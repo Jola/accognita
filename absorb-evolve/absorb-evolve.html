@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Absorb & Evolve</title>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box; margin: 0; padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    :root {
+      --bg:#0a0d14; --panel:#0f1420; --panel2:#141a28;
+      --accent:#4af0c8; --accent2:#a06fff; --gold:#f0c040;
+      --red:#ff4466; --green:#44ff88; --text:#c8d8e8; --muted:#5a6a7a;
+      --slime:#40e890; --slime2:#20a860;
+    }
+    html, body {
+      background:var(--bg); color:var(--text); font-family:'Crimson Pro',serif;
+      width:100%; height:100%; overflow:hidden; touch-action:none;
+    }
+    #app { display:flex; flex-direction:column; width:100vw; height:100vh; height:100dvh; }
+
+    /* HEADER */
+    header {
+      display:flex; align-items:center; gap:8px; padding:6px 12px;
+      background:linear-gradient(90deg,#0a0d14,#0f1a2a,#0a0d14);
+      border-bottom:1px solid #1a2a3a; flex-shrink:0; min-height:44px;
+    }
+    header h1 {
+      font-family:'Cinzel',serif; font-size:clamp(.7rem,2.5vw,1rem);
+      font-weight:900; color:var(--slime); letter-spacing:2px; white-space:nowrap;
+    }
+    .hud-bar { display:flex; gap:8px; margin-left:auto; align-items:center; }
+    .hud-stat { display:flex; flex-direction:column; align-items:center; gap:1px; }
+    .hud-stat .lbl { color:var(--accent); font-family:'Cinzel',serif; font-size:clamp(.48rem,1.4vw,.62rem); letter-spacing:1px; }
+    .hud-stat .val { color:var(--text); font-size:clamp(.62rem,1.8vw,.82rem); }
+    .bar-wrap { display:flex; align-items:center; gap:4px; }
+    .bar { width:clamp(36px,7vw,72px); height:5px; background:#1a2030; border-radius:3px; overflow:hidden; }
+    .bar-fill { height:100%; border-radius:3px; transition:width .3s; }
+    .bar-hp  .bar-fill { background:linear-gradient(90deg,var(--red),#ff8866); }
+    .bar-mp  .bar-fill { background:linear-gradient(90deg,var(--accent2),#66aaff); }
+    .bar-exp .bar-fill { background:linear-gradient(90deg,var(--gold),#ffe880); }
+
+    /* MAIN */
+    .main { display:flex; flex:1; overflow:hidden; position:relative; }
+    #canvas-wrap { flex:1; position:relative; overflow:hidden; }
+    #canvas-wrap canvas { display:block; touch-action:none; }
+
+    /* DESKTOP SIDE PANEL */
+    .side-panel {
+      width:280px; min-width:280px; background:var(--panel);
+      border-left:1px solid #1a2030; display:flex; flex-direction:column; overflow:hidden;
+    }
+    .panel-tabs { display:flex; border-bottom:1px solid #1a2030; flex-shrink:0; }
+    .tab-btn {
+      flex:1; padding:7px 2px; background:transparent; border:none; color:var(--muted);
+      font-family:'Cinzel',serif; font-size:clamp(.48rem,1.4vw,.6rem); letter-spacing:.5px;
+      cursor:pointer; transition:all .2s; border-bottom:2px solid transparent; min-height:38px;
+    }
+    .tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); background:#0a1020; }
+    .tab-btn:hover:not(.active) { color:var(--text); background:#0d1520; }
+    .tab-content { display:none; flex:1; overflow-y:auto; padding:10px; }
+    .tab-content.active { display:flex; flex-direction:column; gap:7px; }
+    .tab-content::-webkit-scrollbar { width:3px; }
+    .tab-content::-webkit-scrollbar-thumb { background:#2a3a4a; border-radius:2px; }
+    .section-title {
+      font-family:'Cinzel',serif; font-size:.56rem; letter-spacing:2px;
+      color:var(--muted); text-transform:uppercase; padding-bottom:4px; border-bottom:1px solid #1a2030;
+    }
+
+    /* SKILL CARDS */
+    .skill-card {
+      background:var(--panel2); border:1px solid #1a2030; border-radius:6px;
+      padding:7px 9px; cursor:pointer; transition:all .2s; position:relative; overflow:hidden;
+    }
+    .skill-card:hover,.skill-card:active { border-color:var(--accent); }
+    .skill-card.selected { border-color:var(--accent); background:#0d1a28; }
+    .skill-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; }
+    .skill-card[data-element="fire"]::before   { background:#ff6644; }
+    .skill-card[data-element="water"]::before  { background:#4488ff; }
+    .skill-card[data-element="earth"]::before  { background:#88aa44; }
+    .skill-card[data-element="wind"]::before   { background:#88ddff; }
+    .skill-card[data-element="slime"]::before  { background:var(--slime); }
+    .skill-card[data-element="dark"]::before   { background:var(--accent2); }
+    .skill-card[data-element="light"]::before  { background:var(--gold); }
+    .skill-card[data-element="poison"]::before { background:#aa44ff; }
+    .skill-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:3px; }
+    .skill-name  { font-family:'Cinzel',serif; font-size:.7rem; color:var(--text); }
+    .skill-level { font-size:.6rem; color:var(--gold); }
+    .skill-desc  { font-size:.68rem; color:var(--muted); line-height:1.4; }
+    .skill-bar-row { display:flex; align-items:center; gap:6px; margin-top:4px; }
+    .skill-bar { flex:1; height:3px; background:#1a2030; border-radius:2px; overflow:hidden; }
+    .skill-bar-fill { height:100%; border-radius:2px; background:var(--accent); transition:width .4s; }
+    .skill-count { font-size:.56rem; color:var(--muted); white-space:nowrap; }
+    .discovered-badge {
+      display:inline-block; padding:1px 4px; border-radius:3px;
+      background:#1a3a1a; border:1px solid #2a6a2a; color:var(--green);
+      font-size:.48rem; font-family:'Cinzel',serif;
+    }
+
+    /* COMBO */
+    .combo-zone {
+      background:#0a1020; border:1px dashed #2a3a4a; border-radius:8px;
+      padding:10px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:8px;
+    }
+    .combo-slots { display:flex; gap:6px; justify-content:center; align-items:center; flex-wrap:wrap; }
+    .combo-slot {
+      width:56px; height:38px; background:#1a2030; border:1px solid #2a3a4a; border-radius:4px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:.56rem; color:var(--muted); cursor:pointer; transition:all .2s; text-align:center; padding:3px;
+    }
+    .combo-slot.filled { border-color:var(--accent); color:var(--text); font-size:.58rem; background:#0d1a28; }
+    .combo-plus,.combo-eq { color:var(--muted); font-size:.9rem; }
+    .combo-result {
+      width:64px; height:38px; background:#1a2030; border:1px solid var(--accent2); border-radius:4px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:.58rem; color:var(--accent2); text-align:center; padding:3px;
+    }
+    .btn {
+      padding:7px 14px; border:1px solid var(--accent); border-radius:4px; background:transparent;
+      color:var(--accent); font-family:'Cinzel',serif; font-size:.58rem; letter-spacing:1px;
+      cursor:pointer; transition:all .2s; min-height:36px;
+    }
+    .btn:hover,.btn:active { background:var(--accent); color:var(--bg); }
+    .btn:disabled { opacity:.3; cursor:default; }
+
+    /* ENTITY CARDS */
+    .entity-card {
+      background:var(--panel2); border:1px solid #1a2030; border-radius:6px;
+      padding:7px 9px; display:flex; align-items:center; gap:7px;
+    }
+    .entity-icon  { font-size:1.3rem; width:28px; text-align:center; }
+    .entity-info  { flex:1; }
+    .entity-name  { font-family:'Cinzel',serif; font-size:.68rem; color:var(--text); }
+    .entity-skills{ font-size:.6rem; color:var(--muted); margin-top:2px; }
+    .entity-actions { display:flex; flex-direction:column; gap:4px; }
+    .action-btn {
+      padding:5px 7px; border-radius:3px; border:none; font-size:.56rem; cursor:pointer;
+      font-family:'Cinzel',serif; letter-spacing:.5px; transition:all .15s; min-height:28px; min-width:56px;
+    }
+    .absorb-btn  { background:#ff4466; color:white; }
+    .absorb-btn:hover,.absorb-btn:active  { background:#ff6688; }
+    .analyze-btn { background:#1a3060; color:var(--accent); border:1px solid var(--accent); }
+    .analyze-btn:hover,.analyze-btn:active { background:#2244aa; }
+
+    /* LOG */
+    .log-entry { font-size:.68rem; line-height:1.5; padding:3px 0; border-bottom:1px solid #0d1520; color:var(--muted); }
+    .log-entry.absorb  { color:var(--green); }
+    .log-entry.analyze { color:var(--accent); }
+    .log-entry.levelup { color:var(--gold); }
+    .log-entry.combo   { color:var(--accent2); }
+    .log-entry.system  { color:var(--muted); font-style:italic; }
+
+    /* DESKTOP FOOTER */
+    .footer-bar {
+      padding:5px 16px; background:var(--panel); border-top:1px solid #1a2030;
+      display:flex; gap:14px; font-size:.6rem; color:var(--muted); flex-shrink:0; flex-wrap:wrap;
+    }
+    .key-hint { color:var(--accent); margin-right:3px; }
+
+    /* NOTIFICATION */
+    .notification {
+      position:fixed; top:52px; left:50%;
+      transform:translateX(-50%) translateY(-10px);
+      background:var(--panel2); border:1px solid var(--accent); border-radius:8px;
+      padding:8px 18px; font-family:'Cinzel',serif; font-size:clamp(.6rem,2.5vw,.75rem);
+      color:var(--accent); letter-spacing:1px; opacity:0; pointer-events:none;
+      transition:all .3s; z-index:100; white-space:nowrap; max-width:90vw; text-align:center;
+    }
+    .notification.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+    /* ═══════════════════════════════════════════
+       MOBILE CONTROLS — primäre Eingabemethode
+    ═══════════════════════════════════════════ */
+    #touchControls {
+      display:none;
+      position:fixed; bottom:0; left:0; right:0;
+      height:190px; pointer-events:none; z-index:40;
+    }
+
+    /* Virtueller Joystick */
+    #joystickZone {
+      position:absolute; left:18px; bottom:18px;
+      width:136px; height:136px; pointer-events:all; border-radius:50%;
+    }
+    #joystickBase {
+      position:absolute; inset:0; border-radius:50%;
+      background:rgba(74,240,200,.07); border:2px solid rgba(74,240,200,.22);
+    }
+    #joystickThumb {
+      position:absolute; width:46px; height:46px; border-radius:50%;
+      background:radial-gradient(circle at 35% 35%,#90ffcc,#40e890);
+      border:2px solid rgba(255,255,255,.25);
+      top:50%; left:50%; transform:translate(-50%,-50%);
+      box-shadow:0 0 14px rgba(64,232,144,.4);
+    }
+
+    /* ABSORB / ANALYZE Touch-Buttons */
+    #actionBtns {
+      position:absolute; right:18px; bottom:18px;
+      display:flex; flex-direction:row; gap:14px; pointer-events:all;
+    }
+    .touch-action-btn {
+      width:72px; height:72px; border-radius:50%; border:2px solid;
+      background:rgba(10,13,20,.88); color:white;
+      font-family:'Cinzel',serif; font-size:.54rem; letter-spacing:.5px; cursor:pointer;
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+      transition:transform .1s,background .1s; pointer-events:all;
+    }
+    .touch-action-btn:active { transform:scale(.9); }
+    #btnAbsorb  { border-color:var(--red);    color:var(--red);    font-size:1.5rem; }
+    #btnAbsorb:active  { background:rgba(255,68,102,.3); }
+    #btnAnalyze { border-color:var(--accent); color:var(--accent); font-size:1.3rem; }
+    #btnAnalyze:active { background:rgba(74,240,200,.2); }
+
+    /* Panel-Toggle (Mobile) */
+    #btnPanel {
+      position:fixed; top:52px; right:12px; width:40px; height:40px; border-radius:50%;
+      background:rgba(15,20,32,.92); border:1px solid var(--accent2);
+      color:var(--accent2); font-size:1rem; display:none;
+      align-items:center; justify-content:center;
+      cursor:pointer; z-index:45; box-shadow:0 2px 12px rgba(0,0,0,.5);
+    }
+
+    /* Bottom Sheet (Mobile Panel) */
+    #bottomSheet {
+      display:none; position:fixed; left:0; right:0; bottom:0;
+      background:var(--panel); border-top:1px solid #1a2030;
+      border-radius:16px 16px 0 0; z-index:50;
+      transition:transform .3s ease; transform:translateY(100%);
+      max-height:60vh; flex-direction:column;
+    }
+    #bottomSheet.open { transform:translateY(0); }
+    .sheet-handle {
+      width:36px; height:4px; background:#2a3a4a; border-radius:2px;
+      margin:10px auto 6px; flex-shrink:0; cursor:pointer;
+    }
+
+    /* ── RESPONSIVE BREAKPOINT ── */
+    @media (max-width:700px) {
+      .side-panel { display:none; }
+      .footer-bar { display:none; }
+      #touchControls { display:block; }
+      #btnPanel    { display:flex; }
+      #bottomSheet { display:flex; }
+    }
+    @media (min-width:701px) {
+      #touchControls { display:none !important; }
+      #btnPanel      { display:none !important; }
+      #bottomSheet   { display:none !important; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div style="font-size:1.3rem;flex-shrink:0">🫧</div>
+    <h1>Absorb &amp; Evolve</h1>
+    <div class="hud-bar">
+      <div class="hud-stat"><span class="lbl">LVL</span><span class="val" id="playerLevel">1</span></div>
+      <div class="hud-stat"><span class="lbl">HP</span>
+        <div class="bar-wrap"><div class="bar bar-hp"><div class="bar-fill" id="hpBar" style="width:100%"></div></div>
+        <span class="val" id="hpText" style="font-size:.62rem">80</span></div></div>
+      <div class="hud-stat"><span class="lbl">MP</span>
+        <div class="bar-wrap"><div class="bar bar-mp"><div class="bar-fill" id="mpBar" style="width:100%"></div></div>
+        <span class="val" id="mpText" style="font-size:.62rem">40</span></div></div>
+      <div class="hud-stat"><span class="lbl">EXP</span>
+        <div class="bar-wrap"><div class="bar bar-exp"><div class="bar-fill" id="expBar" style="width:0%"></div></div></div></div>
+      <div class="hud-stat"><span class="lbl">SKL</span><span class="val" id="skillCount">0</span></div>
+    </div>
+  </header>
+
+  <div class="main">
+    <div id="canvas-wrap"></div>
+
+    <div class="side-panel">
+      <div class="panel-tabs">
+        <button class="tab-btn active" onclick="switchTab('skills')">SKILLS</button>
+        <button class="tab-btn" onclick="switchTab('combine')">COMBINE</button>
+        <button class="tab-btn" onclick="switchTab('nearby')">NEARBY</button>
+        <button class="tab-btn" onclick="switchTab('log')">LOG</button>
+      </div>
+      <div id="tab-skills" class="tab-content active">
+        <div class="section-title">Discovered Skills</div>
+        <div id="skillList"><div style="color:var(--muted);font-size:.73rem;text-align:center;padding:20px 0">Absorbiere oder analysiere Entities…</div></div>
+      </div>
+      <div id="tab-combine" class="tab-content">
+        <div class="section-title">Skill Combination</div>
+        <div class="combo-zone">
+          <div class="combo-slots">
+            <div class="combo-slot" id="slot1" onclick="clearSlot(1)">Select</div>
+            <div class="combo-plus">+</div>
+            <div class="combo-slot" id="slot2" onclick="clearSlot(2)">Select</div>
+            <div class="combo-eq">=</div>
+            <div class="combo-result" id="comboResult">?</div>
+          </div>
+          <button class="btn" id="combineBtn" onclick="tryCombine()" disabled>COMBINE</button>
+        </div>
+        <div class="section-title" style="margin-top:8px">Select Skills</div>
+        <div id="combineSkillList"></div>
+        <div style="margin-top:8px;font-size:.64rem;color:var(--muted);line-height:1.7">
+          Rezepte:<br>
+          <span style="color:var(--accent)">Fire+Water</span>→Steam Burst<br>
+          <span style="color:var(--accent)">Fire+Wind</span>→Firestorm<br>
+          <span style="color:var(--accent)">Poison+Slime</span>→Toxic Coat<br>
+          <span style="color:var(--accent)">Earth+Water</span>→Mud Wall<br>
+          <span style="color:var(--accent)">Dark+Slime</span>→Shadow Form<br>
+          <span style="color:var(--accent)">Wind+Water</span>→Ice Shard
+        </div>
+      </div>
+      <div id="tab-nearby" class="tab-content">
+        <div class="section-title">Entities in Range</div>
+        <p style="font-size:.63rem;color:var(--muted);margin-bottom:6px">Absorb zerstört. Analyze erhält.</p>
+        <div id="nearbyList"><div style="color:var(--muted);font-size:.73rem;text-align:center;padding:20px 0">Näher heran…</div></div>
+      </div>
+      <div id="tab-log" class="tab-content">
+        <div class="section-title">Event Log</div>
+        <div id="logList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bar">
+    <span><span class="key-hint">WASD</span>Bewegen</span>
+    <span><span class="key-hint">E</span>Absorb</span>
+    <span><span class="key-hint">Q</span>Analyze</span>
+    <span><span class="key-hint">Tab</span>Panel</span>
+    <span><span class="key-hint">LClick</span>Absorb Entity</span>
+    <span><span class="key-hint">RClick</span>Analyze Entity</span>
+  </div>
+</div>
+
+<!-- MOBILE: Panel-Button -->
+<button id="btnPanel" onclick="toggleSheet()">📋</button>
+
+<!-- MOBILE: Bottom Sheet -->
+<div id="bottomSheet">
+  <div class="sheet-handle" onclick="toggleSheet()"></div>
+  <div class="panel-tabs">
+    <button class="tab-btn active" onclick="switchTab('skills')">SKILLS</button>
+    <button class="tab-btn" onclick="switchTab('combine')">COMBINE</button>
+    <button class="tab-btn" onclick="switchTab('nearby')">NEARBY</button>
+    <button class="tab-btn" onclick="switchTab('log')">LOG</button>
+  </div>
+  <div id="mobileTabContent" style="flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:7px;"></div>
+</div>
+
+<!-- MOBILE: Touch Controls -->
+<div id="touchControls">
+  <div id="joystickZone">
+    <div id="joystickBase"></div>
+    <div id="joystickThumb"></div>
+  </div>
+  <div id="actionBtns">
+    <button class="touch-action-btn" id="btnAbsorb"
+      ontouchstart="touchAbsorb(event)" onclick="touchAbsorb(event)">
+      💥<span style="font-size:.48rem">ABSORB</span>
+    </button>
+    <button class="touch-action-btn" id="btnAnalyze"
+      ontouchstart="touchAnalyze(event)" onclick="touchAnalyze(event)">
+      🔍<span style="font-size:.48rem">ANALYZE</span>
+    </button>
+  </div>
+</div>
+
+<div class="notification" id="notification"></div>
+
+<script>
+// ============================================================
+// ABSORB & EVOLVE v0.2 — Mobile-First Single File
+// Primärplattform : Mobilgeräte (Joystick + Touch-Buttons)
+// Sekundärplattform: Desktop (WASD + E/Q + Mausklick)
+// ============================================================
+
+// ── DATA: SKILLS ─────────────────────────────────────────────
+const SKILL_DB = {
+  fire:       {name:"Fireball",    element:"fire",   icon:"🔥", desc:"Schleudert einen Feuerball.",           maxLevel:10, baseXp:10, xpMult:1.5},
+  water:      {name:"Water Jet",   element:"water",  icon:"💧", desc:"Kraftvoller Wasserstrahl.",              maxLevel:10, baseXp:10, xpMult:1.5},
+  earth:      {name:"Stone Skin",  element:"earth",  icon:"🪨", desc:"Verhärtet die Oberfläche des Slimes.",  maxLevel:10, baseXp:10, xpMult:1.5},
+  wind:       {name:"Wind Slash",  element:"wind",   icon:"💨", desc:"Schneller Windschnitt.",                 maxLevel:10, baseXp:10, xpMult:1.5},
+  slime:      {name:"Slime Coat",  element:"slime",  icon:"🫧", desc:"Klebrige Schicht verlangsamt Feinde.",  maxLevel:10, baseXp:8,  xpMult:1.5},
+  poison:     {name:"Toxic Spit",  element:"poison", icon:"☠️", desc:"Gift das über Zeit Schaden macht.",     maxLevel:10, baseXp:12, xpMult:1.5},
+  dark:       {name:"Shadow Step", element:"dark",   icon:"🌑", desc:"Im Schatten verschwinden.",             maxLevel:10, baseXp:20, xpMult:1.5},
+  light:      {name:"Holy Beam",   element:"light",  icon:"✨", desc:"Heiliger Lichtstrahl.",                 maxLevel:10, baseXp:20, xpMult:1.5},
+  steam:      {name:"Steam Burst", element:"water",  icon:"♨️", desc:"COMBO: Explosiver Dampfausbruch.",      maxLevel:5,  baseXp:15, xpMult:1.5, isCombo:true},
+  firestorm:  {name:"Firestorm",   element:"fire",   icon:"🌪️",desc:"COMBO: Tornado aus Feuer.",             maxLevel:5,  baseXp:15, xpMult:1.5, isCombo:true},
+  toxiccoat:  {name:"Toxic Coat",  element:"poison", icon:"🟣", desc:"COMBO: Giftige Schleimschicht.",        maxLevel:5,  baseXp:15, xpMult:1.5, isCombo:true},
+  mudwall:    {name:"Mud Wall",    element:"earth",  icon:"🟫", desc:"COMBO: Schlammwand aus Erde+Wasser.",   maxLevel:5,  baseXp:15, xpMult:1.5, isCombo:true},
+  shadowform: {name:"Shadow Form", element:"dark",   icon:"👤", desc:"COMBO: Kurz unsichtbar werden.",        maxLevel:5,  baseXp:20, xpMult:1.5, isCombo:true},
+  iceshard:   {name:"Ice Shard",   element:"wind",   icon:"🧊", desc:"COMBO: Eissplitter frieren ein.",       maxLevel:5,  baseXp:15, xpMult:1.5, isCombo:true},
+};
+
+const COMBOS = {
+  "fire+water":"steam","water+fire":"steam",
+  "fire+wind":"firestorm","wind+fire":"firestorm",
+  "poison+slime":"toxiccoat","slime+poison":"toxiccoat",
+  "earth+water":"mudwall","water+earth":"mudwall",
+  "dark+slime":"shadowform","slime+dark":"shadowform",
+  "wind+water":"iceshard","water+wind":"iceshard",
+};
+
+// ── DATA: ENTITIES ────────────────────────────────────────────
+const ENTITY_DEFS = [
+  {type:"red_slime",      name:"Red Slime",      emoji:"🔴", skills:["fire","slime"],   color:"#ff4444", size:12, rare:false, respawn:30 },
+  {type:"blue_slime",     name:"Blue Slime",     emoji:"🔵", skills:["water","slime"],  color:"#4488ff", size:12, rare:false, respawn:30 },
+  {type:"goblin",         name:"Goblin",          emoji:"👺", skills:["fire"],           color:"#aa4422", size:14, rare:false, respawn:45 },
+  {type:"forest_wolf",    name:"Forest Wolf",     emoji:"🐺", skills:["wind"],           color:"#888888", size:16, rare:false, respawn:60 },
+  {type:"stone_golem",    name:"Stone Golem",     emoji:"🗿", skills:["earth"],          color:"#887755", size:20, rare:false, respawn:120},
+  {type:"vine_plant",     name:"Vine Plant",      emoji:"🌿", skills:["earth","poison"], color:"#224422", size:10, rare:false, respawn:20 },
+  {type:"poison_mushroom",name:"Poison Shrm",     emoji:"🍄", skills:["poison"],         color:"#aa44ff", size:10, rare:false, respawn:25 },
+  {type:"dark_wisp",      name:"Dark Wisp",       emoji:"👻", skills:["dark"],           color:"#553388", size:13, rare:true,  respawn:300},
+  {type:"light_fairy",    name:"Light Fairy",     emoji:"🧚", skills:["light"],          color:"#ffff88", size:11, rare:true,  respawn:300},
+];
+
+// ── GAME STATE ────────────────────────────────────────────────
+const state = {
+  player:   {x:400, y:300, hp:80, maxHp:80, mp:40, maxMp:40, exp:0, level:1, expNeeded:100, radius:12},
+  skills:   {},
+  entities: [],
+  keys:     {},
+  log:      [],
+  combo:    {slot1:null, slot2:null},
+  tick:     0,
+  worldW:   1600,
+  worldH:   1200,
+  joy:      {active:false, id:-1, cx:0, cy:0, dx:0, dy:0},
+};
+
+// ── PHASER SCENE ──────────────────────────────────────────────
+class GameScene extends Phaser.Scene {
+  constructor() { super({key:"GameScene"}); }
+
+  create() {
+    this.entitySprites = new Map();
+    this.createWorld();
+    this.createEntities();
+    this.createPlayer();
+    this.createKeyboard();
+    this.createDesktopMouseInput();
+
+    this.cameras.main.startFollow(this.slime, true, 0.1, 0.1);
+    this.cameras.main.setZoom(1.5);
+    this.cameras.main.setBounds(0, 0, state.worldW, state.worldH);
+
+    window.gameScene = this;
+    addLog('Du erwachst als Schleim…','system');
+    addLog('📱 Mobile: Joystick + ABSORB/ANALYZE Buttons','system');
+    addLog('🖥️ Desktop: WASD + E/Q + Mausklick','system');
+  }
+
+  createWorld() {
+    const g = this.add.graphics();
+    g.fillStyle(0x1a3320); g.fillRect(0,0,state.worldW,state.worldH);
+    g.fillStyle(0x142618,0.5);
+    for (let x=0; x<state.worldW; x+=80)
+      for (let y=0; y<state.worldH; y+=80)
+        if ((x+y)%160===0) g.fillRect(x,y,40,40);
+
+    const decos=[{x:80,y:80,i:"🌲"},{x:1450,y:90,i:"🌲"},{x:180,y:1060,i:"🌲"},
+      {x:1520,y:1010,i:"🌲"},{x:760,y:28,i:"🪨"},{x:40,y:610,i:"🪨"},
+      {x:1560,y:490,i:"🪨"},{x:810,y:1160,i:"🌲"}];
+    for (const d of decos) this.add.text(d.x,d.y,d.i,{fontSize:'32px'}).setAlpha(0.5);
+
+    this.physics.world.setBounds(0,0,state.worldW,state.worldH);
+    this.rangeRing = this.add.graphics();
+  }
+
+  createPlayer() {
+    const g = this.add.graphics();
+    g.fillStyle(0x20a860); g.fillCircle(20,20,18);
+    g.fillStyle(0x40e890); g.fillCircle(20,20,15);
+    g.fillStyle(0x90ffcc,0.7); g.fillCircle(14,14,7);
+    g.generateTexture('slime',40,40); g.destroy();
+
+    this.slime = this.physics.add.image(state.player.x, state.player.y, 'slime');
+    this.slime.setCollideWorldBounds(true);
+    this.tweens.add({targets:this.slime, scaleX:1.08, scaleY:0.93, duration:800, yoyo:true, repeat:-1, ease:'Sine.easeInOut'});
+  }
+
+  createEntities() {
+    const placements = [
+      {t:"red_slime",x:200,y:200},{t:"red_slime",x:600,y:350},
+      {t:"blue_slime",x:400,y:150},{t:"blue_slime",x:800,y:420},
+      {t:"goblin",x:500,y:500},{t:"goblin",x:300,y:620},
+      {t:"forest_wolf",x:900,y:250},{t:"stone_golem",x:700,y:720},
+      {t:"vine_plant",x:150,y:460},{t:"vine_plant",x:1000,y:510},
+      {t:"poison_mushroom",x:350,y:310},{t:"poison_mushroom",x:650,y:560},
+      {t:"dark_wisp",x:1100,y:900},{t:"light_fairy",x:1200,y:210},
+    ];
+
+    for (let i=0; i<placements.length; i++) {
+      const p = placements[i];
+      const def = ENTITY_DEFS.find(d=>d.type===p.t);
+      if (!def) continue;
+
+      state.entities.push({...def, id:i, x:p.x, y:p.y, alive:true});
+
+      const txt = this.add.text(p.x, p.y, def.emoji, {fontSize:'28px'}).setOrigin(0.5);
+
+      // Tap auf Entity — primäre Mobile-Geste (Absorb)
+      txt.setInteractive();
+      txt.on('pointerdown', () => {
+        const dist = Math.hypot(state.player.x-p.x, state.player.y-p.y);
+        if (dist > 80) { notify('Näher heran!'); return; }
+        doAbsorb(i);
+      });
+
+      this.tweens.add({targets:txt, y:p.y-6, duration:1200+i*80, yoyo:true, repeat:-1, ease:'Sine.easeInOut'});
+      this.entitySprites.set(i, txt);
+    }
+  }
+
+  createKeyboard() {
+    this.cursors = this.input.keyboard.createCursorKeys();
+    this.wasd = this.input.keyboard.addKeys({
+      up:Phaser.Input.Keyboard.KeyCodes.W, down:Phaser.Input.Keyboard.KeyCodes.S,
+      left:Phaser.Input.Keyboard.KeyCodes.A, right:Phaser.Input.Keyboard.KeyCodes.D,
+    });
+    this.eKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+    this.qKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
+    this.input.keyboard.on('keydown-TAB', e => {
+      e.preventDefault();
+      const tabs=['skills','combine','nearby','log'];
+      switchTab(tabs[(tabs.indexOf(window._currentTab||'skills')+1)%tabs.length]);
+    });
+  }
+
+  // Desktop: Rechtsklick = Analyze, Linksklick auf Entity = Absorb
+  createDesktopMouseInput() {
+    this.game.canvas.addEventListener('contextmenu', e => {
+      e.preventDefault();
+      const rect = this.game.canvas.getBoundingClientRect();
+      const cam  = this.cameras.main;
+      const wx = (e.clientX-rect.left)/cam.zoom + cam.scrollX;
+      const wy = (e.clientY-rect.top) /cam.zoom + cam.scrollY;
+      const hit = state.entities.find(en=>en.alive && Math.hypot(en.x-wx,en.y-wy)<(en.size||14)+12);
+      if (!hit) return;
+      if (Math.hypot(state.player.x-hit.x,state.player.y-hit.y)>80) {notify('Näher heran!');return;}
+      doAnalyze(hit.id);
+    });
+  }
+
+  update() {
+    // Bewegung
+    const speed = 180;
+    const body  = this.slime.body;
+    const left  = this.cursors.left.isDown  || this.wasd.left.isDown;
+    const right = this.cursors.right.isDown || this.wasd.right.isDown;
+    const up    = this.cursors.up.isDown    || this.wasd.up.isDown;
+    const down  = this.cursors.down.isDown  || this.wasd.down.isDown;
+
+    let dx = (left?-1:right?1:0) + (state.joy.active?state.joy.dx:0);
+    let dy = (up?-1:down?1:0)   + (state.joy.active?state.joy.dy:0);
+    const len = Math.hypot(dx,dy);
+    if (len>1){dx/=len; dy/=len;}
+    body.setVelocity(dx*speed, dy*speed);
+
+    // State sync
+    state.player.x = this.slime.x;
+    state.player.y = this.slime.y;
+
+    // Entity-Visuals
+    for (const ent of state.entities) {
+      const spr = this.entitySprites.get(ent.id);
+      if (spr) spr.setAlpha(ent.alive?1.0:0.15);
+    }
+
+    // Reichweiten-Ring
+    this.rangeRing.clear();
+    const a = 0.15 + 0.07*Math.sin(state.tick*0.08);
+    this.rangeRing.lineStyle(1.5, 0x4af0c8, a);
+    this.rangeRing.strokeCircle(state.player.x, state.player.y, 80);
+
+    // Keyboard Interaction
+    if (Phaser.Input.Keyboard.JustDown(this.eKey)) {const n=getNearestEntity(); n?doAbsorb(n.id):notify('Nichts in Reichweite');}
+    if (Phaser.Input.Keyboard.JustDown(this.qKey)) {const n=getNearestEntity(); n?doAnalyze(n.id):notify('Nichts in Reichweite');}
+
+    // Nearby Panel
+    if (state.tick%20===0) updateNearbyPanel();
+    state.tick++;
+  }
+}
+
+// ── PHASER START ──────────────────────────────────────────────
+window.addEventListener('load', () => {
+  new Phaser.Game({
+    type:Phaser.AUTO, parent:'canvas-wrap', backgroundColor:'#0a0d14',
+    scale:{mode:Phaser.Scale.RESIZE, autoCenter:Phaser.Scale.CENTER_BOTH},
+    physics:{default:'arcade', arcade:{debug:false}},
+    scene:[GameScene],
+  });
+});
+
+// ── JOYSTICK ──────────────────────────────────────────────────
+const JR=44;
+const jZone=document.getElementById('joystickZone');
+const jThumb=document.getElementById('joystickThumb');
+
+jZone.addEventListener('touchstart', e=>{
+  e.preventDefault(); if(state.joy.active)return;
+  const t=e.changedTouches[0], rect=jZone.getBoundingClientRect();
+  state.joy={active:true, id:t.identifier, cx:rect.left+rect.width/2, cy:rect.top+rect.height/2, dx:0, dy:0};
+  moveJoy(t);
+},{passive:false});
+
+jZone.addEventListener('touchmove', e=>{
+  e.preventDefault(); if(!state.joy.active)return;
+  for(const t of e.changedTouches) if(t.identifier===state.joy.id) moveJoy(t);
+},{passive:false});
+
+['touchend','touchcancel'].forEach(ev=>jZone.addEventListener(ev, e=>{
+  for(const t of e.changedTouches) if(t.identifier===state.joy.id){
+    state.joy.active=false; state.joy.id=-1; state.joy.dx=0; state.joy.dy=0;
+    jThumb.style.transform='translate(-50%,-50%)';
+  }
+}));
+
+function moveJoy(t){
+  const ox=t.clientX-state.joy.cx, oy=t.clientY-state.joy.cy, dist=Math.hypot(ox,oy);
+  const cx=dist>JR?(ox/dist)*JR:ox, cy=dist>JR?(oy/dist)*JR:oy;
+  jThumb.style.transform=`translate(calc(-50% + ${cx}px),calc(-50% + ${cy}px))`;
+  state.joy.dx=cx/JR; state.joy.dy=cy/JR;
+}
+
+// ── TOUCH BUTTONS ─────────────────────────────────────────────
+function touchAbsorb(e){if(e)e.preventDefault(); const n=getNearestEntity(); n?doAbsorb(n.id):notify('Nichts in Reichweite');}
+function touchAnalyze(e){if(e)e.preventDefault(); const n=getNearestEntity(); n?doAnalyze(n.id):notify('Nichts in Reichweite');}
+
+function getNearestEntity(){
+  return state.entities
+    .filter(e=>e.alive && Math.hypot(state.player.x-e.x,state.player.y-e.y)<80)
+    .sort((a,b)=>Math.hypot(state.player.x-a.x,state.player.y-a.y)-Math.hypot(state.player.x-b.x,state.player.y-b.y))[0]||null;
+}
+
+// ── SKILL SYSTEM ──────────────────────────────────────────────
+const XP_GAIN={absorb:3, analyze:1, combo:3};
+
+function discoverSkill(id, method){
+  const db=SKILL_DB[id]; if(!db)return;
+  if(!state.skills[id]){
+    state.skills[id]={level:1, xp:0, xpNeeded:db.baseXp};
+    addLog(`Entdeckt: ${db.name}!`, method==='absorb'?'absorb':'analyze');
+    notify(`✨ ${db.icon} ${db.name} entdeckt`); gainExp(20);
+  } else {
+    const sk=state.skills[id];
+    sk.xp += XP_GAIN[method]||1;
+    if(sk.xp>=sk.xpNeeded && sk.level<db.maxLevel){
+      sk.level++; sk.xp-=sk.xpNeeded; sk.xpNeeded=Math.floor(sk.xpNeeded*db.xpMult);
+      addLog(`${db.name} → Lv${sk.level}!`,'levelup');
+      notify(`⬆️ ${db.name} Lv${sk.level}`);
+    }
+  }
+  document.getElementById('skillCount').textContent=Object.keys(state.skills).length;
+  renderSkillList(); renderCombineList();
+}
+
+// ── ENTITY INTERAKTION ────────────────────────────────────────
+function doAbsorb(id){
+  const e=state.entities.find(x=>x.id===id); if(!e||!e.alive)return;
+  if(Math.hypot(state.player.x-e.x,state.player.y-e.y)>80){notify('Zu weit entfernt!');return;}
+  addLog(`Absorbiert: ${e.name}`,'absorb'); e.alive=false;
+  e.skills.forEach(s=>discoverSkill(s,'absorb')); gainExp(15); updateNearbyPanel();
+  setTimeout(()=>{
+    e.alive=true; e.x=80+Math.random()*(state.worldW-160); e.y=80+Math.random()*(state.worldH-160);
+    if(window.gameScene){const spr=window.gameScene.entitySprites.get(id);if(spr){spr.x=e.x;spr.y=e.y;}}
+  }, e.respawn*1000);
+}
+
+function doAnalyze(id){
+  const e=state.entities.find(x=>x.id===id); if(!e||!e.alive)return;
+  if(Math.hypot(state.player.x-e.x,state.player.y-e.y)>80){notify('Zu weit entfernt!');return;}
+  addLog(`Analysiert: ${e.name}`,'analyze'); e.skills.forEach(s=>discoverSkill(s,'analyze')); gainExp(5);
+}
+
+// ── PROGRESSION ───────────────────────────────────────────────
+function gainExp(n){
+  const p=state.player; p.exp+=n;
+  while(p.exp>=p.expNeeded){
+    p.exp-=p.expNeeded; p.level++; p.expNeeded=Math.floor(p.expNeeded*1.4);
+    p.maxHp+=10; p.hp=p.maxHp; p.maxMp+=5; p.mp=p.maxMp;
+    addLog(`Level Up! Lv${p.level}`,'levelup'); notify(`🌟 Level ${p.level}!`);
+    document.getElementById('playerLevel').textContent=p.level;
+  }
+  updateHUD();
+}
+
+function updateHUD(){
+  const p=state.player;
+  document.getElementById('hpBar').style.width=(p.hp/p.maxHp*100)+'%';
+  document.getElementById('mpBar').style.width=(p.mp/p.maxMp*100)+'%';
+  document.getElementById('expBar').style.width=(p.exp/p.expNeeded*100)+'%';
+  document.getElementById('hpText').textContent=p.hp;
+  document.getElementById('mpText').textContent=p.mp;
+}
+
+// ── UI ────────────────────────────────────────────────────────
+function renderSkillList(){
+  const el=document.getElementById('skillList'), skills=Object.entries(state.skills);
+  el.innerHTML=skills.length?skills.map(([id,data])=>{
+    const db=SKILL_DB[id], pct=(data.xp/data.xpNeeded*100).toFixed(0);
+    return`<div class="skill-card" data-element="${db.element}">
+      <div class="skill-header">
+        <span class="skill-name">${db.icon} ${db.name}${db.isCombo?' <span class="discovered-badge">COMBO</span>':''}</span>
+        <span class="skill-level">Lv${data.level}/${db.maxLevel}</span>
+      </div>
+      <div class="skill-desc">${db.desc}</div>
+      <div class="skill-bar-row">
+        <div class="skill-bar"><div class="skill-bar-fill" style="width:${pct}%"></div></div>
+        <span class="skill-count">${data.xp}/${data.xpNeeded}</span>
+      </div></div>`;
+  }).join(''):'<div style="color:var(--muted);font-size:.73rem;text-align:center;padding:20px 0">Absorbiere oder analysiere Entities…</div>';
+  syncMobileTab();
+}
+
+function renderCombineList(){
+  const el=document.getElementById('combineSkillList');
+  const skills=Object.entries(state.skills).filter(([id])=>!SKILL_DB[id].isCombo);
+  el.innerHTML=skills.map(([id,data])=>{
+    const db=SKILL_DB[id], sel=state.combo.slot1===id||state.combo.slot2===id;
+    return`<div class="skill-card ${sel?'selected':''}" data-element="${db.element}" onclick="selectForCombo('${id}')">
+      <div class="skill-header">
+        <span class="skill-name">${db.icon} ${db.name}</span>
+        <span class="skill-level">Lv${data.level}</span>
+      </div></div>`;
+  }).join('')||'<div style="color:var(--muted);font-size:.73rem">Noch keine Skills.</div>';
+  syncMobileTab();
+}
+
+function updateNearbyPanel(){
+  const nearby=state.entities.filter(e=>e.alive&&Math.hypot(state.player.x-e.x,state.player.y-e.y)<80);
+  const el=document.getElementById('nearbyList');
+  el.innerHTML=nearby.length?nearby.map(e=>`
+    <div class="entity-card">
+      <div class="entity-icon">${e.emoji}</div>
+      <div class="entity-info">
+        <div class="entity-name">${e.name}</div>
+        <div class="entity-skills">${e.skills.map(s=>SKILL_DB[s].name).join(', ')}</div>
+      </div>
+      <div class="entity-actions">
+        <button class="action-btn absorb-btn"  onclick="doAbsorb(${e.id})">ABSORB</button>
+        <button class="action-btn analyze-btn" onclick="doAnalyze(${e.id})">ANALYZE</button>
+      </div>
+    </div>`).join(''):'<div style="color:var(--muted);font-size:.73rem;text-align:center;padding:20px 0">Näher heran…</div>';
+  syncMobileTab();
+}
+
+// COMBO
+function selectForCombo(id){
+  if(state.combo.slot1===id)state.combo.slot1=null;
+  else if(state.combo.slot2===id)state.combo.slot2=null;
+  else if(!state.combo.slot1)state.combo.slot1=id;
+  else if(!state.combo.slot2)state.combo.slot2=id;
+  else state.combo.slot1=id;
+  updateComboUI(); renderCombineList();
+}
+function clearSlot(n){if(n===1)state.combo.slot1=null;else state.combo.slot2=null;updateComboUI();renderCombineList();}
+function updateComboUI(){
+  const{slot1,slot2}=state.combo;
+  const s1=document.getElementById('slot1'),s2=document.getElementById('slot2');
+  const res=document.getElementById('comboResult'),btn=document.getElementById('combineBtn');
+  if(!s1)return;
+  s1.textContent=slot1?`${SKILL_DB[slot1].icon} ${SKILL_DB[slot1].name}`:'Select'; s1.className='combo-slot'+(slot1?' filled':'');
+  s2.textContent=slot2?`${SKILL_DB[slot2].icon} ${SKILL_DB[slot2].name}`:'Select'; s2.className='combo-slot'+(slot2?' filled':'');
+  if(slot1&&slot2){
+    const r=COMBOS[`${slot1}+${slot2}`];
+    if(r){const db=SKILL_DB[r];res.textContent=`${db.icon} ${db.name}`;res.style.borderColor='var(--green)';res.style.color='var(--green)';btn.disabled=false;}
+    else{res.textContent='✗ Kein Rezept';res.style.borderColor='var(--red)';res.style.color='var(--red)';btn.disabled=true;}
+  }else{res.textContent='?';res.style.borderColor='var(--accent2)';res.style.color='var(--accent2)';btn.disabled=true;}
+}
+function tryCombine(){
+  const{slot1,slot2}=state.combo; if(!slot1||!slot2)return;
+  const r=COMBOS[`${slot1}+${slot2}`]; if(!r)return;
+  discoverSkill(r,'combo');
+  addLog(`${SKILL_DB[slot1].name}+${SKILL_DB[slot2].name}→${SKILL_DB[r].name}!`,'combo');
+  notify(`🔮 ${SKILL_DB[r].icon} ${SKILL_DB[r].name} freigeschaltet!`);
+  state.combo.slot1=null; state.combo.slot2=null; updateComboUI(); renderCombineList();
+}
+
+// TABS
+window._currentTab='skills';
+function switchTab(name){
+  window._currentTab=name;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.querySelectorAll(`.tab-btn[onclick="switchTab('${name}')"]`).forEach(b=>b.classList.add('active'));
+  const el=document.getElementById(`tab-${name}`); if(el)el.classList.add('active');
+  syncMobileTab();
+}
+function syncMobileTab(){
+  const mc=document.getElementById('mobileTabContent');
+  const src=document.getElementById(`tab-${window._currentTab}`);
+  if(mc&&src)mc.innerHTML=src.innerHTML;
+}
+function toggleSheet(){document.getElementById('bottomSheet').classList.toggle('open');syncMobileTab();}
+
+// LOG & NOTIFY
+function addLog(msg,type='system'){
+  state.log.unshift({msg,type}); if(state.log.length>50)state.log.pop();
+  const el=document.getElementById('logList');
+  if(el)el.innerHTML=state.log.slice(0,30).map(l=>`<div class="log-entry ${l.type}">${l.msg}</div>`).join('');
+}
+let _notifTimer=null;
+function notify(msg){
+  const el=document.getElementById('notification'); el.textContent=msg; el.classList.add('show');
+  if(_notifTimer)clearTimeout(_notifTimer); _notifTimer=setTimeout(()=>el.classList.remove('show'),2500);
+}
+</script>
+</body>
+</html>
