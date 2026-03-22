@@ -3,124 +3,167 @@
 
 ---
 
-## 1. Übersicht
+## 1. Kern-Fähigkeiten: Analyze & Absorb
 
-> **Status: Implementiert (v0.2)** — Alle Kern-Mechaniken sind in `src/systems/SkillSystem.ts` umgesetzt.
+> **Status: Neu definiert (v0.3)** — Analyze und Absorb sind ab sofort eigenständige, levelbare Fähigkeiten mit Fehlschlag-Mechanik.
 
-Das Skill-System ist das Herzstück des Spiels. Es gibt **keine Skill-Bäume zum Anklicken**, keine Shops, keine Klassen-Auswahl. Skills werden ausschließlich durch direkte Interaktion mit der Welt entdeckt.
+Der Slime besitzt genau **zwei angeborene Kern-Fähigkeiten**. Alle anderen Fähigkeiten werden erst durch diese beiden erworben.
 
-### Zwei Entdeckungswege
+| Fähigkeit | Wirkung bei Erfolg | Wirkung bei Fehlschlag |
+|-----------|-------------------|------------------------|
+| **Analyze** | Entität bleibt erhalten. Slime erhält Wissen über mögliche Skills/Material. Skill-XP: +1 | Siehe Fehlschlag-Tabelle |
+| **Absorb** | Entität verschwindet (respawnt später). Slime erhält Skills und/oder Material. Skill-XP: +3 | Siehe Fehlschlag-Tabelle |
 
-| Methode | Effekt auf Entity | Skill-XP-Gewinn | Wann sinnvoll |
-|---------|-------------------|-----------------|---------------|
-| **Absorb** | Entity verschwindet permanent (respawnt nach Zeit) | +3 XP pro Skill | Wenn man den Skill schnell leveln will |
-| **Analyze** | Entity bleibt vollständig erhalten | +1 XP pro Skill | Wenn man die Ressource erhalten will |
+### 1.1 Leveling von Analyze & Absorb
 
-**Design-Prinzip**: Der Spieler muss abwägen. Absorbieren ist mächtiger, aber die Welt verarmt temporär. Analysieren ist nachhaltig, aber langsamer.
+Beide Kern-Fähigkeiten haben ein eigenes Level (Start: Level 1) und steigen durch wiederholten Einsatz auf.
+Das Level der Kern-Fähigkeit bestimmt, wie hoch die Erfolgswahrscheinlichkeit gegen stärkere Entitäten ist.
+
+### 1.2 Fehlschlag-Mechanik
+
+> **Status: Konzept** — Formel und genaue Werte noch nicht festgelegt.
+
+**Erfolgswahrscheinlichkeit** hängt vom Verhältnis `Fähigkeits-Level / Entitäts-Level` ab.
+Ist das Entitäts-Level höher als das Fähigkeits-Level, steigt die Fehlschlagswahrscheinlichkeit.
+
+**Reaktion der Entität auf Fehlschlag:**
+
+| Entitätstyp | Fehlgeschlagenes Analyze | Fehlgeschlagenes Absorb |
+|-------------|--------------------------|-------------------------|
+| **Leblos** (Stein, Pflanze) | Nichts passiert | Nichts passiert |
+| **Neutral** (friedliches Wesen) | Wesen bleibt friedlich | Wesen wird aggressiv und greift an |
+| **Feindlich** (aggressives Wesen) | Wesen greift an | Wesen greift an |
+
+**Offene Entscheidung:** Genaue Formel für die Erfolgswahrscheinlichkeit (linear, kurvenbasiert?).
 
 ---
 
-## 2. Skill-Kategorien
+## 2. Material-System
 
-### Basis-Skills (direkt durch Entities entdeckbar)
+> **Status: Konzept** — Noch nicht implementiert.
 
-> **Status: Implementiert (v0.2)** — Werte in `src/data/skills.ts`. Balancing noch nicht abgestimmt.
+### 2.1 Materialgewinnung
 
-| Skill-ID | Name | Element | Icon | Quelle (Beispiele) | Max Level | baseXpThreshold | Besonderheit |
-|----------|------|---------|------|--------------------|-----------|-----------------|--------------|
-| fire | Fireball | fire | 🔥 | Red Slime, Goblin | 10 | 10 | — |
-| water | Water Jet | water | 💧 | Blue Slime | 10 | 10 | — |
-| earth | Stone Skin | earth | 🪨 | Stone Golem, Vine Plant | 10 | 10 | — |
-| wind | Wind Slash | wind | 💨 | Forest Wolf | 10 | 10 | — |
-| slime | Slime Coat | slime | 🫧 | Jeder Slime-Typ | 10 | **8** | Leichter zu leveln — häufigste Quelle |
-| poison | Toxic Spit | poison | ☠️ | Poison Mushroom, Vine Plant | 10 | **12** | Etwas schwerer — weniger Quellen |
-| dark | Shadow Step | dark | 🌑 | Dark Wisp (selten) | 10 | **20** | Selten — nur Dark Wisp |
-| light | Holy Beam | light | ✨ | Light Fairy (selten) | 10 | **20** | Selten — Light Fairy kämpft nie, nur Analyze |
+Bestimmte **leblose Entitäten** (Pflanzen, Steine) liefern bei Absorb oder Analyze neben möglichen Skills auch **typisierte Materialien**.
 
-### Kombinations-Skills (nur durch Kombinieren freischaltbar)
+| Entitätstyp | Mögliche Materialien |
+|-------------|----------------------|
+| Pflanzen | Pflanzenfasern, Holz, Samen, ... |
+| Steine | Stein, Erz, Kristall, ... |
+
+Welche Materialien und in welcher Menge eine Entität liefert, wird pro Entität in `src/data/entities.ts` definiert.
+
+### 2.2 Material-Verwendung
+
+Materialien sind eine Ressource für aktive Fähigkeiten. Erste definierte Verwendung: `grow` (siehe Abschnitt 3.2).
+Weitere Verwendungsmöglichkeiten folgen mit Ausbau des Systems.
+
+---
+
+## 3. Entitäts-Fähigkeiten (durch Absorb/Analyze erlernbar)
+
+Fähigkeiten werden **nicht garantiert** übertragen. Ob ein Skill erworben wird, hängt ab von:
+- Erfolg der Kern-Fähigkeit (Analyze/Absorb)
+- Entitäts-Level vs. Fähigkeits-Level
+- Skill-spezifischer Dropp-Wahrscheinlichkeit (seltene Skills sind schwerer zu erhalten)
+
+### 3.1 Basis-Skills (Tiere / Wesen)
+
+> **Status: Implementiert (v0.2)** — Werte in `src/data/skills.ts`. Überarbeitung für v0.3 ausstehend.
+
+| Skill-ID | Name | Element | Icon | Quelle (Beispiele) | Max Level | baseXpThreshold |
+|----------|------|---------|------|--------------------|-----------|-----------------|
+| fire | Fireball | fire | 🔥 | Red Slime, Goblin | 10 | 10 |
+| water | Water Jet | water | 💧 | Blue Slime | 10 | 10 |
+| earth | Stone Skin | earth | 🪨 | Stone Golem, Vine Plant | 10 | 10 |
+| wind | Wind Slash | wind | 💨 | Forest Wolf | 10 | 10 |
+| slime | Slime Coat | slime | 🫧 | Jeder Slime-Typ | 10 | 8 |
+| poison | Toxic Spit | poison | ☠️ | Poison Mushroom, Vine Plant | 10 | 12 |
+| dark | Shadow Step | dark | 🌑 | Dark Wisp (selten) | 10 | 20 |
+| light | Holy Beam | light | ✨ | Light Fairy (selten) | 10 | 20 |
+
+### 3.2 Pflanzen-Skills
+
+> **Status: Konzept** — Noch nicht implementiert.
+
+Jede Pflanze besitzt mindestens einen der folgenden Skills. Die Wahrscheinlichkeit, diesen bei Absorb/Analyze zu erhalten, ist **skill-abhängig**.
+
+| Skill-ID | Name | Dropp-Wahrscheinlichkeit | Beschreibung |
+|----------|------|--------------------------|--------------|
+| grow | Grow | **Hoch** — jede Pflanze kann diesen Skill besitzen | Verbraucht Materialien, um den Slime wachsen zu lassen (Größe & Stats) |
+| photosynthesis | Photosynthesis | **Gering** — seltener Skill, wenige Pflanzen tragen ihn | Noch zu definieren — regeneriert oder produziert Ressourcen über Zeit |
+
+**Grow im Detail:**
+- Aktive Fähigkeit: Spieler setzt Grow bewusst ein.
+- Verbraucht definierte Materialien (z.B. Pflanzenfasern — genaue Kosten noch offen).
+- Erhöht dauerhaft Größe und/oder Stats des Slimes (HP, Angriff, Verteidigung — genaue Werte noch offen).
+- Skaliert mit Skill-Level: höheres Grow-Level = effizienterer Verbrauch oder stärkeres Wachstum.
+
+**Offene Entscheidung:** Was genau tut Photosynthesis? (Ressourcenregeneration, Materialproduktion über Zeit, Heilung?)
+
+---
+
+## 4. Skill-Leveling
+
+> **Status: Implementiert (v0.2) — Kern-Mechanik gilt auch für Analyze & Absorb ab v0.3**
+
+### Levelaufstieg durch Entdeckung (Wiederholung)
+- Bekannter Skill wird durch Absorb/Analyze erneut entdeckt → Skill-XP.
+- Absorb: +3 XP, Analyze: +1 XP.
+- XP-Schwelle pro Level: `xpNeeded = floor(baseXpThreshold * 1.5^(level-1))`
+
+**Gilt auch für Analyze und Absorb als Kern-Fähigkeiten** — jeder erfolgreiche Einsatz gibt Fähigkeits-XP.
+
+### Levelaufstieg durch Nutzung (geplant, v0.3)
+- Jeder aktive Einsatz eines Skills im Kampf: +1 XP.
+
+---
+
+## 5. Kombinations-System
 
 > **Status: Implementiert (v0.2)** — Rezepte in `src/data/skills.ts` via `RECIPE_INDEX`.
 
-| Skill-ID | Name | Rezept | Element | Icon | Max Level | baseXpThreshold |
-|----------|------|--------|---------|------|-----------|-----------------|
-| steam | Steam Burst | fire + water | water | ♨️ | 5 | 15 |
-| firestorm | Firestorm | fire + wind | fire | 🌪️ | 5 | 15 |
-| toxiccoat | Toxic Coat | poison + slime | poison | 🟣 | 5 | 15 |
-| mudwall | Mud Wall | earth + water | earth | 🟫 | 5 | 15 |
-| shadowform | Shadow Form | dark + slime | dark | 👤 | 5 | **20** — benötigt seltenen dark-Skill |
-| iceshard | Ice Shard | wind + water | wind | 🧊 | 5 | 15 |
+Zwei bekannte Basis-Skills können kombiniert werden, um Kombinations-Skills freizuschalten.
 
----
-
-## 3. Skill-Leveling
-
-> **Status: Implementiert (v0.2)** — Logik in `src/systems/SkillSystem.ts`, Funktion `discoverSkill()`.
-
-### Levelaufstieg durch Entdeckung (Wiederholung)
-- Jedes Mal wenn ein bereits bekannter Skill entdeckt wird (durch Absorb oder Analyze), erhält er Skill-XP.
-- Absorb: +3 XP, Analyze: +1 XP
-- XP-Schwelle steigt pro Level: `xpNeeded = floor(baseXpThreshold * multiplier^(level-1))`
-- Multiplier: 1.5 (GDD-Vorgabe eingehalten)
-
-**Beispiel-XP-Kurve für fire (baseThreshold=10):**
-Level 1→2: 10 XP · Level 2→3: 15 XP · Level 3→4: 22 XP · Level 4→5: 33 XP · Level 5→6: 49 XP · ...
-
-**Beispiel-XP-Kurve für dark/light (baseThreshold=20):**
-Level 1→2: 20 XP · Level 2→3: 30 XP · Level 3→4: 45 XP · ...
-
-### Levelaufstieg durch Nutzung (geplant, v0.3)
-- Jede aktive Verwendung eines Skills im Kampf gibt ebenfalls Skill-XP.
-- Kampf-XP: +1 XP pro Einsatz
-- Beide Systeme (Entdeckung + Nutzung) wirken additiv.
-
-### Level-Effekte
-| Level | Effekt |
-|-------|--------|
-| 1 | Skill entdeckt, Basis-Schaden/-Effekt |
-| 3 | +25% Effektivität |
-| 5 | Neue visuelle Darstellung (geplant) |
-| 7 | Neue Sekundäreffekt freigeschaltet (geplant) |
-| 10 (MAX) | Vollständig entwickelt, seltene Kombination möglich |
-
----
-
-## 4. Kombinations-System
-
-> **Status: Implementiert (v0.2)** — Logik in `src/systems/SkillSystem.ts`, Funktion `combineSkills()`. Rezepte in `src/data/skills.ts` via `RECIPE_INDEX` (alphabetisch sortierter Key: `"idA+idB"`).
+| Skill-ID | Name | Rezept | Element | Icon | Max Level |
+|----------|------|--------|---------|------|-----------|
+| steam | Steam Burst | fire + water | water | ♨️ | 5 |
+| firestorm | Firestorm | fire + wind | fire | 🌪️ | 5 |
+| toxiccoat | Toxic Coat | poison + slime | poison | 🟣 | 5 |
+| mudwall | Mud Wall | earth + water | earth | 🟫 | 5 |
+| shadowform | Shadow Form | dark + slime | dark | 👤 | 5 |
+| iceshard | Ice Shard | wind + water | wind | 🧊 | 5 |
 
 ### Regeln
 1. Beide Slots müssen mit verschiedenen Basis-Skills belegt sein.
-2. Kombinations-Skills können **nicht** als Input für weitere Kombinationen genutzt werden (v0.1).
-3. Das Rezept muss in der Kombinations-Tabelle existieren — sonst kein Ergebnis.
-4. Wenn das Ergebnis bereits bekannt ist, wird stattdessen Skill-XP vergeben.
+2. Kombinations-Skills können **nicht** als Input für weitere Kombinationen genutzt werden.
+3. Wenn das Ergebnis bereits bekannt ist, wird stattdessen Skill-XP vergeben.
 
-### Unbekannte Rezepte (geplant)
-- In v0.1 sind alle Rezepte im UI sichtbar (Tutorial-freundlich).
-- In späteren Versionen: Rezepte sind verborgen und müssen durch Experiment oder In-Game-Hinweise gefunden werden.
-- Manche Rezepte werden nur durch spezielle Items oder NPCs enthüllt.
+**Offene Entscheidung:** Sollen Rezepte versteckt sein und erst durch Experiment gefunden werden?
 
 ---
 
-## 5. Skill-Anzeige & Verwaltung
+## 6. Skill-Anzeige & Verwaltung
 
 ### Aktiv-Leiste (HUD)
 - Maximal 5 Skills gleichzeitig aktiv (Tastenbelegung 1–5).
-- Auswahl welche Skills aktiv sind: im Skills-Tab per Drag-and-Drop (geplant v0.2).
 
 ### Skills-Tab (Side Panel)
-- Zeigt alle entdeckten Skills mit Level, XP-Fortschritt und Beschreibung.
-- Farbcodierung nach Element (linker Balken-Indikator).
-- Combo-Skills sind mit "COMBO"-Badge markiert.
+- Zeigt alle entdeckten Skills mit Level, XP-Fortschritt, Beschreibung.
+- Kern-Fähigkeiten (Analyze, Absorb) werden separat als immer verfügbar angezeigt.
+- Farbcodierung nach Element.
 
 ---
 
-## 6. Geplante Erweiterungen
+## 7. Geplante Erweiterungen
 
-- **Passive Skills**: Skills die automatisch wirken (z.B. "Regeneration" aus Pflanze absorbieren).
-- **Transformation-Skills**: Bei genug Skills eines Elements transformiert sich der Slime optisch (z.B. Feuer-Slime mit Flammen-Aura).
-- **Vergessen-Mechanik**: Der Slime hat ein Limit an aktiven Skills. Zu viele Skills erzwingen eine Auswahl.
-- **Skill-Synergie**: Bestimmte Skills verstärken sich gegenseitig wenn beide aktiv sind.
+- **Passive Skills**: Automatisch wirkende Skills (z.B. Regeneration aus Pflanze).
+- **Transformation-Skills**: Bei genug Skills eines Elements optische Veränderung.
+- **Vergessen-Mechanik**: Skill-Limit erzwingt Auswahl.
+- **Skill-Synergie**: Bestimmte Skills verstärken sich gegenseitig.
+- **Leveling durch Kampf**: Skill-XP durch aktiven Einsatz im Kampf (v0.3).
+- **Material-Crafting**: Materialien für mehr als nur `grow` verwenden (v0.3+).
 
 ---
 
-*Letzte Aktualisierung: v0.2 — Skill-System implementiert, Balancing-Werte dokumentiert (März 2026)*
+*Letzte Aktualisierung: v0.3-Konzept — Analyze/Absorb als leveled Core-Fähigkeiten, Fehlschlag-Mechanik, Material-System, Pflanzen-Skills definiert (März 2026)*
