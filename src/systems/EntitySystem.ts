@@ -11,54 +11,30 @@
 // ============================================================
 
 import type { PlayerState, WorldState } from "../types/GameState";
+import { CORE_BASE_XP, CORE_XP_MULTIPLIER, CORE_MAX_LEVEL } from "../types/GameState";
 import type { EntityInstance, EntityDisposition } from "../types/Entity";
 import type { MaterialStack } from "../types/Material";
 import { ENTITY_MAP } from "../data/entities";
 import { discoverSkill, gainCoreAbilityXp } from "./SkillSystem";
 import { addMaterial } from "./MaterialSystem";
 import type { SkillDiscoveryResult, DiscoveryMethod } from "../types/Skill";
-import { CORE_BASE_XP, CORE_XP_MULTIPLIER, CORE_MAX_LEVEL } from "../types/GameState";
+import { calcSuccessChance, ANALYZE_CHANCE_MODIFIER } from "../data/balance";
 
-// -----------------------------------------------------------
-// ERFOLGS-MECHANIK
-// GDD: Erfolgswahrscheinlichkeit = min(1, abilityLevel / entityLevel)
-// Bei Gleichstand oder höherem Ability-Level: 100% Erfolg
-// -----------------------------------------------------------
-export function calcSuccessChance(
-  abilityLevel: number,
-  entityLevel: number
-): number {
-  if (abilityLevel >= entityLevel) return 1.0;
-  return abilityLevel / entityLevel;
-}
+// calcSuccessChance kommt aus balance.ts — hier re-exportiert damit GameScene.ts nur einen Import braucht
+export { calcSuccessChance } from "../data/balance";
 
 // -----------------------------------------------------------
 // FEHLSCHLAG-REAKTION
-// Bestimmt ob die Entity angreift wenn die Aktion scheitert.
-// Leblose Entities (plant, mineral) reagieren nie aggressiv.
 // -----------------------------------------------------------
 function shouldAggro(
   disposition: EntityDisposition,
   method: DiscoveryMethod,
   category: string
 ): boolean {
-  // Leblose Entitäten: niemals aggressiv
   if (category === "plant" || category === "mineral") return false;
-
-  // Feindliche Wesen greifen immer an
   if (disposition === "hostile") return true;
-
-  // Neutrale Wesen:
-  //   Fehlgeschlagenes Absorb   → greifen an
-  //   Fehlgeschlagenes Analyze  → bleiben friedlich
   return method === "absorb";
 }
-
-// -----------------------------------------------------------
-// ANALYSE-MODIFIER für Skill-Drop-Chancen
-// Analyze-Chancen werden reduziert (physisch nichts absorbiert)
-// -----------------------------------------------------------
-const ANALYZE_CHANCE_MODIFIER = 0.7;
 
 // -----------------------------------------------------------
 // Ergebnis einer Interaktion (Absorb oder Analyze)
@@ -115,14 +91,14 @@ export function absorbEntity(
   instance.respawnAt = Date.now() + def.respawnTime * 1000;
   player.totalAbsorbs += 1;
 
-  // Kern-Fähigkeit leveln
-  gainCoreAbilityXp(player, "absorb");
+  // Kern-Fähigkeit leveln (entityLevel für Skalierung)
+  gainCoreAbilityXp(player, "absorb", def.level);
 
-  // Skill-Drops verarbeiten (mit Chance-Roll)
+  // Skill-Drops verarbeiten (mit Chance-Roll + entityLevel-Skalierung)
   const skillResults: SkillDiscoveryResult[] = [];
   for (const drop of def.skillDrops) {
     if (Math.random() <= drop.chance) {
-      skillResults.push(discoverSkill(player, drop.skillId, "absorb"));
+      skillResults.push(discoverSkill(player, drop.skillId, "absorb", def.level));
     }
   }
 
@@ -190,15 +166,15 @@ export function analyzeEntity(
   // ERFOLG — Entity bleibt
   player.totalAnalyzes += 1;
 
-  // Kern-Fähigkeit leveln
-  gainCoreAbilityXp(player, "analyze");
+  // Kern-Fähigkeit leveln (entityLevel für Skalierung)
+  gainCoreAbilityXp(player, "analyze", def.level);
 
-  // Skill-Drops mit reduzierter Chance (Analyze gibt weniger als Absorb)
+  // Skill-Drops mit reduzierter Chance + entityLevel-Skalierung
   const skillResults: SkillDiscoveryResult[] = [];
   for (const drop of def.skillDrops) {
     const modifiedChance = drop.chance * ANALYZE_CHANCE_MODIFIER;
     if (Math.random() <= modifiedChance) {
-      skillResults.push(discoverSkill(player, drop.skillId, "analyze"));
+      skillResults.push(discoverSkill(player, drop.skillId, "analyze", def.level));
     }
   }
 

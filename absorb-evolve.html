@@ -564,7 +564,7 @@
       icon: "\u{1F525}",
       category: "basic",
       activation: "active",
-      maxLevel: 10,
+      maxLevel: 0,
       baseXpThreshold: 10,
       xpThresholdMultiplier: 1.5,
       description: "Schleudert einen Feuerball auf den Feind.",
@@ -579,7 +579,7 @@
       icon: "\u{1F4A7}",
       category: "basic",
       activation: "active",
-      maxLevel: 10,
+      maxLevel: 0,
       baseXpThreshold: 10,
       xpThresholdMultiplier: 1.5,
       description: "Ein kraftvoller Wasserstrahl, der Feinde verlangsamt.",
@@ -594,7 +594,7 @@
       icon: "\u{1FAA8}",
       category: "basic",
       activation: "active",
-      maxLevel: 10,
+      maxLevel: 0,
       baseXpThreshold: 10,
       xpThresholdMultiplier: 1.5,
       description: "Verh\xE4rtet die Oberfl\xE4che des Slimes und erh\xF6ht die Verteidigung.",
@@ -609,7 +609,7 @@
       icon: "\u{1F4A8}",
       category: "basic",
       activation: "active",
-      maxLevel: 10,
+      maxLevel: 0,
       baseXpThreshold: 10,
       xpThresholdMultiplier: 1.5,
       description: "Ein schneller Windschnitt, der den Slime kurzzeitig beschleunigt.",
@@ -624,7 +624,7 @@
       icon: "\u{1FAE7}",
       category: "basic",
       activation: "active",
-      maxLevel: 10,
+      maxLevel: 0,
       baseXpThreshold: 8,
       // Leichter zu leveln — häufigste Quelle
       xpThresholdMultiplier: 1.5,
@@ -640,7 +640,7 @@
       icon: "\u2620\uFE0F",
       category: "basic",
       activation: "active",
-      maxLevel: 10,
+      maxLevel: 0,
       baseXpThreshold: 12,
       // Etwas schwerer — weniger Quellen
       xpThresholdMultiplier: 1.5,
@@ -656,7 +656,7 @@
       icon: "\u{1F311}",
       category: "basic",
       activation: "active",
-      maxLevel: 10,
+      maxLevel: 0,
       baseXpThreshold: 20,
       // Schwer — selten (Dark Wisp)
       xpThresholdMultiplier: 1.5,
@@ -672,7 +672,7 @@
       icon: "\u2728",
       category: "basic",
       activation: "active",
-      maxLevel: 10,
+      maxLevel: 0,
       baseXpThreshold: 20,
       // Schwer — selten (Light Fairy, kämpft nie)
       xpThresholdMultiplier: 1.5,
@@ -690,7 +690,7 @@
       icon: "\u{1F331}",
       category: "basic",
       activation: "active",
-      maxLevel: 10,
+      maxLevel: 0,
       baseXpThreshold: 10,
       xpThresholdMultiplier: 1.5,
       description: "Verbraucht Pflanzenfasern um zu wachsen. Erh\xF6ht MaxHP und K\xF6rpergr\xF6\xDFe dauerhaft. H\xF6heres Level = st\xE4rkeres Wachstum pro Einsatz.",
@@ -704,7 +704,7 @@
       category: "basic",
       activation: "passive",
       // Wirkt automatisch, kein manueller Einsatz
-      maxLevel: 5,
+      maxLevel: 0,
       baseXpThreshold: 15,
       xpThresholdMultiplier: 1.5,
       description: "Passiv: Regeneriert langsam HP, solange der Slime sich nicht k\xE4mpfend fortbewegt. Wirkt automatisch nach Entdeckung. H\xF6heres Level = st\xE4rkere Regeneration."
@@ -718,7 +718,7 @@
       icon: "\u2668\uFE0F",
       category: "combo",
       activation: "active",
-      maxLevel: 5,
+      maxLevel: 0,
       baseXpThreshold: 15,
       xpThresholdMultiplier: 1.5,
       description: "Explosiver Dampfausbruch aus Feuer und Wasser.",
@@ -734,7 +734,7 @@
       icon: "\u{1F32A}\uFE0F",
       category: "combo",
       activation: "active",
-      maxLevel: 5,
+      maxLevel: 0,
       baseXpThreshold: 15,
       xpThresholdMultiplier: 1.5,
       description: "Ein rotierender Feuersturm, der mehrere Feinde trifft.",
@@ -750,7 +750,7 @@
       icon: "\u{1F7E3}",
       category: "combo",
       activation: "active",
-      maxLevel: 5,
+      maxLevel: 0,
       baseXpThreshold: 15,
       xpThresholdMultiplier: 1.5,
       description: "Giftige Schleimschicht \u2014 Angreifer vergiften sich selbst.",
@@ -766,7 +766,7 @@
       icon: "\u{1F7EB}",
       category: "combo",
       activation: "active",
-      maxLevel: 5,
+      maxLevel: 0,
       baseXpThreshold: 15,
       xpThresholdMultiplier: 1.5,
       description: "Errichtet eine Schlammwand, die Feinde blockiert und verlangsamt.",
@@ -782,7 +782,7 @@
       icon: "\u{1F464}",
       category: "combo",
       activation: "active",
-      maxLevel: 5,
+      maxLevel: 0,
       baseXpThreshold: 20,
       // Teuerster Combo — benötigt seltenen dark-Skill
       xpThresholdMultiplier: 1.5,
@@ -799,7 +799,7 @@
       icon: "\u{1F9CA}",
       category: "combo",
       activation: "active",
-      maxLevel: 5,
+      maxLevel: 0,
       baseXpThreshold: 15,
       xpThresholdMultiplier: 1.5,
       description: "Schleudert Eissplitter, die Feinde einfrieren.",
@@ -1109,22 +1109,42 @@
     ENTITY_DEFINITIONS.map((e) => [e.id, e])
   );
 
+  // src/data/balance.ts
+  var BASE_XP_ABSORB = 3;
+  var BASE_XP_ANALYZE = 1;
+  var BASE_XP_CORE = 1;
+  var XP_LEVEL_MULTIPLIER = 1.5;
+  var XP_CURVE_EXPONENT = 1.5;
+  var XP_CURVE_MIN = 0.05;
+  var XP_CURVE_MAX = 4;
+  function calcXpMultiplier(entityLevel, skillLevel) {
+    const level = Math.max(1, skillLevel);
+    const ratio = entityLevel / level;
+    const raw = Math.pow(ratio, XP_CURVE_EXPONENT);
+    return Math.min(XP_CURVE_MAX, Math.max(XP_CURVE_MIN, raw));
+  }
+  function scaleXp(baseXp, entityLevel, skillLevel) {
+    return Math.max(0, Math.floor(baseXp * calcXpMultiplier(entityLevel, skillLevel)));
+  }
+  function calcSuccessChance(abilityLevel, entityLevel) {
+    if (abilityLevel >= entityLevel) return 1;
+    return abilityLevel / entityLevel;
+  }
+  var ANALYZE_CHANCE_MODIFIER = 0.7;
+
   // src/systems/SkillSystem.ts
   function calcXpThreshold(baseThreshold, multiplier, level) {
     return Math.floor(baseThreshold * Math.pow(multiplier, level - 1));
   }
-  var XP_GAIN = {
-    absorb: 3,
-    analyze: 1
-  };
-  function gainCoreAbilityXp(player, method) {
+  function gainCoreAbilityXp(player, method, entityLevel = 1) {
     const ability = player.coreAbilities[method];
-    if (ability.level >= CORE_MAX_LEVEL) {
-      ability.totalXpEarned += 1;
-      return { leveledUp: false };
+    const xpGained = scaleXp(BASE_XP_CORE, entityLevel, ability.level);
+    if (ability.level >= CORE_MAX_LEVEL || xpGained === 0) {
+      ability.totalXpEarned += xpGained;
+      return { leveledUp: false, xpGained };
     }
-    ability.currentXp += 1;
-    ability.totalXpEarned += 1;
+    ability.currentXp += xpGained;
+    ability.totalXpEarned += xpGained;
     let leveledUp = false;
     let newLevel;
     while (ability.currentXp >= ability.xpToNextLevel && ability.level < CORE_MAX_LEVEL) {
@@ -1138,7 +1158,7 @@
       leveledUp = true;
       newLevel = ability.level;
     }
-    return { leveledUp, newLevel };
+    return { leveledUp, newLevel, xpGained };
   }
   function createSkillInstance(skillId) {
     const def = ALL_SKILLS.get(skillId);
@@ -1152,62 +1172,45 @@
       totalXpEarned: 0
     };
   }
-  function discoverSkill(player, skillId, method) {
+  function isAtMaxLevel(instance) {
+    const def = ALL_SKILLS.get(instance.definitionId);
+    if (!def) return false;
+    return def.maxLevel > 0 && instance.level >= def.maxLevel;
+  }
+  function discoverSkill(player, skillId, method, entityLevel = 1) {
     const def = ALL_SKILLS.get(skillId);
     if (!def) throw new Error(`Unbekannte Skill-ID: ${skillId}`);
-    const xpGained = XP_GAIN[method];
+    const baseXp = method === "absorb" ? BASE_XP_ABSORB : BASE_XP_ANALYZE;
     const existing = player.discoveredSkills.get(skillId);
     if (!existing) {
-      const newInstance = createSkillInstance(skillId);
-      player.discoveredSkills.set(skillId, newInstance);
-      return {
-        skillId,
-        method,
-        xpGained: 0,
-        wasNewDiscovery: true,
-        leveledUp: false
-      };
+      player.discoveredSkills.set(skillId, createSkillInstance(skillId));
+      return { skillId, method, xpGained: 0, wasNewDiscovery: true, leveledUp: false };
     }
-    if (existing.level >= def.maxLevel) {
-      existing.totalXpEarned += xpGained;
-      return {
-        skillId,
-        method,
-        xpGained,
-        wasNewDiscovery: false,
-        leveledUp: false
-      };
+    if (isAtMaxLevel(existing)) {
+      existing.totalXpEarned += baseXp;
+      return { skillId, method, xpGained: baseXp, wasNewDiscovery: false, leveledUp: false };
     }
+    const xpGained = scaleXp(baseXp, entityLevel, existing.level);
     existing.currentXp += xpGained;
     existing.totalXpEarned += xpGained;
     let leveledUp = false;
     let newLevel;
-    while (existing.currentXp >= existing.xpToNextLevel && existing.level < def.maxLevel) {
+    while (existing.currentXp >= existing.xpToNextLevel && !isAtMaxLevel(existing)) {
       existing.currentXp -= existing.xpToNextLevel;
       existing.level += 1;
       existing.xpToNextLevel = calcXpThreshold(
         def.baseXpThreshold,
-        def.xpThresholdMultiplier,
+        XP_LEVEL_MULTIPLIER,
         existing.level
       );
       leveledUp = true;
       newLevel = existing.level;
     }
-    return {
-      skillId,
-      method,
-      xpGained,
-      wasNewDiscovery: false,
-      leveledUp,
-      newLevel
-    };
+    return { skillId, method, xpGained, wasNewDiscovery: false, leveledUp, newLevel };
   }
   function combineSkills(player, skillIdA, skillIdB) {
     if (skillIdA === skillIdB) {
-      return {
-        outcome: "invalid_input",
-        message: "Du kannst einen Skill nicht mit sich selbst kombinieren."
-      };
+      return { outcome: "invalid_input", message: "Du kannst einen Skill nicht mit sich selbst kombinieren." };
     }
     const defA = ALL_SKILLS.get(skillIdA);
     const defB = ALL_SKILLS.get(skillIdB);
@@ -1215,33 +1218,27 @@
       return { outcome: "invalid_input", message: "Unbekannter Skill." };
     }
     if (defA.category !== "basic" || defB.category !== "basic") {
-      return {
-        outcome: "invalid_input",
-        message: "Nur Basis-Skills k\xF6nnen kombiniert werden."
-      };
+      return { outcome: "invalid_input", message: "Nur Basis-Skills k\xF6nnen kombiniert werden." };
     }
     const [a, b] = [skillIdA, skillIdB].sort();
     const resultId = RECIPE_INDEX.get(`${a}+${b}`);
     if (!resultId) {
-      return {
-        outcome: "no_recipe",
-        message: "Diese Kombination ergibt keinen bekannten Skill."
-      };
+      return { outcome: "no_recipe", message: "Diese Kombination ergibt keinen bekannten Skill." };
     }
     const alreadyKnown = player.discoveredSkills.has(resultId);
     if (alreadyKnown) {
-      const xpGained = XP_GAIN["absorb"];
       const instance = player.discoveredSkills.get(resultId);
       const resultDef2 = ALL_SKILLS.get(resultId);
-      if (instance.level < resultDef2.maxLevel) {
+      const xpGained = scaleXp(BASE_XP_ABSORB, instance.level, instance.level);
+      if (!isAtMaxLevel(instance)) {
         instance.currentXp += xpGained;
         instance.totalXpEarned += xpGained;
-        while (instance.currentXp >= instance.xpToNextLevel && instance.level < resultDef2.maxLevel) {
+        while (instance.currentXp >= instance.xpToNextLevel && !isAtMaxLevel(instance)) {
           instance.currentXp -= instance.xpToNextLevel;
           instance.level += 1;
           instance.xpToNextLevel = calcXpThreshold(
             resultDef2.baseXpThreshold,
-            resultDef2.xpThresholdMultiplier,
+            XP_LEVEL_MULTIPLIER,
             instance.level
           );
         }
@@ -1253,8 +1250,7 @@
         message: `${resultDef2.name} bereits bekannt \u2014 +${xpGained} XP.`
       };
     }
-    const newInstance = createSkillInstance(resultId);
-    player.discoveredSkills.set(resultId, newInstance);
+    player.discoveredSkills.set(resultId, createSkillInstance(resultId));
     const resultDef = ALL_SKILLS.get(resultId);
     return {
       outcome: "success_new",
@@ -1272,9 +1268,7 @@
     return Math.min(instance.currentXp / instance.xpToNextLevel, 1);
   }
   function isMaxLevel(instance) {
-    const def = ALL_SKILLS.get(instance.definitionId);
-    if (!def) return false;
-    return instance.level >= def.maxLevel;
+    return isAtMaxLevel(instance);
   }
 
   // src/systems/MaterialSystem.ts
@@ -1362,16 +1356,11 @@
   }
 
   // src/systems/EntitySystem.ts
-  function calcSuccessChance(abilityLevel, entityLevel) {
-    if (abilityLevel >= entityLevel) return 1;
-    return abilityLevel / entityLevel;
-  }
   function shouldAggro(disposition, method, category) {
     if (category === "plant" || category === "mineral") return false;
     if (disposition === "hostile") return true;
     return method === "absorb";
   }
-  var ANALYZE_CHANCE_MODIFIER = 0.7;
   function absorbEntity(player, world, instanceId) {
     const instance = world.entities.get(instanceId);
     if (!instance?.isAlive) {
@@ -1394,11 +1383,11 @@
     instance.isAggro = false;
     instance.respawnAt = Date.now() + def.respawnTime * 1e3;
     player.totalAbsorbs += 1;
-    gainCoreAbilityXp(player, "absorb");
+    gainCoreAbilityXp(player, "absorb", def.level);
     const skillResults = [];
     for (const drop of def.skillDrops) {
       if (Math.random() <= drop.chance) {
-        skillResults.push(discoverSkill(player, drop.skillId, "absorb"));
+        skillResults.push(discoverSkill(player, drop.skillId, "absorb", def.level));
       }
     }
     const materialResults = [];
@@ -1440,12 +1429,12 @@
       return failResult("analyze", def.name, failMsg, aggro);
     }
     player.totalAnalyzes += 1;
-    gainCoreAbilityXp(player, "analyze");
+    gainCoreAbilityXp(player, "analyze", def.level);
     const skillResults = [];
     for (const drop of def.skillDrops) {
       const modifiedChance = drop.chance * ANALYZE_CHANCE_MODIFIER;
       if (Math.random() <= modifiedChance) {
-        skillResults.push(discoverSkill(player, drop.skillId, "analyze"));
+        skillResults.push(discoverSkill(player, drop.skillId, "analyze", def.level));
       }
     }
     return {
