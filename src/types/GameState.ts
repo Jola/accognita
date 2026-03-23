@@ -7,6 +7,18 @@ import type { SkillInstance } from "./Skill";
 import type { EntityInstance } from "./Entity";
 
 // -----------------------------------------------------------
+// CoreAbilityState: Zustand einer Kern-Fähigkeit (Analyze/Absorb)
+// Kern-Fähigkeiten sind immer vorhanden und werden nie "verloren".
+// Ihr Level bestimmt die Erfolgswahrscheinlichkeit gegen Entitäten.
+// -----------------------------------------------------------
+export interface CoreAbilityState {
+  level: number;
+  currentXp: number;
+  xpToNextLevel: number;
+  totalXpEarned: number;
+}
+
+// -----------------------------------------------------------
 // PlayerState: Alles was den Slime beschreibt
 // -----------------------------------------------------------
 export interface PlayerState {
@@ -24,13 +36,25 @@ export interface PlayerState {
   level: number;
   totalExp: number;
 
-  // Skills
-  discoveredSkills: Map<string, SkillInstance>; // skillId → Instance
-  activeSkillSlots: (string | null)[];          // 5 Slots, null = leer
+  // Kern-Fähigkeiten — immer vorhanden, levelbar durch Nutzung
+  // Level bestimmt Erfolgswahrscheinlichkeit bei Analyze/Absorb
+  coreAbilities: {
+    analyze: CoreAbilityState;
+    absorb: CoreAbilityState;
+  };
+
+  // Entdeckte Skills (basic + combo)
+  discoveredSkills: Map<string, SkillInstance>;   // skillId → Instance
+  activeSkillSlots: (string | null)[];            // 5 Slots, null = leer
+
+  // Materialien-Inventar (materialId → Menge)
+  materials: Map<string, number>;
 
   // Statistiken
   totalAbsorbs: number;
+  totalAbsorbFailures: number;
   totalAnalyzes: number;
+  totalAnalyzeFailures: number;
   playtimeSeconds: number;
 }
 
@@ -38,28 +62,45 @@ export interface PlayerState {
 // WorldState: Zustand der Spielwelt
 // -----------------------------------------------------------
 export interface WorldState {
-  entities: Map<string, EntityInstance>; // instanceId → Instance
+  entities: Map<string, EntityInstance>;  // instanceId → Instance
   currentZone: string;
   timeElapsed: number;
 }
 
 // -----------------------------------------------------------
 // GameState: Der komplette Spielzustand
-// Dieser Zustand kann gespeichert und geladen werden (v0.2)
 // -----------------------------------------------------------
 export interface GameState {
   player: PlayerState;
   world: WorldState;
-  version: string;               // Für zukünftige Migration
-  savedAt?: number;              // Timestamp letzter Speicherung
+  version: string;
+  savedAt?: number;
 }
+
+// -----------------------------------------------------------
+// Startwerte für Kern-Fähigkeiten
+// -----------------------------------------------------------
+const CORE_BASE_XP = 10;
+const CORE_XP_MULTIPLIER = 1.5;
+const CORE_MAX_LEVEL = 20;
+
+function createCoreAbility(): CoreAbilityState {
+  return {
+    level: 1,
+    currentXp: 0,
+    xpToNextLevel: CORE_BASE_XP,
+    totalXpEarned: 0,
+  };
+}
+
+export { CORE_BASE_XP, CORE_XP_MULTIPLIER, CORE_MAX_LEVEL };
 
 // -----------------------------------------------------------
 // Hilfsfunktion: Neuen leeren GameState erstellen
 // -----------------------------------------------------------
 export function createInitialGameState(): GameState {
   return {
-    version: "0.2.0",
+    version: "0.3.0",
     player: {
       x: 400,
       y: 300,
@@ -69,10 +110,17 @@ export function createInitialGameState(): GameState {
       maxMp: 40,
       level: 1,
       totalExp: 0,
+      coreAbilities: {
+        analyze: createCoreAbility(),
+        absorb: createCoreAbility(),
+      },
       discoveredSkills: new Map(),
       activeSkillSlots: [null, null, null, null, null],
+      materials: new Map(),
       totalAbsorbs: 0,
+      totalAbsorbFailures: 0,
       totalAnalyzes: 0,
+      totalAnalyzeFailures: 0,
       playtimeSeconds: 0,
     },
     world: {

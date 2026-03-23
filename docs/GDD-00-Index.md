@@ -137,12 +137,16 @@ Wenn du als KI-Assistent an diesem Projekt arbeitest, gelten folgende Regeln:
 
 - [ ] Tod-Mechanik: Soft Death, Checkpoint oder Rogue-like? (siehe GDD-03, Abschnitt 7)
 - [ ] Skill-Limit: Gibt es eine Obergrenze für aktive Skills? (siehe GDD-02, Abschnitt 6)
-- [ ] Unbekannte Rezepte: Ab wann werden Kombinations-Rezepte versteckt? (GDD-02, Abschnitt 4)
+- [ ] Unbekannte Rezepte: Ab wann werden Kombinations-Rezepte versteckt? (GDD-02, Abschnitt 5)
 - [ ] Speichersystem: LocalStorage oder Server-basiert? (GDD-04, Abschnitt 8)
 - [ ] PWA: Soll das Spiel als installierbare App (PWA) verfügbar sein? (GDD-04, Abschnitt 8)
 - [ ] Mobile Interact: Soll Tap auf Entity direkt Absorb/Analyze auslösen, oder erst ein Kontextmenü zeigen?
 - [ ] Balancing: XP-Kurve, Spawn-Dichte und Respawn-Zeiten sind implementiert aber noch nicht getestet und abgestimmt
+- [ ] Fehlschlag-Formel: Linear oder kurvenbasiert? (GDD-02, Abschnitt 1.2)
+- [ ] Photosynthesis: Was tut diese Fähigkeit konkret? (GDD-02, Abschnitt 3.2)
+- [ ] Grow-Kosten: Welche Materialien und welche Mengen benötigt Grow? (GDD-02, Abschnitt 3.2)
+- [ ] Grow-Effekt: Welche Stats erhöht Grow konkret, und um wie viel? (GDD-02, Abschnitt 3.2)
 
 ---
 
-*Letzte Aktualisierung: v0.2 — Modulare Architektur, TypeScript + Phaser.js implementiert (März 2026)*
+*Letzte Aktualisierung: v0.3-Konzept — Skill-System Grundlagen neu definiert: Core-Fähigkeiten, Fehlschlag-Mechanik, Materialien, Pflanzen-Skills (März 2026)*

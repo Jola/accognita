@@ -14,32 +14,66 @@ import type {
   DiscoveryMethod,
 } from "../types/Skill";
 import type { PlayerState } from "../types/GameState";
+import { CORE_BASE_XP, CORE_XP_MULTIPLIER, CORE_MAX_LEVEL } from "../types/GameState";
 import { ALL_SKILLS, RECIPE_INDEX } from "../data/skills";
 
 // -----------------------------------------------------------
 // XP-BERECHNUNG
-// GDD: xpNeeded = floor(xpNeeded * 1.5) pro Level
+// GDD: xpNeeded = floor(baseThreshold * multiplier^(level-1))
 // -----------------------------------------------------------
 export function calcXpThreshold(
   baseThreshold: number,
   multiplier: number,
   level: number
 ): number {
-  // Level 1→2 braucht baseThreshold
-  // Level 2→3 braucht floor(baseThreshold * 1.5)
-  // Level 3→4 braucht floor(baseThreshold * 1.5^2)
-  // usw.
   return Math.floor(baseThreshold * Math.pow(multiplier, level - 1));
 }
 
 // -----------------------------------------------------------
-// XP-GEWINN PRO METHODE
+// XP-GEWINN PRO METHODE (für entdeckte Skills)
 // GDD: Absorb +3 XP, Analyze +1 XP
 // -----------------------------------------------------------
 export const XP_GAIN: Record<DiscoveryMethod, number> = {
   absorb: 3,
   analyze: 1,
 };
+
+// -----------------------------------------------------------
+// KERN-FÄHIGKEITS-XP
+// Jeder erfolgreiche Einsatz gibt +1 XP zur Kern-Fähigkeit.
+// Höheres Level = höhere Erfolgswahrscheinlichkeit gegen stärkere Entities.
+// -----------------------------------------------------------
+export function gainCoreAbilityXp(
+  player: PlayerState,
+  method: DiscoveryMethod
+): { leveledUp: boolean; newLevel?: number } {
+  const ability = player.coreAbilities[method];
+
+  if (ability.level >= CORE_MAX_LEVEL) {
+    ability.totalXpEarned += 1;
+    return { leveledUp: false };
+  }
+
+  ability.currentXp += 1;
+  ability.totalXpEarned += 1;
+
+  let leveledUp = false;
+  let newLevel: number | undefined;
+
+  while (ability.currentXp >= ability.xpToNextLevel && ability.level < CORE_MAX_LEVEL) {
+    ability.currentXp -= ability.xpToNextLevel;
+    ability.level += 1;
+    ability.xpToNextLevel = calcXpThreshold(
+      CORE_BASE_XP,
+      CORE_XP_MULTIPLIER,
+      ability.level
+    );
+    leveledUp = true;
+    newLevel = ability.level;
+  }
+
+  return { leveledUp, newLevel };
+}
 
 // -----------------------------------------------------------
 // Neue SkillInstance erstellen (bei Erstentdeckung)
@@ -60,10 +94,8 @@ function createSkillInstance(skillId: string): SkillInstance {
 
 // -----------------------------------------------------------
 // SKILL DISCOVER
-// Hauptfunktion: Verarbeitet eine Absorb- oder Analyze-Aktion
-//
-// Gibt Mutation-Daten zurück — ändert den State NICHT selbst.
-// Der Aufrufer (Scene) ist für die State-Mutation verantwortlich.
+// Verarbeitet das Erlernen oder XP-Gewinn eines Skills.
+// Gibt Mutations-Daten zurück — ändert den State direkt.
 // -----------------------------------------------------------
 export function discoverSkill(
   player: PlayerState,
@@ -76,23 +108,21 @@ export function discoverSkill(
   const xpGained = XP_GAIN[method];
   const existing = player.discoveredSkills.get(skillId);
 
-  // --- ERSTENTDECKUNG ---
+  // ERSTENTDECKUNG
   if (!existing) {
     const newInstance = createSkillInstance(skillId);
     player.discoveredSkills.set(skillId, newInstance);
-
     return {
       skillId,
       method,
-      xpGained: 0,             // Keine XP bei Erstentdeckung
+      xpGained: 0,
       wasNewDiscovery: true,
       leveledUp: false,
     };
   }
 
-  // --- BEREITS BEKANNT: XP GEBEN ---
+  // BEREITS BEKANNT: XP geben
   if (existing.level >= def.maxLevel) {
-    // Max Level erreicht — trotzdem totalXp zählen
     existing.totalXpEarned += xpGained;
     return {
       skillId,
@@ -103,11 +133,9 @@ export function discoverSkill(
     };
   }
 
-  // XP hinzufügen
   existing.currentXp += xpGained;
   existing.totalXpEarned += xpGained;
 
-  // Level-Up prüfen (kann mehrfach hintereinander eintreten)
   let leveledUp = false;
   let newLevel: number | undefined;
 
@@ -138,19 +166,13 @@ export function discoverSkill(
 
 // -----------------------------------------------------------
 // SKILL COMBINE
-// Versucht zwei Skills zu kombinieren
-// GDD-Regeln:
-//   1. Beide IDs müssen verschieden sein
-//   2. Combo-Skills dürfen nicht als Input verwendet werden
-//   3. Rezept muss existieren
-//   4. Wenn bereits bekannt → XP statt neuer Skill
+// Versucht zwei Skills zu kombinieren.
 // -----------------------------------------------------------
 export function combineSkills(
   player: PlayerState,
   skillIdA: string,
   skillIdB: string
 ): CombineResult {
-  // Regel 1: Nicht gleich
   if (skillIdA === skillIdB) {
     return {
       outcome: "invalid_input",
@@ -158,28 +180,24 @@ export function combineSkills(
     };
   }
 
-  // Regel 2: Kein Combo-Skill als Input
   const defA = ALL_SKILLS.get(skillIdA);
   const defB = ALL_SKILLS.get(skillIdB);
 
   if (!defA || !defB) {
+    return { outcome: "invalid_input", message: "Unbekannter Skill." };
+  }
+
+  // Nur basic-Skills dürfen kombiniert werden (nicht core oder combo)
+  if (defA.category !== "basic" || defB.category !== "basic") {
     return {
       outcome: "invalid_input",
-      message: "Unbekannter Skill.",
+      message: "Nur Basis-Skills können kombiniert werden.",
     };
   }
 
-  if (defA.category === "combo" || defB.category === "combo") {
-    return {
-      outcome: "invalid_input",
-      message: "Kombinierte Skills können nicht weiter kombiniert werden.",
-    };
-  }
-
-  // Regel 3: Rezept suchen (alphabetisch sortiert)
+  // Rezept suchen (alphabetisch sortiert)
   const [a, b] = [skillIdA, skillIdB].sort();
-  const recipeKey = `${a}+${b}`;
-  const resultId = RECIPE_INDEX.get(recipeKey);
+  const resultId = RECIPE_INDEX.get(`${a}+${b}`);
 
   if (!resultId) {
     return {
@@ -188,12 +206,11 @@ export function combineSkills(
     };
   }
 
-  // Regel 4: Bereits bekannt?
+  // Bereits bekannt?
   const alreadyKnown = player.discoveredSkills.has(resultId);
 
   if (alreadyKnown) {
-    // XP für den bereits bekannten Combo-Skill vergeben
-    const xpGained = XP_GAIN["absorb"]; // Kombination = Absorb-XP
+    const xpGained = XP_GAIN["absorb"];
     const instance = player.discoveredSkills.get(resultId)!;
     const resultDef = ALL_SKILLS.get(resultId)!;
 
@@ -201,7 +218,6 @@ export function combineSkills(
       instance.currentXp += xpGained;
       instance.totalXpEarned += xpGained;
 
-      // Level-Up prüfen
       while (
         instance.currentXp >= instance.xpToNextLevel &&
         instance.level < resultDef.maxLevel
@@ -220,7 +236,7 @@ export function combineSkills(
       outcome: "success_xp",
       resultSkillId: resultId,
       xpGained,
-      message: `${resultDef.name} ist bereits bekannt — du erhältst ${xpGained} XP.`,
+      message: `${resultDef.name} bereits bekannt — +${xpGained} XP.`,
     };
   }
 
@@ -237,21 +253,24 @@ export function combineSkills(
 }
 
 // -----------------------------------------------------------
-// SKILL EFFECTIVENESS (für Kampfsystem, v0.2)
-// GDD: Level 3 = +25% Effektivität
-// Formel: 1.0 + (level - 1) * 0.1 + (level >= 3 ? 0.15 : 0)
+// PASSIVE SKILLS — Hilfsfunktionen
 // -----------------------------------------------------------
-export function getSkillEffectiveness(level: number): number {
-  const baseBonus = (level - 1) * 0.1;
-  const tier3Bonus = level >= 3 ? 0.15 : 0;
-  return 1.0 + baseBonus + tier3Bonus;
+
+/** Gibt alle entdeckten passiven Skills zurück */
+export function getPassiveSkills(player: PlayerState): SkillInstance[] {
+  const result: SkillInstance[] = [];
+  for (const instance of player.discoveredSkills.values()) {
+    const def = ALL_SKILLS.get(instance.definitionId);
+    if (def?.activation === "passive") result.push(instance);
+  }
+  return result;
 }
 
 // -----------------------------------------------------------
 // HILFSFUNKTIONEN für UI
 // -----------------------------------------------------------
 
-/** Gibt alle entdeckten Skills als Array zurück, sortiert nach Entdeckungszeitpunkt */
+/** Gibt alle entdeckten Skills sortiert nach Entdeckungszeitpunkt zurück */
 export function getDiscoveredSkillsSorted(
   player: PlayerState
 ): SkillInstance[] {
@@ -271,4 +290,11 @@ export function isMaxLevel(instance: SkillInstance): boolean {
   const def = ALL_SKILLS.get(instance.definitionId);
   if (!def) return false;
   return instance.level >= def.maxLevel;
+}
+
+/** Skill-Effektivität basierend auf Level */
+export function getSkillEffectiveness(level: number): number {
+  const baseBonus = (level - 1) * 0.1;
+  const tier3Bonus = level >= 3 ? 0.15 : 0;
+  return 1.0 + baseBonus + tier3Bonus;
 }

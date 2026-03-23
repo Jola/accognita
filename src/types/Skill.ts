@@ -4,6 +4,9 @@
 // Keine Phaser-Abhängigkeit. Reine Datenstrukturen.
 // ============================================================
 
+import type { MaterialStack } from "./Material";
+
+// Element-Typen — erweiterbar durch neue Einträge hier
 export type ElementType =
   | "fire"
   | "water"
@@ -12,9 +15,20 @@ export type ElementType =
   | "slime"
   | "poison"
   | "dark"
-  | "light";
+  | "light"
+  | "nature"  // Pflanzenskills
+  | "none";   // Kern-Fähigkeiten (Analyze, Absorb)
 
-export type SkillCategory = "basic" | "combo";
+// Wie ein Skill erworben wird:
+//   core  = angeboren, immer vorhanden (Analyze, Absorb)
+//   basic = durch Entitäten entdeckbar
+//   combo = durch Kombinieren zweier basic-Skills
+export type SkillCategory = "core" | "basic" | "combo";
+
+// Wie ein Skill wirkt:
+//   active  = wird bewusst eingesetzt (Angriff, Fähigkeit)
+//   passive = wirkt automatisch wenn entdeckt (immer aktiv)
+export type SkillActivation = "active" | "passive";
 
 // -----------------------------------------------------------
 // SkillDefinition: Die unveränderliche Blaupause eines Skills
@@ -26,18 +40,22 @@ export interface SkillDefinition {
   element: ElementType;
   icon: string;
   category: SkillCategory;
+  activation: SkillActivation;
   maxLevel: number;
-  baseXpThreshold: number;       // XP für Level 1 → 2
-  xpThresholdMultiplier: number; // Faktor pro Level (GDD: 1.5)
+  baseXpThreshold: number;          // XP für Level 1 → 2
+  xpThresholdMultiplier: number;    // Faktor pro Level (GDD: 1.5)
   description: string;
 
-  // Kampfwerte (für späteres Kampfsystem, v0.2)
+  // Für aktive Skills (Kampf, v0.3)
   baseDamage?: number;
   mpCost?: number;
   cooldownMs?: number;
 
+  // Materialkosten bei Aktivierung (z.B. grow)
+  materialCost?: MaterialStack[];
+
   // Nur für Combo-Skills
-  recipe?: [string, string];     // z.B. ["fire", "water"]
+  recipe?: [string, string];
 }
 
 // -----------------------------------------------------------
@@ -45,16 +63,16 @@ export interface SkillDefinition {
 // (lebt im GameState, verändert sich während des Spiels)
 // -----------------------------------------------------------
 export interface SkillInstance {
-  definitionId: string;          // Referenz auf SkillDefinition
-  level: number;                 // 1 bis maxLevel
-  currentXp: number;             // XP im aktuellen Level
-  xpToNextLevel: number;         // Schwelle für nächstes Level
-  discoveredAt: number;          // Timestamp der Entdeckung
-  totalXpEarned: number;         // Gesamt-XP (für Statistiken)
+  definitionId: string;
+  level: number;
+  currentXp: number;
+  xpToNextLevel: number;
+  discoveredAt: number;             // Timestamp der Entdeckung (0 für core)
+  totalXpEarned: number;
 }
 
 // -----------------------------------------------------------
-// SkillDiscoveryEvent: Ergebnis einer Absorb/Analyze-Aktion
+// Interaktions-Methoden und Ergebnisse
 // -----------------------------------------------------------
 export type DiscoveryMethod = "absorb" | "analyze";
 
@@ -71,10 +89,10 @@ export interface SkillDiscoveryResult {
 // CombineResult: Ergebnis eines Kombinationsversuchs
 // -----------------------------------------------------------
 export type CombineOutcome =
-  | "success_new"    // Neuer Combo-Skill entdeckt
-  | "success_xp"     // Bereits bekannt → XP erhalten
-  | "no_recipe"      // Kombination existiert nicht
-  | "invalid_input"; // Gleicher Skill doppelt, oder Combo als Input
+  | "success_new"     // Neuer Combo-Skill entdeckt
+  | "success_xp"      // Bereits bekannt → XP erhalten
+  | "no_recipe"       // Kombination existiert nicht
+  | "invalid_input";  // Gleicher Skill doppelt, oder Combo als Input
 
 export interface CombineResult {
   outcome: CombineOutcome;
