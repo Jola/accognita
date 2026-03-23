@@ -88,7 +88,7 @@ Fähigkeiten werden **nicht garantiert** übertragen. Ob ein Skill erworben wird
 |---------|-------|-------------|-----------|----------------|
 | Ameise | 1 | neutral | creature | Chitin Armor (15%), Superstrength (10%) |
 | Marienkäfer | 1 | neutral | creature | Hemolymph (15%) |
-| Springspinne | 2 | hostile | creature | Pounce (20%), Chitin Armor (10%) |
+| Springspinne | 2 | hostile | creature | Jump (20%), Chitin Armor (10%) |
 | Giftspinne | 2 | hostile | creature | Venom (20%), Chitin Armor (8%) |
 
 #### Skills
@@ -98,7 +98,7 @@ Fähigkeiten werden **nicht garantiert** übertragen. Ob ein Skill erworben wird
 | chitin_armor | Chitin Armor | passiv | earth | 🛡️ | Ameise, Springspinne, Giftspinne | Reduziert physischen Schaden |
 | superstrength | Superstrength | passiv | none | 💪 | Ameise | Erhöht Material-Ausbeute bei Absorb |
 | venom | Venom | passiv | poison | 🕷️ | Giftspinne | Treffer vergiften Ziel (DoT-Chance) |
-| jump | Pounce | aktiv | none | 🦘 | Springspinne | Sprung auf Ziel/Punkt, kurze Distanz |
+| jump | Jump | aktiv | none | 🦘 | Springspinne | **Bewegungs-Unlock**: Ohne diesen Skill kann der Slime nicht springen. Höheres Level = größere Sprunghöhe/-weite. |
 | hemolymph | Hemolymph | passiv | poison | 🐞 | Marienkäfer | Bei eigenem Treffer: Angreifer vergiftet |
 
 Alle Basis-Skills haben `maxLevel: 0` (unlimitiert). XP-Skalierung via Option D (`balance.ts`).

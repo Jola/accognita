@@ -121,7 +121,7 @@ export const BASE_SKILLS: SkillDefinition[] = [
   },
   {
     id: "jump",
-    name: "Pounce",
+    name: "Jump",
     element: "none",
     icon: "🦘",
     category: "basic",
@@ -130,10 +130,10 @@ export const BASE_SKILLS: SkillDefinition[] = [
     baseXpThreshold: 12,
     xpThresholdMultiplier: 1.5,
     description:
-      "Springt blitzschnell auf ein Ziel oder einen Punkt zu. " +
-      "Kurze Distanz, hohe Geschwindigkeit. Höheres Level = größere Sprungweite und kürzere Abklingzeit.",
-    mpCost: 6,
-    cooldownMs: 2000,
+      "Schaltet die Fähigkeit zu Springen frei. Ohne diesen Skill kann der Slime nicht springen. " +
+      "Höheres Level = größere Sprunghöhe und -weite.",
+    mpCost: 4,
+    cooldownMs: 800,
   },
   {
     id: "hemolymph",
