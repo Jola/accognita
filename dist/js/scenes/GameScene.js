@@ -34,6 +34,7 @@ export class GameScene extends Phaser.Scene {
         this.joy = { active: false, id: -1, cx: 0, cy: 0, dx: 0, dy: 0 };
         this.JOY_RADIUS = 44;
         this.lastNearbyId = null;
+        this.gamePaused = false;
     }
     create() {
         this.gameState = createInitialGameState();
@@ -42,6 +43,7 @@ export class GameScene extends Phaser.Scene {
         this.createPlayer();
         this.createInput();
         this.setupJoystick();
+        this.setupFullscreen();
         this.setupGlobalFunctions();
         window.gameState = this.gameState;
         window.gameScene = this;
@@ -307,6 +309,55 @@ export class GameScene extends Phaser.Scene {
         jZone.addEventListener("touchcancel", endJoy, { passive: false });
     }
     // ----------------------------------------------------------
+    // VOLLBILD
+    // ----------------------------------------------------------
+    setupFullscreen() {
+        const onChange = () => {
+            const isFs = !!(document.fullscreenElement ||
+                document.webkitFullscreenElement);
+            if (!isFs) {
+                this.pauseGame();
+            }
+            else {
+                this.resumeGame();
+            }
+        };
+        document.addEventListener("fullscreenchange", onChange);
+        document.addEventListener("webkitfullscreenchange", onChange);
+        // Beim ersten Tippen/Klicken in den Vollbild-Modus wechseln
+        document.addEventListener("pointerdown", () => this.enterFullscreen(), { once: true });
+    }
+    enterFullscreen() {
+        const el = document.documentElement;
+        try {
+            if (el.requestFullscreen) {
+                el.requestFullscreen();
+            }
+            else if (el.webkitRequestFullscreen) {
+                el.webkitRequestFullscreen();
+            }
+        }
+        catch (_) { }
+    }
+    pauseGame() {
+        if (this.gamePaused)
+            return;
+        this.gamePaused = true;
+        this.physics.pause();
+        const ov = document.getElementById("pauseOverlay");
+        if (ov)
+            ov.classList.add("visible");
+    }
+    resumeGame() {
+        if (!this.gamePaused)
+            return;
+        this.gamePaused = false;
+        this.physics.resume();
+        const ov = document.getElementById("pauseOverlay");
+        if (ov)
+            ov.classList.remove("visible");
+    }
+    // ----------------------------------------------------------
     // GLOBALE FUNKTIONEN (für HTML-Buttons)
     // ----------------------------------------------------------
     setupGlobalFunctions() {
@@ -315,11 +366,24 @@ export class GameScene extends Phaser.Scene {
         window.touchAbsorb = () => this.doAbsorb();
         window.touchAnalyze = () => this.doAnalyze();
         window.doGrow = () => this.doGrow();
+        window.resumeFromPause = () => {
+            const el = document.documentElement;
+            if (el.requestFullscreen || el.webkitRequestFullscreen) {
+                this.enterFullscreen();
+                // resumeGame() wird vom fullscreenchange-Event ausgelöst
+            }
+            else {
+                // iOS Safari: kein Fullscreen-Support — direkt fortsetzen
+                this.resumeGame();
+            }
+        };
     }
     // ----------------------------------------------------------
     // GAME LOOP
     // ----------------------------------------------------------
     update(_time, _delta) {
+        if (this.gamePaused)
+            return;
         this.handleMovement();
         this.syncPlayerPosition();
         this.updateEntityVisuals();
