@@ -323,6 +323,33 @@
     .notification-analyze { border-color:var(--accent); color:var(--accent); }
     .notification-system  { border-color:var(--muted);  color:var(--muted); }
 
+    /* PAUSE OVERLAY */
+    #pauseOverlay {
+      display:none; position:fixed; inset:0; z-index:200;
+      background:rgba(10,13,20,.92);
+      align-items:center; justify-content:center; flex-direction:column;
+      backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    }
+    #pauseOverlay.visible { display:flex; }
+    .pause-menu {
+      background:var(--panel2); border:1px solid var(--accent2);
+      border-radius:16px; padding:40px 52px;
+      text-align:center; display:flex; flex-direction:column; gap:20px;
+      box-shadow:0 0 48px rgba(160,111,255,.35); min-width:280px; max-width:90vw;
+    }
+    .pause-title {
+      font-family:'Cinzel',serif; font-size:1.5rem;
+      color:var(--accent); letter-spacing:4px;
+    }
+    .pause-sub { font-size:.8rem; color:var(--muted); }
+    .btn-resume {
+      padding:16px 28px; background:var(--slime2); color:var(--bg);
+      border:none; border-radius:8px; font-family:'Cinzel',serif;
+      font-size:.95rem; letter-spacing:2px; cursor:pointer; transition:all .2s;
+    }
+    .btn-resume:hover,.btn-resume:active { background:var(--slime); transform:scale(1.03); }
+    .pause-hint { font-size:.62rem; color:var(--muted); line-height:2; }
+
   </style>
 </head>
 <body>
@@ -462,6 +489,20 @@
       onclick="window.touchAnalyze&&window.touchAnalyze()">
       🔍<span style="font-size:.48rem">ANALYZE</span>
     </button>
+  </div>
+</div>
+
+<div id="pauseOverlay">
+  <div class="pause-menu">
+    <div class="pause-title">⏸ PAUSE</div>
+    <div class="pause-sub">Das Spiel ist pausiert.<br>Kehre in den Vollbild-Modus zurück, um weiterzuspielen.</div>
+    <button class="btn-resume" onclick="window.resumeFromPause&&window.resumeFromPause()">▶ WEITERSPIELEN</button>
+    <div class="pause-hint">
+      <span style="color:var(--accent)">WASD</span> Bewegen &nbsp;·&nbsp;
+      <span style="color:var(--accent)">E</span> Absorb &nbsp;·&nbsp;
+      <span style="color:var(--accent)">Q</span> Analyze<br>
+      Auf dem Handy: Joystick + ABSORB/ANALYZE-Buttons
+    </div>
   </div>
 </div>
 
@@ -1262,6 +1303,7 @@ var __unused = (() => {
       this.joy = { active: false, id: -1, cx: 0, cy: 0, dx: 0, dy: 0 };
       this.JOY_RADIUS = 44;
       this.lastNearbyId = null;
+      this.gamePaused = false;
     }
     create() {
       this.gameState = createInitialGameState();
@@ -1270,6 +1312,7 @@ var __unused = (() => {
       this.createPlayer();
       this.createInput();
       this.setupJoystick();
+      this.setupFullscreen();
       this.setupGlobalFunctions();
       window.gameState = this.gameState;
       window.gameScene = this;
@@ -1542,6 +1585,47 @@ var __unused = (() => {
       jZone.addEventListener("touchcancel", endJoy, { passive: false });
     }
     // ----------------------------------------------------------
+    // VOLLBILD
+    // ----------------------------------------------------------
+    setupFullscreen() {
+      const onChange = () => {
+        const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+        if (!isFs) {
+          this.pauseGame();
+        } else {
+          this.resumeGame();
+        }
+      };
+      document.addEventListener("fullscreenchange", onChange);
+      document.addEventListener("webkitfullscreenchange", onChange);
+      document.addEventListener("pointerdown", () => this.enterFullscreen(), { once: true });
+    }
+    enterFullscreen() {
+      const el = document.documentElement;
+      try {
+        if (el.requestFullscreen) {
+          el.requestFullscreen();
+        } else if (el.webkitRequestFullscreen) {
+          el.webkitRequestFullscreen();
+        }
+      } catch (_) {
+      }
+    }
+    pauseGame() {
+      if (this.gamePaused) return;
+      this.gamePaused = true;
+      this.physics.pause();
+      const ov = document.getElementById("pauseOverlay");
+      if (ov) ov.classList.add("visible");
+    }
+    resumeGame() {
+      if (!this.gamePaused) return;
+      this.gamePaused = false;
+      this.physics.resume();
+      const ov = document.getElementById("pauseOverlay");
+      if (ov) ov.classList.remove("visible");
+    }
+    // ----------------------------------------------------------
     // GLOBALE FUNKTIONEN (für HTML-Buttons)
     // ----------------------------------------------------------
     setupGlobalFunctions() {
@@ -1550,11 +1634,20 @@ var __unused = (() => {
       window.touchAbsorb = () => this.doAbsorb();
       window.touchAnalyze = () => this.doAnalyze();
       window.doGrow = () => this.doGrow();
+      window.resumeFromPause = () => {
+        const el = document.documentElement;
+        if (el.requestFullscreen || el.webkitRequestFullscreen) {
+          this.enterFullscreen();
+        } else {
+          this.resumeGame();
+        }
+      };
     }
     // ----------------------------------------------------------
     // GAME LOOP
     // ----------------------------------------------------------
     update(_time, _delta) {
+      if (this.gamePaused) return;
       this.handleMovement();
       this.syncPlayerPosition();
       this.updateEntityVisuals();
