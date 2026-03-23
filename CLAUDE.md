@@ -16,7 +16,7 @@ Current state: **v0.2** — Modular TypeScript + Phaser.js architecture, Skill-S
 
 | File | Purpose |
 |------|---------|
-| `absorb-evolve.html` | The game itself. Single-file build, open by double-click in browser. |
+| `dist/index.html` | The game itself. Build output for GitHub Pages. Open by double-click in browser. |
 | `src/types/Skill.ts` | TypeScript interfaces for skills |
 | `src/types/Entity.ts` | TypeScript interfaces for entities |
 | `src/types/GameState.ts` | Central game state interfaces |
@@ -70,9 +70,9 @@ types/   ←  data/  ←  systems/  ←  scenes/
 ### Build Workflow
 1. Jörn describes what to change (in German, on mobile).
 2. Claude writes/edits the TypeScript source files.
-3. Claude compiles with `tsc` and bundles into single HTML.
-4. Claude provides download link.
-5. Jörn downloads and opens in browser — no terminal needed.
+3. Claude compiles with `tsc` and bundles into `dist/index.html`.
+4. Claude commits and pushes — GitHub Pages deploys automatically.
+5. Jörn opens the game via GitHub Pages URL — no terminal needed.
 
 ### Communication
 - Talk to the developer in **German**.
@@ -85,7 +85,7 @@ types/   ←  data/  ←  systems/  ←  scenes/
 - TypeScript 5.x
 - Phaser.js 3.70 (loaded via CDN in the single HTML file)
 - No build system on developer side — Claude runs `tsc`
-- Single `.html` output file
+- Build output: `dist/index.html` (single file, deployed via GitHub Pages)
 
 ## Planned (do not implement unless asked)
 - Combat system with active skill use (v0.3)
