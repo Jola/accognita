@@ -16,7 +16,8 @@ Current state: **v0.2** — Modular TypeScript + Phaser.js architecture, Skill-S
 
 | File | Purpose |
 |------|---------|
-| `index.html` | The game itself. Build output, open by double-click in browser. |
+| `accognita.html` | The game itself. Build output, open by double-click in browser. |
+| `README.md` | GitHub Pages landing page with link to the game. |
 | `src/types/Skill.ts` | TypeScript interfaces for skills |
 | `src/types/Entity.ts` | TypeScript interfaces for entities |
 | `src/types/GameState.ts` | Central game state interfaces |
@@ -70,7 +71,7 @@ types/   ←  data/  ←  systems/  ←  scenes/
 ### Build Workflow
 1. Jörn describes what to change (in German, on mobile).
 2. Claude writes/edits the TypeScript source files.
-3. Claude compiles with `tsc` and bundles into `index.html` (root).
+3. Claude compiles with `tsc` and bundles into `accognita.html` (root).
 4. Claude commits and pushes — GitHub Pages deploys automatically.
 5. Jörn opens the game via GitHub Pages URL — no terminal needed.
 
@@ -85,7 +86,7 @@ types/   ←  data/  ←  systems/  ←  scenes/
 - TypeScript 5.x
 - Phaser.js 3.70 (loaded via CDN in the single HTML file)
 - No build system on developer side — Claude runs `tsc`
-- Build output: `index.html` (root, single file, deployed via GitHub Pages)
+- Build output: `accognita.html` (root, single file, deployed via GitHub Pages)
 
 ## Planned (do not implement unless asked)
 - Combat system with active skill use (v0.3)
