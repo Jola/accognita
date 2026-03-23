@@ -14,6 +14,7 @@ export declare class GameScene extends Phaser.Scene {
     private joy;
     private readonly JOY_RADIUS;
     private lastNearbyId;
+    private gamePaused;
     constructor();
     create(): void;
     private createWorld;
@@ -21,6 +22,10 @@ export declare class GameScene extends Phaser.Scene {
     private createEntities;
     private createInput;
     private setupJoystick;
+    private setupFullscreen;
+    private enterFullscreen;
+    private pauseGame;
+    private resumeGame;
     private setupGlobalFunctions;
     update(_time: number, _delta: number): void;
     private handleMovement;
