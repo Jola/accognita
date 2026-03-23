@@ -203,6 +203,7 @@ export class GameScene extends Phaser.Scene {
       { defId: "grass",          x: 1065, y: 390 },
       { defId: "grass",          x: 1035, y: 440 },
       { defId: "jumping_spider", x: 1110, y: 375 },
+      { defId: "poison_spider",  x: 1090, y: 445 },
       { defId: "ladybug",        x: 1000, y: 430 },
       { defId: "ant",            x: 1075, y: 450 },
 
@@ -212,6 +213,7 @@ export class GameScene extends Phaser.Scene {
       { defId: "grass",          x: 850,  y: 895 },
       { defId: "ant",            x: 920,  y: 830 },
       { defId: "jumping_spider", x: 810,  y: 880 },
+      { defId: "poison_spider",  x: 900,  y: 890 },
 
       // --- Cluster F (rechts unten, ~1295,680) ---
       { defId: "grass",          x: 1255, y: 660 },
@@ -219,6 +221,7 @@ export class GameScene extends Phaser.Scene {
       { defId: "grass",          x: 1280, y: 725 },
       { defId: "ladybug",        x: 1350, y: 665 },
       { defId: "jumping_spider", x: 1240, y: 710 },
+      { defId: "poison_spider",  x: 1330, y: 720 },
     ];
 
     for (let i = 0; i < placements.length; i++) {
