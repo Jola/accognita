@@ -594,7 +594,7 @@ function renderMaterials(state: GameState) {
       <div class="material-row">
         <span class="mat-icon">${m.icon}</span>
         <span class="mat-name">${m.name}</span>
-        <span class="mat-amount">×${m.amount}</span>
+        <span class="mat-amount">×${m.formatted}</span>
       </div>
     `
     )

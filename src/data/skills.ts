@@ -24,6 +24,21 @@ import type { SkillDefinition } from "../types/Skill";
 // -----------------------------------------------------------
 export const CORE_SKILLS: SkillDefinition[] = [
   {
+    id: "infinite_storage",
+    name: "Infinite Storage",
+    element: "none",
+    icon: "♾️",
+    category: "core",
+    activation: "passive",
+    maxLevel: 1,             // Immer auf Level 1 — keine Steigerung
+    baseXpThreshold: 999999, // Nie steigerbar
+    xpThresholdMultiplier: 1.0,
+    description:
+      "Der Slime-Körper ist ein dimensionales Lager ohne Kapazitätsgrenze. " +
+      "Alle gesammelten Materialien werden unbegrenzt gespeichert. " +
+      "Mengen bis Number.MAX_SAFE_INTEGER (~9 Quadrillionen) werden unterstützt.",
+  },
+  {
     id: "analyze",
     name: "Analyze",
     element: "none",
@@ -65,7 +80,7 @@ export const BASE_SKILLS: SkillDefinition[] = [
     icon: "🔥",
     category: "basic",
     activation: "active",
-    maxLevel: 10,
+    maxLevel: 0,
     baseXpThreshold: 10,
     xpThresholdMultiplier: 1.5,
     description: "Schleudert einen Feuerball auf den Feind.",
@@ -80,7 +95,7 @@ export const BASE_SKILLS: SkillDefinition[] = [
     icon: "💧",
     category: "basic",
     activation: "active",
-    maxLevel: 10,
+    maxLevel: 0,
     baseXpThreshold: 10,
     xpThresholdMultiplier: 1.5,
     description: "Ein kraftvoller Wasserstrahl, der Feinde verlangsamt.",
@@ -95,7 +110,7 @@ export const BASE_SKILLS: SkillDefinition[] = [
     icon: "🪨",
     category: "basic",
     activation: "active",
-    maxLevel: 10,
+    maxLevel: 0,
     baseXpThreshold: 10,
     xpThresholdMultiplier: 1.5,
     description: "Verhärtet die Oberfläche des Slimes und erhöht die Verteidigung.",
@@ -110,7 +125,7 @@ export const BASE_SKILLS: SkillDefinition[] = [
     icon: "💨",
     category: "basic",
     activation: "active",
-    maxLevel: 10,
+    maxLevel: 0,
     baseXpThreshold: 10,
     xpThresholdMultiplier: 1.5,
     description: "Ein schneller Windschnitt, der den Slime kurzzeitig beschleunigt.",
@@ -125,7 +140,7 @@ export const BASE_SKILLS: SkillDefinition[] = [
     icon: "🫧",
     category: "basic",
     activation: "active",
-    maxLevel: 10,
+    maxLevel: 0,
     baseXpThreshold: 8, // Leichter zu leveln — häufigste Quelle
     xpThresholdMultiplier: 1.5,
     description: "Bedeckt den Slime mit einer klebrigen Schicht, die Angreifer verlangsamt.",
@@ -140,7 +155,7 @@ export const BASE_SKILLS: SkillDefinition[] = [
     icon: "☠️",
     category: "basic",
     activation: "active",
-    maxLevel: 10,
+    maxLevel: 0,
     baseXpThreshold: 12, // Etwas schwerer — weniger Quellen
     xpThresholdMultiplier: 1.5,
     description: "Spuckt Gift, das über Zeit Schaden verursacht.",
@@ -155,7 +170,7 @@ export const BASE_SKILLS: SkillDefinition[] = [
     icon: "🌑",
     category: "basic",
     activation: "active",
-    maxLevel: 10,
+    maxLevel: 0,
     baseXpThreshold: 20, // Schwer — selten (Dark Wisp)
     xpThresholdMultiplier: 1.5,
     description: "Tritt in den Schatten — Gegner verlieren kurz die Aggro.",
@@ -170,7 +185,7 @@ export const BASE_SKILLS: SkillDefinition[] = [
     icon: "✨",
     category: "basic",
     activation: "active",
-    maxLevel: 10,
+    maxLevel: 0,
     baseXpThreshold: 20, // Schwer — selten (Light Fairy, kämpft nie)
     xpThresholdMultiplier: 1.5,
     description: "Ein heiliger Lichtstrahl. Light Fairy kämpft nie — nur durch Analyze.",
@@ -193,7 +208,7 @@ export const PLANT_SKILLS: SkillDefinition[] = [
     icon: "🌱",
     category: "basic",
     activation: "active",
-    maxLevel: 10,
+    maxLevel: 0,
     baseXpThreshold: 10,
     xpThresholdMultiplier: 1.5,
     description:
@@ -208,7 +223,7 @@ export const PLANT_SKILLS: SkillDefinition[] = [
     icon: "☀️",
     category: "basic",
     activation: "passive", // Wirkt automatisch, kein manueller Einsatz
-    maxLevel: 5,
+    maxLevel: 0,
     baseXpThreshold: 15,
     xpThresholdMultiplier: 1.5,
     description:
@@ -229,7 +244,7 @@ export const COMBO_SKILLS: SkillDefinition[] = [
     icon: "♨️",
     category: "combo",
     activation: "active",
-    maxLevel: 5,
+    maxLevel: 0,
     baseXpThreshold: 15,
     xpThresholdMultiplier: 1.5,
     description: "Explosiver Dampfausbruch aus Feuer und Wasser.",
@@ -245,7 +260,7 @@ export const COMBO_SKILLS: SkillDefinition[] = [
     icon: "🌪️",
     category: "combo",
     activation: "active",
-    maxLevel: 5,
+    maxLevel: 0,
     baseXpThreshold: 15,
     xpThresholdMultiplier: 1.5,
     description: "Ein rotierender Feuersturm, der mehrere Feinde trifft.",
@@ -261,7 +276,7 @@ export const COMBO_SKILLS: SkillDefinition[] = [
     icon: "🟣",
     category: "combo",
     activation: "active",
-    maxLevel: 5,
+    maxLevel: 0,
     baseXpThreshold: 15,
     xpThresholdMultiplier: 1.5,
     description: "Giftige Schleimschicht — Angreifer vergiften sich selbst.",
@@ -277,7 +292,7 @@ export const COMBO_SKILLS: SkillDefinition[] = [
     icon: "🟫",
     category: "combo",
     activation: "active",
-    maxLevel: 5,
+    maxLevel: 0,
     baseXpThreshold: 15,
     xpThresholdMultiplier: 1.5,
     description: "Errichtet eine Schlammwand, die Feinde blockiert und verlangsamt.",
@@ -293,7 +308,7 @@ export const COMBO_SKILLS: SkillDefinition[] = [
     icon: "👤",
     category: "combo",
     activation: "active",
-    maxLevel: 5,
+    maxLevel: 0,
     baseXpThreshold: 20, // Teuerster Combo — benötigt seltenen dark-Skill
     xpThresholdMultiplier: 1.5,
     description: "Der Slime wird für kurze Zeit unsichtbar und schneller.",
@@ -309,7 +324,7 @@ export const COMBO_SKILLS: SkillDefinition[] = [
     icon: "🧊",
     category: "combo",
     activation: "active",
-    maxLevel: 5,
+    maxLevel: 0,
     baseXpThreshold: 15,
     xpThresholdMultiplier: 1.5,
     description: "Schleudert Eissplitter, die Feinde einfrieren.",

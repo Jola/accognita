@@ -10,6 +10,31 @@ import { MATERIAL_MAP } from "../data/materials";
 import { ALL_SKILLS } from "../data/skills";
 
 // -----------------------------------------------------------
+// ZAHLENFORMATIERUNG
+// Unlimited storage — Zahlen werden ab 1.000 abgekürzt.
+// Max: Number.MAX_SAFE_INTEGER ≈ 9 Quadrillionen (praktisch unbegrenzt)
+// -----------------------------------------------------------
+const SUFFIXES: [number, string][] = [
+  [1e15, "Q"],  // Quadrillion
+  [1e12, "T"],  // Trillion
+  [1e9,  "B"],  // Billion
+  [1e6,  "M"],  // Million
+  [1e3,  "K"],  // Tausend
+];
+
+export function formatAmount(n: number): string {
+  for (const [threshold, suffix] of SUFFIXES) {
+    if (n >= threshold) {
+      const value = n / threshold;
+      // Keine Nachkommastelle wenn glatt, sonst 1 Stelle
+      const formatted = value % 1 === 0 ? value.toFixed(0) : value.toFixed(1);
+      return `${formatted}${suffix}`;
+    }
+  }
+  return String(Math.floor(n));
+}
+
+// -----------------------------------------------------------
 // INVENTAR-HILFSFUNKTIONEN
 // -----------------------------------------------------------
 
@@ -57,15 +82,14 @@ export function deductMaterials(
 /** Alle Materialien als Array zurückgeben (zum Anzeigen) */
 export function getMaterialList(
   player: PlayerState
-): { id: string; name: string; icon: string; amount: number }[] {
-  const result: { id: string; name: string; icon: string; amount: number }[] =
-    [];
+): { id: string; name: string; icon: string; amount: number; formatted: string }[] {
+  const result: { id: string; name: string; icon: string; amount: number; formatted: string }[] = [];
 
   for (const [id, amount] of player.materials) {
     if (amount <= 0) continue;
     const def = MATERIAL_MAP.get(id);
     if (!def) continue;
-    result.push({ id, name: def.name, icon: def.icon, amount });
+    result.push({ id, name: def.name, icon: def.icon, amount, formatted: formatAmount(amount) });
   }
 
   return result.sort((a, b) => a.name.localeCompare(b.name));

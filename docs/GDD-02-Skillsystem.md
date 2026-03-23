@@ -9,17 +9,28 @@
 
 Der Slime besitzt genau **zwei angeborene Kern-Fähigkeiten**. Alle anderen Fähigkeiten werden erst durch diese beiden erworben.
 
-| Fähigkeit | Wirkung bei Erfolg | Wirkung bei Fehlschlag |
-|-----------|-------------------|------------------------|
-| **Analyze** | Entität bleibt erhalten. Slime erhält Wissen über mögliche Skills/Material. Skill-XP: +1 | Siehe Fehlschlag-Tabelle |
-| **Absorb** | Entität verschwindet (respawnt später). Slime erhält Skills und/oder Material. Skill-XP: +3 | Siehe Fehlschlag-Tabelle |
+| Fähigkeit | Typ | Wirkung bei Erfolg | Wirkung bei Fehlschlag |
+|-----------|-----|--------------------|------------------------|
+| **Analyze** | aktiv, levelbar | Entität bleibt. Skill-XP: +1. Kein Material. | Siehe Fehlschlag-Tabelle |
+| **Absorb** | aktiv, levelbar | Entität verschwindet (respawnt). Skills + Material. Skill-XP: +3 | Siehe Fehlschlag-Tabelle |
+| **Infinite Storage** | passiv, fest | Materialien werden ohne Limit gespeichert. Mengendarstellung: K/M/B/T/Q ab 1.000. | — (kein Fehlschlag möglich) |
 
-### 1.1 Leveling von Analyze & Absorb
+### 1.1 Infinite Storage — Materiallager ohne Limit
+
+> **Status: Implementiert (v0.3)**
+
+- Alle gesammelten Materialien landen in einem einzigen unendlichen Inventar.
+- Keine Slots, keine Kapazitätsgrenze — jedes Material wird als `(Typ → Menge)` gespeichert.
+- Mengen werden ab 1.000 abgekürzt dargestellt: `1K`, `2.3M`, `1.5B`, `4T`, `9Q`
+- Technisches Maximum: `Number.MAX_SAFE_INTEGER` ≈ 9,007 Quadrillionen — praktisch unlimitiert.
+- Diese Fähigkeit ist unveränderlich (Level 1, kein XP-System).
+
+### 1.2 Leveling von Analyze & Absorb
 
 Beide Kern-Fähigkeiten haben ein eigenes Level (Start: Level 1) und steigen durch wiederholten Einsatz auf.
 Das Level der Kern-Fähigkeit bestimmt, wie hoch die Erfolgswahrscheinlichkeit gegen stärkere Entitäten ist.
 
-### 1.2 Fehlschlag-Mechanik
+### 1.3 Fehlschlag-Mechanik
 
 > **Status: Konzept** — Formel und genaue Werte noch nicht festgelegt.
 
@@ -166,4 +177,4 @@ Zwei bekannte Basis-Skills können kombiniert werden, um Kombinations-Skills fre
 
 ---
 
-*Letzte Aktualisierung: v0.3-Konzept — Analyze/Absorb als leveled Core-Fähigkeiten, Fehlschlag-Mechanik, Material-System, Pflanzen-Skills definiert (März 2026)*
+*Letzte Aktualisierung: v0.3 — Infinite Storage als Core-Skill dokumentiert, K/M/B/T/Q-Mengendarstellung (März 2026)*
