@@ -15,6 +15,8 @@ import { useGrow, getMaterialList, } from "../systems/MaterialSystem.js";
 import { createJoystick } from "../ui/Joystick.js";
 import { createSkillBar } from "../ui/SkillBar.js";
 import { createSkillMenu } from "../ui/SkillMenu.js";
+import { createSaveMenu } from "../ui/SaveMenu.js";
+import { saveToSlot, loadFromSlot, deleteAllSaves } from "../systems/SaveSystem.js";
 import { calcEntityAi, tickAttackCooldown, setAttackCooldown, resetAi, } from "../systems/AiSystem.js";
 import { playerAttack, entityAttack, canActivateSkill, consumeSkill, calcDashDistance, executeCheckpoint, regenMp, } from "../systems/CombatSystem.js";
 import { processTicks, triggerAuras, applyEffect, removeExpiredEffects, syncPassiveEffects, } from "../systems/StatusEffectSystem.js";
@@ -38,6 +40,7 @@ export class GameScene extends Phaser.Scene {
         this.entitySprites = new Map();
         this.lastNearbyId = null;
         this.gamePaused = false;
+        this.playtimeAccumulator = 0; // Sekunden akkumulieren für player.playtimeSeconds
     }
     create() {
         this.gameState = createInitialGameState();
@@ -55,6 +58,7 @@ export class GameScene extends Phaser.Scene {
         window.gameScene = this;
         window.__ALL_SKILLS = ALL_SKILLS;
         this.setupSkillBar();
+        this.setupSaveMenu();
         this.cameras.main.startFollow(this.slimeGraphic, true, 0.1, 0.1);
         this.cameras.main.setZoom(1.5);
         updateUI(this.gameState);
@@ -303,6 +307,68 @@ export class GameScene extends Phaser.Scene {
         this.physics.resume();
     }
     // ----------------------------------------------------------
+    // SAVE MENU
+    // ----------------------------------------------------------
+    setupSaveMenu() {
+        const menu = createSaveMenu();
+        // 💾-Button im HUD verdrahten
+        document.getElementById("btnSave")?.addEventListener("click", () => menu.open());
+        // Auch aus der Pause-Overlay heraus öffnen
+        document.getElementById("btnSaveFromPause")?.addEventListener("click", () => {
+            const ov = document.getElementById("pauseOverlay");
+            if (ov)
+                ov.classList.remove("visible");
+            menu.open();
+        });
+    }
+    /** Spielstand in Slot speichern */
+    saveGame(slot) {
+        // SkillBar-Slots in player.activeSkillSlots spiegeln
+        if (this.skillBar) {
+            for (let i = 0; i < 4; i++) {
+                this.gameState.player.activeSkillSlots[i] = this.skillBar.slots[i];
+            }
+        }
+        saveToSlot(slot, this.gameState.player, this.skillBar?.slots ?? []);
+        addLog(`💾 Spielstand in Slot ${slot + 1} gespeichert.`, "system");
+    }
+    /** Spielstand aus Slot laden */
+    loadGame(slot) {
+        const saved = loadFromSlot(slot);
+        if (!saved) {
+            showToast("Speicherstand nicht gefunden.", "system");
+            return;
+        }
+        // Spieler-State ersetzen
+        this.gameState.player = saved.player;
+        // Spieler-Sprite an gespeicherte Position
+        this.slimeGraphic.setPosition(saved.player.x, saved.player.y);
+        // Passive Effekte neu aufbauen
+        syncPassiveEffects(this.gameState.player);
+        // SkillBar-Slots wiederherstellen
+        if (this.skillBar && saved.player.activeSkillSlots) {
+            for (let i = 0; i < 4; i++) {
+                this.skillBar.assignSlot(i, saved.player.activeSkillSlots[i] ?? null);
+            }
+        }
+        // Entities zurücksetzen (HP, Aggro — nicht Position)
+        for (const [, instance] of this.gameState.world.entities) {
+            const def = ENTITY_MAP.get(instance.definitionId);
+            instance.currentHp = def?.hp ?? 0;
+            instance.isAggro = false;
+            instance.statusEffects = [];
+            instance.attackCooldownRemaining = 0;
+            instance.isAlive = true;
+        }
+        updateUI(this.gameState);
+        addLog(`▶ Slot ${slot + 1} geladen — Lv.${saved.player.level}, ${saved.player.discoveredSkills.size} Skills.`, "system");
+    }
+    /** Alles zurücksetzen und Seite neu laden */
+    resetGame() {
+        deleteAllSaves();
+        window.location.reload();
+    }
+    // ----------------------------------------------------------
     // GLOBALE FUNKTIONEN (für HTML-Buttons)
     // ----------------------------------------------------------
     setupGlobalFunctions() {
@@ -329,6 +395,12 @@ export class GameScene extends Phaser.Scene {
     update(_time, delta) {
         if (this.gamePaused)
             return;
+        // Spielzeit akkumulieren
+        this.playtimeAccumulator += delta;
+        if (this.playtimeAccumulator >= 1000) {
+            this.gameState.player.playtimeSeconds += Math.floor(this.playtimeAccumulator / 1000);
+            this.playtimeAccumulator %= 1000;
+        }
         this.handleMovement();
         this.syncPlayerPosition();
         this.processEntityAi(delta);

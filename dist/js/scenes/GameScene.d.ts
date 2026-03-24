@@ -12,6 +12,7 @@ export declare class GameScene extends Phaser.Scene {
     private gamePaused;
     private hpBarGraphics;
     private skillBar;
+    private playtimeAccumulator;
     constructor();
     create(): void;
     private createWorld;
@@ -27,6 +28,13 @@ export declare class GameScene extends Phaser.Scene {
     pauseForUI(): void;
     /** Spiel nach UI-Schließen fortsetzen */
     resumeForUI(): void;
+    private setupSaveMenu;
+    /** Spielstand in Slot speichern */
+    saveGame(slot: number): void;
+    /** Spielstand aus Slot laden */
+    loadGame(slot: number): void;
+    /** Alles zurücksetzen und Seite neu laden */
+    resetGame(): void;
     private setupGlobalFunctions;
     update(_time: number, delta: number): void;
     private handleMovement;
