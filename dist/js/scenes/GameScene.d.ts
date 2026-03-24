@@ -21,6 +21,7 @@ export declare class GameScene extends Phaser.Scene {
     private setupJoystick;
     private setupFullscreen;
     private enterFullscreen;
+    private exitFullscreen;
     private pauseGame;
     private resumeGame;
     private setupSkillBar;

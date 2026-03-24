@@ -221,6 +221,16 @@
       pointer-events:all;
     }
 
+    /* Fullscreen-Exit-Button */
+    #btnFullscreenExit {
+      position:fixed; top:8px; right:12px; width:40px; height:40px; border-radius:50%;
+      background:rgba(15,20,32,.92); border:1px solid rgba(255,200,80,.5);
+      color:rgba(255,200,80,.9); font-size:1.1rem; display:none;
+      align-items:center; justify-content:center; cursor:pointer; z-index:46;
+      pointer-events:all;
+    }
+    #btnFullscreenExit.visible { display:flex; }
+
     /* Panel-Toggle: immer sichtbar */
     #btnPanel {
       position:fixed; top:52px; right:12px; width:40px; height:40px; border-radius:50%;
@@ -457,6 +467,9 @@
 
 <!-- SAVE-Button: immer sichtbar -->
 <button id="btnSave">💾</button>
+
+<!-- FULLSCREEN-Exit-Button: nur im Fullscreen sichtbar -->
+<button id="btnFullscreenExit" title="Vollbild beenden">⛶</button>
 
 <!-- MOBILE: Bottom Sheet -->
 <div id="bottomSheet">
@@ -2689,17 +2702,24 @@
     // VOLLBILD
     // ----------------------------------------------------------
     setupFullscreen() {
+      const btn = document.getElementById("btnFullscreenExit");
       const onChange = () => {
         const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
         if (!isFs) {
+          btn?.classList.remove("visible");
           this.pauseGame();
         } else {
+          btn?.classList.add("visible");
           this.resumeGame();
         }
       };
       document.addEventListener("fullscreenchange", onChange);
       document.addEventListener("webkitfullscreenchange", onChange);
       document.addEventListener("pointerdown", () => this.enterFullscreen(), { once: true });
+      btn?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.exitFullscreen();
+      });
     }
     enterFullscreen() {
       const el = document.documentElement;
@@ -2708,6 +2728,16 @@
           el.requestFullscreen();
         } else if (el.webkitRequestFullscreen) {
           el.webkitRequestFullscreen();
+        }
+      } catch (_) {
+      }
+    }
+    exitFullscreen() {
+      try {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
         }
       } catch (_) {
       }

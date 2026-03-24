@@ -323,14 +323,17 @@ export class GameScene extends Phaser.Scene {
   // VOLLBILD
   // ----------------------------------------------------------
   private setupFullscreen() {
+    const btn = document.getElementById("btnFullscreenExit");
     const onChange = () => {
       const isFs = !!(
         document.fullscreenElement ||
         (document as any).webkitFullscreenElement
       );
       if (!isFs) {
+        btn?.classList.remove("visible");
         this.pauseGame();
       } else {
+        btn?.classList.add("visible");
         this.resumeGame();
       }
     };
@@ -339,6 +342,12 @@ export class GameScene extends Phaser.Scene {
 
     // Beim ersten Tippen/Klicken in den Vollbild-Modus wechseln
     document.addEventListener("pointerdown", () => this.enterFullscreen(), { once: true });
+
+    // Expliziter Exit-Button
+    btn?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.exitFullscreen();
+    });
   }
 
   private enterFullscreen() {
@@ -346,6 +355,13 @@ export class GameScene extends Phaser.Scene {
     try {
       if (el.requestFullscreen)             { el.requestFullscreen(); }
       else if (el.webkitRequestFullscreen)  { el.webkitRequestFullscreen(); }
+    } catch (_) {}
+  }
+
+  private exitFullscreen() {
+    try {
+      if ((document as any).exitFullscreen)        { (document as any).exitFullscreen(); }
+      else if ((document as any).webkitExitFullscreen) { (document as any).webkitExitFullscreen(); }
     } catch (_) {}
   }
 
