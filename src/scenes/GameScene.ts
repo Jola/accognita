@@ -54,10 +54,6 @@ export class GameScene extends Phaser.Scene {
 
   private slimeGraphic!: any;
   private entitySprites: Map<string, any> = new Map();
-  private cursors!: any;
-  private wasdKeys!: any;
-  private eKey!: any;
-  private qKey!: any;
 
   // Joystick-Zustand (mobile)
   private joy = { active: false, id: -1, cx: 0, cy: 0, dx: 0, dy: 0 };
@@ -76,7 +72,6 @@ export class GameScene extends Phaser.Scene {
     this.createWorld();
     this.createEntities();
     this.createPlayer();
-    this.createInput();
     this.setupJoystick();
     this.setupFullscreen();
     this.setupGlobalFunctions();
@@ -89,8 +84,7 @@ export class GameScene extends Phaser.Scene {
 
     updateUI(this.gameState);
     addLog("Du erwachst als Schleim…", "system");
-    addLog("📱 Mobile: Joystick + ABSORB/ANALYZE", "system");
-    addLog("🖥️ Desktop: WASD + E (Absorb) / Q (Analyze)", "system");
+    addLog("Joystick bewegen · ABSORB + ANALYZE tippen", "system");
   }
 
   // ----------------------------------------------------------
@@ -275,48 +269,6 @@ export class GameScene extends Phaser.Scene {
   }
 
   // ----------------------------------------------------------
-  // INPUT
-  // ----------------------------------------------------------
-  private createInput() {
-    this.cursors = this.input.keyboard.createCursorKeys();
-    this.wasdKeys = this.input.keyboard.addKeys({
-      up:    Phaser.Input.Keyboard.KeyCodes.W,
-      down:  Phaser.Input.Keyboard.KeyCodes.S,
-      left:  Phaser.Input.Keyboard.KeyCodes.A,
-      right: Phaser.Input.Keyboard.KeyCodes.D,
-    });
-    this.eKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
-    this.qKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
-
-    // Rechtsklick = Analyze
-    this.game.canvas.addEventListener("contextmenu", (e: MouseEvent) => {
-      e.preventDefault();
-      const rect = this.game.canvas.getBoundingClientRect();
-      const cam = this.cameras.main;
-      const wx = (e.clientX - rect.left) / cam.zoom + cam.scrollX;
-      const wy = (e.clientY - rect.top)  / cam.zoom + cam.scrollY;
-      const hit = this.findEntityNear(wx, wy, 50);
-      if (!hit) return;
-      const dist = Math.hypot(
-        this.gameState.player.x - hit.x,
-        this.gameState.player.y - hit.y
-      );
-      if (dist > 100) { showToast("Näher herangehen!", "system"); return; }
-      this.lastNearbyId = hit.instanceId;
-      this.doAnalyze();
-    });
-
-    // Tab-Taste: Tabs durchschalten
-    this.input.keyboard.on("keydown-TAB", (e: KeyboardEvent) => {
-      e.preventDefault();
-      const tabs = ["skills", "combine", "materials", "log"];
-      const current = (window as any)._currentTab ?? "skills";
-      const next = tabs[(tabs.indexOf(current) + 1) % tabs.length];
-      switchTab(next);
-    });
-  }
-
-  // ----------------------------------------------------------
   // JOYSTICK (Mobile)
   // ----------------------------------------------------------
   private setupJoystick() {
@@ -451,7 +403,6 @@ export class GameScene extends Phaser.Scene {
     this.syncPlayerPosition();
     this.updateEntityVisuals();
     this.checkNearbyEntity();
-    this.handleKeyboardInteraction();
     this.applyPassiveSkills(_delta);
 
     processRespawns(this.gameState.world);
@@ -461,13 +412,8 @@ export class GameScene extends Phaser.Scene {
     const speed = 180;
     const body = this.slimeGraphic.body;
 
-    const left  = this.cursors.left.isDown  || this.wasdKeys.left.isDown;
-    const right = this.cursors.right.isDown || this.wasdKeys.right.isDown;
-    const up    = this.cursors.up.isDown    || this.wasdKeys.up.isDown;
-    const down  = this.cursors.down.isDown  || this.wasdKeys.down.isDown;
-
-    let dx = (left ? -1 : right ? 1 : 0) + (this.joy.active ? this.joy.dx : 0);
-    let dy = (up   ? -1 : down  ? 1 : 0) + (this.joy.active ? this.joy.dy : 0);
+    let dx = this.joy.active ? this.joy.dx : 0;
+    let dy = this.joy.active ? this.joy.dy : 0;
     const len = Math.hypot(dx, dy);
     if (len > 1) { dx /= len; dy /= len; }
 
@@ -505,11 +451,6 @@ export class GameScene extends Phaser.Scene {
         this.gameState
       );
     }
-  }
-
-  private handleKeyboardInteraction() {
-    if (Phaser.Input.Keyboard.JustDown(this.eKey)) this.doAbsorb();
-    if (Phaser.Input.Keyboard.JustDown(this.qKey)) this.doAnalyze();
   }
 
   // Photosynthesis: passiver HP-Regen
@@ -627,7 +568,7 @@ function renderSkillList(state: GameState) {
   const skills = getDiscoveredSkillsSorted(state.player);
   if (skills.length === 0) {
     container.innerHTML =
-      '<p class="empty-hint">Noch keine Skills entdeckt.<br>Nähere dich einer Entity und drücke <kbd>E</kbd> (Absorb) oder <kbd>Q</kbd> (Analyze).</p>';
+      '<p class="empty-hint">Noch keine Skills entdeckt.<br>Nähere dich einer Entity und tippe 💥 Absorb oder 🔍 Analyze.</p>';
     return;
   }
 
@@ -755,8 +696,8 @@ function updateNearbyPanel(
       💥 ${absorbChance}% &nbsp;|&nbsp; 🔍 ${analyzeChance}%
     </div>
     <div class="nearby-actions">
-      <button onclick="window.gameScene.doAbsorb()" class="btn-absorb">💥 Absorb (E)</button>
-      <button onclick="window.gameScene.doAnalyze()" class="btn-analyze">🔍 Analyze (Q)</button>
+      <button onclick="window.gameScene.doAbsorb()" class="btn-absorb">💥 Absorb</button>
+      <button onclick="window.gameScene.doAnalyze()" class="btn-analyze">🔍 Analyze</button>
     </div>
   `;
 }
