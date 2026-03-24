@@ -83,8 +83,8 @@ export function createSkillMenu(skillBar: SkillBarState): {
   overlay.classList.add("hidden");
   document.body.appendChild(overlay);
 
-  // Schließen per Tap außerhalb der Karte
-  overlay.addEventListener("pointerdown", (e) => {
+  // Schließen per Tap außerhalb einer Karte
+  overlay.addEventListener("click", (e) => {
     if (e.target === overlay) close();
   });
 
@@ -140,18 +140,18 @@ export function createSkillMenu(skillBar: SkillBarState): {
       </div>
     `;
 
-    // Event-Listener nach DOM-Aufbau setzen
-    overlay.querySelector("#smenu-close")?.addEventListener("pointerup", () => close());
+    // Event-Listener nach DOM-Aufbau setzen (click = zuverlässig auf Mobile + Desktop)
+    overlay.querySelector("#smenu-close")?.addEventListener("click", () => close());
 
     overlay.querySelectorAll<HTMLButtonElement>(".smenu-slot-btn").forEach((btn) => {
-      btn.addEventListener("pointerup", () => {
+      btn.addEventListener("click", () => {
         const skillId = btn.dataset.skill!;
         const slotIdx = parseInt(btn.dataset.slot!, 10);
         // Gleiches Skill nochmal → entfernen (Toggle)
         if (skillBar.slots[slotIdx] === skillId) {
           skillBar.assignSlot(slotIdx, null);
         } else {
-          // Erst aus altem Slot entfernen, falls bereits belegt
+          // Erst aus altem Slot entfernen, falls anderswo belegt
           const oldSlot = skillBar.slots.indexOf(skillId);
           if (oldSlot >= 0) skillBar.assignSlot(oldSlot, null);
           skillBar.assignSlot(slotIdx, skillId);
@@ -161,7 +161,7 @@ export function createSkillMenu(skillBar: SkillBarState): {
     });
 
     overlay.querySelectorAll<HTMLButtonElement>(".smenu-use-btn").forEach((btn) => {
-      btn.addEventListener("pointerup", () => {
+      btn.addEventListener("click", () => {
         const skillId = btn.dataset.use!;
         close();
         const scene = (window as any).gameScene;

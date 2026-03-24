@@ -111,6 +111,24 @@ export const BASE_SKILLS = [
         // Appliziert DoT-StatusEffect auf getroffene Ziele
     },
     {
+        id: "bite",
+        name: "Biss",
+        element: "none",
+        icon: "🦷",
+        category: "basic",
+        activation: "active",
+        maxLevel: 0,
+        baseXpThreshold: 12,
+        xpThresholdMultiplier: 1.5,
+        description: "Aktiv: Gezielter Biss — verursacht direkten Schaden (7 Basis). " +
+            "Ist Venom bekannt, hat jeder Biss zusätzliche Chance das Ziel zu vergiften. " +
+            "Höheres Level = stärkerer Biss. MP-Kosten: 3.",
+        mpCost: 3,
+        cooldownMs: 2000,
+        attackType: "melee",
+        baseDamage: 7,
+    },
+    {
         id: "jump",
         name: "Jump",
         element: "none",

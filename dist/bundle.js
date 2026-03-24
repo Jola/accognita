@@ -132,6 +132,22 @@
       // Appliziert DoT-StatusEffect auf getroffene Ziele
     },
     {
+      id: "bite",
+      name: "Biss",
+      element: "none",
+      icon: "\u{1F9B7}",
+      category: "basic",
+      activation: "active",
+      maxLevel: 0,
+      baseXpThreshold: 12,
+      xpThresholdMultiplier: 1.5,
+      description: "Aktiv: Gezielter Biss \u2014 verursacht direkten Schaden (7 Basis). Ist Venom bekannt, hat jeder Biss zus\xE4tzliche Chance das Ziel zu vergiften. H\xF6heres Level = st\xE4rkerer Biss. MP-Kosten: 3.",
+      mpCost: 3,
+      cooldownMs: 2e3,
+      attackType: "melee",
+      baseDamage: 7
+    },
+    {
       id: "jump",
       name: "Jump",
       element: "none",
@@ -278,6 +294,8 @@
       rarity: "common",
       level: 1,
       skillDrops: [
+        { skillId: "bite", chance: 0.12 },
+        // Direkter Angriffsbiss
         { skillId: "chitin_armor", chance: 0.15 },
         // Hartes Exoskelett
         { skillId: "superstrength", chance: 0.1 }
@@ -333,6 +351,8 @@
       rarity: "common",
       level: 2,
       skillDrops: [
+        { skillId: "bite", chance: 0.15 },
+        // Biss-Angriff
         { skillId: "jump", chance: 0.2 },
         // Charakteristischer Sprung
         { skillId: "chitin_armor", chance: 0.1 }
@@ -359,6 +379,8 @@
       rarity: "uncommon",
       level: 2,
       skillDrops: [
+        { skillId: "bite", chance: 0.15 },
+        // Biss-Angriff (kombiniert sich mit Venom)
         { skillId: "venom", chance: 0.2 },
         // Giftbiss
         { skillId: "chitin_armor", chance: 0.08 }
@@ -1111,7 +1133,7 @@
     overlay.id = "skillMenu";
     overlay.classList.add("hidden");
     document.body.appendChild(overlay);
-    overlay.addEventListener("pointerdown", (e) => {
+    overlay.addEventListener("click", (e) => {
       if (e.target === overlay)
         close();
     });
@@ -1152,9 +1174,9 @@
       }).join("")}
       </div>
     `;
-      overlay.querySelector("#smenu-close")?.addEventListener("pointerup", () => close());
+      overlay.querySelector("#smenu-close")?.addEventListener("click", () => close());
       overlay.querySelectorAll(".smenu-slot-btn").forEach((btn) => {
-        btn.addEventListener("pointerup", () => {
+        btn.addEventListener("click", () => {
           const skillId = btn.dataset.skill;
           const slotIdx = parseInt(btn.dataset.slot, 10);
           if (skillBar.slots[slotIdx] === skillId) {
@@ -1169,7 +1191,7 @@
         });
       });
       overlay.querySelectorAll(".smenu-use-btn").forEach((btn) => {
-        btn.addEventListener("pointerup", () => {
+        btn.addEventListener("click", () => {
           const skillId = btn.dataset.use;
           close();
           const scene = window.gameScene;
