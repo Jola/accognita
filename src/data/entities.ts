@@ -54,6 +54,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     rarity: "common",
     level: 1,
     skillDrops: [
+      { skillId: "bite",          chance: 0.12 }, // Direkter Angriffsbiss
       { skillId: "chitin_armor",  chance: 0.15 }, // Hartes Exoskelett
       { skillId: "superstrength", chance: 0.10 }, // 50x Körpergewicht
     ],
@@ -98,7 +99,8 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     rarity: "common",
     level: 2,
     skillDrops: [
-      { skillId: "jump",        chance: 0.20 }, // Charakteristischer Sprung
+      { skillId: "bite",         chance: 0.15 }, // Biss-Angriff
+      { skillId: "jump",         chance: 0.20 }, // Charakteristischer Sprung
       { skillId: "chitin_armor", chance: 0.10 }, // Exoskelett (stärker als Ameise)
     ],
     materialDrops: [],
@@ -118,6 +120,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     rarity: "uncommon",
     level: 2,
     skillDrops: [
+      { skillId: "bite",         chance: 0.15 }, // Biss-Angriff (kombiniert sich mit Venom)
       { skillId: "venom",        chance: 0.20 }, // Giftbiss
       { skillId: "chitin_armor", chance: 0.08 }, // Exoskelett
     ],

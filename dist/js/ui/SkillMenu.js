@@ -75,8 +75,8 @@ export function createSkillMenu(skillBar) {
     overlay.id = "skillMenu";
     overlay.classList.add("hidden");
     document.body.appendChild(overlay);
-    // Schließen per Tap außerhalb der Karte
-    overlay.addEventListener("pointerdown", (e) => {
+    // Schließen per Tap außerhalb einer Karte
+    overlay.addEventListener("click", (e) => {
         if (e.target === overlay)
             close();
     });
@@ -127,10 +127,10 @@ export function createSkillMenu(skillBar) {
             .join("")}
       </div>
     `;
-        // Event-Listener nach DOM-Aufbau setzen
-        overlay.querySelector("#smenu-close")?.addEventListener("pointerup", () => close());
+        // Event-Listener nach DOM-Aufbau setzen (click = zuverlässig auf Mobile + Desktop)
+        overlay.querySelector("#smenu-close")?.addEventListener("click", () => close());
         overlay.querySelectorAll(".smenu-slot-btn").forEach((btn) => {
-            btn.addEventListener("pointerup", () => {
+            btn.addEventListener("click", () => {
                 const skillId = btn.dataset.skill;
                 const slotIdx = parseInt(btn.dataset.slot, 10);
                 // Gleiches Skill nochmal → entfernen (Toggle)
@@ -138,7 +138,7 @@ export function createSkillMenu(skillBar) {
                     skillBar.assignSlot(slotIdx, null);
                 }
                 else {
-                    // Erst aus altem Slot entfernen, falls bereits belegt
+                    // Erst aus altem Slot entfernen, falls anderswo belegt
                     const oldSlot = skillBar.slots.indexOf(skillId);
                     if (oldSlot >= 0)
                         skillBar.assignSlot(oldSlot, null);
@@ -148,7 +148,7 @@ export function createSkillMenu(skillBar) {
             });
         });
         overlay.querySelectorAll(".smenu-use-btn").forEach((btn) => {
-            btn.addEventListener("pointerup", () => {
+            btn.addEventListener("click", () => {
                 const skillId = btn.dataset.use;
                 close();
                 const scene = window.gameScene;
