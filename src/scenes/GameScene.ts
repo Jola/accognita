@@ -34,6 +34,8 @@ import {
 } from "../systems/MaterialSystem.js";
 import type { EntityInstance } from "../types/Entity.js";
 import { createJoystick, type JoystickState } from "../ui/Joystick.js";
+import { createSkillBar, type SkillBarState } from "../ui/SkillBar.js";
+import { createSkillMenu } from "../ui/SkillMenu.js";
 import {
   calcEntityAi,
   tickAttackCooldown,
@@ -83,6 +85,7 @@ export class GameScene extends Phaser.Scene {
   private lastNearbyId: string | null = null;
   private gamePaused = false;
   private hpBarGraphics!: any;
+  private skillBar!: SkillBarState;
 
   constructor() {
     super({ key: "GameScene" });
@@ -104,8 +107,11 @@ export class GameScene extends Phaser.Scene {
     // Passive Skills als permanente StatusEffekte initialisieren
     syncPassiveEffects(this.gameState.player);
 
-    (window as any).gameState  = this.gameState;
-    (window as any).gameScene  = this;
+    (window as any).gameState    = this.gameState;
+    (window as any).gameScene    = this;
+    (window as any).__ALL_SKILLS = ALL_SKILLS;
+
+    this.setupSkillBar();
 
     this.cameras.main.startFollow(this.slimeGraphic, true, 0.1, 0.1);
     this.cameras.main.setZoom(1.5);
@@ -352,6 +358,32 @@ export class GameScene extends Phaser.Scene {
     this.physics.resume();
     const ov = document.getElementById("pauseOverlay");
     if (ov) ov.classList.remove("visible");
+  }
+
+  // ----------------------------------------------------------
+  // SKILL BAR + SKILL MENU
+  // ----------------------------------------------------------
+  private setupSkillBar() {
+    const container = document.getElementById("skillBarWrap");
+    if (!container) return;
+
+    // Closure: menuRef wird erst nach createSkillMenu gesetzt,
+    // aber erst beim ersten Öffnen aufgerufen → kein doppeltes Erstellen nötig.
+    let menuRef: { open(): void; close(): void } | null = null;
+    this.skillBar = createSkillBar(container, () => menuRef?.open());
+    menuRef = createSkillMenu(this.skillBar);
+  }
+
+  /** Spiel für UI pausieren (ohne Pause-Overlay) */
+  pauseForUI() {
+    this.gamePaused = true;
+    this.physics.pause();
+  }
+
+  /** Spiel nach UI-Schließen fortsetzen */
+  resumeForUI() {
+    this.gamePaused = false;
+    this.physics.resume();
   }
 
   // ----------------------------------------------------------

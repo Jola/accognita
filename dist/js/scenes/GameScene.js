@@ -13,6 +13,8 @@ import { combineSkills, getDiscoveredSkillsSorted, getXpProgress, isMaxLevel, } 
 import { absorbEntity, analyzeEntity, findNearestEntity, processRespawns, calcSuccessChance, } from "../systems/EntitySystem.js";
 import { useGrow, getMaterialList, } from "../systems/MaterialSystem.js";
 import { createJoystick } from "../ui/Joystick.js";
+import { createSkillBar } from "../ui/SkillBar.js";
+import { createSkillMenu } from "../ui/SkillMenu.js";
 import { calcEntityAi, tickAttackCooldown, setAttackCooldown, resetAi, } from "../systems/AiSystem.js";
 import { playerAttack, entityAttack, canActivateSkill, consumeSkill, calcDashDistance, executeCheckpoint, regenMp, } from "../systems/CombatSystem.js";
 import { processTicks, triggerAuras, applyEffect, removeExpiredEffects, syncPassiveEffects, } from "../systems/StatusEffectSystem.js";
@@ -51,6 +53,8 @@ export class GameScene extends Phaser.Scene {
         syncPassiveEffects(this.gameState.player);
         window.gameState = this.gameState;
         window.gameScene = this;
+        window.__ALL_SKILLS = ALL_SKILLS;
+        this.setupSkillBar();
         this.cameras.main.startFollow(this.slimeGraphic, true, 0.1, 0.1);
         this.cameras.main.setZoom(1.5);
         updateUI(this.gameState);
@@ -274,6 +278,29 @@ export class GameScene extends Phaser.Scene {
         const ov = document.getElementById("pauseOverlay");
         if (ov)
             ov.classList.remove("visible");
+    }
+    // ----------------------------------------------------------
+    // SKILL BAR + SKILL MENU
+    // ----------------------------------------------------------
+    setupSkillBar() {
+        const container = document.getElementById("skillBarWrap");
+        if (!container)
+            return;
+        // Closure: menuRef wird erst nach createSkillMenu gesetzt,
+        // aber erst beim ersten Öffnen aufgerufen → kein doppeltes Erstellen nötig.
+        let menuRef = null;
+        this.skillBar = createSkillBar(container, () => menuRef?.open());
+        menuRef = createSkillMenu(this.skillBar);
+    }
+    /** Spiel für UI pausieren (ohne Pause-Overlay) */
+    pauseForUI() {
+        this.gamePaused = true;
+        this.physics.pause();
+    }
+    /** Spiel nach UI-Schließen fortsetzen */
+    resumeForUI() {
+        this.gamePaused = false;
+        this.physics.resume();
     }
     // ----------------------------------------------------------
     // GLOBALE FUNKTIONEN (für HTML-Buttons)

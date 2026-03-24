@@ -11,6 +11,7 @@ export declare class GameScene extends Phaser.Scene {
     private lastNearbyId;
     private gamePaused;
     private hpBarGraphics;
+    private skillBar;
     constructor();
     create(): void;
     private createWorld;
@@ -21,6 +22,11 @@ export declare class GameScene extends Phaser.Scene {
     private enterFullscreen;
     private pauseGame;
     private resumeGame;
+    private setupSkillBar;
+    /** Spiel für UI pausieren (ohne Pause-Overlay) */
+    pauseForUI(): void;
+    /** Spiel nach UI-Schließen fortsetzen */
+    resumeForUI(): void;
     private setupGlobalFunctions;
     update(_time: number, delta: number): void;
     private handleMovement;
