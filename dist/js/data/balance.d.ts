@@ -6,6 +6,10 @@ export declare const BASE_XP_ANALYZE = 1;
 export declare const BASE_XP_CORE = 1;
 /** Skalierungsfaktor für XP-Schwellen pro Level-Up */
 export declare const XP_LEVEL_MULTIPLIER = 1.5;
+/** XP für den ersten Level-Up (Lv1 → Lv2) */
+export declare const PLAYER_LEVEL_BASE_XP = 200;
+/** Faktor mit dem die XP-Schwelle pro Level steigt (Basis 2 → verdoppelt sich) */
+export declare const PLAYER_LEVEL_XP_MULTIPLIER = 2;
 /** Exponent der Kurve — höher = steiler (mehr Unterschied zwischen leicht/schwer) */
 export declare const XP_CURVE_EXPONENT = 1.5;
 /** Untergrenze des Multiplikators (damit nie ganz 0 bei fast-grayed Gegnern) */

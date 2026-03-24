@@ -17,6 +17,8 @@ import {
   BASE_XP_ANALYZE,
   BASE_XP_CORE,
   XP_LEVEL_MULTIPLIER,
+  PLAYER_LEVEL_BASE_XP,
+  PLAYER_LEVEL_XP_MULTIPLIER,
   scaleXp,
 } from "../data/balance";
 
@@ -294,4 +296,52 @@ export function gainSkillXp(
   }
 
   return { leveledUp, newLevel };
+}
+
+// -----------------------------------------------------------
+// SPIELER-HAUPTLEVEL
+// -----------------------------------------------------------
+
+/**
+ * Berechnet Level, XP im aktuellen Level und XP für den nächsten Level-Up
+ * auf Basis der kumulativen Gesamt-XP des Spielers.
+ */
+export function calcPlayerLevel(
+  totalXp: number
+): { level: number; xpIntoLevel: number; xpToNext: number } {
+  let level = 1;
+  let remaining = totalXp;
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const threshold = Math.floor(
+      PLAYER_LEVEL_BASE_XP * Math.pow(PLAYER_LEVEL_XP_MULTIPLIER, level - 1)
+    );
+    if (remaining < threshold) {
+      return { level, xpIntoLevel: remaining, xpToNext: threshold };
+    }
+    remaining -= threshold;
+    level++;
+  }
+}
+
+/**
+ * Summiert alle totalXpEarned aus Skills und Kern-Fähigkeiten,
+ * schreibt das Ergebnis in player.totalExp und aktualisiert player.level.
+ * Gibt zurück ob ein Level-Up eingetreten ist.
+ */
+export function updatePlayerLevel(
+  player: PlayerState
+): { leveledUp: boolean; newLevel?: number } {
+  let totalXp =
+    player.coreAbilities.absorb.totalXpEarned +
+    player.coreAbilities.analyze.totalXpEarned;
+  for (const inst of player.discoveredSkills.values()) {
+    totalXp += inst.totalXpEarned;
+  }
+  player.totalExp = totalXp;
+
+  const { level } = calcPlayerLevel(totalXp);
+  const leveledUp = level > player.level;
+  if (leveledUp) player.level = level;
+  return { leveledUp, newLevel: leveledUp ? level : undefined };
 }

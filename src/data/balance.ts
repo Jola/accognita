@@ -35,6 +35,20 @@ export const BASE_XP_CORE = 1;
 export const XP_LEVEL_MULTIPLIER = 1.5;
 
 // -----------------------------------------------------------
+// SPIELER-HAUPTLEVEL
+// Wird aus der Summe aller totalXpEarned aller Skills +
+// Kern-Fähigkeiten berechnet.
+// xpNeeded(n→n+1) = floor(PLAYER_LEVEL_BASE_XP * PLAYER_LEVEL_XP_MULTIPLIER^(n-1))
+// Skaliert deutlich langsamer als Skill-Level.
+// -----------------------------------------------------------
+
+/** XP für den ersten Level-Up (Lv1 → Lv2) */
+export const PLAYER_LEVEL_BASE_XP = 200;
+
+/** Faktor mit dem die XP-Schwelle pro Level steigt (Basis 2 → verdoppelt sich) */
+export const PLAYER_LEVEL_XP_MULTIPLIER = 2.0;
+
+// -----------------------------------------------------------
 // XP-SKALIERUNG: ENTITY-LEVEL vs. SKILL-LEVEL
 //
 // Option D: clamp( (entityLevel / skillLevel)^EXPONENT, MIN, MAX )

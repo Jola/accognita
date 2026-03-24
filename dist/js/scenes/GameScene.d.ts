@@ -46,6 +46,8 @@ export declare class GameScene extends Phaser.Scene {
     private checkPlayerDeath;
     /** Level-Up nach gainSkillXp() verarbeiten: Log + syncPassiveEffects */
     private skillLevelUp;
+    /** Hauptlevel neu berechnen und bei Level-Up loggen */
+    private checkPlayerLevelUp;
     private showDamageNumber;
     activateSkill(skillId: string): void;
     private checkNearbyEntity;

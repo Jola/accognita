@@ -17,4 +17,22 @@ export declare function gainSkillXp(player: PlayerState, skillId: string, amount
     leveledUp: boolean;
     newLevel?: number;
 };
+/**
+ * Berechnet Level, XP im aktuellen Level und XP für den nächsten Level-Up
+ * auf Basis der kumulativen Gesamt-XP des Spielers.
+ */
+export declare function calcPlayerLevel(totalXp: number): {
+    level: number;
+    xpIntoLevel: number;
+    xpToNext: number;
+};
+/**
+ * Summiert alle totalXpEarned aus Skills und Kern-Fähigkeiten,
+ * schreibt das Ergebnis in player.totalExp und aktualisiert player.level.
+ * Gibt zurück ob ein Level-Up eingetreten ist.
+ */
+export declare function updatePlayerLevel(player: PlayerState): {
+    leveledUp: boolean;
+    newLevel?: number;
+};
 //# sourceMappingURL=SkillSystem.d.ts.map

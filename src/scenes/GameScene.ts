@@ -21,6 +21,8 @@ import {
   getXpProgress,
   isMaxLevel,
   gainSkillXp,
+  updatePlayerLevel,
+  calcPlayerLevel,
 } from "../systems/SkillSystem.js";
 import {
   absorbEntity,
@@ -715,15 +717,24 @@ export class GameScene extends Phaser.Scene {
     result: { leveledUp: boolean; newLevel?: number },
     skillId: string
   ) {
-    if (!result.leveledUp) return;
-    const def = ALL_SKILLS.get(skillId);
-    const icon = def?.icon ?? "⚡";
-    addLog(`⬆️ ${icon} ${def?.name ?? skillId} → Lv.${result.newLevel}!`, "system");
-    // Passive Skills: StatusEffekte sofort aktualisieren
-    if (def?.activation === "passive") {
-      syncPassiveEffects(this.gameState.player);
+    if (result.leveledUp) {
+      const def = ALL_SKILLS.get(skillId);
+      const icon = def?.icon ?? "⚡";
+      addLog(`⬆️ ${icon} ${def?.name ?? skillId} → Lv.${result.newLevel}!`, "system");
+      if (def?.activation === "passive") {
+        syncPassiveEffects(this.gameState.player);
+      }
     }
+    this.checkPlayerLevelUp();
     updateUI(this.gameState);
+  }
+
+  /** Hauptlevel neu berechnen und bei Level-Up loggen */
+  private checkPlayerLevelUp() {
+    const r = updatePlayerLevel(this.gameState.player);
+    if (r.leveledUp) {
+      addLog(`🌟 Charakter → Lv.${r.newLevel}!`, "levelup");
+    }
   }
 
   private showDamageNumber(x: number, y: number, dmg: number, color: string) {
@@ -850,6 +861,7 @@ export class GameScene extends Phaser.Scene {
       this.lastNearbyId = null;
       updateNearbyPanel(undefined, this.gameState);
     }
+    this.checkPlayerLevelUp();
     updateUI(this.gameState);
   }
 
@@ -865,6 +877,7 @@ export class GameScene extends Phaser.Scene {
     );
     showInteractionResult(result, this.gameState);
     if (result.success) syncPassiveEffects(this.gameState.player);
+    this.checkPlayerLevelUp();
     updateUI(this.gameState);
   }
 
@@ -877,6 +890,7 @@ export class GameScene extends Phaser.Scene {
   doCombine(skillIdA: string, skillIdB: string) {
     const result = combineSkills(this.gameState.player, skillIdA, skillIdB);
     showCombineResult(result);
+    this.checkPlayerLevelUp();
     updateUI(this.gameState);
     return result;
   }

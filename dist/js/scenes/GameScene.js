@@ -9,7 +9,7 @@ import { createInitialGameState } from "../types/GameState.js";
 import { ALL_SKILLS } from "../data/skills.js";
 import { MATERIAL_MAP } from "../data/materials.js";
 import { ENTITY_MAP } from "../data/entities.js";
-import { combineSkills, getDiscoveredSkillsSorted, getXpProgress, isMaxLevel, gainSkillXp, } from "../systems/SkillSystem.js";
+import { combineSkills, getDiscoveredSkillsSorted, getXpProgress, isMaxLevel, gainSkillXp, updatePlayerLevel, } from "../systems/SkillSystem.js";
 import { absorbEntity, analyzeEntity, findNearestEntity, processRespawns, calcSuccessChance, } from "../systems/EntitySystem.js";
 import { useGrow, getMaterialList, } from "../systems/MaterialSystem.js";
 import { createJoystick } from "../ui/Joystick.js";
@@ -600,16 +600,23 @@ export class GameScene extends Phaser.Scene {
     }
     /** Level-Up nach gainSkillXp() verarbeiten: Log + syncPassiveEffects */
     skillLevelUp(result, skillId) {
-        if (!result.leveledUp)
-            return;
-        const def = ALL_SKILLS.get(skillId);
-        const icon = def?.icon ?? "⚡";
-        addLog(`⬆️ ${icon} ${def?.name ?? skillId} → Lv.${result.newLevel}!`, "system");
-        // Passive Skills: StatusEffekte sofort aktualisieren
-        if (def?.activation === "passive") {
-            syncPassiveEffects(this.gameState.player);
+        if (result.leveledUp) {
+            const def = ALL_SKILLS.get(skillId);
+            const icon = def?.icon ?? "⚡";
+            addLog(`⬆️ ${icon} ${def?.name ?? skillId} → Lv.${result.newLevel}!`, "system");
+            if (def?.activation === "passive") {
+                syncPassiveEffects(this.gameState.player);
+            }
         }
+        this.checkPlayerLevelUp();
         updateUI(this.gameState);
+    }
+    /** Hauptlevel neu berechnen und bei Level-Up loggen */
+    checkPlayerLevelUp() {
+        const r = updatePlayerLevel(this.gameState.player);
+        if (r.leveledUp) {
+            addLog(`🌟 Charakter → Lv.${r.newLevel}!`, "levelup");
+        }
     }
     showDamageNumber(x, y, dmg, color) {
         const txt = this.add
@@ -716,6 +723,7 @@ export class GameScene extends Phaser.Scene {
             this.lastNearbyId = null;
             updateNearbyPanel(undefined, this.gameState);
         }
+        this.checkPlayerLevelUp();
         updateUI(this.gameState);
     }
     doAnalyze() {
@@ -727,6 +735,7 @@ export class GameScene extends Phaser.Scene {
         showInteractionResult(result, this.gameState);
         if (result.success)
             syncPassiveEffects(this.gameState.player);
+        this.checkPlayerLevelUp();
         updateUI(this.gameState);
     }
     doGrow() {
@@ -738,6 +747,7 @@ export class GameScene extends Phaser.Scene {
     doCombine(skillIdA, skillIdB) {
         const result = combineSkills(this.gameState.player, skillIdA, skillIdB);
         showCombineResult(result);
+        this.checkPlayerLevelUp();
         updateUI(this.gameState);
         return result;
     }

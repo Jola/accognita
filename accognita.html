@@ -372,7 +372,12 @@
     <div style="font-size:1.3rem;flex-shrink:0">🫧</div>
     <h1>Absorb &amp; Evolve</h1>
     <div class="hud-bar">
-      <div class="hud-stat"><span class="lbl">LVL</span><span class="val" id="ui-level">1</span></div>
+      <div class="hud-stat"><span class="lbl">LVL</span>
+        <div class="bar-wrap">
+          <div class="bar bar-exp"><div class="bar-fill" id="xp-bar-fill" style="width:0%"></div></div>
+          <span class="val" id="ui-level" style="font-size:.62rem">Lv.1</span>
+        </div>
+      </div>
       <div class="hud-stat"><span class="lbl">HP</span>
         <div class="bar-wrap">
           <div class="bar bar-hp"><div class="bar-fill" id="hp-bar-fill" style="width:100%"></div></div>
@@ -661,7 +666,7 @@
       xpThresholdMultiplier: 1.5,
       description: "Aktiv: Gezielter Biss \u2014 verursacht direkten Schaden (7 Basis). Ist Venom bekannt, hat jeder Biss zus\xE4tzliche Chance das Ziel zu vergiften. H\xF6heres Level = st\xE4rkerer Biss. MP-Kosten: 3.",
       mpCost: 3,
-      cooldownMs: 2e3,
+      cooldownMs: 1200,
       attackType: "melee",
       baseDamage: 7
     },
@@ -926,6 +931,8 @@
   var XP_CURVE_EXPONENT = 1.5;
   var XP_CURVE_MIN = 0.05;
   var XP_CURVE_MAX = 4;
+  var PLAYER_LEVEL_BASE_XP = 200;
+  var PLAYER_LEVEL_XP_MULTIPLIER = 2;
   function calcXpMultiplier(entityLevel, skillLevel) {
     const level = Math.max(1, skillLevel);
     const ratio = entityLevel / level;
@@ -1092,6 +1099,25 @@
       newLevel = instance.level;
     }
     return { leveledUp, newLevel };
+  }
+  function calcPlayerLevel(totalXp) {
+    let level = 1;
+    let remaining = totalXp;
+    while (true) {
+      const threshold = Math.floor(PLAYER_LEVEL_BASE_XP * Math.pow(PLAYER_LEVEL_XP_MULTIPLIER, level - 1));
+      if (remaining < threshold) return { level, xpIntoLevel: remaining, xpToNext: threshold };
+      remaining -= threshold;
+      level++;
+    }
+  }
+  function updatePlayerLevel(player) {
+    let totalXp = player.coreAbilities.absorb.totalXpEarned + player.coreAbilities.analyze.totalXpEarned;
+    for (const inst of player.discoveredSkills.values()) totalXp += inst.totalXpEarned;
+    player.totalExp = totalXp;
+    const { level } = calcPlayerLevel(totalXp);
+    const leveledUp = level > player.level;
+    if (leveledUp) player.level = level;
+    return { leveledUp, newLevel: leveledUp ? level : undefined };
   }
 
   // dist/js/systems/MaterialSystem.js
@@ -3033,15 +3059,20 @@
     }
     /** Level-Up nach gainSkillXp() verarbeiten: Log + syncPassiveEffects */
     skillLevelUp(result, skillId) {
-      if (!result.leveledUp)
-        return;
-      const def = ALL_SKILLS.get(skillId);
-      const icon = def?.icon ?? "\u26A1";
-      addLog(`\u2B06\uFE0F ${icon} ${def?.name ?? skillId} \u2192 Lv.${result.newLevel}!`, "system");
-      if (def?.activation === "passive") {
-        syncPassiveEffects(this.gameState.player);
+      if (result.leveledUp) {
+        const def = ALL_SKILLS.get(skillId);
+        const icon = def?.icon ?? "\u26A1";
+        addLog(`\u2B06\uFE0F ${icon} ${def?.name ?? skillId} \u2192 Lv.${result.newLevel}!`, "system");
+        if (def?.activation === "passive") {
+          syncPassiveEffects(this.gameState.player);
+        }
       }
+      this.checkPlayerLevelUp();
       updateUI(this.gameState);
+    }
+    checkPlayerLevelUp() {
+      const r = updatePlayerLevel(this.gameState.player);
+      if (r.leveledUp) addLog(`\u{1F31F} Charakter \u2192 Lv.${r.newLevel}!`, "levelup");
     }
     showDamageNumber(x, y, dmg, color) {
       const txt = this.add.text(x, y, `${Math.round(dmg)}`, {
@@ -3138,6 +3169,7 @@
         this.lastNearbyId = null;
         updateNearbyPanel(void 0, this.gameState);
       }
+      this.checkPlayerLevelUp();
       updateUI(this.gameState);
     }
     doAnalyze() {
@@ -3149,6 +3181,7 @@
       showInteractionResult(result, this.gameState);
       if (result.success)
         syncPassiveEffects(this.gameState.player);
+      this.checkPlayerLevelUp();
       updateUI(this.gameState);
     }
     doGrow() {
@@ -3160,6 +3193,7 @@
     doCombine(skillIdA, skillIdB) {
       const result = combineSkills(this.gameState.player, skillIdA, skillIdB);
       showCombineResult(result);
+      this.checkPlayerLevelUp();
       updateUI(this.gameState);
       return result;
     }
@@ -3179,7 +3213,9 @@
   };
   function updateUI(state) {
     const p = state.player;
-    setEl("ui-level", `Lv.${p.level}`);
+    const { xpIntoLevel, xpToNext } = calcPlayerLevel(p.totalExp);
+    setEl("ui-level", `Lv.${p.level} (${xpIntoLevel}/${xpToNext})`);
+    setStyle("xp-bar-fill", "width", `${xpIntoLevel / xpToNext * 100}%`);
     setEl("ui-hp", `${Math.floor(p.hp)}/${p.maxHp}`);
     setEl("ui-mp", `${p.mp}/${p.maxMp}`);
     setStyle("hp-bar-fill", "width", `${p.hp / p.maxHp * 100}%`);
