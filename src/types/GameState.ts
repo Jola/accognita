@@ -5,6 +5,7 @@
 
 import type { SkillInstance } from "./Skill";
 import type { EntityInstance } from "./Entity";
+import type { StatusEffect } from "./Combat";
 
 // -----------------------------------------------------------
 // CoreAbilityState: Zustand einer Kern-Fähigkeit (Analyze/Absorb)
@@ -49,6 +50,12 @@ export interface PlayerState {
 
   // Materialien-Inventar (materialId → Menge)
   materials: Map<string, number>;
+
+  // Kampfzustand (v0.3)
+  statusEffects: StatusEffect[];        // Aktive Effekte auf dem Spieler
+  skillCooldowns: Map<string, number>;  // skillId → expiresAt-Timestamp (ms)
+  spawnX: number;                       // Respawn-Punkt X (Checkpoint)
+  spawnY: number;                       // Respawn-Punkt Y (Checkpoint)
 
   // Statistiken
   totalAbsorbs: number;
@@ -117,6 +124,10 @@ export function createInitialGameState(): GameState {
       discoveredSkills: new Map(),
       activeSkillSlots: [null, null, null, null, null],
       materials: new Map(),
+      statusEffects: [],
+      skillCooldowns: new Map(),
+      spawnX: 400,
+      spawnY: 300,
       totalAbsorbs: 0,
       totalAbsorbFailures: 0,
       totalAnalyzes: 0,

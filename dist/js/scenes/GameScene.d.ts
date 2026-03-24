@@ -10,6 +10,7 @@ export declare class GameScene extends Phaser.Scene {
     private joy;
     private lastNearbyId;
     private gamePaused;
+    private hpBarGraphics;
     constructor();
     create(): void;
     private createWorld;
@@ -21,12 +22,16 @@ export declare class GameScene extends Phaser.Scene {
     private pauseGame;
     private resumeGame;
     private setupGlobalFunctions;
-    update(_time: number, _delta: number): void;
+    update(_time: number, delta: number): void;
     private handleMovement;
     private syncPlayerPosition;
     private updateEntityVisuals;
+    private processEntityAi;
+    private processCombatEffects;
+    private checkPlayerDeath;
+    private showDamageNumber;
+    activateSkill(skillId: string): void;
     private checkNearbyEntity;
-    private applyPassiveSkills;
     doAbsorb(): void;
     doAnalyze(): void;
     doGrow(): void;

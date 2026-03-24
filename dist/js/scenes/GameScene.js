@@ -13,6 +13,9 @@ import { combineSkills, getDiscoveredSkillsSorted, getXpProgress, isMaxLevel, } 
 import { absorbEntity, analyzeEntity, findNearestEntity, processRespawns, calcSuccessChance, } from "../systems/EntitySystem.js";
 import { useGrow, getMaterialList, } from "../systems/MaterialSystem.js";
 import { createJoystick } from "../ui/Joystick.js";
+import { calcEntityAi, tickAttackCooldown, setAttackCooldown, resetAi, } from "../systems/AiSystem.js";
+import { playerAttack, entityAttack, canActivateSkill, consumeSkill, calcDashDistance, executeCheckpoint, regenMp, } from "../systems/CombatSystem.js";
+import { processTicks, triggerAuras, applyEffect, removeExpiredEffects, syncPassiveEffects, } from "../systems/StatusEffectSystem.js";
 // ============================================================
 // BOOT SCENE
 // ============================================================
@@ -42,6 +45,10 @@ export class GameScene extends Phaser.Scene {
         this.setupJoystick();
         this.setupFullscreen();
         this.setupGlobalFunctions();
+        // HP-Bar-Layer über allem (depth: 10)
+        this.hpBarGraphics = this.add.graphics().setDepth(10);
+        // Passive Skills als permanente StatusEffekte initialisieren
+        syncPassiveEffects(this.gameState.player);
         window.gameState = this.gameState;
         window.gameScene = this;
         this.cameras.main.startFollow(this.slimeGraphic, true, 0.1, 0.1);
@@ -178,8 +185,11 @@ export class GameScene extends Phaser.Scene {
                 definitionId: p.defId,
                 x: p.x,
                 y: p.y,
-                currentHp: def.hp,
+                currentHp: def.hp ?? 0,
                 isAlive: true,
+                isAggro: false,
+                statusEffects: [],
+                attackCooldownRemaining: 0,
             };
             this.gameState.world.entities.set(instanceId, instance);
             const text = this.add
@@ -289,14 +299,16 @@ export class GameScene extends Phaser.Scene {
     // ----------------------------------------------------------
     // GAME LOOP
     // ----------------------------------------------------------
-    update(_time, _delta) {
+    update(_time, delta) {
         if (this.gamePaused)
             return;
         this.handleMovement();
         this.syncPlayerPosition();
+        this.processEntityAi(delta);
+        this.processCombatEffects(delta);
         this.updateEntityVisuals();
         this.checkNearbyEntity();
-        this.applyPassiveSkills(_delta);
+        this.checkPlayerDeath();
         processRespawns(this.gameState.world);
     }
     handleMovement() {
@@ -316,21 +328,213 @@ export class GameScene extends Phaser.Scene {
         this.gameState.player.y = this.slimeGraphic.y;
     }
     updateEntityVisuals() {
+        this.hpBarGraphics.clear();
         for (const [id, instance] of this.gameState.world.entities) {
             const sprite = this.entitySprites.get(id);
             if (!sprite)
                 continue;
             if (!instance.isAlive) {
                 sprite.setAlpha(0.2);
+                continue;
             }
-            else if (instance.isAggro) {
-                sprite.setTint(0xff4444); // Roter Tint bei Aggro
+            if (instance.isAggro) {
+                sprite.setTint(0xff4444);
             }
             else {
                 sprite.clearTint();
                 sprite.setAlpha(1.0);
             }
+            // HP-Balken (nur bei Schaden oder Aggro)
+            const def = ENTITY_MAP.get(instance.definitionId);
+            if (def && def.hp && (instance.currentHp < def.hp || instance.isAggro)) {
+                const ratio = Math.max(0, instance.currentHp / def.hp);
+                const bw = 30;
+                const bh = 4;
+                const bx = instance.x - bw / 2;
+                const by = instance.y - 26;
+                this.hpBarGraphics.fillStyle(0x222222, 0.8);
+                this.hpBarGraphics.fillRect(bx, by, bw, bh);
+                const color = ratio > 0.5 ? 0x44cc44 : ratio > 0.25 ? 0xddaa00 : 0xcc2222;
+                this.hpBarGraphics.fillStyle(color, 1);
+                this.hpBarGraphics.fillRect(bx, by, Math.round(bw * ratio), bh);
+            }
         }
+    }
+    // ----------------------------------------------------------
+    // KAMPF-LOOP
+    // ----------------------------------------------------------
+    processEntityAi(delta) {
+        const now = Date.now();
+        const px = this.gameState.player.x;
+        const py = this.gameState.player.y;
+        for (const [id, instance] of this.gameState.world.entities) {
+            if (!instance.isAlive)
+                continue;
+            const def = ENTITY_MAP.get(instance.definitionId);
+            if (!def)
+                continue;
+            tickAttackCooldown(instance, delta);
+            const frame = calcEntityAi(def, instance, px, py, now);
+            if (frame.becameAggro) {
+                addLog(`${def.icon} ${def.name} wird aggressiv!`, "aggro");
+            }
+            if (frame.lostAggro) {
+                instance.isAggro = false;
+            }
+            // Entity bewegen
+            if ((frame.vx !== 0 || frame.vy !== 0) && instance.isAlive) {
+                instance.x += frame.vx * (delta / 1000);
+                instance.y += frame.vy * (delta / 1000);
+                const sprite = this.entitySprites.get(id);
+                if (sprite) {
+                    sprite.x = instance.x;
+                    sprite.y = instance.y;
+                }
+            }
+            // Entity greift an
+            if (frame.wantToAttack) {
+                setAttackCooldown(instance, def);
+                const result = entityAttack(def, instance, this.gameState.player);
+                if (result.hit) {
+                    this.gameState.player.hp = Math.max(0, this.gameState.player.hp - result.damageDealt);
+                    for (const effect of result.statusApplied) {
+                        applyEffect(this.gameState.player, effect);
+                    }
+                    const reflectDmg = triggerAuras(this.gameState.player);
+                    if (reflectDmg > 0) {
+                        instance.currentHp = Math.max(0, instance.currentHp - reflectDmg);
+                        this.showDamageNumber(instance.x, instance.y - 20, reflectDmg, "#ff8800");
+                    }
+                    addLog(result.message, "aggro");
+                    this.showDamageNumber(px, py - 30, result.damageDealt, "#ff4444");
+                    updateUI(this.gameState);
+                }
+            }
+        }
+    }
+    processCombatEffects(delta) {
+        const now = Date.now();
+        // Spieler-Effekte
+        const playerHpDelta = processTicks(this.gameState.player, now);
+        if (playerHpDelta !== 0) {
+            this.gameState.player.hp = Math.max(0, Math.min(this.gameState.player.maxHp, this.gameState.player.hp + playerHpDelta));
+            if (playerHpDelta < 0) {
+                this.showDamageNumber(this.gameState.player.x, this.gameState.player.y - 30, -playerHpDelta, "#aa44ff");
+            }
+            updateUI(this.gameState);
+        }
+        removeExpiredEffects(this.gameState.player, now);
+        // Entity-Effekte — processTicks erwartet { hp, maxHp } → Wrapper
+        for (const instance of this.gameState.world.entities.values()) {
+            if (!instance.isAlive)
+                continue;
+            const def = ENTITY_MAP.get(instance.definitionId);
+            const wrapper = {
+                statusEffects: instance.statusEffects,
+                hp: instance.currentHp,
+                maxHp: def?.hp ?? 0,
+            };
+            const hpDelta = processTicks(wrapper, now);
+            if (hpDelta !== 0) {
+                instance.currentHp = Math.max(0, instance.currentHp + hpDelta);
+                if (hpDelta < 0) {
+                    this.showDamageNumber(instance.x, instance.y - 20, -hpDelta, "#44ff88");
+                }
+                if (instance.currentHp <= 0) {
+                    instance.isAlive = false;
+                    resetAi(instance);
+                    if (def)
+                        addLog(`${def.icon} ${def.name} wurde vernichtet!`, "system");
+                }
+            }
+            removeExpiredEffects(instance, now);
+        }
+        // MP-Regen (1 MP/s)
+        regenMp(this.gameState.player, delta);
+    }
+    checkPlayerDeath() {
+        if (this.gameState.player.hp > 0)
+            return;
+        executeCheckpoint(this.gameState.player);
+        syncPassiveEffects(this.gameState.player);
+        for (const instance of this.gameState.world.entities.values()) {
+            resetAi(instance);
+        }
+        this.slimeGraphic.setPosition(this.gameState.player.x, this.gameState.player.y);
+        this.cameras.main.flash(400, 255, 50, 50);
+        addLog("💀 Besiegt! Checkpoint — HP/MP wiederhergestellt.", "system");
+        updateUI(this.gameState);
+    }
+    showDamageNumber(x, y, dmg, color) {
+        const txt = this.add
+            .text(x, y, `${Math.round(dmg)}`, {
+            fontSize: "13px",
+            color,
+            fontStyle: "bold",
+            stroke: "#000000",
+            strokeThickness: 3,
+        })
+            .setOrigin(0.5)
+            .setDepth(20);
+        this.tweens.add({
+            targets: txt,
+            y: y - 38,
+            alpha: 0,
+            duration: 900,
+            ease: "Power1",
+            onComplete: () => txt.destroy(),
+        });
+    }
+    activateSkill(skillId) {
+        const check = canActivateSkill(this.gameState.player, skillId);
+        if (!check.ok) {
+            showToast(check.reason ?? "Skill nicht verfügbar.", "system");
+            return;
+        }
+        consumeSkill(this.gameState.player, skillId);
+        const skillDef = ALL_SKILLS.get(skillId);
+        if (skillDef?.attackType === "dash") {
+            const dist = calcDashDistance(this.gameState.player, skillId);
+            const dx = this.joy.active ? this.joy.dx : 0;
+            const dy = this.joy.active ? this.joy.dy : 0;
+            const len = Math.hypot(dx, dy);
+            if (len > 0.1) {
+                const nx = dx / len;
+                const ny = dy / len;
+                this.slimeGraphic.setPosition(Phaser.Math.Clamp(this.slimeGraphic.x + nx * dist, 0, 1600), Phaser.Math.Clamp(this.slimeGraphic.y + ny * dist, 0, 1200));
+            }
+            showToast(`🦘 Sprung! (${dist}px)`, "system");
+            updateUI(this.gameState);
+            return;
+        }
+        const target = this.lastNearbyId
+            ? this.gameState.world.entities.get(this.lastNearbyId)
+            : null;
+        if (!target || !target.isAlive) {
+            showToast("Kein Ziel in Reichweite.", "system");
+            updateUI(this.gameState);
+            return;
+        }
+        const result = playerAttack(this.gameState.player, target, skillId);
+        if (result.hit) {
+            target.currentHp = Math.max(0, target.currentHp - result.damageDealt);
+            for (const effect of result.statusApplied) {
+                applyEffect(target, effect);
+            }
+            this.showDamageNumber(target.x, target.y - 20, result.damageDealt, "#ffffff");
+            if (target.currentHp <= 0) {
+                target.isAlive = false;
+                resetAi(target);
+                const def = ENTITY_MAP.get(target.definitionId);
+                if (def)
+                    addLog(`${def.icon} ${def.name} wurde besiegt!`, "system");
+            }
+            addLog(result.message, "absorb");
+        }
+        else {
+            showToast(result.message, "system");
+        }
+        updateUI(this.gameState);
     }
     checkNearbyEntity() {
         const nearest = findNearestEntity(this.gameState.player, this.gameState.world, 100);
@@ -338,18 +542,6 @@ export class GameScene extends Phaser.Scene {
         if (nearestId !== this.lastNearbyId) {
             this.lastNearbyId = nearestId;
             updateNearbyPanel(nearest ? ENTITY_MAP.get(nearest.definitionId) : undefined, this.gameState);
-        }
-    }
-    // Photosynthesis: passiver HP-Regen
-    applyPassiveSkills(delta) {
-        const photoSkill = this.gameState.player.discoveredSkills.get("photosynthesis");
-        if (!photoSkill)
-            return;
-        const regenPerMs = (0.01 * photoSkill.level) / 1000;
-        const regen = regenPerMs * delta;
-        const p = this.gameState.player;
-        if (p.hp < p.maxHp) {
-            p.hp = Math.min(p.maxHp, p.hp + regen);
         }
     }
     // ----------------------------------------------------------
@@ -362,11 +554,12 @@ export class GameScene extends Phaser.Scene {
         }
         const result = absorbEntity(this.gameState.player, this.gameState.world, this.lastNearbyId);
         showInteractionResult(result, this.gameState);
-        updateUI(this.gameState);
         if (result.success) {
+            syncPassiveEffects(this.gameState.player);
             this.lastNearbyId = null;
             updateNearbyPanel(undefined, this.gameState);
         }
+        updateUI(this.gameState);
     }
     doAnalyze() {
         if (!this.lastNearbyId) {
@@ -375,6 +568,8 @@ export class GameScene extends Phaser.Scene {
         }
         const result = analyzeEntity(this.gameState.player, this.gameState.world, this.lastNearbyId);
         showInteractionResult(result, this.gameState);
+        if (result.success)
+            syncPassiveEffects(this.gameState.player);
         updateUI(this.gameState);
     }
     doGrow() {

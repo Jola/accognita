@@ -5,6 +5,7 @@
 // ============================================================
 
 import type { MaterialStack } from "./Material";
+import type { AttackType } from "./Combat";
 
 // Element-Typen — erweiterbar durch neue Einträge hier
 export type ElementType =
@@ -50,6 +51,7 @@ export interface SkillDefinition {
   baseDamage?: number;
   mpCost?: number;
   cooldownMs?: number;
+  attackType?: AttackType;  // Wie der Angriff ausgeführt wird
 
   // Materialkosten bei Aktivierung (z.B. grow)
   materialCost?: MaterialStack[];

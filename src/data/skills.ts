@@ -88,8 +88,9 @@ export const BASE_SKILLS: SkillDefinition[] = [
     xpThresholdMultiplier: 1.5,
     description:
       "Passiv: Zieht eine harte Chitinschicht über die Außenhaut. " +
-      "Reduziert eingehenden physischen Schaden. Höheres Level = stärkere Schutzwirkung. " +
+      "Reduziert eingehenden physischen Schaden um 10% + 5% pro Level. " +
       "Quelle: Ameisen (Lv1) und Spinnen (Lv2).",
+    // Kein Kampf-Direktangriff — wirkt als stat_mod StatusEffect
   },
   {
     id: "superstrength",
@@ -103,7 +104,8 @@ export const BASE_SKILLS: SkillDefinition[] = [
     xpThresholdMultiplier: 1.5,
     description:
       "Passiv: Ameisen tragen das 50-fache ihres Körpergewichts — der Slime übernimmt diese Stärke. " +
-      "Materialien werden in größerer Menge absorbiert. Höheres Level = höherer Mengenbonus.",
+      "Verstärkt den Nahkampf-Angriff des Slimes. Höheres Level = höherer Schadensbonus.",
+    // Wirkt als damageMult-Modifikator im CombatSystem
   },
   {
     id: "venom",
@@ -116,8 +118,9 @@ export const BASE_SKILLS: SkillDefinition[] = [
     baseXpThreshold: 15,
     xpThresholdMultiplier: 1.5,
     description:
-      "Passiv: Jeder Treffer des Slimes hat eine Chance, dem Ziel Gift zu injizieren. " +
-      "Gift verursacht Schaden über Zeit. Höheres Level = höhere Vergiftungschance und stärkeres Gift.",
+      "Passiv: Jeder Nahkampftreffer des Slimes hat eine Chance, dem Ziel Gift zu injizieren. " +
+      "Gift verursacht 2 Schaden/s für 4s. Höheres Level = höhere Chance und stärkeres Gift.",
+    // Appliziert DoT-StatusEffect auf getroffene Ziele
   },
   {
     id: "jump",
@@ -130,10 +133,11 @@ export const BASE_SKILLS: SkillDefinition[] = [
     baseXpThreshold: 12,
     xpThresholdMultiplier: 1.5,
     description:
-      "Schaltet die Fähigkeit zu Springen frei. Ohne diesen Skill kann der Slime nicht springen. " +
-      "Höheres Level = größere Sprunghöhe und -weite.",
+      "Aktiv: Springt 160px in Bewegungsrichtung — überwindet Hindernisse und erzeugt Distanz. " +
+      "Höheres Level = größere Sprungweite. MP-Kosten: 4.",
     mpCost: 4,
-    cooldownMs: 800,
+    cooldownMs: 1800,
+    attackType: "dash",
   },
   {
     id: "hemolymph",
@@ -147,7 +151,8 @@ export const BASE_SKILLS: SkillDefinition[] = [
     xpThresholdMultiplier: 1.5,
     description:
       "Passiv: Wird der Slime getroffen, gibt er bitteres Hämolymph ab — " +
-      "der Angreifer erleidet sofort Giftschaden. Höheres Level = stärkerer Rückschlag.",
+      "der Angreifer erleidet 2 Sofortschaden. Höheres Level = stärkerer Rückschlag.",
+    // Appliziert Aura-StatusEffect der bei jedem eingehenden Treffer feuert
   },
 ];
 
