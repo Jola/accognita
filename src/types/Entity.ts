@@ -4,6 +4,7 @@
 // ============================================================
 
 import type { MaterialDrop } from "./Material";
+import type { StatusEffect } from "./Combat";
 
 // Verhalten im Spiel — wie reagiert die Entity auf Nähe?
 export type EntityBehavior =
@@ -55,13 +56,16 @@ export interface EntityDefinition {
   materialDrops: MaterialDrop[];  // Leer für reine Kreaturen
 
   // Kampfwerte (v0.3)
-  hp?: number;
-  damage?: number;
-  speed?: number;
+  hp?: number;                   // Maximale Trefferpunkte
+  damage?: number;               // Schaden pro Angriff (Basiswert)
+  speed?: number;                // Bewegungsgeschwindigkeit (px/s)
+  attackRangePx?: number;        // Angriffs-Reichweite in Pixeln (default 60)
+  attackCooldownMs?: number;     // Millisekunden zwischen Angriffen (default 1500)
+  attackType?: "melee" | "ranged" | "charge";  // Angriffsart
 
   respawnTime: number;
   interactRadius: number;
-  aggroRadius?: number;
+  aggroRadius?: number;          // Ab dieser Distanz wird die Entity aggro (px)
 }
 
 // -----------------------------------------------------------
@@ -72,8 +76,10 @@ export interface EntityInstance {
   definitionId: string;
   x: number;
   y: number;
-  currentHp?: number;
+  currentHp: number;        // Aktuelle HP (wird bei Spawn aus Definition befüllt)
   isAlive: boolean;
   respawnAt?: number;       // Timestamp wenn absorbiert
-  isAggro?: boolean;        // Entity wurde durch Fehlschlag aggressiv
+  isAggro: boolean;         // Entity ist im Kampfmodus
+  statusEffects: StatusEffect[];       // Aktive Effekte auf dieser Entity
+  attackCooldownRemaining: number;     // ms bis zum nächsten Angriff
 }

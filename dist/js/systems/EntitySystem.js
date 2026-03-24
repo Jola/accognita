@@ -151,7 +151,9 @@ export function processRespawns(world) {
                 instance.isAlive = true;
                 instance.isAggro = false;
                 instance.respawnAt = undefined;
-                instance.currentHp = def.hp;
+                instance.currentHp = def.hp ?? 0;
+                instance.statusEffects = [];
+                instance.attackCooldownRemaining = 0;
                 respawned.push(id);
             }
         }

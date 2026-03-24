@@ -178,8 +178,11 @@ export class GameScene extends Phaser.Scene {
                 definitionId: p.defId,
                 x: p.x,
                 y: p.y,
-                currentHp: def.hp,
+                currentHp: def.hp ?? 0,
                 isAlive: true,
+                isAggro: false,
+                statusEffects: [],
+                attackCooldownRemaining: 0,
             };
             this.gameState.world.entities.set(instanceId, instance);
             const text = this.add

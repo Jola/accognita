@@ -1,4 +1,5 @@
 import type { MaterialDrop } from "./Material";
+import type { StatusEffect } from "./Combat";
 export type EntityBehavior = "passive" | "defensive" | "aggressive" | "territorial" | "rare";
 export type EntityDisposition = "neutral" | "hostile";
 export type EntityCategory = "creature" | "plant" | "mineral";
@@ -21,6 +22,9 @@ export interface EntityDefinition {
     hp?: number;
     damage?: number;
     speed?: number;
+    attackRangePx?: number;
+    attackCooldownMs?: number;
+    attackType?: "melee" | "ranged" | "charge";
     respawnTime: number;
     interactRadius: number;
     aggroRadius?: number;
@@ -30,9 +34,11 @@ export interface EntityInstance {
     definitionId: string;
     x: number;
     y: number;
-    currentHp?: number;
+    currentHp: number;
     isAlive: boolean;
     respawnAt?: number;
-    isAggro?: boolean;
+    isAggro: boolean;
+    statusEffects: StatusEffect[];
+    attackCooldownRemaining: number;
 }
 //# sourceMappingURL=Entity.d.ts.map

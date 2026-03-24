@@ -1,4 +1,5 @@
 import type { MaterialStack } from "./Material";
+import type { AttackType } from "./Combat";
 export type ElementType = "fire" | "water" | "earth" | "wind" | "slime" | "poison" | "dark" | "light" | "nature" | "none";
 export type SkillCategory = "core" | "basic" | "combo";
 export type SkillActivation = "active" | "passive";
@@ -16,6 +17,7 @@ export interface SkillDefinition {
     baseDamage?: number;
     mpCost?: number;
     cooldownMs?: number;
+    attackType?: AttackType;
     materialCost?: MaterialStack[];
     recipe?: [string, string];
 }

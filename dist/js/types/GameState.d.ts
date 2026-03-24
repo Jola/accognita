@@ -1,5 +1,6 @@
 import type { SkillInstance } from "./Skill";
 import type { EntityInstance } from "./Entity";
+import type { StatusEffect } from "./Combat";
 export interface CoreAbilityState {
     level: number;
     currentXp: number;
@@ -22,6 +23,10 @@ export interface PlayerState {
     discoveredSkills: Map<string, SkillInstance>;
     activeSkillSlots: (string | null)[];
     materials: Map<string, number>;
+    statusEffects: StatusEffect[];
+    skillCooldowns: Map<string, number>;
+    spawnX: number;
+    spawnY: number;
     totalAbsorbs: number;
     totalAbsorbFailures: number;
     totalAnalyzes: number;
