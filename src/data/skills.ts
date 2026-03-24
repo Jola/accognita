@@ -137,7 +137,7 @@ export const BASE_SKILLS: SkillDefinition[] = [
       "Ist Venom bekannt, hat jeder Biss zusätzliche Chance das Ziel zu vergiften. " +
       "Höheres Level = stärkerer Biss. MP-Kosten: 3.",
     mpCost: 3,
-    cooldownMs: 2000,
+    cooldownMs: 1200,
     attackType: "melee",
     baseDamage: 7,
   },
