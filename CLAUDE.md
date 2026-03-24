@@ -25,6 +25,7 @@ Current state: **v0.2** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/data/entities.ts` | All entity definitions |
 | `src/systems/SkillSystem.ts` | Pure skill logic — no Phaser, no DOM, fully testable |
 | `src/systems/EntitySystem.ts` | Absorb/Analyze/Respawn logic |
+| `src/ui/Joystick.ts` | Self-contained virtual joystick — DOM only, no Phaser |
 | `src/scenes/GameScene.ts` | Phaser scene — only file that knows about Phaser |
 | `tsconfig.json` | TypeScript compiler configuration |
 | `docs/GDD-00-Index.md` | Meta-document. Explains all GDD files and conventions. |
@@ -42,15 +43,17 @@ The most important rule: **systems/ and data/ have zero Phaser dependency.**
 ```
 types/   ←  data/  ←  systems/  ←  scenes/
                                       ↑
-                                  only layer
-                                  that knows
-                                  Phaser & DOM
+                         ui/      only layer
+                          ↑       that knows
+                       DOM-only   Phaser & DOM
+                       modules
 ```
 
 - `types/` — Pure TypeScript interfaces. No logic.
 - `data/` — Static definitions. Change values here for balancing.
 - `systems/` — Pure game logic. No rendering. Testable in isolation.
-- `scenes/` — Phaser + DOM glue. Calls systems, renders results.
+- `ui/` — Self-contained DOM components (e.g. Joystick). No Phaser.
+- `scenes/` — Phaser + DOM glue. Calls systems and ui modules, renders results.
 
 ---
 

@@ -33,6 +33,7 @@ import {
   getMaterialList,
 } from "../systems/MaterialSystem.js";
 import type { EntityInstance } from "../types/Entity.js";
+import { createJoystick, type JoystickState } from "../ui/Joystick.js";
 
 // ============================================================
 // BOOT SCENE
@@ -55,9 +56,7 @@ export class GameScene extends Phaser.Scene {
   private slimeGraphic!: any;
   private entitySprites: Map<string, any> = new Map();
 
-  // Joystick-Zustand (mobile)
-  private joy = { active: false, id: -1, cx: 0, cy: 0, dx: 0, dy: 0 };
-  private readonly JOY_RADIUS = 44;
+  private joy!: JoystickState;
 
   private lastNearbyId: string | null = null;
   private gamePaused = false;
@@ -272,59 +271,9 @@ export class GameScene extends Phaser.Scene {
   // JOYSTICK (Mobile)
   // ----------------------------------------------------------
   private setupJoystick() {
-    const jZone  = document.getElementById("joystickZone");
-    const jThumb = document.getElementById("joystickThumb");
-    if (!jZone || !jThumb) return;
-
-    const JR = this.JOY_RADIUS;
-
-    const moveJoy = (touch: Touch) => {
-      const rect = jZone.getBoundingClientRect();
-      const dx = touch.clientX - this.joy.cx;
-      const dy = touch.clientY - this.joy.cy;
-      const len = Math.hypot(dx, dy);
-      const capped = Math.min(len, JR);
-      const angle = Math.atan2(dy, dx);
-      this.joy.dx = (Math.cos(angle) * capped) / JR;
-      this.joy.dy = (Math.sin(angle) * capped) / JR;
-      jThumb.style.transform = `translate(${Math.cos(angle) * capped}px, ${Math.sin(angle) * capped}px)`;
-    };
-
-    jZone.addEventListener("touchstart", (e: TouchEvent) => {
-      e.preventDefault();
-      if (this.joy.active) return;
-      const t = e.changedTouches[0];
-      const rect = jZone.getBoundingClientRect();
-      this.joy = {
-        active: true,
-        id: t.identifier,
-        cx: rect.left + rect.width / 2,
-        cy: rect.top + rect.height / 2,
-        dx: 0, dy: 0,
-      };
-      moveJoy(t);
-    }, { passive: false });
-
-    jZone.addEventListener("touchmove", (e: TouchEvent) => {
-      e.preventDefault();
-      if (!this.joy.active) return;
-      for (const t of Array.from(e.changedTouches)) {
-        if (t.identifier === this.joy.id) moveJoy(t);
-      }
-    }, { passive: false });
-
-    const endJoy = (e: TouchEvent) => {
-      for (const t of Array.from(e.changedTouches)) {
-        if (t.identifier === this.joy.id) {
-          this.joy.active = false;
-          this.joy.dx = 0;
-          this.joy.dy = 0;
-          jThumb.style.transform = "translate(0,0)";
-        }
-      }
-    };
-    jZone.addEventListener("touchend",    endJoy, { passive: false });
-    jZone.addEventListener("touchcancel", endJoy, { passive: false });
+    const container = document.getElementById("touchControls");
+    if (!container) return;
+    this.joy = createJoystick(container);
   }
 
   // ----------------------------------------------------------

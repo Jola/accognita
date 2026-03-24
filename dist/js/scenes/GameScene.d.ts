@@ -8,7 +8,6 @@ export declare class GameScene extends Phaser.Scene {
     private slimeGraphic;
     private entitySprites;
     private joy;
-    private readonly JOY_RADIUS;
     private lastNearbyId;
     private gamePaused;
     constructor();
