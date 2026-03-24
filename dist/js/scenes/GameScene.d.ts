@@ -7,10 +7,6 @@ export declare class GameScene extends Phaser.Scene {
     private gameState;
     private slimeGraphic;
     private entitySprites;
-    private cursors;
-    private wasdKeys;
-    private eKey;
-    private qKey;
     private joy;
     private readonly JOY_RADIUS;
     private lastNearbyId;
@@ -20,7 +16,6 @@ export declare class GameScene extends Phaser.Scene {
     private createWorld;
     private createPlayer;
     private createEntities;
-    private createInput;
     private setupJoystick;
     private setupFullscreen;
     private enterFullscreen;
@@ -32,7 +27,6 @@ export declare class GameScene extends Phaser.Scene {
     private syncPlayerPosition;
     private updateEntityVisuals;
     private checkNearbyEntity;
-    private handleKeyboardInteraction;
     private applyPassiveSkills;
     doAbsorb(): void;
     doAnalyze(): void;
