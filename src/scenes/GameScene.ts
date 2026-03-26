@@ -23,6 +23,8 @@ import {
   gainSkillXp,
   updatePlayerLevel,
   calcPlayerLevel,
+  calcMaxHp,
+  calcMaxMp,
 } from "../systems/SkillSystem.js";
 import {
   absorbEntity,
@@ -450,6 +452,12 @@ export class GameScene extends Phaser.Scene {
     // Spieler-Sprite an gespeicherte Position
     this.slimeGraphic.setPosition(saved.player.x, saved.player.y);
 
+    // maxHp/maxMp aus Level neu berechnen (migriert alte Saves)
+    this.gameState.player.maxHp = calcMaxHp(saved.player.level);
+    this.gameState.player.maxMp = calcMaxMp(saved.player.level);
+    this.gameState.player.hp = Math.min(this.gameState.player.hp, this.gameState.player.maxHp);
+    this.gameState.player.mp = Math.min(this.gameState.player.mp, this.gameState.player.maxMp);
+
     // Passive Effekte neu aufbauen
     syncPassiveEffects(this.gameState.player);
 
@@ -733,7 +741,8 @@ export class GameScene extends Phaser.Scene {
   private checkPlayerLevelUp() {
     const r = updatePlayerLevel(this.gameState.player);
     if (r.leveledUp) {
-      addLog(`🌟 Charakter → Lv.${r.newLevel}!`, "levelup");
+      const p = this.gameState.player;
+      addLog(`🌟 Charakter → Lv.${r.newLevel}! (HP: ${p.maxHp} / MP: ${p.maxMp})`, "levelup");
     }
   }
 

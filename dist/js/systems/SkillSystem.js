@@ -4,7 +4,7 @@
 // ============================================================
 import { CORE_BASE_XP, CORE_XP_MULTIPLIER, CORE_MAX_LEVEL } from "../types/GameState";
 import { ALL_SKILLS, RECIPE_INDEX } from "../data/skills";
-import { BASE_XP_ABSORB, BASE_XP_ANALYZE, BASE_XP_CORE, XP_LEVEL_MULTIPLIER, PLAYER_LEVEL_BASE_XP, PLAYER_LEVEL_XP_MULTIPLIER, scaleXp, } from "../data/balance";
+import { BASE_XP_ABSORB, BASE_XP_ANALYZE, BASE_XP_CORE, XP_LEVEL_MULTIPLIER, PLAYER_LEVEL_BASE_XP, PLAYER_LEVEL_XP_MULTIPLIER, BASE_HP, HP_PER_LEVEL, BASE_MP, MP_PER_LEVEL, scaleXp, } from "../data/balance";
 // -----------------------------------------------------------
 // XP-SCHWELLEN-BERECHNUNG
 // -----------------------------------------------------------
@@ -229,6 +229,14 @@ export function calcPlayerLevel(totalXp) {
  * schreibt das Ergebnis in player.totalExp und aktualisiert player.level.
  * Gibt zurück ob ein Level-Up eingetreten ist.
  */
+/** Berechnet maxHp für ein gegebenes Spielerlevel */
+export function calcMaxHp(level) {
+    return BASE_HP + (level - 1) * HP_PER_LEVEL;
+}
+/** Berechnet maxMp für ein gegebenes Spielerlevel */
+export function calcMaxMp(level) {
+    return BASE_MP + (level - 1) * MP_PER_LEVEL;
+}
 export function updatePlayerLevel(player) {
     let totalXp = player.coreAbilities.absorb.totalXpEarned +
         player.coreAbilities.analyze.totalXpEarned;
@@ -238,8 +246,16 @@ export function updatePlayerLevel(player) {
     player.totalExp = totalXp;
     const { level } = calcPlayerLevel(totalXp);
     const leveledUp = level > player.level;
-    if (leveledUp)
+    if (leveledUp) {
         player.level = level;
+        const newMaxHp = calcMaxHp(level);
+        const newMaxMp = calcMaxMp(level);
+        // HP/MP proportional miterhöhen (volle Differenz als Bonus)
+        player.hp = Math.min(player.hp + (newMaxHp - player.maxHp), newMaxHp);
+        player.mp = Math.min(player.mp + (newMaxMp - player.maxMp), newMaxMp);
+        player.maxHp = newMaxHp;
+        player.maxMp = newMaxMp;
+    }
     return { leveledUp, newLevel: leveledUp ? level : undefined };
 }
 //# sourceMappingURL=SkillSystem.js.map

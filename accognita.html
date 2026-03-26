@@ -933,6 +933,12 @@
   var XP_CURVE_MAX = 4;
   var PLAYER_LEVEL_BASE_XP = 200;
   var PLAYER_LEVEL_XP_MULTIPLIER = 2;
+  var BASE_HP = 80;
+  var HP_PER_LEVEL = 15;
+  var BASE_MP = 40;
+  var MP_PER_LEVEL = 8;
+  function calcMaxHp(level) { return BASE_HP + (level - 1) * HP_PER_LEVEL; }
+  function calcMaxMp(level) { return BASE_MP + (level - 1) * MP_PER_LEVEL; }
   function calcXpMultiplier(entityLevel, skillLevel) {
     const level = Math.max(1, skillLevel);
     const ratio = entityLevel / level;
@@ -1116,7 +1122,15 @@
     player.totalExp = totalXp;
     const { level } = calcPlayerLevel(totalXp);
     const leveledUp = level > player.level;
-    if (leveledUp) player.level = level;
+    if (leveledUp) {
+      player.level = level;
+      const newMaxHp = calcMaxHp(level);
+      const newMaxMp = calcMaxMp(level);
+      player.hp  = Math.min(player.hp  + (newMaxHp - player.maxHp), newMaxHp);
+      player.mp  = Math.min(player.mp  + (newMaxMp - player.maxMp), newMaxMp);
+      player.maxHp = newMaxHp;
+      player.maxMp = newMaxMp;
+    }
     return { leveledUp, newLevel: leveledUp ? level : undefined };
   }
 
@@ -2839,6 +2853,11 @@
       }
       this.gameState.player = saved.player;
       this.slimeGraphic.setPosition(saved.player.x, saved.player.y);
+      // maxHp/maxMp aus Level neu berechnen (migriert alte Saves)
+      this.gameState.player.maxHp = calcMaxHp(saved.player.level);
+      this.gameState.player.maxMp = calcMaxMp(saved.player.level);
+      this.gameState.player.hp = Math.min(this.gameState.player.hp, this.gameState.player.maxHp);
+      this.gameState.player.mp = Math.min(this.gameState.player.mp, this.gameState.player.maxMp);
       syncPassiveEffects(this.gameState.player);
       if (this.skillBar && saved.player.activeSkillSlots) {
         for (let i = 0; i < 4; i++) {
@@ -3072,7 +3091,10 @@
     }
     checkPlayerLevelUp() {
       const r = updatePlayerLevel(this.gameState.player);
-      if (r.leveledUp) addLog(`\u{1F31F} Charakter \u2192 Lv.${r.newLevel}!`, "levelup");
+      if (r.leveledUp) {
+        const p = this.gameState.player;
+        addLog(`\u{1F31F} Charakter \u2192 Lv.${r.newLevel}! (HP: ${p.maxHp} / MP: ${p.maxMp})`, "levelup");
+      }
     }
     showDamageNumber(x, y, dmg, color) {
       const txt = this.add.text(x, y, `${Math.round(dmg)}`, {

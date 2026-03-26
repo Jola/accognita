@@ -10,6 +10,14 @@ export declare const XP_LEVEL_MULTIPLIER = 1.5;
 export declare const PLAYER_LEVEL_BASE_XP = 200;
 /** Faktor mit dem die XP-Schwelle pro Level steigt (Basis 2 → verdoppelt sich) */
 export declare const PLAYER_LEVEL_XP_MULTIPLIER = 2;
+/** Basis-HP bei Lv 1 */
+export declare const BASE_HP = 80;
+/** HP-Zuwachs pro Level-Up */
+export declare const HP_PER_LEVEL = 15;
+/** Basis-MP bei Lv 1 */
+export declare const BASE_MP = 40;
+/** MP-Zuwachs pro Level-Up */
+export declare const MP_PER_LEVEL = 8;
 /** Exponent der Kurve — höher = steiler (mehr Unterschied zwischen leicht/schwer) */
 export declare const XP_CURVE_EXPONENT = 1.5;
 /** Untergrenze des Multiplikators (damit nie ganz 0 bei fast-grayed Gegnern) */

@@ -19,6 +19,10 @@ import {
   XP_LEVEL_MULTIPLIER,
   PLAYER_LEVEL_BASE_XP,
   PLAYER_LEVEL_XP_MULTIPLIER,
+  BASE_HP,
+  HP_PER_LEVEL,
+  BASE_MP,
+  MP_PER_LEVEL,
   scaleXp,
 } from "../data/balance";
 
@@ -329,6 +333,16 @@ export function calcPlayerLevel(
  * schreibt das Ergebnis in player.totalExp und aktualisiert player.level.
  * Gibt zurück ob ein Level-Up eingetreten ist.
  */
+/** Berechnet maxHp für ein gegebenes Spielerlevel */
+export function calcMaxHp(level: number): number {
+  return BASE_HP + (level - 1) * HP_PER_LEVEL;
+}
+
+/** Berechnet maxMp für ein gegebenes Spielerlevel */
+export function calcMaxMp(level: number): number {
+  return BASE_MP + (level - 1) * MP_PER_LEVEL;
+}
+
 export function updatePlayerLevel(
   player: PlayerState
 ): { leveledUp: boolean; newLevel?: number } {
@@ -342,6 +356,15 @@ export function updatePlayerLevel(
 
   const { level } = calcPlayerLevel(totalXp);
   const leveledUp = level > player.level;
-  if (leveledUp) player.level = level;
+  if (leveledUp) {
+    player.level = level;
+    const newMaxHp = calcMaxHp(level);
+    const newMaxMp = calcMaxMp(level);
+    // HP/MP proportional miterhöhen (volle Differenz als Bonus)
+    player.hp  = Math.min(player.hp  + (newMaxHp - player.maxHp), newMaxHp);
+    player.mp  = Math.min(player.mp  + (newMaxMp - player.maxMp), newMaxMp);
+    player.maxHp = newMaxHp;
+    player.maxMp = newMaxMp;
+  }
   return { leveledUp, newLevel: leveledUp ? level : undefined };
 }

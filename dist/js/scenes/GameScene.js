@@ -9,7 +9,7 @@ import { createInitialGameState } from "../types/GameState.js";
 import { ALL_SKILLS } from "../data/skills.js";
 import { MATERIAL_MAP } from "../data/materials.js";
 import { ENTITY_MAP } from "../data/entities.js";
-import { combineSkills, getDiscoveredSkillsSorted, getXpProgress, isMaxLevel, gainSkillXp, updatePlayerLevel, } from "../systems/SkillSystem.js";
+import { combineSkills, getDiscoveredSkillsSorted, getXpProgress, isMaxLevel, gainSkillXp, updatePlayerLevel, calcMaxHp, calcMaxMp, } from "../systems/SkillSystem.js";
 import { absorbEntity, analyzeEntity, findNearestEntity, processRespawns, calcSuccessChance, } from "../systems/EntitySystem.js";
 import { useGrow, getMaterialList, } from "../systems/MaterialSystem.js";
 import { createJoystick } from "../ui/Joystick.js";
@@ -362,6 +362,11 @@ export class GameScene extends Phaser.Scene {
         this.gameState.player = saved.player;
         // Spieler-Sprite an gespeicherte Position
         this.slimeGraphic.setPosition(saved.player.x, saved.player.y);
+        // maxHp/maxMp aus Level neu berechnen (migriert alte Saves)
+        this.gameState.player.maxHp = calcMaxHp(saved.player.level);
+        this.gameState.player.maxMp = calcMaxMp(saved.player.level);
+        this.gameState.player.hp = Math.min(this.gameState.player.hp, this.gameState.player.maxHp);
+        this.gameState.player.mp = Math.min(this.gameState.player.mp, this.gameState.player.maxMp);
         // Passive Effekte neu aufbauen
         syncPassiveEffects(this.gameState.player);
         // SkillBar-Slots wiederherstellen
@@ -615,7 +620,8 @@ export class GameScene extends Phaser.Scene {
     checkPlayerLevelUp() {
         const r = updatePlayerLevel(this.gameState.player);
         if (r.leveledUp) {
-            addLog(`🌟 Charakter → Lv.${r.newLevel}!`, "levelup");
+            const p = this.gameState.player;
+            addLog(`🌟 Charakter → Lv.${r.newLevel}! (HP: ${p.maxHp} / MP: ${p.maxMp})`, "levelup");
         }
     }
     showDamageNumber(x, y, dmg, color) {

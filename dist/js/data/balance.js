@@ -39,6 +39,19 @@ export const PLAYER_LEVEL_BASE_XP = 200;
 /** Faktor mit dem die XP-Schwelle pro Level steigt (Basis 2 → verdoppelt sich) */
 export const PLAYER_LEVEL_XP_MULTIPLIER = 2.0;
 // -----------------------------------------------------------
+// SPIELER-VITALWERTE-SKALIERUNG
+// maxHp(level) = BASE_HP + (level - 1) * HP_PER_LEVEL
+// maxMp(level) = BASE_MP + (level - 1) * MP_PER_LEVEL
+// -----------------------------------------------------------
+/** Basis-HP bei Lv 1 */
+export const BASE_HP = 80;
+/** HP-Zuwachs pro Level-Up */
+export const HP_PER_LEVEL = 15;
+/** Basis-MP bei Lv 1 */
+export const BASE_MP = 40;
+/** MP-Zuwachs pro Level-Up */
+export const MP_PER_LEVEL = 8;
+// -----------------------------------------------------------
 // XP-SKALIERUNG: ENTITY-LEVEL vs. SKILL-LEVEL
 //
 // Option D: clamp( (entityLevel / skillLevel)^EXPONENT, MIN, MAX )

@@ -31,6 +31,10 @@ export declare function calcPlayerLevel(totalXp: number): {
  * schreibt das Ergebnis in player.totalExp und aktualisiert player.level.
  * Gibt zurück ob ein Level-Up eingetreten ist.
  */
+/** Berechnet maxHp für ein gegebenes Spielerlevel */
+export declare function calcMaxHp(level: number): number;
+/** Berechnet maxMp für ein gegebenes Spielerlevel */
+export declare function calcMaxMp(level: number): number;
 export declare function updatePlayerLevel(player: PlayerState): {
     leveledUp: boolean;
     newLevel?: number;
