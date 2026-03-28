@@ -21,17 +21,23 @@ Current state: **v0.3** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/types/Skill.ts` | TypeScript interfaces for skills |
 | `src/types/Entity.ts` | TypeScript interfaces for entities |
 | `src/types/GameState.ts` | Central game state interfaces |
+| `src/types/Combat.ts` | AttackType, StatusEffect, AttackResult, AiFrame interfaces |
+| `src/types/Material.ts` | Material and loot-drop interfaces |
 | `src/data/skills.ts` | All skill definitions and balancing values |
 | `src/data/entities.ts` | All entity definitions |
-| `src/types/Combat.ts` | AttackType, StatusEffect, AttackResult, AiFrame interfaces |
+| `src/data/materials.ts` | All material/loot definitions |
+| `src/data/balance.ts` | Central balancing constants (XP curves, damage, etc.) |
 | `src/systems/SkillSystem.ts` | Pure skill logic — no Phaser, no DOM, fully testable |
 | `src/systems/EntitySystem.ts` | Absorb/Analyze/Respawn logic |
 | `src/systems/StatusEffectSystem.ts` | DoT/HoT/Aura processing, passive skill sync |
 | `src/systems/CombatSystem.ts` | Damage calculation, skill dispatch, checkpoint logic |
 | `src/systems/AiSystem.ts` | Aggro, chase, attack-trigger (pure logic, no Phaser) |
+| `src/systems/MaterialSystem.ts` | Loot drop resolution and material inventory logic |
+| `src/systems/SaveSystem.ts` | Save/load game state via localStorage (3 slots) |
 | `src/ui/Joystick.ts` | Self-contained virtual joystick — DOM only, no Phaser |
 | `src/ui/SkillBar.ts` | Touch skill slots with cooldown display and long-press menu |
 | `src/ui/SkillMenu.ts` | Full-screen skill management overlay (pauses game) |
+| `src/ui/SaveMenu.ts` | Save/load slot UI overlay |
 | `src/scenes/GameScene.ts` | Phaser scene — only file that knows about Phaser |
 | `src/world/Chunk.ts` | Types: BiomeId, HeightLevel, ChunkDef, LoadedChunk, SpawnDef + constants |
 | `src/world/BiomeDefinitions.ts` | Zone layout, spawn tables, tile index mapping |
@@ -42,7 +48,7 @@ Current state: **v0.3** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `docs/GDD-00-Index.md` | Meta-document. Explains all GDD files and conventions. |
 | `docs/GDD-01-Hauptbeschreibung.md` | Vision, core loop, setting, progression. |
 | `docs/GDD-02-Skillsystem.md` | Skill discovery, leveling, combinations. |
-| `docs/GDD-03-Kampfsystem.md` | Combat design — v0.2 implemented. |
+| `docs/GDD-03-Kampfsystem.md` | Combat design — v0.3 implemented. |
 | `docs/GDD-04-LookAndFeel.md` | Colors, typography, UI layout, mobile/desktop, tech stack. |
 
 ---
@@ -104,11 +110,9 @@ types/   ←  data/  ←  systems/  ←  scenes/
 - Build output: `accognita.html` (root, single file, deployed via GitHub Pages)
 
 ## Planned (do not implement unless asked)
-- Combat system with active skill use (v0.3)
 - Isometric view (v0.4)
-- Save system / LocalStorage (v0.3, still undecided)
 - PWA / manifest.json (undecided)
-- Touch joystick for mobile (v0.3)
+- Material inventory UI (looted materials visible in-game)
 
 ---
 
@@ -118,6 +122,6 @@ types/   ←  data/  ←  systems/  ←  scenes/
 - Skill-Limit: Obergrenze für aktive Skills?
 - Kombinations-Rezepte: Sollen sie versteckt werden?
 - Mobile Tap: Direkt Absorb/Analyze, oder erst Kontextmenü?
-- Speichersystem: LocalStorage oder Server?
 - PWA: Ja oder Nein?
 - Balancing: XP-Kurven, Spawn-Dichte und Respawn-Zeiten noch nicht abgestimmt
+- Material-UI: Looted materials inventory anzeigen? (MaterialSystem existiert, UI fehlt)
