@@ -41,4 +41,12 @@ export declare function scaleXp(baseXp: number, entityLevel: number, skillLevel:
 export declare function calcSuccessChance(abilityLevel: number, entityLevel: number): number;
 /** Faktor der auf Skill-Drop-Chancen bei Analyze angewendet wird */
 export declare const ANALYZE_CHANCE_MODIFIER = 0.7;
+/** Welt-Radius des Slimes bei Level 1 (in World-Pixeln, TILE_SIZE=32) */
+export declare const PLAYER_WORLD_RADIUS_MIN = 2;
+/** Welt-Radius des Slimes ab Level PLAYER_SIZE_LEVEL_MAX */
+export declare const PLAYER_WORLD_RADIUS_MAX = 8;
+/** Level ab dem die maximale Größe erreicht wird */
+export declare const PLAYER_SIZE_LEVEL_MAX = 20;
+/** Konstante Bildschirm-Radius des Slimes in Pixeln (ändert sich nie) */
+export declare const PLAYER_SCREEN_RADIUS = 16;
 //# sourceMappingURL=balance.d.ts.map

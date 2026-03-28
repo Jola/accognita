@@ -66,6 +66,10 @@ export interface EntityDefinition {
   respawnTime: number;
   interactRadius: number;
   aggroRadius?: number;          // Ab dieser Distanz wird die Entity aggro (px)
+
+  /** Visuelle Weltgröße in World-Pixeln. Bestimmt wie groß das Icon dargestellt wird.
+   *  Kleines Insekt: 3–4, Mittelgroßes: 5–7. Default: 5 wenn nicht angegeben. */
+  worldSize?: number;
 }
 
 // -----------------------------------------------------------
