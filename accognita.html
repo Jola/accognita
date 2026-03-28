@@ -523,7 +523,6 @@
 <div class="notification" id="notification"></div>
 
 <script>
-
 "use strict";
 (() => {
   // dist/js/types/GameState.js
@@ -3798,12 +3797,15 @@
             for (const effect of result.statusApplied) {
               applyEffect(this.gameState.player, effect);
             }
-            this.skillLevelUp(gainSkillXp(this.gameState.player, "chitin_armor", 1), "chitin_armor");
+            const absorbed = Math.max(0, (def.damage ?? 1) - result.damageDealt);
+            if (absorbed > 0) {
+              this.skillLevelUp(gainSkillXp(this.gameState.player, "chitin_armor", absorbed), "chitin_armor");
+            }
             const reflectDmg = triggerAuras(this.gameState.player);
             if (reflectDmg > 0) {
               instance.currentHp = Math.max(0, instance.currentHp - reflectDmg);
               this.showDamageNumber(instance.x, instance.y, reflectDmg, "#ff8800");
-              this.skillLevelUp(gainSkillXp(this.gameState.player, "hemolymph", 2), "hemolymph");
+              this.skillLevelUp(gainSkillXp(this.gameState.player, "hemolymph", reflectDmg), "hemolymph");
               if (instance.currentHp <= 0) {
                 instance.isAlive = false;
                 instance.respawnAt = Date.now() + (def?.respawnTime ?? 60) * 1e3;
@@ -3878,7 +3880,7 @@
         if (playerHpDelta < 0) {
           this.showDamageNumber(this.gameState.player.x, this.gameState.player.y, -playerHpDelta, "#aa44ff");
         } else if (playerHpDelta > 0) {
-          this.skillLevelUp(gainSkillXp(this.gameState.player, "photosynthesis", 1), "photosynthesis");
+          this.skillLevelUp(gainSkillXp(this.gameState.player, "photosynthesis", playerHpDelta), "photosynthesis");
         }
         updateUI(this.gameState);
       }
@@ -3892,6 +3894,12 @@
           hp: instance.currentHp,
           maxHp: def?.hp ?? 0
         };
+        let venomXp = 0;
+        for (const effect of instance.statusEffects) {
+          if (effect.sourceSkillId === "venom" && effect.type === "dot" && effect.tickIntervalMs > 0 && now - effect.lastTickAt >= effect.tickIntervalMs) {
+            venomXp += effect.damagePerTick;
+          }
+        }
         const hpDelta = processTicks(wrapper, now);
         if (hpDelta !== 0) {
           instance.currentHp = Math.max(0, instance.currentHp + hpDelta);
@@ -3905,6 +3913,9 @@
             if (def)
               addLog(`${def.icon} ${def.name} wurde vernichtet!`, "system");
           }
+        }
+        if (venomXp > 0) {
+          this.skillLevelUp(gainSkillXp(this.gameState.player, "venom", venomXp), "venom");
         }
         removeExpiredEffects(instance, now);
       }
@@ -4018,11 +4029,8 @@
             addLog(`${def.icon} ${def.name} wurde besiegt!`, "system");
         }
         addLog(result.message, "absorb");
-        this.skillLevelUp(gainSkillXp(this.gameState.player, skillId, 2), skillId);
+        this.skillLevelUp(gainSkillXp(this.gameState.player, skillId, result.damageDealt), skillId);
         this.skillLevelUp(gainSkillXp(this.gameState.player, "superstrength", 1), "superstrength");
-        if (result.statusApplied.length > 0) {
-          this.skillLevelUp(gainSkillXp(this.gameState.player, "venom", 3), "venom");
-        }
       } else {
         showToast(result.message, "system");
       }
@@ -4330,6 +4338,7 @@ ${detail}` : ""}`, type);
     });
   });
 })();
+
 </script>
 
 </html>

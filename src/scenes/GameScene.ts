@@ -618,15 +618,18 @@ export class GameScene extends Phaser.Scene {
             applyEffect(this.gameState.player, effect);
           }
 
-          // Chitin Armor: XP für jeden eingesteckten Treffer
-          this.skillLevelUp(gainSkillXp(this.gameState.player, "chitin_armor", 1), "chitin_armor");
+          // Chitin Armor: XP = tatsächlich absorbierter Schaden
+          const absorbed = Math.max(0, (def.damage ?? 1) - result.damageDealt);
+          if (absorbed > 0) {
+            this.skillLevelUp(gainSkillXp(this.gameState.player, "chitin_armor", absorbed), "chitin_armor");
+          }
 
           const reflectDmg = triggerAuras(this.gameState.player);
           if (reflectDmg > 0) {
             instance.currentHp = Math.max(0, instance.currentHp - reflectDmg);
             this.showDamageNumber(instance.x, instance.y, reflectDmg, "#ff8800");
-            // Hemolymph: XP für jeden ausgelösten Rückschlag
-            this.skillLevelUp(gainSkillXp(this.gameState.player, "hemolymph", 2), "hemolymph");
+            // Hemolymph: XP = zurückgeworfener Schaden
+            this.skillLevelUp(gainSkillXp(this.gameState.player, "hemolymph", reflectDmg), "hemolymph");
             if (instance.currentHp <= 0) {
               instance.isAlive  = false;
               instance.respawnAt = Date.now() + (def?.respawnTime ?? 60) * 1000;
@@ -722,8 +725,8 @@ export class GameScene extends Phaser.Scene {
           -playerHpDelta, "#aa44ff"
         );
       } else if (playerHpDelta > 0) {
-        // Photosynthesis: XP pro Heilungs-Tick
-        this.skillLevelUp(gainSkillXp(this.gameState.player, "photosynthesis", 1), "photosynthesis");
+        // Photosynthesis: XP = regenerierte Lebenspunkte
+        this.skillLevelUp(gainSkillXp(this.gameState.player, "photosynthesis", playerHpDelta), "photosynthesis");
       }
       updateUI(this.gameState);
     }
@@ -738,6 +741,15 @@ export class GameScene extends Phaser.Scene {
         hp: instance.currentHp,
         maxHp: def?.hp ?? 0,
       };
+      // Venom-XP: Schaden fälliger Venom-Ticks zählen (vor processTicks, da lastTickAt danach aktualisiert wird)
+      let venomXp = 0;
+      for (const effect of instance.statusEffects) {
+        if (effect.sourceSkillId === "venom" && effect.type === "dot"
+            && effect.tickIntervalMs > 0 && now - effect.lastTickAt >= effect.tickIntervalMs) {
+          venomXp += effect.damagePerTick;
+        }
+      }
+
       const hpDelta = processTicks(wrapper, now);
       if (hpDelta !== 0) {
         instance.currentHp = Math.max(0, instance.currentHp + hpDelta);
@@ -750,6 +762,10 @@ export class GameScene extends Phaser.Scene {
           resetAi(instance);
           if (def) addLog(`${def.icon} ${def.name} wurde vernichtet!`, "system");
         }
+      }
+      // Venom: XP = Schaden der getickten Venom-DoTs
+      if (venomXp > 0) {
+        this.skillLevelUp(gainSkillXp(this.gameState.player, "venom", venomXp), "venom");
       }
       removeExpiredEffects(instance, now);
     }
@@ -892,14 +908,11 @@ export class GameScene extends Phaser.Scene {
       }
       addLog(result.message, "absorb");
 
-      // XP durch aktiven Skill-Einsatz
-      this.skillLevelUp(gainSkillXp(this.gameState.player, skillId, 2), skillId);
+      // XP = angerichteter Schaden (Bite, Biss usw.)
+      this.skillLevelUp(gainSkillXp(this.gameState.player, skillId, result.damageDealt), skillId);
       // Superstrength: XP für jeden Nahkampftreffer
       this.skillLevelUp(gainSkillXp(this.gameState.player, "superstrength", 1), "superstrength");
-      // Venom: XP wenn Vergiftung eingetreten
-      if (result.statusApplied.length > 0) {
-        this.skillLevelUp(gainSkillXp(this.gameState.player, "venom", 3), "venom");
-      }
+      // Venom: XP kommt von den DoT-Ticks in processCombatEffects
     } else {
       showToast(result.message, "system");
     }
