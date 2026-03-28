@@ -649,23 +649,27 @@ export class GameScene extends Phaser.Scene {
         }
     }
     // Zeigt eine Schadenszahl an der Position (x, y) in Weltkoordinaten.
-    // Font-Größe, Offset und Rise werden automatisch an den aktuellen Zoom angepasst,
-    // damit die Zahlen auf dem Bildschirm immer gleich groß erscheinen.
+    // Schadenszahl in Bildschirmgröße rendern — scharf auf jedem Zoom-Level.
+    //
+    // Trick: Text wird bei voller Bildschirm-Fontgröße (14px) gerendert,
+    // dann per setScale(1/zoom) auf Weltgröße runterskaliert.
+    // Der Kamera-Zoom hebt das wieder auf → exakt 14px auf dem Bildschirm, nie unscharf.
+    // Offset und Rise ebenfalls in Bildschirm-Pixeln, dann durch Zoom geteilt.
     showDamageNumber(x, y, dmg, color) {
         const zoom = this.cameras.main.zoom;
-        const fSize = Math.max(1, Math.round(11 / zoom)); // ~11px auf dem Bildschirm
-        const offset = Math.round(8 / zoom); // Startversatz nach oben (Weltpixel)
-        const rise = Math.round(14 / zoom); // Aufstieg der Animation (Weltpixel)
-        const stroke = Math.max(1, Math.round(2 / zoom));
+        const scale = 1 / zoom;
+        const offset = 10 / zoom; // 10 Bildschirmpixel nach oben
+        const rise = 18 / zoom; // 18 Bildschirmpixel Aufstieg
         const txt = this.add
             .text(x, y - offset, `${Math.round(dmg)}`, {
-            fontSize: `${fSize}px`,
+            fontSize: "14px",
             color,
             fontStyle: "bold",
             stroke: "#000000",
-            strokeThickness: stroke,
+            strokeThickness: 3,
         })
             .setOrigin(0.5)
+            .setScale(scale)
             .setDepth(20);
         this.tweens.add({
             targets: txt,
