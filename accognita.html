@@ -3583,7 +3583,7 @@
           return;
         }
         this.lastNearbyId = instance.instanceId;
-        this.doAbsorb();
+        updateNearbyPanel(def, instance, this.gameState);
       });
       text.floatPhase = Math.random() * Math.PI * 2;
       this.entitySprites.set(instance.instanceId, text);
@@ -4053,6 +4053,12 @@
           this.skillLevelUp(gainSkillXp(this.gameState.player, "venom", venomXp), "venom");
         }
         removeExpiredEffects(instance, now);
+        if (!instance.isAggro && instance.currentHp > 0) {
+          const scaledMax = getScaledMaxHp(def, instance.bonusLevel ?? 0);
+          if (instance.currentHp < scaledMax) {
+            instance.currentHp = Math.min(scaledMax, instance.currentHp + scaledMax * 0.05 * (delta / 1e3));
+          }
+        }
       }
       regenMp(this.gameState.player, delta);
     }
@@ -4176,7 +4182,7 @@
       const nearestId = nearest?.instanceId ?? null;
       if (nearestId !== this.lastNearbyId) {
         this.lastNearbyId = nearestId;
-        updateNearbyPanel(nearest ? ENTITY_MAP.get(nearest.definitionId) : void 0, this.gameState);
+        updateNearbyPanel(nearest ? ENTITY_MAP.get(nearest.definitionId) : void 0, nearest ?? void 0, this.gameState);
       }
     }
     // ----------------------------------------------------------
@@ -4192,7 +4198,7 @@
       if (result.success) {
         syncPassiveEffects(this.gameState.player);
         this.lastNearbyId = null;
-        updateNearbyPanel(void 0, this.gameState);
+        updateNearbyPanel(void 0, void 0, this.gameState);
       }
       this.checkPlayerLevelUp();
       updateUI(this.gameState);
@@ -4339,7 +4345,7 @@
       </div>
     `).join("");
   }
-  function updateNearbyPanel(entityDef, state) {
+  function updateNearbyPanel(entityDef, instance, state) {
     const panel = document.getElementById("nearby-panel");
     if (!panel)
       return;
@@ -4349,26 +4355,49 @@
     }
     const absorbLevel = state.player.coreAbilities.absorb.level;
     const analyzeLevel = state.player.coreAbilities.analyze.level;
-    const absorbChance = Math.round(calcSuccessChance(absorbLevel, entityDef.level) * 100);
-    const analyzeChance = Math.round(calcSuccessChance(analyzeLevel, entityDef.level) * 100);
+    const bonusLv = instance?.bonusLevel ?? 0;
+    const effectiveLv = entityDef.level + bonusLv;
+    const absorbChance = Math.round(calcSuccessChance(absorbLevel, effectiveLv) * 100);
+    const analyzeChance = Math.round(calcSuccessChance(analyzeLevel, effectiveLv) * 100);
+    const scaledMaxHp = getScaledMaxHp(entityDef, bonusLv);
+    const currentHp = Math.ceil(instance?.currentHp ?? scaledMaxHp);
+    const hpPct = Math.round(Math.max(0, currentHp / scaledMaxHp) * 100);
+    const hpColor = hpPct > 50 ? "#44cc44" : hpPct > 25 ? "#cccc44" : "#cc4444";
+    const bonusStars = bonusLv > 0 ? ` ${"\u2605".repeat(bonusLv)}` : "";
+    const passiveLines = [];
+    if (entityDef.damageReduction && entityDef.damageReduction > 0) {
+      passiveLines.push(`\u{1F6E1}\uFE0F Chitin-Panzer: ${Math.round(entityDef.damageReduction * 100)}% DR`);
+    }
+    if (entityDef.venomChance && entityDef.venomChance > 0) {
+      passiveLines.push(`\u2620\uFE0F Gift: ${Math.round(entityDef.venomChance * 100)}% / ${entityDef.venomDamagePerTick} pro Tick`);
+    }
     const skillIcons = entityDef.skillDrops.map((drop) => {
       const s = ALL_SKILLS.get(drop.skillId);
-      return s ? `<span title="${s.name} (${Math.round(drop.chance * 100)}%)">${s.icon}</span>` : "";
-    }).join(" ");
-    const matIcons = entityDef.materialDrops.map((drop) => {
-      const m = MATERIAL_MAP.get(drop.materialId);
-      return m ? `<span title="${m.name} \xD7${drop.amountMin}\u2013${drop.amountMax} (${Math.round(drop.chance * 100)}%)">${m.icon}</span>` : "";
-    }).join(" ");
+      return s ? `<span title="${s.name} (${Math.round(drop.chance * 100)}%)">${s.icon} ${s.name}</span>` : "";
+    }).filter(Boolean).join(", ");
     panel.innerHTML = `
     <div class="nearby-entity">
       <span class="nearby-icon">${entityDef.icon}</span>
-      <span class="nearby-name">${entityDef.name}</span>
-      <span class="nearby-level" style="color:var(--muted);font-size:.75em"> Lv.${entityDef.level}</span>
-      ${skillIcons ? `<div class="nearby-drops" title="M\xF6gliche Skills">\u2694\uFE0F ${skillIcons}</div>` : ""}
-      ${matIcons ? `<div class="nearby-drops" title="M\xF6gliche Materialien">\u{1F4E6} ${matIcons}</div>` : ""}
+      <div style="flex:1;min-width:0">
+        <div>
+          <span class="nearby-name">${entityDef.name}</span>
+          <span style="color:var(--muted);font-size:.72em"> Lv.${effectiveLv}${bonusStars}</span>
+        </div>
+        <div style="margin:3px 0 2px">
+          <div style="height:6px;background:#222;border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:${hpPct}%;background:${hpColor};transition:width .2s"></div>
+          </div>
+          <span style="font-size:.65em;color:var(--muted)">${currentHp}/${scaledMaxHp} HP</span>
+        </div>
+        <div style="font-size:.68em;color:var(--muted)">
+          \u2694\uFE0F ${entityDef.damage ?? "\u2013"} &nbsp;|&nbsp; \u{1F4A8} ${entityDef.speed ?? "\u2013"}
+        </div>
+      </div>
     </div>
-    <div class="nearby-chances" style="font-size:.7em;color:var(--muted);margin:4px 0">
-      \u{1F4A5} ${absorbChance}% &nbsp;|&nbsp; \u{1F50D} ${analyzeChance}%
+    ${passiveLines.length ? `<div style="font-size:.68em;color:#aaa;margin:4px 0">${passiveLines.join("<br>")}</div>` : ""}
+    ${skillIcons ? `<div style="font-size:.68em;color:var(--muted);margin:2px 0">\u{1F381} ${skillIcons}</div>` : ""}
+    <div style="font-size:.65em;color:var(--muted);margin:3px 0">
+      \u{1F4A5} Absorb ${absorbChance}% &nbsp;|&nbsp; \u{1F50D} Analyze ${analyzeChance}%
     </div>
     <div class="nearby-actions">
       <button onclick="window.gameScene.doAbsorb()" class="btn-absorb">\u{1F4A5} Absorb</button>

@@ -203,8 +203,9 @@ export class GameScene extends Phaser.Scene {
         showToast("Näher herangehen!", "system");
         return;
       }
+      // Tap zeigt Info — kein automatisches Absorb mehr
       this.lastNearbyId = instance.instanceId;
-      this.doAbsorb();
+      updateNearbyPanel(def, instance, this.gameState);
     });
 
     // Float-Phase für jede Entity individuell — wird in updateEntityVisuals() genutzt
@@ -768,6 +769,15 @@ export class GameScene extends Phaser.Scene {
         this.skillLevelUp(gainSkillXp(this.gameState.player, "venom", venomXp), "venom");
       }
       removeExpiredEffects(instance, now);
+
+      // HP-Regeneration außerhalb des Kampfes: 5% MaxHP/s
+      if (!instance.isAggro && instance.currentHp > 0) {
+        const scaledMax = getScaledMaxHp(def!, instance.bonusLevel ?? 0);
+        if (instance.currentHp < scaledMax) {
+          instance.currentHp = Math.min(scaledMax,
+            instance.currentHp + scaledMax * 0.05 * (delta / 1000));
+        }
+      }
     }
 
     // MP-Regen (1 MP/s)
@@ -927,6 +937,7 @@ export class GameScene extends Phaser.Scene {
       this.lastNearbyId = nearestId;
       updateNearbyPanel(
         nearest ? ENTITY_MAP.get(nearest.definitionId) : undefined,
+        nearest ?? undefined,
         this.gameState
       );
     }
@@ -949,7 +960,7 @@ export class GameScene extends Phaser.Scene {
     if (result.success) {
       syncPassiveEffects(this.gameState.player);
       this.lastNearbyId = null;
-      updateNearbyPanel(undefined, this.gameState);
+      updateNearbyPanel(undefined, undefined, this.gameState);
     }
     this.checkPlayerLevelUp();
     updateUI(this.gameState);
@@ -1135,50 +1146,76 @@ function renderMaterials(state: GameState) {
 
 function updateNearbyPanel(
   entityDef: ReturnType<typeof ENTITY_MAP.get>,
+  instance: EntityInstance | undefined,
   state: GameState
 ) {
   const panel = document.getElementById("nearby-panel");
   if (!panel) return;
 
   if (!entityDef) {
-    panel.innerHTML =
-      '<span class="empty-hint">Keine Entity in Reichweite</span>';
+    panel.innerHTML = '<span class="empty-hint">Keine Entity in Reichweite</span>';
     return;
   }
 
-  const absorbLevel = state.player.coreAbilities.absorb.level;
+  const absorbLevel  = state.player.coreAbilities.absorb.level;
   const analyzeLevel = state.player.coreAbilities.analyze.level;
-  const absorbChance = Math.round(calcSuccessChance(absorbLevel, entityDef.level) * 100);
-  const analyzeChance = Math.round(calcSuccessChance(analyzeLevel, entityDef.level) * 100);
+  const bonusLv      = instance?.bonusLevel ?? 0;
+  const effectiveLv  = entityDef.level + bonusLv;
+  const absorbChance = Math.round(calcSuccessChance(absorbLevel,  effectiveLv) * 100);
+  const analyzeChance= Math.round(calcSuccessChance(analyzeLevel, effectiveLv) * 100);
 
+  // HP-Leiste
+  const scaledMaxHp = getScaledMaxHp(entityDef, bonusLv);
+  const currentHp   = Math.ceil(instance?.currentHp ?? scaledMaxHp);
+  const hpPct       = Math.round(Math.max(0, currentHp / scaledMaxHp) * 100);
+  const hpColor     = hpPct > 50 ? "#44cc44" : hpPct > 25 ? "#cccc44" : "#cc4444";
+
+  // Bonus-Level Sterne
+  const bonusStars = bonusLv > 0 ? ` ${"★".repeat(bonusLv)}` : "";
+
+  // Passive Fähigkeiten der Entity
+  const passiveLines: string[] = [];
+  if (entityDef.damageReduction && entityDef.damageReduction > 0) {
+    passiveLines.push(`🛡️ Chitin-Panzer: ${Math.round(entityDef.damageReduction * 100)}% DR`);
+  }
+  if (entityDef.venomChance && entityDef.venomChance > 0) {
+    passiveLines.push(
+      `☠️ Gift: ${Math.round(entityDef.venomChance * 100)}% / ${entityDef.venomDamagePerTick} pro Tick`
+    );
+  }
+
+  // Mögliche Skill-Drops
   const skillIcons = entityDef.skillDrops
     .map((drop) => {
       const s = ALL_SKILLS.get(drop.skillId);
-      return s
-        ? `<span title="${s.name} (${Math.round(drop.chance * 100)}%)">${s.icon}</span>`
-        : "";
+      return s ? `<span title="${s.name} (${Math.round(drop.chance * 100)}%)">${s.icon} ${s.name}</span>` : "";
     })
-    .join(" ");
-
-  const matIcons = entityDef.materialDrops
-    .map((drop) => {
-      const m = MATERIAL_MAP.get(drop.materialId);
-      return m
-        ? `<span title="${m.name} ×${drop.amountMin}–${drop.amountMax} (${Math.round(drop.chance * 100)}%)">${m.icon}</span>`
-        : "";
-    })
-    .join(" ");
+    .filter(Boolean)
+    .join(", ");
 
   panel.innerHTML = `
     <div class="nearby-entity">
       <span class="nearby-icon">${entityDef.icon}</span>
-      <span class="nearby-name">${entityDef.name}</span>
-      <span class="nearby-level" style="color:var(--muted);font-size:.75em"> Lv.${entityDef.level}</span>
-      ${skillIcons ? `<div class="nearby-drops" title="Mögliche Skills">⚔️ ${skillIcons}</div>` : ""}
-      ${matIcons   ? `<div class="nearby-drops" title="Mögliche Materialien">📦 ${matIcons}</div>` : ""}
+      <div style="flex:1;min-width:0">
+        <div>
+          <span class="nearby-name">${entityDef.name}</span>
+          <span style="color:var(--muted);font-size:.72em"> Lv.${effectiveLv}${bonusStars}</span>
+        </div>
+        <div style="margin:3px 0 2px">
+          <div style="height:6px;background:#222;border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:${hpPct}%;background:${hpColor};transition:width .2s"></div>
+          </div>
+          <span style="font-size:.65em;color:var(--muted)">${currentHp}/${scaledMaxHp} HP</span>
+        </div>
+        <div style="font-size:.68em;color:var(--muted)">
+          ⚔️ ${entityDef.damage ?? "–"} &nbsp;|&nbsp; 💨 ${entityDef.speed ?? "–"}
+        </div>
+      </div>
     </div>
-    <div class="nearby-chances" style="font-size:.7em;color:var(--muted);margin:4px 0">
-      💥 ${absorbChance}% &nbsp;|&nbsp; 🔍 ${analyzeChance}%
+    ${passiveLines.length ? `<div style="font-size:.68em;color:#aaa;margin:4px 0">${passiveLines.join("<br>")}</div>` : ""}
+    ${skillIcons ? `<div style="font-size:.68em;color:var(--muted);margin:2px 0">🎁 ${skillIcons}</div>` : ""}
+    <div style="font-size:.65em;color:var(--muted);margin:3px 0">
+      💥 Absorb ${absorbChance}% &nbsp;|&nbsp; 🔍 Analyze ${analyzeChance}%
     </div>
     <div class="nearby-actions">
       <button onclick="window.gameScene.doAbsorb()" class="btn-absorb">💥 Absorb</button>
