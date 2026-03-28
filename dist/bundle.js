@@ -315,7 +315,8 @@
       // 2 × worldSize
       respawnTime: 30,
       interactRadius: 35,
-      aggroRadius: 60,
+      aggroRadius: 15,
+      // 5 × worldSize
       worldSize: 3
       // Ameise — winziges Insekt, ähnlich groß wie Level-1-Slime
     },
@@ -344,7 +345,8 @@
       // 2 × worldSize
       respawnTime: 35,
       interactRadius: 35,
-      aggroRadius: 50,
+      aggroRadius: 20,
+      // 5 × worldSize
       worldSize: 4
       // Marienkäfer — etwas größer als Ameise
     },
@@ -380,7 +382,8 @@
       // 2 × worldSize
       respawnTime: 45,
       interactRadius: 40,
-      aggroRadius: 100,
+      aggroRadius: 30,
+      // 5 × worldSize
       worldSize: 6
       // Springspinne — deutlich größer als Ameisen
     },
@@ -412,7 +415,8 @@
       // 2 × worldSize
       respawnTime: 50,
       interactRadius: 40,
-      aggroRadius: 90,
+      aggroRadius: 30,
+      // 5 × worldSize
       worldSize: 6
       // Giftspinne — ähnlich groß wie Springspinne
     }
@@ -1696,7 +1700,7 @@
     }
     instance._aiLastCalcAt = now;
     const dist = Math.sqrt(distSq);
-    const aggroRadius = def.aggroRadius ?? 120;
+    const aggroRadius = def.aggroRadius ?? (def.worldSize ?? 6) * 5;
     const aggroLossRadius = aggroRadius * AGGRO_LOSS_FACTOR;
     let becameAggro = false;
     let lostAggro = false;

@@ -99,7 +99,7 @@ export function calcEntityAi(
   const dist = Math.sqrt(distSq); // sqrt nur 1× nach dem Throttle
 
   // --- Aggro-Check ---
-  const aggroRadius = def.aggroRadius ?? 120;
+  const aggroRadius = def.aggroRadius ?? (def.worldSize ?? 6) * 5;
   const aggroLossRadius = aggroRadius * AGGRO_LOSS_FACTOR;
 
   let becameAggro = false;

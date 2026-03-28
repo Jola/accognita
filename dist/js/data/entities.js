@@ -57,7 +57,7 @@ export const ENTITY_DEFINITIONS = [
         attackRangePx: 6, attackCooldownMs: 1800, attackType: "melee", // 2 × worldSize
         respawnTime: 30,
         interactRadius: 35,
-        aggroRadius: 60,
+        aggroRadius: 15, // 5 × worldSize
         worldSize: 3, // Ameise — winziges Insekt, ähnlich groß wie Level-1-Slime
     },
     {
@@ -77,7 +77,7 @@ export const ENTITY_DEFINITIONS = [
         attackRangePx: 8, attackCooldownMs: 2000, attackType: "melee", // 2 × worldSize
         respawnTime: 35,
         interactRadius: 35,
-        aggroRadius: 50,
+        aggroRadius: 20, // 5 × worldSize
         worldSize: 4, // Marienkäfer — etwas größer als Ameise
     },
     // ==========================================================
@@ -102,7 +102,7 @@ export const ENTITY_DEFINITIONS = [
         attackRangePx: 12, attackCooldownMs: 1200, attackType: "charge", // 2 × worldSize
         respawnTime: 45,
         interactRadius: 40,
-        aggroRadius: 100,
+        aggroRadius: 30, // 5 × worldSize
         worldSize: 6, // Springspinne — deutlich größer als Ameisen
     },
     {
@@ -124,7 +124,7 @@ export const ENTITY_DEFINITIONS = [
         attackRangePx: 12, attackCooldownMs: 1600, attackType: "melee", // 2 × worldSize
         respawnTime: 50,
         interactRadius: 40,
-        aggroRadius: 90,
+        aggroRadius: 30, // 5 × worldSize
         worldSize: 6, // Giftspinne — ähnlich groß wie Springspinne
     },
 ];
