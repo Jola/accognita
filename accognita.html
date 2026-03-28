@@ -942,8 +942,86 @@
       interactRadius: 40,
       aggroRadius: 30,
       // 5 × worldSize
+      venomChance: 0.4,
+      venomDamagePerTick: 2,
+      // Venom Lv1 — schwächeres Gift
       worldSize: 6
       // Giftspinne — ähnlich groß wie Springspinne
+    },
+    // ==========================================================
+    // SKORPIONE — Level 3 & 4 (feindlich, gepanzert, giftig)
+    // ==========================================================
+    {
+      id: "small_scorpion",
+      name: "Kleiner Skorpion",
+      icon: "\u{1F982}",
+      behavior: "aggressive",
+      disposition: "hostile",
+      category: "creature",
+      rarity: "uncommon",
+      level: 3,
+      skillDrops: [
+        { skillId: "chitin_armor", chance: 0.25 },
+        // Skorpion-Panzer
+        { skillId: "venom", chance: 0.25 },
+        // Stachel-Gift
+        { skillId: "bite", chance: 0.1 }
+      ],
+      materialDrops: [],
+      hp: 30,
+      damage: 12,
+      speed: 35,
+      // worldSize 7 × 5 = 35
+      attackRangePx: 14,
+      attackCooldownMs: 1400,
+      attackType: "melee",
+      // 2 × worldSize
+      respawnTime: 60,
+      interactRadius: 45,
+      aggroRadius: 35,
+      // 5 × worldSize
+      // Chitin Armor Lv5: 10% + 4×5% = 30% Schadensreduktion
+      damageReduction: 0.3,
+      // Venom Lv5: 50% Chance, 2 + floor(4×0.5) = 4 Schaden/Tick
+      venomChance: 0.5,
+      venomDamagePerTick: 4,
+      worldSize: 7
+    },
+    {
+      id: "large_scorpion",
+      name: "Gro\xDFer Skorpion",
+      icon: "\u{1F982}",
+      behavior: "aggressive",
+      disposition: "hostile",
+      category: "creature",
+      rarity: "rare",
+      level: 4,
+      skillDrops: [
+        { skillId: "chitin_armor", chance: 0.3 },
+        // Massiver Panzer
+        { skillId: "venom", chance: 0.3 },
+        // Starkes Gift
+        { skillId: "bite", chance: 0.15 }
+      ],
+      materialDrops: [],
+      hp: 55,
+      damage: 20,
+      speed: 50,
+      // worldSize 10 × 5 = 50
+      attackRangePx: 20,
+      attackCooldownMs: 1600,
+      attackType: "melee",
+      // 2 × worldSize
+      respawnTime: 120,
+      interactRadius: 55,
+      aggroRadius: 50,
+      // 5 × worldSize
+      // Chitin Armor Lv8: 10% + 7×5% = 45% Schadensreduktion
+      damageReduction: 0.45,
+      // Venom Lv8: 65% Chance, 2 + floor(7×0.5) = 5 Schaden/Tick
+      venomChance: 0.65,
+      venomDamagePerTick: 5,
+      worldSize: 10
     }
   ];
   var ENTITY_MAP = new Map(ENTITY_DEFINITIONS.map((e) => [e.id, e]));
@@ -2534,7 +2612,7 @@
     }
     return mult;
   }
-  function makeVenomEffect(venomLevel) {
+  function makeVenomEffect(venomLevel, damageOverride) {
     const now = Date.now();
     const durationMs = 4e3;
     return makeStatusEffect({
@@ -2545,7 +2623,7 @@
       expiresAt: now + durationMs,
       tickIntervalMs: 1e3,
       lastTickAt: now,
-      damagePerTick: 2 + Math.floor((venomLevel - 1) * 0.5)
+      damagePerTick: damageOverride ?? 2 + Math.floor((venomLevel - 1) * 0.5)
     });
   }
 
@@ -2580,8 +2658,9 @@
     }
     const damageMult = calcDamageMult(player.statusEffects);
     let dmg = Math.max(1, Math.round(baseDmg * damageMult));
-    const targetArmor = 0;
-    dmg = Math.max(1, dmg - targetArmor);
+    if (def.damageReduction && def.damageReduction > 0) {
+      dmg = Math.max(1, Math.round(dmg * (1 - def.damageReduction)));
+    }
     const venomInst = player.discoveredSkills.get("venom");
     if (venomInst) {
       const venomChance = 0.3 + (venomInst.level - 1) * 0.05;
@@ -2605,9 +2684,9 @@
     const reduction = calcDamageReduction(player.statusEffects);
     const dmg = Math.max(1, Math.round(baseDmg * (1 - reduction)));
     const appliedEffects = [];
-    if (def.id === "poison_spider") {
-      if (Math.random() < 0.4) {
-        appliedEffects.push(makeVenomEffect(1));
+    if (def.venomChance && def.venomChance > 0) {
+      if (Math.random() < def.venomChance) {
+        appliedEffects.push(makeVenomEffect(1, def.venomDamagePerTick));
       }
     }
     const msg = dmg !== baseDmg ? `${def.icon} ${def.name} trifft! ${baseDmg}\u2192${dmg} (R\xFCstung).` : `${def.icon} ${def.name} trifft f\xFCr ${dmg} Schaden!`;
@@ -3177,10 +3256,10 @@
   var BIOME_SPAWNS = {
     forest: ["ant", "ladybug", "grass"],
     swamp: ["poison_spider", "grass"],
-    highland: ["jumping_spider", "ant"],
-    mountain: ["jumping_spider", "poison_spider"],
-    desert: ["ant"],
-    dungeon: ["jumping_spider", "poison_spider"]
+    highland: ["jumping_spider", "ant", "small_scorpion"],
+    mountain: ["jumping_spider", "poison_spider", "small_scorpion"],
+    desert: ["ant", "small_scorpion", "large_scorpion"],
+    dungeon: ["jumping_spider", "poison_spider", "large_scorpion"]
   };
   function getTileIndex(biome, height) {
     const offset = BIOME_TILE_OFFSET[biome] ?? 0;
@@ -3235,7 +3314,7 @@
   }
   function generateSpawns(biome, rng) {
     const spawnTable = BIOME_SPAWNS[biome] ?? ["grass"];
-    const count = 32 + Math.floor(rng() * 25);
+    const count = 64 + Math.floor(rng() * 49);
     const spawns = [];
     for (let i = 0; i < count; i++) {
       const defId = spawnTable[Math.floor(rng() * spawnTable.length)];

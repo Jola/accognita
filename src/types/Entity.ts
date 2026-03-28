@@ -67,6 +67,11 @@ export interface EntityDefinition {
   interactRadius: number;
   aggroRadius?: number;          // Ab dieser Distanz wird die Entity aggro (px)
 
+  // Passive Verteidigung & Angriffsgift — skalieren 1:1 mit Skill-Werten
+  damageReduction?: number;      // 0–1: Schadensreduktion (wie Chitin Armor)
+  venomChance?: number;          // 0–1: Chance Gift zu applizieren bei jedem Treffer
+  venomDamagePerTick?: number;   // Schaden pro Tick des applizierten Gifts
+
   /** Visuelle Weltgröße in World-Pixeln. Bestimmt wie groß das Icon dargestellt wird.
    *  Kleines Insekt: 3–4, Mittelgroßes: 5–7. Default: 5 wenn nicht angegeben. */
   worldSize?: number;

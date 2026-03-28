@@ -29,10 +29,10 @@ export function getBiomeAt(cx, cy) {
 export const BIOME_SPAWNS = {
     forest: ["ant", "ladybug", "grass"],
     swamp: ["poison_spider", "grass"],
-    highland: ["jumping_spider", "ant"],
-    mountain: ["jumping_spider", "poison_spider"],
-    desert: ["ant"],
-    dungeon: ["jumping_spider", "poison_spider"],
+    highland: ["jumping_spider", "ant", "small_scorpion"],
+    mountain: ["jumping_spider", "poison_spider", "small_scorpion"],
+    desert: ["ant", "small_scorpion", "large_scorpion"],
+    dungeon: ["jumping_spider", "poison_spider", "large_scorpion"],
 };
 // ────────────────────────────────────────
 // Tile-Index-Berechnung

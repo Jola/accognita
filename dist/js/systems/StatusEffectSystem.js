@@ -216,7 +216,7 @@ export function calcSpeedMultiplier(effects) {
 // Hilfsfunktion: Venom-DoT-Effekt auf einer Entity erzeugen
 // (aufgerufen von CombatSystem nach erfolgreichem Treffer)
 // -----------------------------------------------------------
-export function makeVenomEffect(venomLevel) {
+export function makeVenomEffect(venomLevel, damageOverride) {
     const now = Date.now();
     const durationMs = 4000;
     return makeStatusEffect({
@@ -227,7 +227,7 @@ export function makeVenomEffect(venomLevel) {
         expiresAt: now + durationMs,
         tickIntervalMs: 1000,
         lastTickAt: now,
-        damagePerTick: 2 + Math.floor((venomLevel - 1) * 0.5),
+        damagePerTick: damageOverride ?? (2 + Math.floor((venomLevel - 1) * 0.5)),
     });
 }
 //# sourceMappingURL=StatusEffectSystem.js.map

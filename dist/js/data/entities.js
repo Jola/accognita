@@ -125,7 +125,63 @@ export const ENTITY_DEFINITIONS = [
         respawnTime: 50,
         interactRadius: 40,
         aggroRadius: 30, // 5 × worldSize
+        venomChance: 0.40, venomDamagePerTick: 2, // Venom Lv1 — schwächeres Gift
         worldSize: 6, // Giftspinne — ähnlich groß wie Springspinne
+    },
+    // ==========================================================
+    // SKORPIONE — Level 3 & 4 (feindlich, gepanzert, giftig)
+    // ==========================================================
+    {
+        id: "small_scorpion",
+        name: "Kleiner Skorpion",
+        icon: "🦂",
+        behavior: "aggressive",
+        disposition: "hostile",
+        category: "creature",
+        rarity: "uncommon",
+        level: 3,
+        skillDrops: [
+            { skillId: "chitin_armor", chance: 0.25 }, // Skorpion-Panzer
+            { skillId: "venom", chance: 0.25 }, // Stachel-Gift
+            { skillId: "bite", chance: 0.10 },
+        ],
+        materialDrops: [],
+        hp: 30, damage: 12, speed: 35, // worldSize 7 × 5 = 35
+        attackRangePx: 14, attackCooldownMs: 1400, attackType: "melee", // 2 × worldSize
+        respawnTime: 60,
+        interactRadius: 45,
+        aggroRadius: 35, // 5 × worldSize
+        // Chitin Armor Lv5: 10% + 4×5% = 30% Schadensreduktion
+        damageReduction: 0.30,
+        // Venom Lv5: 50% Chance, 2 + floor(4×0.5) = 4 Schaden/Tick
+        venomChance: 0.50, venomDamagePerTick: 4,
+        worldSize: 7,
+    },
+    {
+        id: "large_scorpion",
+        name: "Großer Skorpion",
+        icon: "🦂",
+        behavior: "aggressive",
+        disposition: "hostile",
+        category: "creature",
+        rarity: "rare",
+        level: 4,
+        skillDrops: [
+            { skillId: "chitin_armor", chance: 0.30 }, // Massiver Panzer
+            { skillId: "venom", chance: 0.30 }, // Starkes Gift
+            { skillId: "bite", chance: 0.15 },
+        ],
+        materialDrops: [],
+        hp: 55, damage: 20, speed: 50, // worldSize 10 × 5 = 50
+        attackRangePx: 20, attackCooldownMs: 1600, attackType: "melee", // 2 × worldSize
+        respawnTime: 120,
+        interactRadius: 55,
+        aggroRadius: 50, // 5 × worldSize
+        // Chitin Armor Lv8: 10% + 7×5% = 45% Schadensreduktion
+        damageReduction: 0.45,
+        // Venom Lv8: 65% Chance, 2 + floor(7×0.5) = 5 Schaden/Tick
+        venomChance: 0.65, venomDamagePerTick: 5,
+        worldSize: 10,
     },
 ];
 // Schnellzugriffs-Map

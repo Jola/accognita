@@ -74,7 +74,7 @@ function generateHeightMap(rng) {
 /** ~16–28 Spawns pro Chunk, zufällig verteilt */
 function generateSpawns(biome, rng) {
     const spawnTable = BIOME_SPAWNS[biome] ?? ["grass"];
-    const count = 32 + Math.floor(rng() * 25); // 32–56
+    const count = 64 + Math.floor(rng() * 49); // 64–112
     const spawns = [];
     for (let i = 0; i < count; i++) {
         const defId = spawnTable[Math.floor(rng() * spawnTable.length)];
