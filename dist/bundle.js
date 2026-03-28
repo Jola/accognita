@@ -452,7 +452,7 @@
   var PLAYER_WORLD_RADIUS_MAX = 8;
   var PLAYER_SIZE_LEVEL_MAX = 20;
   var PLAYER_SCREEN_RADIUS = 16;
-  var PLAYER_SPEED_PER_WORLD_RADIUS = 5;
+  var PLAYER_SPEED_PER_WORLD_RADIUS = 7.5;
 
   // dist/js/systems/SkillSystem.js
   function calcXpThreshold(baseThreshold, multiplier, level) {

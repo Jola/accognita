@@ -175,7 +175,7 @@ export const PLAYER_SCREEN_RADIUS = 16;
  *   Level 1  (radius 2): world-speed  10 → screen-speed  10 × 8 = 80 px/s
  *   Level 20 (radius 8): world-speed  40 → screen-speed  40 × 2 = 80 px/s
  */
-export const PLAYER_SPEED_PER_WORLD_RADIUS = 5;
+export const PLAYER_SPEED_PER_WORLD_RADIUS = 7.5;
 
 /**
  * Grundgeschwindigkeit für Entities pro worldSize-Einheit.
