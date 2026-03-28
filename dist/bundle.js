@@ -1665,6 +1665,12 @@
   var AGGRO_LOSS_FACTOR = 2.5;
   var AI_TICK_MS = 100;
   var CHASE_STOP_FACTOR = 0.5;
+  var TILE_PX = 32;
+  var WANDER_RADIUS_PX = 10 * TILE_PX;
+  var WANDER_SPEED_FACTOR = 0.45;
+  var WANDER_PAUSE_MIN = 1500;
+  var WANDER_PAUSE_MAX = 4e3;
+  var WANDER_ARRIVE_SQ = 10 * 10;
   function calcEntityAi(def, instance, playerX, playerY, now) {
     if (!def.damage || def.behavior === "passive") {
       return idleFrame();
@@ -1714,6 +1720,15 @@
         vx = dxRaw / dist * speed;
         vy = dyRaw / dist * speed;
       }
+      instance._wanderTargetX = void 0;
+      instance._wanderTargetY = void 0;
+      if (lostAggro) {
+        instance._wanderPauseUntil = now + 1500;
+      }
+    } else if (instance.isAlive) {
+      const w = calcWander(def, instance, now);
+      vx = w.vx;
+      vy = w.vy;
     }
     instance._aiLastVx = vx;
     instance._aiLastVy = vy;
@@ -1737,9 +1752,46 @@
     delete instance._aiLastCalcAt;
     delete instance._aiLastVx;
     delete instance._aiLastVy;
+    delete instance._wanderTargetX;
+    delete instance._wanderTargetY;
+    delete instance._wanderPauseUntil;
   }
   function idleFrame() {
     return { vx: 0, vy: 0, wantToAttack: false, becameAggro: false, lostAggro: false };
+  }
+  function calcWander(def, instance, now) {
+    const inst = instance;
+    if (inst._spawnX === void 0) {
+      inst._spawnX = instance.x;
+      inst._spawnY = instance.y;
+    }
+    if (now < (inst._wanderPauseUntil ?? 0)) {
+      return idleFrame();
+    }
+    if (inst._wanderTargetX === void 0) {
+      const angle = Math.random() * Math.PI * 2;
+      const r = Math.random() * WANDER_RADIUS_PX;
+      inst._wanderTargetX = inst._spawnX + Math.cos(angle) * r;
+      inst._wanderTargetY = inst._spawnY + Math.sin(angle) * r;
+    }
+    const dtx = inst._wanderTargetX - instance.x;
+    const dty = inst._wanderTargetY - instance.y;
+    const dtSq = dtx * dtx + dty * dty;
+    if (dtSq < WANDER_ARRIVE_SQ) {
+      inst._wanderTargetX = void 0;
+      inst._wanderTargetY = void 0;
+      inst._wanderPauseUntil = now + WANDER_PAUSE_MIN + Math.random() * (WANDER_PAUSE_MAX - WANDER_PAUSE_MIN);
+      return idleFrame();
+    }
+    const dt = Math.sqrt(dtSq);
+    const speed = (def.speed ?? 60) * WANDER_SPEED_FACTOR;
+    return {
+      vx: dtx / dt * speed,
+      vy: dty / dt * speed,
+      wantToAttack: false,
+      becameAggro: false,
+      lostAggro: false
+    };
   }
   function shouldAggro2(def) {
     return def.behavior === "aggressive" || def.behavior === "territorial";
@@ -2562,9 +2614,9 @@
   }
 
   // dist/js/world/Chunk.js
-  var TILE_PX = 32;
+  var TILE_PX2 = 32;
   var TILES_PER_CHUNK = 32;
-  var CHUNK_PX = TILE_PX * TILES_PER_CHUNK;
+  var CHUNK_PX = TILE_PX2 * TILES_PER_CHUNK;
   var RENDER_RADIUS = 2;
   var ACTIVE_RADIUS = 1;
   var UNLOAD_RADIUS = 3;
@@ -2761,10 +2813,10 @@
       const def = generateChunk(cx, cy, this.gameState.world.worldSeed);
       const tilemap = this.scene.make.tilemap({
         data: def.tileIndices,
-        tileWidth: TILE_PX,
-        tileHeight: TILE_PX
+        tileWidth: TILE_PX2,
+        tileHeight: TILE_PX2
       });
-      const tileset = tilemap.addTilesetImage("worldTileset", "worldTileset", TILE_PX, TILE_PX, 0, 0);
+      const tileset = tilemap.addTilesetImage("worldTileset", "worldTileset", TILE_PX2, TILE_PX2, 0, 0);
       const layer = tilemap.createLayer(0, tileset, cx * CHUNK_PX, cy * CHUNK_PX);
       layer.setDepth(-1);
       const instanceIds = [];

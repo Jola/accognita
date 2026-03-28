@@ -2189,14 +2189,13 @@
   var MAX_AI_DIST_SQ = 500 * 500;
   var AGGRO_LOSS_FACTOR = 2.5;
   var AI_TICK_MS = 100;
-  var CHASE_STOP_DIST_SQ = 20 * 20;
+  var CHASE_STOP_FACTOR = 0.5;
   var TILE_PX = 32;
   var WANDER_RADIUS_PX = 10 * TILE_PX;
   var WANDER_SPEED_FACTOR = 0.45;
   var WANDER_PAUSE_MIN = 1500;
   var WANDER_PAUSE_MAX = 4e3;
   var WANDER_ARRIVE_SQ = 10 * 10;
-  var CHASE_STOP_FACTOR = 0.5;
   function calcEntityAi(def, instance, playerX, playerY, now) {
     if (!def.damage || def.behavior === "passive") {
       return idleFrame();
@@ -4337,60 +4336,6 @@ ${detail}` : ""}`, type);
       logState.log.pop();
     const el = document.getElementById("logList");
     if (el) {
-      el.innerHTML = logState.log.slice(0, 30).map((l) => `<div class="log-entry ${l.type}">${l.msg}</div>`).join("");
-    }
-  }
-  function showCombineResult(result) {
-    const out = document.getElementById("combine-result");
-    if (!out)
-      return;
-    out.textContent = result.message;
-    out.className = `combine-result outcome-${result.outcome}`;
-  }
-  function switchTab(name) {
-    window._currentTab = name;
-    document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
-    document.querySelectorAll(".tab-content").forEach((c) => c.classList.remove("active"));
-    document.querySelectorAll(`.tab-btn[data-tab="${name}"]`).forEach((b) => b.classList.add("active"));
-    const el = document.getElementById(`tab-${name}`);
-    if (el)
-      el.classList.add("active");
-    syncMobileTab(name);
-  }
-  function syncMobileTab(name) {
-    const mc = document.getElementById("mobileTabContent");
-    const src = document.getElementById(`tab-${name}`);
-    if (mc && src)
-      mc.innerHTML = src.innerHTML;
-  }
-  function toggleSheet() {
-    document.getElementById("bottomSheet")?.classList.toggle("open");
-    syncMobileTab(window._currentTab ?? "skills");
-  }
-  function setEl(id, text) {
-    const el = document.getElementById(id);
-    if (el)
-      el.textContent = text;
-  }
-  function setStyle(id, prop, value) {
-    const el = document.getElementById(id);
-    if (el)
-      el.style[prop] = value;
-  }
-  window.addEventListener("load", () => {
-    new Phaser.Game({
-      type: Phaser.AUTO,
-      parent: "canvas-wrap",
-      backgroundColor: "#0a0d14",
-      scale: {
-        mode: Phaser.Scale.RESIZE,
-        autoCenter: Phaser.Scale.CENTER_BOTH
-      },
-      physics: { default: "arcade", arcade: { debug: false } },
-      scene: [BootScene, GameScene]
-    });
-  });
-})();
       el.innerHTML = logState.log.slice(0, 30).map((l) => `<div class="log-entry ${l.type}">${l.msg}</div>`).join("");
     }
   }
