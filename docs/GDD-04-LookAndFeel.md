@@ -8,22 +8,35 @@
 ### Kern-Ästhetik
 **Dark Fantasy meets biolumineszente Natur.** Die Welt ist dunkel und leicht bedrohlich, aber der Slime selbst leuchtet. Kontrast zwischen der düsteren Umgebung und dem lebendigen, glühenden Protagonisten.
 
-Kein Cartoon-Look. Kein Pixel-Art-Minimalismus. Stattdessen:
+Kein Cartoon-Look. Stattdessen:
 - Atmosphärische Dunkelheit mit punktuellen Lichteffekten
 - Organische Formen (der Slime ist nie perfekt rund)
 - Mittelalterliche Welt ohne Technologie-Elemente
+- **Pixel-Art-Tiles** (32×32px, prozedural generiert): Grashalme, Steinfugen, Dünenstreifen, Wasserreflexionen — jedes Biom hat einen eigenen Look
 
 ---
 
 ## 2. Farbpalette
 
-### Welt
+### Welt — Biom-Farbpaletten (implementiert, v0.3)
+
+Jedes Biom hat 4 Höhenstufen (Wasser/0, Flach/1, Hügel/2, Gipfel/3) mit eigener Pixel-Art-Textur:
+
+| Biom | Basis | Hell | Dunkel | Akzent |
+|------|-------|------|--------|--------|
+| Forest (Wald) | `#3d7a32` | `#5aaa46` | `#1e4a18` | `#d4c840` (Blumen) |
+| Swamp (Sumpf) | `#2d4e24` | `#3d6a30` | `#141e10` | `#3a8878` (Wasser) |
+| Highland (Hochland) | `#7a6838` | `#9a8a50` | `#4a4020` | `#9a7840` (Steine) |
+| Mountain (Gebirge) | `#686878` | `#9898a8` | `#383840` | `#b8b8c8` (Mineral) |
+| Desert (Wüste) | `#c0a048` | `#d8c070` | `#886828` | `#c8b858` (Sand) |
+| Dungeon | `#282838` | `#383850` | `#14141e` | `#484858` (Fugen) |
+
+Höhe 0 (Wasser): Wellen-/Reflexionsmuster je nach Biom
+Höhe 3 (Gipfel): Schnee-Overlay bei Mountain, dichter Baumschatten bei Forest
+
+### Hintergrund & UI
 | Bereich | Farbe | Hex |
 |---------|-------|-----|
-| Gras (Standard) | Dunkelgrün | `#1a3320` |
-| Gras (Schatten) | Sehr dunkelgrün | `#142618` |
-| Wasser | Dunkles Blau | `#1a2a4a` |
-| Stein/Fels | Dunkelgrau | `#2a2a2a` |
 | Hintergrund | Fast-Schwarz | `#0a0d14` |
 
 ### UI
@@ -138,7 +151,7 @@ Das Spiel ist primär für Mobilgeräte entwickelt. Desktop wird vollständig un
 ### In-Canvas HUD (unten Mitte)
 - Maximal 5 aktive Skills als Icon-Leiste
 - Skill-Level als kleiner Text
-- Cooldown-Overlay geplant (v0.2)
+- Cooldown-Overlay implementiert (v0.3)
 
 ---
 
@@ -167,12 +180,13 @@ Das Spiel ist primär für Mobilgeräte entwickelt. Desktop wird vollständig un
 ## 6. Perspektiven — Technische Umsetzung
 
 ### View 1: Top-Down (Standard)
-- Rechteckige Tiles (40x40px)
-- Kamera folgt dem Spieler mit sanfter Interpolation (Lerp 10%)
-- Tile-Typen: grass, dark_grass, water, stone
-- Wasser hat animierten Shimmer-Overlay (Sinusfunktion)
+- 32×32px Pixel-Art-Tiles, prozedural generiert (Canvas 2D ImageData, kein externes Bild)
+- Kamera folgt dem Spieler mit sanfter Interpolation
+- Chunk-basiert: 20×20 Chunks à 32×32 Tiles = 20480×20480px Welt
+- 6 Biome: Forest, Swamp, Highland, Mountain, Desert, Dungeon — als authored Zonen angeordnet
+- Dynamisches Laden/Entladen (Render-Radius 2, Active-Radius 1, Unload-Radius 3)
 
-### View 2: Isometrisch (geplant, v0.3)
+### View 2: Isometrisch (geplant, v0.4)
 - 2:1 Isometrische Projektion
 - Tiles werden als Rauten dargestellt
 - Entities und Slime bekommen Schatten-Ellipsen für Tiefenwirkung
@@ -202,15 +216,17 @@ Der Refactor zu einer modularen Architektur wurde in v0.2 vollständig umgesetzt
 ```
 src/
 ├── types/          # TypeScript-Interfaces (kein Phaser, kein DOM)
-│   ├── Skill.ts
-│   ├── Entity.ts
-│   └── GameState.ts
+│   ├── Skill.ts, Entity.ts, GameState.ts, Combat.ts, Material.ts
 ├── data/           # Reine Datendefinitionen — Balancing-Werte hier ändern
-│   ├── skills.ts
-│   └── entities.ts
+│   ├── skills.ts, entities.ts, materials.ts, balance.ts
 ├── systems/        # Reine Spiellogik (kein Phaser, kein DOM, testbar)
-│   ├── SkillSystem.ts
-│   └── EntitySystem.ts
+│   ├── SkillSystem.ts, EntitySystem.ts, CombatSystem.ts
+│   ├── AiSystem.ts, StatusEffectSystem.ts, MaterialSystem.ts, SaveSystem.ts
+├── ui/             # DOM-only Komponenten (kein Phaser)
+│   ├── Joystick.ts, SkillBar.ts, SkillMenu.ts, SaveMenu.ts
+├── world/          # Chunk-System (kein Phaser-Import, scene als any)
+│   ├── Chunk.ts, BiomeDefinitions.ts, WorldGenerator.ts
+│   ├── TilesetGenerator.ts, ChunkManager.ts
 └── scenes/         # Einzige Phaser-abhängige Schicht
     └── GameScene.ts
 ```
@@ -230,15 +246,16 @@ Kein lokales Node.js, npm oder Terminal auf Jörns Seite nötig.
 
 ### Stack-Tabelle
 
-| Bereich | Aktuell (v0.2) | Geplant |
+| Bereich | Aktuell (v0.3) | Geplant |
 |---------|----------------|---------|
 | Rendering | Phaser.js 3.70 (CDN) | — |
 | Sprache | TypeScript 5.x | — |
 | Framework | Phaser.js | — |
-| Build | Claude (`tsc`) → Single HTML | Evtl. Vite für größere Versionen |
-| Persistenz | Keins | LocalStorage (v0.3, noch offen) |
-| Mobile Input | Phaser Keyboard + DOM-Buttons | Touch-Joystick (v0.3) |
+| Build | Claude (`tsc`) → Single HTML, GitHub Pages | Evtl. Vite für größere Versionen |
+| Persistenz | LocalStorage (3 Slots, implementiert) | — |
+| Mobile Input | Virtueller Joystick (DOM) + Touch-Buttons | — |
 | Viewport | Phaser Scale.RESIZE | — |
+| Welt | 20×20 Chunk-System, Pixel-Art-Tiles, 6 Biome | Isometrisch (v0.4) |
 | PWA | Nein | Noch offen |
 
 ### [VERWORFEN] Ursprünglicher Stack v0.1
@@ -254,4 +271,4 @@ Kein lokales Node.js, npm oder Terminal auf Jörns Seite nötig.
 
 ---
 
-*Letzte Aktualisierung: v0.2 — Tech-Stack auf TypeScript + Phaser.js umgestellt (März 2026)*
+*Letzte Aktualisierung: v0.3 — Biom-Farbpaletten, Pixel-Art-Tiles, Chunk-System und aktueller Tech-Stack eingetragen (März 2026)*
