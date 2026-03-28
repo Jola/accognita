@@ -101,7 +101,7 @@ export class GameScene extends Phaser.Scene {
             .setInteractive();
         text.on("pointerdown", () => {
             const dist = Math.hypot(this.gameState.player.x - instance.x, this.gameState.player.y - instance.y);
-            if (dist > 100) {
+            if (dist > this.getPlayerAttackRange()) {
                 showToast("Näher herangehen!", "system");
                 return;
             }
@@ -143,6 +143,11 @@ export class GameScene extends Phaser.Scene {
     calcPlayerWorldRadius(level) {
         const t = Math.min((level - 1) / (PLAYER_SIZE_LEVEL_MAX - 1), 1.0);
         return PLAYER_WORLD_RADIUS_MIN + t * (PLAYER_WORLD_RADIUS_MAX - PLAYER_WORLD_RADIUS_MIN);
+    }
+    // Nahkampf-Angriffsreichweite des Slimes in Weltpixeln.
+    // = Rand des Charakters + nochmal eine Charaktergröße = 2 × worldRadius.
+    getPlayerAttackRange() {
+        return this.calcPlayerWorldRadius(this.gameState.player.level) * 2;
     }
     // Passt Kamera-Zoom an das aktuelle Level an.
     // Slime erscheint immer PLAYER_SCREEN_RADIUS px groß.
@@ -488,7 +493,7 @@ export class GameScene extends Phaser.Scene {
                     const reflectDmg = triggerAuras(this.gameState.player);
                     if (reflectDmg > 0) {
                         instance.currentHp = Math.max(0, instance.currentHp - reflectDmg);
-                        this.showDamageNumber(instance.x, instance.y - 20, reflectDmg, "#ff8800");
+                        this.showDamageNumber(instance.x, instance.y, reflectDmg, "#ff8800");
                         // Hemolymph: XP für jeden ausgelösten Rückschlag
                         this.skillLevelUp(gainSkillXp(this.gameState.player, "hemolymph", 2), "hemolymph");
                         if (instance.currentHp <= 0) {
@@ -499,7 +504,7 @@ export class GameScene extends Phaser.Scene {
                         }
                     }
                     addLog(result.message, "aggro");
-                    this.showDamageNumber(px, py - 30, result.damageDealt, "#ff4444");
+                    this.showDamageNumber(px, py, result.damageDealt, "#ff4444");
                     updateUI(this.gameState);
                 }
             }
@@ -545,7 +550,7 @@ export class GameScene extends Phaser.Scene {
                 const dmg = getScaledDamage(hunterDef, hunter.bonusLevel ?? 0);
                 const preyDef = ENTITY_MAP.get(prey.definitionId);
                 prey.currentHp = Math.max(0, prey.currentHp - dmg);
-                this.showDamageNumber(prey.x, prey.y - 20, dmg, "#ff8800");
+                this.showDamageNumber(prey.x, prey.y, dmg, "#ff8800");
                 if (prey.currentHp <= 0) {
                     prey.isAlive = false;
                     prey.respawnAt = Date.now() + (preyDef?.respawnTime ?? 60) * 1000;
@@ -570,7 +575,7 @@ export class GameScene extends Phaser.Scene {
         if (playerHpDelta !== 0) {
             this.gameState.player.hp = Math.max(0, Math.min(this.gameState.player.maxHp, this.gameState.player.hp + playerHpDelta));
             if (playerHpDelta < 0) {
-                this.showDamageNumber(this.gameState.player.x, this.gameState.player.y - 30, -playerHpDelta, "#aa44ff");
+                this.showDamageNumber(this.gameState.player.x, this.gameState.player.y, -playerHpDelta, "#aa44ff");
             }
             else if (playerHpDelta > 0) {
                 // Photosynthesis: XP pro Heilungs-Tick
@@ -593,7 +598,7 @@ export class GameScene extends Phaser.Scene {
             if (hpDelta !== 0) {
                 instance.currentHp = Math.max(0, instance.currentHp + hpDelta);
                 if (hpDelta < 0) {
-                    this.showDamageNumber(instance.x, instance.y - 20, -hpDelta, "#44ff88");
+                    this.showDamageNumber(instance.x, instance.y, -hpDelta, "#44ff88");
                 }
                 if (instance.currentHp <= 0) {
                     instance.isAlive = false;
@@ -643,20 +648,28 @@ export class GameScene extends Phaser.Scene {
             this.updateCameraZoom(); // Welt schrumpft optisch mit dem Level-Up
         }
     }
+    // Zeigt eine Schadenszahl an der Position (x, y) in Weltkoordinaten.
+    // Font-Größe, Offset und Rise werden automatisch an den aktuellen Zoom angepasst,
+    // damit die Zahlen auf dem Bildschirm immer gleich groß erscheinen.
     showDamageNumber(x, y, dmg, color) {
+        const zoom = this.cameras.main.zoom;
+        const fSize = Math.max(1, Math.round(11 / zoom)); // ~11px auf dem Bildschirm
+        const offset = Math.round(8 / zoom); // Startversatz nach oben (Weltpixel)
+        const rise = Math.round(14 / zoom); // Aufstieg der Animation (Weltpixel)
+        const stroke = Math.max(1, Math.round(2 / zoom));
         const txt = this.add
-            .text(x, y, `${Math.round(dmg)}`, {
-            fontSize: "13px",
+            .text(x, y - offset, `${Math.round(dmg)}`, {
+            fontSize: `${fSize}px`,
             color,
             fontStyle: "bold",
             stroke: "#000000",
-            strokeThickness: 3,
+            strokeThickness: stroke,
         })
             .setOrigin(0.5)
             .setDepth(20);
         this.tweens.add({
             targets: txt,
-            y: y - 38,
+            y: y - offset - rise,
             alpha: 0,
             duration: 900,
             ease: "Power1",
@@ -701,7 +714,7 @@ export class GameScene extends Phaser.Scene {
             for (const effect of result.statusApplied) {
                 applyEffect(target, effect);
             }
-            this.showDamageNumber(target.x, target.y - 20, result.damageDealt, "#ffffff");
+            this.showDamageNumber(target.x, target.y, result.damageDealt, "#ffffff");
             if (target.currentHp <= 0) {
                 target.isAlive = false;
                 const def = ENTITY_MAP.get(target.definitionId);
@@ -726,7 +739,7 @@ export class GameScene extends Phaser.Scene {
         updateUI(this.gameState);
     }
     checkNearbyEntity() {
-        const nearest = findNearestEntity(this.gameState.player, this.gameState.world, 100);
+        const nearest = findNearestEntity(this.gameState.player, this.gameState.world, this.getPlayerAttackRange());
         const nearestId = nearest?.instanceId ?? null;
         if (nearestId !== this.lastNearbyId) {
             this.lastNearbyId = nearestId;

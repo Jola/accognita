@@ -22,6 +22,7 @@ export declare class GameScene extends Phaser.Scene {
     private despawnEntitySprite;
     private createPlayer;
     private calcPlayerWorldRadius;
+    private getPlayerAttackRange;
     private updateCameraZoom;
     private setupJoystick;
     private setupFullscreen;

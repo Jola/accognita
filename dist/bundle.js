@@ -307,11 +307,12 @@
       materialDrops: [],
       hp: 8,
       damage: 3,
-      speed: 28,
-      // worldSize 3 × 9 ≈ 28
-      attackRangePx: 40,
+      speed: 15,
+      // worldSize 3 × 5 = 15
+      attackRangePx: 6,
       attackCooldownMs: 1800,
       attackType: "melee",
+      // 2 × worldSize
       respawnTime: 30,
       interactRadius: 35,
       aggroRadius: 60,
@@ -335,11 +336,12 @@
       materialDrops: [],
       hp: 6,
       damage: 2,
-      speed: 35,
-      // worldSize 4 × 9 ≈ 35
-      attackRangePx: 38,
+      speed: 20,
+      // worldSize 4 × 5 = 20
+      attackRangePx: 8,
       attackCooldownMs: 2e3,
       attackType: "melee",
+      // 2 × worldSize
       respawnTime: 35,
       interactRadius: 35,
       aggroRadius: 50,
@@ -370,11 +372,12 @@
       materialDrops: [],
       hp: 18,
       damage: 8,
-      speed: 55,
-      // worldSize 6 × 9 = 54, +1 für aggressiv
-      attackRangePx: 55,
+      speed: 30,
+      // worldSize 6 × 5 = 30
+      attackRangePx: 12,
       attackCooldownMs: 1200,
       attackType: "charge",
+      // 2 × worldSize
       respawnTime: 45,
       interactRadius: 40,
       aggroRadius: 100,
@@ -401,11 +404,12 @@
       materialDrops: [],
       hp: 15,
       damage: 6,
-      speed: 50,
-      // worldSize 6 × 9 = 54, etwas langsamer (lauert)
-      attackRangePx: 50,
+      speed: 30,
+      // worldSize 6 × 5 = 30
+      attackRangePx: 12,
       attackCooldownMs: 1600,
       attackType: "melee",
+      // 2 × worldSize
       respawnTime: 50,
       interactRadius: 40,
       aggroRadius: 90,
@@ -448,7 +452,7 @@
   var PLAYER_WORLD_RADIUS_MAX = 8;
   var PLAYER_SIZE_LEVEL_MAX = 20;
   var PLAYER_SCREEN_RADIUS = 16;
-  var PLAYER_SPEED_PER_WORLD_RADIUS = 20;
+  var PLAYER_SPEED_PER_WORLD_RADIUS = 5;
 
   // dist/js/systems/SkillSystem.js
   function calcXpThreshold(baseThreshold, multiplier, level) {
@@ -1660,7 +1664,7 @@
   var MAX_AI_DIST_SQ = 500 * 500;
   var AGGRO_LOSS_FACTOR = 2.5;
   var AI_TICK_MS = 100;
-  var CHASE_STOP_DIST_SQ = 20 * 20;
+  var CHASE_STOP_FACTOR = 0.5;
   function calcEntityAi(def, instance, playerX, playerY, now) {
     if (!def.damage || def.behavior === "passive") {
       return idleFrame();
@@ -1705,7 +1709,8 @@
     let vy = 0;
     if (instance.isAggro && instance.isAlive) {
       const speed = def.speed ?? 60;
-      if (distSq > CHASE_STOP_DIST_SQ) {
+      const stopDist = (def.attackRangePx ?? 60) * CHASE_STOP_FACTOR;
+      if (distSq > stopDist * stopDist) {
         vx = dxRaw / dist * speed;
         vy = dyRaw / dist * speed;
       }
@@ -2913,7 +2918,7 @@
       const text = this.add.text(instance.x, instance.y, def.icon, { fontSize: `${RENDER_FONT}px` }).setOrigin(0.5).setScale(worldSize / RENDER_FONT).setInteractive();
       text.on("pointerdown", () => {
         const dist = Math.hypot(this.gameState.player.x - instance.x, this.gameState.player.y - instance.y);
-        if (dist > 100) {
+        if (dist > this.getPlayerAttackRange()) {
           showToast("N\xE4her herangehen!", "system");
           return;
         }
@@ -2953,6 +2958,11 @@
     calcPlayerWorldRadius(level) {
       const t = Math.min((level - 1) / (PLAYER_SIZE_LEVEL_MAX - 1), 1);
       return PLAYER_WORLD_RADIUS_MIN + t * (PLAYER_WORLD_RADIUS_MAX - PLAYER_WORLD_RADIUS_MIN);
+    }
+    // Nahkampf-Angriffsreichweite des Slimes in Weltpixeln.
+    // = Rand des Charakters + nochmal eine Charaktergröße = 2 × worldRadius.
+    getPlayerAttackRange() {
+      return this.calcPlayerWorldRadius(this.gameState.player.level) * 2;
     }
     // Passt Kamera-Zoom an das aktuelle Level an.
     // Slime erscheint immer PLAYER_SCREEN_RADIUS px groß.
@@ -3266,7 +3276,7 @@
             const reflectDmg = triggerAuras(this.gameState.player);
             if (reflectDmg > 0) {
               instance.currentHp = Math.max(0, instance.currentHp - reflectDmg);
-              this.showDamageNumber(instance.x, instance.y - 20, reflectDmg, "#ff8800");
+              this.showDamageNumber(instance.x, instance.y, reflectDmg, "#ff8800");
               this.skillLevelUp(gainSkillXp(this.gameState.player, "hemolymph", 2), "hemolymph");
               if (instance.currentHp <= 0) {
                 instance.isAlive = false;
@@ -3276,7 +3286,7 @@
               }
             }
             addLog(result.message, "aggro");
-            this.showDamageNumber(px, py - 30, result.damageDealt, "#ff4444");
+            this.showDamageNumber(px, py, result.damageDealt, "#ff4444");
             updateUI(this.gameState);
           }
         }
@@ -3317,7 +3327,7 @@
           const dmg = getScaledDamage(hunterDef, hunter.bonusLevel ?? 0);
           const preyDef = ENTITY_MAP.get(prey.definitionId);
           prey.currentHp = Math.max(0, prey.currentHp - dmg);
-          this.showDamageNumber(prey.x, prey.y - 20, dmg, "#ff8800");
+          this.showDamageNumber(prey.x, prey.y, dmg, "#ff8800");
           if (prey.currentHp <= 0) {
             prey.isAlive = false;
             prey.respawnAt = Date.now() + (preyDef?.respawnTime ?? 60) * 1e3;
@@ -3340,7 +3350,7 @@
       if (playerHpDelta !== 0) {
         this.gameState.player.hp = Math.max(0, Math.min(this.gameState.player.maxHp, this.gameState.player.hp + playerHpDelta));
         if (playerHpDelta < 0) {
-          this.showDamageNumber(this.gameState.player.x, this.gameState.player.y - 30, -playerHpDelta, "#aa44ff");
+          this.showDamageNumber(this.gameState.player.x, this.gameState.player.y, -playerHpDelta, "#aa44ff");
         } else if (playerHpDelta > 0) {
           this.skillLevelUp(gainSkillXp(this.gameState.player, "photosynthesis", 1), "photosynthesis");
         }
@@ -3360,7 +3370,7 @@
         if (hpDelta !== 0) {
           instance.currentHp = Math.max(0, instance.currentHp + hpDelta);
           if (hpDelta < 0) {
-            this.showDamageNumber(instance.x, instance.y - 20, -hpDelta, "#44ff88");
+            this.showDamageNumber(instance.x, instance.y, -hpDelta, "#44ff88");
           }
           if (instance.currentHp <= 0) {
             instance.isAlive = false;
@@ -3409,17 +3419,25 @@
         this.updateCameraZoom();
       }
     }
+    // Zeigt eine Schadenszahl an der Position (x, y) in Weltkoordinaten.
+    // Font-Größe, Offset und Rise werden automatisch an den aktuellen Zoom angepasst,
+    // damit die Zahlen auf dem Bildschirm immer gleich groß erscheinen.
     showDamageNumber(x, y, dmg, color) {
-      const txt = this.add.text(x, y, `${Math.round(dmg)}`, {
-        fontSize: "13px",
+      const zoom = this.cameras.main.zoom;
+      const fSize = Math.max(1, Math.round(11 / zoom));
+      const offset = Math.round(8 / zoom);
+      const rise = Math.round(14 / zoom);
+      const stroke = Math.max(1, Math.round(2 / zoom));
+      const txt = this.add.text(x, y - offset, `${Math.round(dmg)}`, {
+        fontSize: `${fSize}px`,
         color,
         fontStyle: "bold",
         stroke: "#000000",
-        strokeThickness: 3
+        strokeThickness: stroke
       }).setOrigin(0.5).setDepth(20);
       this.tweens.add({
         targets: txt,
-        y: y - 38,
+        y: y - offset - rise,
         alpha: 0,
         duration: 900,
         ease: "Power1",
@@ -3461,7 +3479,7 @@
         for (const effect of result.statusApplied) {
           applyEffect(target, effect);
         }
-        this.showDamageNumber(target.x, target.y - 20, result.damageDealt, "#ffffff");
+        this.showDamageNumber(target.x, target.y, result.damageDealt, "#ffffff");
         if (target.currentHp <= 0) {
           target.isAlive = false;
           const def = ENTITY_MAP.get(target.definitionId);
@@ -3482,7 +3500,7 @@
       updateUI(this.gameState);
     }
     checkNearbyEntity() {
-      const nearest = findNearestEntity(this.gameState.player, this.gameState.world, 100);
+      const nearest = findNearestEntity(this.gameState.player, this.gameState.world, this.getPlayerAttackRange());
       const nearestId = nearest?.instanceId ?? null;
       if (nearestId !== this.lastNearbyId) {
         this.lastNearbyId = nearestId;

@@ -25,9 +25,9 @@ const MAX_AI_DIST_SQ = 500 * 500; // 500px, als Quadrat
 const AGGRO_LOSS_FACTOR = 2.5;
 // Mindest-Update-Intervall pro Entity (ms)
 const AI_TICK_MS = 100;
-// Wie nah Entity am Spieler bleibt wenn sie ihn verfolgt (px)
-// Zu groß → Entity läuft durch den Spieler
-const CHASE_STOP_DIST_SQ = 20 * 20;
+// Chase-Stop-Distanz: Entity hält an wenn sie näher als attackRange × CHASE_STOP_FACTOR ist.
+// Faktor 0.5 → stoppt mittig in der Angriffsreichweite, verhindert Durchlaufen.
+const CHASE_STOP_FACTOR = 0.5;
 // -----------------------------------------------------------
 // Haupt-Funktion: AI für eine Entity berechnen
 //
@@ -90,7 +90,8 @@ export function calcEntityAi(def, instance, playerX, playerY, now) {
     let vy = 0;
     if (instance.isAggro && instance.isAlive) {
         const speed = def.speed ?? 60;
-        if (distSq > CHASE_STOP_DIST_SQ) {
+        const stopDist = (def.attackRangePx ?? 60) * CHASE_STOP_FACTOR;
+        if (distSq > stopDist * stopDist) {
             // Normierter Richtungsvektor × Speed
             vx = (dxRaw / dist) * speed;
             vy = (dyRaw / dist) * speed;
