@@ -29,6 +29,15 @@ const AI_TICK_MS = 100;
 // Zu groß → Entity läuft durch den Spieler
 const CHASE_STOP_DIST_SQ = 20 * 20;
 // -----------------------------------------------------------
+// Wander-Konstanten
+// -----------------------------------------------------------
+const TILE_PX = 32;
+const WANDER_RADIUS_PX = 10 * TILE_PX; // Max. 10 Kacheln von Spawnpunkt weg
+const WANDER_SPEED_FACTOR = 0.45; // 45 % der Kampfgeschwindigkeit
+const WANDER_PAUSE_MIN = 1500; // ms Mindest-Pause nach Erreichen des Ziels
+const WANDER_PAUSE_MAX = 4000; // ms Maximal-Pause
+const WANDER_ARRIVE_SQ = 10 * 10; // Gilt als "angekommen" innerhalb 10px
+// -----------------------------------------------------------
 // Haupt-Funktion: AI für eine Entity berechnen
 //
 // Gibt AiFrame zurück mit gewünschter Velocity (vx, vy)
@@ -96,6 +105,18 @@ export function calcEntityAi(def, instance, playerX, playerY, now) {
             vy = (dyRaw / dist) * speed;
         }
         // Innerhalb des Stop-Radius: Entity bleibt stehen (greift aber an)
+        // Wander-Zustand zurücksetzen, damit nach Aggro-Verlust eine Pause kommt
+        instance._wanderTargetX = undefined;
+        instance._wanderTargetY = undefined;
+        if (lostAggro) {
+            instance._wanderPauseUntil = now + 1500;
+        }
+    }
+    else if (instance.isAlive) {
+        // Kein Aggro → wandern
+        const w = calcWander(def, instance, now);
+        vx = w.vx;
+        vy = w.vy;
     }
     // Gecachte Velocity für Throttle-Frames
     instance._aiLastVx = vx;
@@ -131,12 +152,60 @@ export function resetAi(instance) {
     delete instance._aiLastCalcAt;
     delete instance._aiLastVx;
     delete instance._aiLastVy;
+    delete instance._wanderTargetX;
+    delete instance._wanderTargetY;
+    delete instance._wanderPauseUntil;
+    // _spawnX/_spawnY absichtlich NICHT löschen — bleibt der echte Spawnpunkt
 }
 // -----------------------------------------------------------
 // Hilfsfunktionen
 // -----------------------------------------------------------
 function idleFrame() {
     return { vx: 0, vy: 0, wantToAttack: false, becameAggro: false, lostAggro: false };
+}
+// -----------------------------------------------------------
+// Wander-Berechnung — gibt Velocity in Richtung Wanderziel zurück.
+// Spawn-Position und Wanderzustand werden als private Felder
+// auf der Instance gespeichert (gleiche Konvention wie _aiLastCalcAt).
+// -----------------------------------------------------------
+function calcWander(def, instance, now) {
+    const inst = instance;
+    // Spawnpunkt einmalig beim ersten Aufruf merken
+    if (inst._spawnX === undefined) {
+        inst._spawnX = instance.x;
+        inst._spawnY = instance.y;
+    }
+    // Pause nach Ankunft oder Aggro-Verlust
+    if (now < (inst._wanderPauseUntil ?? 0)) {
+        return idleFrame();
+    }
+    // Neues Ziel wählen wenn keins vorhanden
+    if (inst._wanderTargetX === undefined) {
+        const angle = Math.random() * Math.PI * 2;
+        const r = Math.random() * WANDER_RADIUS_PX;
+        inst._wanderTargetX = inst._spawnX + Math.cos(angle) * r;
+        inst._wanderTargetY = inst._spawnY + Math.sin(angle) * r;
+    }
+    const dtx = inst._wanderTargetX - instance.x;
+    const dty = inst._wanderTargetY - instance.y;
+    const dtSq = dtx * dtx + dty * dty;
+    // Ziel erreicht → Pause einlegen, Ziel löschen
+    if (dtSq < WANDER_ARRIVE_SQ) {
+        inst._wanderTargetX = undefined;
+        inst._wanderTargetY = undefined;
+        inst._wanderPauseUntil = now + WANDER_PAUSE_MIN +
+            Math.random() * (WANDER_PAUSE_MAX - WANDER_PAUSE_MIN);
+        return idleFrame();
+    }
+    const dt = Math.sqrt(dtSq);
+    const speed = (def.speed ?? 60) * WANDER_SPEED_FACTOR;
+    return {
+        vx: (dtx / dt) * speed,
+        vy: (dty / dt) * speed,
+        wantToAttack: false,
+        becameAggro: false,
+        lostAggro: false,
+    };
 }
 // Greift die Entity überhaupt an?
 // defensive: nur bei isAggro (wird durch Absorb-Fehlschlag gesetzt)
