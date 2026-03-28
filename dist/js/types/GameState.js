@@ -53,6 +53,7 @@ export function createInitialGameState() {
             entities: new Map(),
             currentZone: "forest_start",
             timeElapsed: 0,
+            worldSeed: 20250328,
         },
     };
 }

@@ -37,6 +37,7 @@ export interface WorldState {
     entities: Map<string, EntityInstance>;
     currentZone: string;
     timeElapsed: number;
+    worldSeed: number;
 }
 export interface GameState {
     player: PlayerState;

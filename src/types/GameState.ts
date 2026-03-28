@@ -72,6 +72,7 @@ export interface WorldState {
   entities: Map<string, EntityInstance>;  // instanceId → Instance
   currentZone: string;
   timeElapsed: number;
+  worldSeed: number;  // Seed für deterministiche Chunk-Generierung
 }
 
 // -----------------------------------------------------------
@@ -138,6 +139,7 @@ export function createInitialGameState(): GameState {
       entities: new Map(),
       currentZone: "forest_start",
       timeElapsed: 0,
+      worldSeed: 20250328,
     },
   };
 }

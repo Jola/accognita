@@ -566,7 +566,8 @@
       world: {
         entities: /* @__PURE__ */ new Map(),
         currentZone: "forest_start",
-        timeElapsed: 0
+        timeElapsed: 0,
+        worldSeed: 20250328
       }
     };
   }
@@ -927,17 +928,15 @@
   var BASE_XP_ANALYZE = 1;
   var BASE_XP_CORE = 1;
   var XP_LEVEL_MULTIPLIER = 1.5;
-  var XP_CURVE_EXPONENT = 1.5;
-  var XP_CURVE_MIN = 0.05;
-  var XP_CURVE_MAX = 4;
   var PLAYER_LEVEL_BASE_XP = 200;
   var PLAYER_LEVEL_XP_MULTIPLIER = 2;
   var BASE_HP = 80;
   var HP_PER_LEVEL = 15;
   var BASE_MP = 40;
   var MP_PER_LEVEL = 8;
-  function calcMaxHp(level) { return BASE_HP + (level - 1) * HP_PER_LEVEL; }
-  function calcMaxMp(level) { return BASE_MP + (level - 1) * MP_PER_LEVEL; }
+  var XP_CURVE_EXPONENT = 1.5;
+  var XP_CURVE_MIN = 0.05;
+  var XP_CURVE_MAX = 4;
   function calcXpMultiplier(entityLevel, skillLevel) {
     const level = Math.max(1, skillLevel);
     const ratio = entityLevel / level;
@@ -1110,14 +1109,24 @@
     let remaining = totalXp;
     while (true) {
       const threshold = Math.floor(PLAYER_LEVEL_BASE_XP * Math.pow(PLAYER_LEVEL_XP_MULTIPLIER, level - 1));
-      if (remaining < threshold) return { level, xpIntoLevel: remaining, xpToNext: threshold };
+      if (remaining < threshold) {
+        return { level, xpIntoLevel: remaining, xpToNext: threshold };
+      }
       remaining -= threshold;
       level++;
     }
   }
+  function calcMaxHp(level) {
+    return BASE_HP + (level - 1) * HP_PER_LEVEL;
+  }
+  function calcMaxMp(level) {
+    return BASE_MP + (level - 1) * MP_PER_LEVEL;
+  }
   function updatePlayerLevel(player) {
     let totalXp = player.coreAbilities.absorb.totalXpEarned + player.coreAbilities.analyze.totalXpEarned;
-    for (const inst of player.discoveredSkills.values()) totalXp += inst.totalXpEarned;
+    for (const inst of player.discoveredSkills.values()) {
+      totalXp += inst.totalXpEarned;
+    }
     player.totalExp = totalXp;
     const { level } = calcPlayerLevel(totalXp);
     const leveledUp = level > player.level;
@@ -1125,12 +1134,12 @@
       player.level = level;
       const newMaxHp = calcMaxHp(level);
       const newMaxMp = calcMaxMp(level);
-      player.hp  = Math.min(player.hp  + (newMaxHp - player.maxHp), newMaxHp);
-      player.mp  = Math.min(player.mp  + (newMaxMp - player.maxMp), newMaxMp);
+      player.hp = Math.min(player.hp + (newMaxHp - player.maxHp), newMaxHp);
+      player.mp = Math.min(player.mp + (newMaxMp - player.maxMp), newMaxMp);
       player.maxHp = newMaxHp;
       player.maxMp = newMaxMp;
     }
-    return { leveledUp, newLevel: leveledUp ? level : undefined };
+    return { leveledUp, newLevel: leveledUp ? level : void 0 };
   }
 
   // dist/js/systems/MaterialSystem.js
@@ -2526,6 +2535,757 @@
     };
   }
 
+  // dist/js/world/TilesetGenerator.js
+  var TILE_SIZE = 32;
+  var TILE_COUNT = 24;
+  var BIOME_TILE_OFFSET = {
+    forest: 0,
+    swamp: 4,
+    highland: 8,
+    mountain: 12,
+    desert: 16,
+    dungeon: 20
+  };
+  function hexToRgb(color) {
+    const n = parseInt(color.replace("#", ""), 16);
+    return [n >> 16 & 255, n >> 8 & 255, n & 255];
+  }
+  function makeLCG(seed) {
+    let s = seed >>> 0;
+    return () => {
+      s = (s * 1664525 + 1013904223 & 4294967295) >>> 0;
+      return s / 4294967295;
+    };
+  }
+  function setPixel(data, x, y, r, g, b, a = 255) {
+    if (x < 0 || x >= TILE_SIZE || y < 0 || y >= TILE_SIZE)
+      return;
+    const i = (y * TILE_SIZE + x) * 4;
+    data[i] = r;
+    data[i + 1] = g;
+    data[i + 2] = b;
+    data[i + 3] = a;
+  }
+  function fillBlock(data, x, y, w, h, r, g, b, a = 255) {
+    for (let dy = 0; dy < h; dy++) {
+      for (let dx = 0; dx < w; dx++) {
+        setPixel(data, x + dx, y + dy, r, g, b, a);
+      }
+    }
+  }
+  function draw3DEdge(data, lr, lg, lb, dr, dg, db) {
+    for (let x = 0; x < TILE_SIZE; x++)
+      setPixel(data, x, 0, lr, lg, lb, 160);
+    for (let y = 1; y < TILE_SIZE; y++)
+      setPixel(data, 0, y, lr, lg, lb, 100);
+    for (let x = 0; x < TILE_SIZE; x++)
+      setPixel(data, x, TILE_SIZE - 1, dr, dg, db, 140);
+    for (let y = 0; y < TILE_SIZE - 1; y++)
+      setPixel(data, TILE_SIZE - 1, y, dr, dg, db, 100);
+  }
+  var PALETTES = {
+    forest: { base: "#3d7a32", light: "#5aaa46", dark: "#1e4a18", accent: "#d4c840" },
+    swamp: { base: "#2d4e24", light: "#3d6a30", dark: "#141e10", accent: "#3a8878" },
+    highland: { base: "#7a6838", light: "#9a8a50", dark: "#4a4020", accent: "#9a7840" },
+    mountain: { base: "#686878", light: "#9898a8", dark: "#383840", accent: "#b8b8c8" },
+    desert: { base: "#c0a048", light: "#d8c070", dark: "#886828", accent: "#c8b858" },
+    dungeon: { base: "#282838", light: "#383850", dark: "#14141e", accent: "#484858" }
+  };
+  function drawForest(data, height, seed) {
+    const { base, light, dark, accent } = PALETTES.forest;
+    const [br, bg, bb] = hexToRgb(base);
+    const [lr, lg, lb] = hexToRgb(light);
+    const [dr, dg, db] = hexToRgb(dark);
+    const [ar, ag, ab] = hexToRgb(accent);
+    const rng = makeLCG(seed);
+    if (height === 0) {
+      for (let y = 0; y < TILE_SIZE; y++) {
+        for (let x = 0; x < TILE_SIZE; x++) {
+          const wave = Math.sin(x * 0.6 + y * 0.3) * 0.5 + 0.5;
+          const r = 34 + wave * 10 | 0;
+          const g = 85 + wave * 18 | 0;
+          const b = 153 + wave * 20 | 0;
+          setPixel(data, x, y, r, g, b);
+        }
+      }
+      for (let y = 5; y < TILE_SIZE; y += 6) {
+        for (let x = 0; x < TILE_SIZE - 1; x++) {
+          setPixel(data, x, y, 85, 153, 204, 160);
+        }
+      }
+      return;
+    }
+    for (let y = 0; y < TILE_SIZE; y++) {
+      for (let x = 0; x < TILE_SIZE; x++) {
+        const v = rng() * 0.14 - 0.07;
+        setPixel(data, x, y, Math.min(255, Math.max(0, br + v * 35)) | 0, Math.min(255, Math.max(0, bg + v * 45)) | 0, Math.min(255, Math.max(0, bb + v * 20)) | 0);
+      }
+    }
+    for (let i = 0; i < 5; i++) {
+      const sx = 1 + rng() * 28 | 0;
+      const sy = 12 + rng() * 16 | 0;
+      fillBlock(data, sx, sy, 2, 2, dr, dg, db, 130);
+    }
+    const bladeCount = 9 + rng() * 5 | 0;
+    for (let i = 0; i < bladeCount; i++) {
+      const bx = 1 + rng() * 30 | 0;
+      const by = 18 + rng() * 10 | 0;
+      const bh = 3 + rng() * (height + 2) | 0;
+      for (let d = 0; d < bh; d++) {
+        const a = 170 + rng() * 85 | 0;
+        const lean = d > 1 && rng() > 0.6 ? 1 : 0;
+        setPixel(data, bx + lean, by - d, lr, lg, lb, a);
+      }
+      setPixel(data, bx, by - bh, Math.min(255, lr + 30), Math.min(255, lg + 30), lb, 220);
+    }
+    for (let i = 0; i < 4; i++) {
+      const sx = 1 + rng() * 28 | 0;
+      const sy = 14 + rng() * 14 | 0;
+      fillBlock(data, sx, sy, 2, 1, lr, lg, lb, 100);
+    }
+    const flowerCount = height >= 2 ? 2 : 1;
+    for (let i = 0; i < flowerCount; i++) {
+      if (rng() > 0.45) {
+        const fx = 2 + rng() * 28 | 0;
+        const fy = 16 + rng() * 13 | 0;
+        setPixel(data, fx, fy, ar, ag, ab);
+        setPixel(data, fx - 1, fy, ar, ag, ab, 120);
+        setPixel(data, fx + 1, fy, ar, ag, ab, 120);
+      }
+    }
+    if (height === 3) {
+      for (let i = 0; i < 4; i++) {
+        const sx = rng() * 24 | 0;
+        const sy = rng() * 20 | 0;
+        fillBlock(data, sx, sy, 5, 4, dr, dg, db, 90);
+      }
+    }
+    draw3DEdge(data, lr, lg, lb, dr, dg, db);
+  }
+  function drawSwamp(data, height, seed) {
+    const { base, light, dark, accent } = PALETTES.swamp;
+    const [br, bg, bb] = hexToRgb(base);
+    const [lr, lg, lb] = hexToRgb(light);
+    const [dr, dg, db] = hexToRgb(dark);
+    const [ar, ag, ab] = hexToRgb(accent);
+    const rng = makeLCG(seed);
+    if (height === 0) {
+      for (let y = 0; y < TILE_SIZE; y++) {
+        for (let x = 0; x < TILE_SIZE; x++) {
+          const v = rng() * 0.1;
+          setPixel(data, x, y, 15 + v * 10 | 0, 40 + v * 15 | 0, 26 + v * 10 | 0);
+        }
+      }
+      for (let y = 4; y < TILE_SIZE; y += 7) {
+        for (let x = 0; x < TILE_SIZE; x++) {
+          if (rng() > 0.45)
+            setPixel(data, x, y, ar, ag, ab, 120);
+        }
+      }
+      return;
+    }
+    for (let y = 0; y < TILE_SIZE; y++) {
+      for (let x = 0; x < TILE_SIZE; x++) {
+        const v = rng() * 0.12 - 0.06;
+        setPixel(data, x, y, Math.min(255, Math.max(0, br + v * 25)) | 0, Math.min(255, Math.max(0, bg + v * 35)) | 0, Math.min(255, Math.max(0, bb + v * 18)) | 0);
+      }
+    }
+    const mossCount = 6 + rng() * 4 | 0;
+    for (let i = 0; i < mossCount; i++) {
+      const mx = rng() * 28 | 0;
+      const my = rng() * 28 | 0;
+      const mw = 2 + rng() * 2 | 0;
+      const mh = 2 + rng() * 2 | 0;
+      fillBlock(data, mx, my, mw, mh, dr, dg, db, 160);
+    }
+    for (let p = 0; p < 2; p++) {
+      const cx = 4 + rng() * 22 | 0;
+      const cy = 6 + rng() * 18 | 0;
+      for (let dy = -2; dy <= 2; dy++) {
+        for (let dx = -4; dx <= 4; dx++) {
+          if (dx * dx / 16 + dy * dy / 4 <= 1) {
+            const a = 140 + rng() * 60 | 0;
+            setPixel(data, cx + dx, cy + dy, ar, ag, ab, a);
+          }
+        }
+      }
+      setPixel(data, cx, cy - 1, Math.min(255, ar + 30), Math.min(255, ag + 30), Math.min(255, ab + 30), 160);
+    }
+    for (let i = 0; i < 4; i++) {
+      const bx = 1 + rng() * 30 | 0;
+      const by = 20 + rng() * 8 | 0;
+      setPixel(data, bx, by, lr, lg, lb, 160);
+      setPixel(data, bx, by - 1, lr, lg, lb, 200);
+      setPixel(data, bx, by - 2, lr, lg, lb, 140);
+    }
+    draw3DEdge(data, lr, lg, lb, dr, dg, db);
+  }
+  function drawHighland(data, height, seed) {
+    const { base, light, dark, accent } = PALETTES.highland;
+    const [br, bg, bb] = hexToRgb(base);
+    const [lr, lg, lb] = hexToRgb(light);
+    const [dr, dg, db] = hexToRgb(dark);
+    const [ar, ag, ab] = hexToRgb(accent);
+    const rng = makeLCG(seed);
+    if (height === 0) {
+      for (let y = 0; y < TILE_SIZE; y++) {
+        for (let x = 0; x < TILE_SIZE; x++) {
+          const wave = Math.sin(x * 0.7 + y * 0.4) * 0.5 + 0.5;
+          setPixel(data, x, y, 58 + wave * 15 | 0, 85 + wave * 20 | 0, 120 + wave * 18 | 0);
+        }
+      }
+      for (let i = 0; i < 4; i++) {
+        const sx = rng() * 26 | 0;
+        const sy = rng() * 26 | 0;
+        fillBlock(data, sx, sy, 3, 2, ar, ag, ab, 200);
+        setPixel(data, sx, sy, lr, lg, lb, 220);
+      }
+      return;
+    }
+    for (let y = 0; y < TILE_SIZE; y++) {
+      const streak = y % 5 < 1 || y % 7 < 1 ? 0.18 : 0;
+      for (let x = 0; x < TILE_SIZE; x++) {
+        const v = rng() * 0.1 - 0.05;
+        setPixel(data, x, y, Math.min(255, Math.max(0, br + (v - streak) * 40)) | 0, Math.min(255, Math.max(0, bg + (v - streak) * 35)) | 0, Math.min(255, Math.max(0, bb + (v - streak) * 20)) | 0);
+      }
+    }
+    const bladeCount = 7 + rng() * 4 | 0;
+    for (let i = 0; i < bladeCount; i++) {
+      const bx = 1 + rng() * 29 | 0;
+      const by = 8 + rng() * 20 | 0;
+      const len = 2 + rng() * 3 | 0;
+      for (let d = 0; d < len; d++) {
+        setPixel(data, bx + d, by - d, lr, lg, lb, 170);
+      }
+    }
+    const stoneCount = 2 + rng() * 3 | 0;
+    for (let i = 0; i < stoneCount; i++) {
+      const sx = 2 + rng() * 26 | 0;
+      const sy = 4 + rng() * 24 | 0;
+      const sw = 2 + rng() * 2 | 0;
+      fillBlock(data, sx, sy, sw, 2, ar, ag, ab, 200);
+      setPixel(data, sx, sy, lr, lg, lb, 230);
+      setPixel(data, sx + 1, sy, Math.min(255, lr + 20), Math.min(255, lg + 20), Math.min(255, lb + 20), 180);
+      fillBlock(data, sx, sy + 2, sw, 1, dr, dg, db, 120);
+    }
+    draw3DEdge(data, lr, lg, lb, dr, dg, db);
+  }
+  function drawMountain(data, height, seed) {
+    const { base, light, dark, accent } = PALETTES.mountain;
+    const [br, bg, bb] = hexToRgb(base);
+    const [lr, lg, lb] = hexToRgb(light);
+    const [dr, dg, db] = hexToRgb(dark);
+    const rng = makeLCG(seed);
+    if (height === 0) {
+      for (let y = 0; y < TILE_SIZE; y++) {
+        for (let x = 0; x < TILE_SIZE; x++) {
+          const v = rng() * 0.08;
+          setPixel(data, x, y, 34 + v * 15 | 0, 34 + v * 15 | 0, 48 + v * 20 | 0);
+        }
+      }
+      for (let x = 0; x < TILE_SIZE; x++)
+        setPixel(data, x, 0, lr, lg, lb, 180);
+      for (let x = 0; x < TILE_SIZE; x++)
+        setPixel(data, x, 1, lr, lg, lb, 80);
+      return;
+    }
+    for (let y = 0; y < TILE_SIZE; y++) {
+      for (let x = 0; x < TILE_SIZE; x++) {
+        const v = rng() * 0.14 - 0.07;
+        setPixel(data, x, y, Math.min(255, Math.max(0, br + v * 50)) | 0, Math.min(255, Math.max(0, bg + v * 50)) | 0, Math.min(255, Math.max(0, bb + v * 55)) | 0);
+      }
+    }
+    const crackCount = 2 + rng() * 3 | 0;
+    for (let c = 0; c < crackCount; c++) {
+      let cx = 2 + rng() * 28 | 0;
+      let cy = rng() * 10 | 0;
+      const crackLen = 8 + rng() * 16 | 0;
+      for (let d = 0; d < crackLen; d++) {
+        setPixel(data, cx, cy, dr, dg, db, 220);
+        if (cx > 0)
+          setPixel(data, cx - 1, cy, lr, lg, lb, 60);
+        cy++;
+        cx = Math.min(31, Math.max(0, cx + (rng() * 3 | 0) - 1));
+      }
+    }
+    const [ar, ag, ab] = hexToRgb(accent);
+    for (let i = 0; i < 3 + height; i++) {
+      if (rng() > 0.4) {
+        const gx = rng() * TILE_SIZE | 0;
+        const gy = rng() * TILE_SIZE | 0;
+        setPixel(data, gx, gy, ar, ag, ab, 200);
+        setPixel(data, gx + 1, gy, ar, ag, ab, 100);
+        setPixel(data, gx, gy + 1, ar, ag, ab, 100);
+      }
+    }
+    for (let x = 0; x < TILE_SIZE; x++)
+      setPixel(data, x, 0, lr, lg, lb, 220);
+    for (let x = 0; x < TILE_SIZE; x++)
+      setPixel(data, x, 1, lr, lg, lb, 110);
+    for (let y = 2; y < TILE_SIZE; y++)
+      setPixel(data, 0, y, lr, lg, lb, 160);
+    for (let x = 0; x < TILE_SIZE; x++)
+      setPixel(data, x, TILE_SIZE - 1, dr, dg, db, 220);
+    for (let x = 0; x < TILE_SIZE; x++)
+      setPixel(data, x, TILE_SIZE - 2, dr, dg, db, 100);
+    for (let y = 0; y < TILE_SIZE - 2; y++)
+      setPixel(data, TILE_SIZE - 1, y, dr, dg, db, 160);
+    if (height === 3) {
+      const snowRng = makeLCG(seed + 7777);
+      for (let y = 0; y < 11; y++) {
+        for (let x = 0; x < TILE_SIZE; x++) {
+          const a = y < 5 ? 160 + snowRng() * 95 | 0 : snowRng() > 0.5 ? 100 + snowRng() * 80 | 0 : 0;
+          if (a > 0)
+            setPixel(data, x, y, 215, 228, 240, a);
+        }
+      }
+      for (let i = 0; i < 8; i++) {
+        const sx = snowRng() * TILE_SIZE | 0;
+        const sy = snowRng() * 10 | 0;
+        setPixel(data, sx, sy, 255, 255, 255);
+        if (sx > 0)
+          setPixel(data, sx - 1, sy, 230, 238, 248, 180);
+        if (sx < 31)
+          setPixel(data, sx + 1, sy, 230, 238, 248, 180);
+        if (sy > 0)
+          setPixel(data, sx, sy - 1, 230, 238, 248, 150);
+      }
+    }
+  }
+  function drawDesert(data, height, seed) {
+    const { base, light, dark, accent } = PALETTES.desert;
+    const [br, bg, bb] = hexToRgb(base);
+    const [lr, lg, lb] = hexToRgb(light);
+    const [dr, dg, db] = hexToRgb(dark);
+    const rng = makeLCG(seed);
+    if (height === 0) {
+      for (let y = 0; y < TILE_SIZE; y++) {
+        for (let x = 0; x < TILE_SIZE; x++) {
+          const wave = Math.sin(x * 0.7 + y * 0.5) * 0.4 + 0.6;
+          setPixel(data, x, y, 32 + wave * 15 | 0, 96 + wave * 20 | 0, 168 + wave * 18 | 0);
+        }
+      }
+      for (let y = 3; y < TILE_SIZE; y += 5) {
+        for (let x = 0; x < TILE_SIZE - 1; x++) {
+          setPixel(data, x, y, 80, 153, 204, 140);
+        }
+      }
+      return;
+    }
+    for (let y = 0; y < TILE_SIZE; y++) {
+      for (let x = 0; x < TILE_SIZE; x++) {
+        const v = rng() * 0.08 - 0.04;
+        setPixel(data, x, y, Math.min(255, Math.max(0, br + v * 30)) | 0, Math.min(255, Math.max(0, bg + v * 25)) | 0, Math.min(255, Math.max(0, bb + v * 15)) | 0);
+      }
+    }
+    const stripeCount = 3 + rng() * 2 | 0;
+    const offset = rng() * 8 | 0;
+    for (let s = 0; s < stripeCount; s++) {
+      const startD = offset + s * 7;
+      for (let d = startD; d < startD + TILE_SIZE * 2; d++) {
+        const sx = d - TILE_SIZE;
+        const sy = d - startD;
+        setPixel(data, sx, sy, lr, lg, lb, 100);
+        setPixel(data, sx + 1, sy, lr, lg, lb, 50);
+      }
+    }
+    const pebbleCount = 3 + rng() * 3 | 0;
+    for (let i = 0; i < pebbleCount; i++) {
+      const px = 2 + rng() * 27 | 0;
+      const py = 4 + rng() * 24 | 0;
+      fillBlock(data, px, py, 2, 2, dr, dg, db, 180);
+      setPixel(data, px, py, lr, lg, lb, 160);
+    }
+    if (height >= 2) {
+      for (let y = 8; y < TILE_SIZE; y += 5) {
+        for (let x = 1; x < TILE_SIZE - 1; x++) {
+          if (x % 3 !== 0)
+            setPixel(data, x, y, lr, lg, lb, 70);
+        }
+      }
+    }
+    for (let x = 0; x < TILE_SIZE; x++)
+      setPixel(data, x, 0, lr, lg, lb, 180);
+    for (let y = 1; y < TILE_SIZE; y++)
+      setPixel(data, 0, y, lr, lg, lb, 110);
+    for (let x = 0; x < TILE_SIZE; x++)
+      setPixel(data, x, TILE_SIZE - 1, dr, dg, db, 130);
+    for (let y = 0; y < TILE_SIZE - 1; y++)
+      setPixel(data, TILE_SIZE - 1, y, dr, dg, db, 100);
+  }
+  function drawDungeon(data, height, seed) {
+    const { base, light, dark, accent } = PALETTES.dungeon;
+    const [br, bg, bb] = hexToRgb(base);
+    const [lr, lg, lb] = hexToRgb(light);
+    const [dr, dg, db] = hexToRgb(dark);
+    const [ar, ag, ab] = hexToRgb(accent);
+    const rng = makeLCG(seed);
+    if (height === 0) {
+      for (let y = 0; y < TILE_SIZE; y++) {
+        for (let x = 0; x < TILE_SIZE; x++) {
+          const v = rng() * 0.05;
+          setPixel(data, x, y, 8 + v * 10 | 0, 8 + v * 10 | 0, 16 + v * 15 | 0);
+        }
+      }
+      for (let x = 0; x < TILE_SIZE; x++)
+        setPixel(data, x, 0, dr, dg, db, 120);
+      return;
+    }
+    for (let y = 0; y < TILE_SIZE; y++) {
+      for (let x = 0; x < TILE_SIZE; x++) {
+        if (x % 8 === 0 || y % 8 === 0) {
+          setPixel(data, x, y, dr, dg, db);
+          continue;
+        }
+        const blockX = Math.floor(x / 8);
+        const blockY = Math.floor(y / 8);
+        const even = (blockX + blockY) % 2 === 0;
+        const tint = even ? 0 : 8;
+        const v = rng() * 0.04;
+        setPixel(data, x, y, Math.min(255, br + tint + v * 15) | 0, Math.min(255, bg + tint + v * 15) | 0, Math.min(255, bb + tint + v * 20) | 0);
+      }
+    }
+    const crackCount = 1 + rng() * 2 | 0;
+    for (let c = 0; c < crackCount; c++) {
+      const bx = (1 + rng() * 3 | 0) * 8 + 1;
+      const by = (1 + rng() * 3 | 0) * 8 + 1;
+      for (let d = 0; d < 5; d++) {
+        setPixel(data, bx + d, by + (rng() * 2 | 0), dr, dg, db, 160);
+      }
+    }
+    if (height >= 2 && rng() > 0.4) {
+      const rx = 9 + rng() * 12 | 0;
+      const ry = 9 + rng() * 12 | 0;
+      setPixel(data, rx, ry, ar, ag, ab);
+      setPixel(data, rx + 1, ry, ar, ag, ab, 140);
+      setPixel(data, rx, ry + 1, ar, ag, ab, 140);
+      setPixel(data, rx - 1, ry, ar, ag, ab, 100);
+    }
+    for (let x = 0; x < TILE_SIZE; x++)
+      setPixel(data, x, 0, lr, lg, lb, 200);
+    for (let x = 0; x < TILE_SIZE; x++)
+      setPixel(data, x, 1, lr, lg, lb, 90);
+    for (let y = 2; y < TILE_SIZE; y++)
+      setPixel(data, 0, y, lr, lg, lb, 130);
+  }
+  var DRAW_FUNCTIONS = {
+    forest: drawForest,
+    swamp: drawSwamp,
+    highland: drawHighland,
+    mountain: drawMountain,
+    desert: drawDesert,
+    dungeon: drawDungeon
+  };
+  var BIOME_ORDER = ["forest", "swamp", "highland", "mountain", "desert", "dungeon"];
+  function generateTileset(scene) {
+    const canvas = document.createElement("canvas");
+    canvas.width = TILE_SIZE * TILE_COUNT;
+    canvas.height = TILE_SIZE;
+    const ctx = canvas.getContext("2d");
+    for (let bi = 0; bi < BIOME_ORDER.length; bi++) {
+      const biome = BIOME_ORDER[bi];
+      const drawFn = DRAW_FUNCTIONS[biome];
+      for (let h = 0; h < 4; h++) {
+        const tileIndex = bi * 4 + h;
+        const imgData = ctx.createImageData(TILE_SIZE, TILE_SIZE);
+        drawFn(imgData.data, h, bi * 1e3 + h * 100 + 42);
+        ctx.putImageData(imgData, tileIndex * TILE_SIZE, 0);
+      }
+    }
+    scene.textures.addCanvas("worldTileset", canvas);
+  }
+
+  // dist/js/world/Chunk.js
+  var TILE_PX = 32;
+  var TILES_PER_CHUNK = 32;
+  var CHUNK_PX = TILE_PX * TILES_PER_CHUNK;
+  var RENDER_RADIUS = 2;
+  var ACTIVE_RADIUS = 1;
+  var UNLOAD_RADIUS = 3;
+  var WORLD_CHUNKS_X = 20;
+  var WORLD_CHUNKS_Y = 20;
+  var CHUNK_TICK_MS = 500;
+  function chunkKey(cx, cy) {
+    return `${cx},${cy}`;
+  }
+
+  // dist/js/world/BiomeDefinitions.js
+  var WORLD_ZONES = [
+    { cx: 0, cy: 0, cw: 5, ch: 5, biome: "forest", danger: 1 },
+    // Startzone
+    { cx: 5, cy: 0, cw: 4, ch: 4, biome: "swamp", danger: 2 },
+    { cx: 0, cy: 5, cw: 5, ch: 4, biome: "highland", danger: 2 },
+    { cx: 5, cy: 5, cw: 5, ch: 5, biome: "mountain", danger: 3 },
+    { cx: 10, cy: 2, cw: 3, ch: 6, biome: "desert", danger: 3 },
+    { cx: 7, cy: 9, cw: 5, ch: 5, biome: "dungeon", danger: 4 }
+  ];
+  function getBiomeAt(cx, cy) {
+    for (const zone of WORLD_ZONES) {
+      if (cx >= zone.cx && cx < zone.cx + zone.cw && cy >= zone.cy && cy < zone.cy + zone.ch) {
+        return zone.biome;
+      }
+    }
+    return "forest";
+  }
+  var BIOME_SPAWNS = {
+    forest: ["ant", "ladybug", "grass"],
+    swamp: ["poison_spider", "grass"],
+    highland: ["jumping_spider", "ant"],
+    mountain: ["jumping_spider", "poison_spider"],
+    desert: ["ant"],
+    dungeon: ["jumping_spider", "poison_spider"]
+  };
+  function getTileIndex(biome, height) {
+    const offset = BIOME_TILE_OFFSET[biome] ?? 0;
+    return offset + Math.min(3, Math.max(0, height));
+  }
+
+  // dist/js/world/WorldGenerator.js
+  function chunkSeed(cx, cy, worldSeed) {
+    return (cx * 73856093 ^ cy * 19349663 ^ worldSeed) >>> 0;
+  }
+  function makeLCG2(seed) {
+    let s = seed >>> 0;
+    return () => {
+      s = (s * 1664525 + 1013904223 & 4294967295) >>> 0;
+      return s / 4294967295;
+    };
+  }
+  function generateHeightMap(rng) {
+    const map = [];
+    const coarse = [];
+    const coarseSize = Math.ceil(TILES_PER_CHUNK / 4);
+    for (let cy = 0; cy < coarseSize; cy++) {
+      coarse.push([]);
+      for (let cx2 = 0; cx2 < coarseSize; cx2++) {
+        const r = rng();
+        let h;
+        if (r < 0.15)
+          h = 0;
+        else if (r < 0.55)
+          h = 1;
+        else if (r < 0.9)
+          h = 2;
+        else
+          h = 3;
+        coarse[cy].push(h);
+      }
+    }
+    for (let row = 0; row < TILES_PER_CHUNK; row++) {
+      map.push([]);
+      for (let col = 0; col < TILES_PER_CHUNK; col++) {
+        const coarseH = coarse[Math.floor(row / 4)][Math.floor(col / 4)];
+        const nudge = rng();
+        let h = coarseH;
+        if (nudge > 0.85 && h < 3)
+          h++;
+        else if (nudge < 0.08 && h > 0)
+          h--;
+        map[row].push(h);
+      }
+    }
+    return map;
+  }
+  function generateSpawns(biome, rng) {
+    const spawnTable = BIOME_SPAWNS[biome] ?? ["grass"];
+    const count = 8 + Math.floor(rng() * 7);
+    const spawns = [];
+    for (let i = 0; i < count; i++) {
+      const defId = spawnTable[Math.floor(rng() * spawnTable.length)];
+      const localX = 48 + rng() * (CHUNK_PX - 96) | 0;
+      const localY = 48 + rng() * (CHUNK_PX - 96) | 0;
+      spawns.push({ defId, localX, localY });
+    }
+    return spawns;
+  }
+  function generateChunk(cx, cy, worldSeed) {
+    const seed = chunkSeed(cx, cy, worldSeed);
+    const rng = makeLCG2(seed);
+    const biome = getBiomeAt(cx, cy);
+    const heightMap = generateHeightMap(rng);
+    const tileIndices = heightMap.map((row) => row.map((h) => getTileIndex(biome, h)));
+    const spawns = generateSpawns(biome, rng);
+    return { cx, cy, biome, tileIndices, heightMap, spawns };
+  }
+
+  // dist/js/world/ChunkManager.js
+  var ChunkManager = class {
+    constructor(scene, gameState, createEntitySprite, removeEntitySprite) {
+      this.loadedChunks = /* @__PURE__ */ new Map();
+      this.deadCache = /* @__PURE__ */ new Map();
+      this.lastTickTime = 0;
+      this.lastCx = -999;
+      this.lastCy = -999;
+      this.scene = scene;
+      this.gameState = gameState;
+      this.createEntitySprite = createEntitySprite;
+      this.removeEntitySprite = removeEntitySprite;
+    }
+    // ────────────────────────────────────────
+    // Public API
+    // ────────────────────────────────────────
+    /**
+     * Aufzurufen in GameScene.update().
+     * Prüft alle CHUNK_TICK_MS ob Chunks geladen/entladen werden müssen.
+     */
+    tick(px, py, now) {
+      if (now - this.lastTickTime < CHUNK_TICK_MS)
+        return;
+      this.lastTickTime = now;
+      const cx = Math.floor(px / CHUNK_PX);
+      const cy = Math.floor(py / CHUNK_PX);
+      if (cx === this.lastCx && cy === this.lastCy && this.loadedChunks.size > 0)
+        return;
+      this.lastCx = cx;
+      this.lastCy = cy;
+      this.updateChunks(cx, cy);
+    }
+    /**
+     * Welche Chunks sollen jetzt KI-simuliert werden?
+     * Gibt alle instanceIds in ACTIVE_RADIUS-Chunks zurück.
+     */
+    getActiveEntityIds() {
+      const active = /* @__PURE__ */ new Set();
+      for (const [key, chunk] of this.loadedChunks) {
+        const [kcx, kcy] = key.split(",").map(Number);
+        if (Math.abs(kcx - this.lastCx) <= ACTIVE_RADIUS && Math.abs(kcy - this.lastCy) <= ACTIVE_RADIUS) {
+          for (const id of chunk.instanceIds)
+            active.add(id);
+        }
+      }
+      return active;
+    }
+    isChunkLoaded(cx, cy) {
+      return this.loadedChunks.has(chunkKey(cx, cy));
+    }
+    // ────────────────────────────────────────
+    // Chunk-Verwaltung
+    // ────────────────────────────────────────
+    updateChunks(cx, cy) {
+      const toLoad = [];
+      for (let dy = -RENDER_RADIUS; dy <= RENDER_RADIUS; dy++) {
+        for (let dx = -RENDER_RADIUS; dx <= RENDER_RADIUS; dx++) {
+          const ncx = cx + dx;
+          const ncy = cy + dy;
+          if (ncx < 0 || ncy < 0 || ncx >= WORLD_CHUNKS_X || ncy >= WORLD_CHUNKS_Y)
+            continue;
+          const key = chunkKey(ncx, ncy);
+          if (!this.loadedChunks.has(key))
+            toLoad.push(key);
+        }
+      }
+      const toUnload = [];
+      for (const [key] of this.loadedChunks) {
+        const [kcx, kcy] = key.split(",").map(Number);
+        if (Math.abs(kcx - cx) > UNLOAD_RADIUS || Math.abs(kcy - cy) > UNLOAD_RADIUS) {
+          toUnload.push(key);
+        }
+      }
+      for (const key of toUnload)
+        this.unloadChunk(key);
+      for (const key of toLoad) {
+        const [ncx, ncy] = key.split(",").map(Number);
+        this.loadChunk(ncx, ncy);
+      }
+    }
+    loadChunk(cx, cy) {
+      const key = chunkKey(cx, cy);
+      if (this.loadedChunks.has(key))
+        return;
+      const def = generateChunk(cx, cy, this.gameState.world.worldSeed);
+      const tilemap = this.scene.make.tilemap({
+        data: def.tileIndices,
+        tileWidth: TILE_PX,
+        tileHeight: TILE_PX
+      });
+      const tileset = tilemap.addTilesetImage("worldTileset", "worldTileset", TILE_PX, TILE_PX, 0, 0);
+      const layer = tilemap.createLayer(0, tileset, cx * CHUNK_PX, cy * CHUNK_PX);
+      layer.setDepth(-1);
+      const instanceIds = [];
+      const now = Date.now();
+      const deadRecords = this.deadCache.get(key) ?? [];
+      for (const spawn of def.spawns) {
+        const def2 = ENTITY_MAP.get(spawn.defId);
+        if (!def2)
+          continue;
+        const deadIdx = deadRecords.findIndex((d) => d.defId === spawn.defId && Math.abs(d.localX - spawn.localX) < 2);
+        if (deadIdx >= 0) {
+          const dead = deadRecords[deadIdx];
+          if (now < dead.respawnAt) {
+            continue;
+          }
+          deadRecords.splice(deadIdx, 1);
+        }
+        const instanceId = `chunk_${key}_${instanceIds.length}`;
+        const worldX = cx * CHUNK_PX + spawn.localX;
+        const worldY = cy * CHUNK_PX + spawn.localY;
+        const instance = {
+          instanceId,
+          definitionId: spawn.defId,
+          x: worldX,
+          y: worldY,
+          currentHp: def2.hp ?? 10,
+          isAlive: true,
+          isAggro: false,
+          statusEffects: [],
+          attackCooldownRemaining: 0,
+          chunkKey: key
+        };
+        this.gameState.world.entities.set(instanceId, instance);
+        this.createEntitySprite(instance);
+        instanceIds.push(instanceId);
+      }
+      if (deadRecords.length > 0) {
+        this.deadCache.set(key, deadRecords);
+      } else {
+        this.deadCache.delete(key);
+      }
+      this.loadedChunks.set(key, {
+        def,
+        tilemap,
+        tilemapLayer: layer,
+        instanceIds,
+        loadedAt: now
+      });
+      console.log(`[Chunk] Loaded [${cx},${cy}] biome=${def.biome} entities=${instanceIds.length}`);
+    }
+    unloadChunk(key) {
+      const chunk = this.loadedChunks.get(key);
+      if (!chunk)
+        return;
+      const now = Date.now();
+      const deadRecords = this.deadCache.get(key) ?? [];
+      for (const instanceId of chunk.instanceIds) {
+        const instance = this.gameState.world.entities.get(instanceId);
+        if (instance) {
+          if (!instance.isAlive && instance.respawnAt) {
+            const cx = chunk.def.cx;
+            const cy = chunk.def.cy;
+            deadRecords.push({
+              defId: instance.definitionId,
+              localX: instance.x - cx * CHUNK_PX,
+              localY: instance.y - cy * CHUNK_PX,
+              respawnAt: instance.respawnAt
+            });
+          }
+          this.gameState.world.entities.delete(instanceId);
+        }
+        this.removeEntitySprite(instanceId);
+      }
+      if (deadRecords.length > 0) {
+        const alive = deadRecords.filter((d) => d.respawnAt > now);
+        if (alive.length > 0)
+          this.deadCache.set(key, alive);
+        else
+          this.deadCache.delete(key);
+      }
+      chunk.tilemapLayer.destroy();
+      chunk.tilemap.destroy();
+      this.loadedChunks.delete(key);
+      console.log(`[Chunk] Unloaded [${key}]`);
+    }
+  };
+
   // dist/js/scenes/GameScene.js
   var BootScene = class extends Phaser.Scene {
     constructor() {
@@ -2543,10 +3303,12 @@
       this.gamePaused = false;
       this.playtimeAccumulator = 0;
     }
+    preload() {
+      generateTileset(this);
+    }
     create() {
       this.gameState = createInitialGameState();
       this.createWorld();
-      this.createEntities();
       this.createPlayer();
       this.setupJoystick();
       this.setupFullscreen();
@@ -2568,55 +3330,48 @@
     // WELT
     // ----------------------------------------------------------
     createWorld() {
-      const worldW = 1600;
-      const worldH = 1200;
-      const g = this.add.graphics();
-      g.fillStyle(1717024);
-      g.fillRect(0, 0, worldW, worldH);
-      g.fillStyle(1320472, 0.5);
-      for (let x = 0; x < worldW; x += 80) {
-        for (let y = 0; y < worldH; y += 80) {
-          if ((x + y) % 160 === 0)
-            g.fillRect(x, y, 40, 40);
-        }
-      }
-      const grassPatches = [
-        { x: 240, y: 200, w: 160, h: 120 },
-        // Cluster A — nahe Spielerstart
-        { x: 680, y: 130, w: 180, h: 130 },
-        // Cluster B — oben Mitte
-        { x: 120, y: 590, w: 170, h: 130 },
-        // Cluster C — links
-        { x: 980, y: 340, w: 180, h: 140 },
-        // Cluster D — rechts
-        { x: 780, y: 800, w: 190, h: 130 },
-        // Cluster E — unten Mitte
-        { x: 1230, y: 640, w: 160, h: 120 }
-        // Cluster F — rechts unten
-      ];
-      g.fillStyle(1985064, 0.85);
-      for (const p of grassPatches) {
-        g.fillRoundedRect(p.x, p.y, p.w, p.h, 18);
-      }
-      g.fillStyle(2449456, 0.4);
-      for (const p of grassPatches) {
-        g.fillRoundedRect(p.x + 8, p.y + 8, p.w - 16, p.h - 16, 12);
-      }
-      const decos = [
-        { x: 80, y: 80, i: "\u{1F332}" },
-        { x: 1450, y: 90, i: "\u{1F332}" },
-        { x: 180, y: 1060, i: "\u{1F332}" },
-        { x: 1520, y: 1010, i: "\u{1F332}" },
-        { x: 760, y: 28, i: "\u{1FAA8}" },
-        { x: 40, y: 610, i: "\u{1FAA8}" },
-        { x: 1560, y: 490, i: "\u{1FAA8}" },
-        { x: 810, y: 1160, i: "\u{1F332}" }
-      ];
-      for (const d of decos) {
-        this.add.text(d.x, d.y, d.i, { fontSize: "32px" }).setAlpha(0.5);
-      }
+      const worldW = WORLD_CHUNKS_X * CHUNK_PX;
+      const worldH = WORLD_CHUNKS_Y * CHUNK_PX;
       this.physics.world.setBounds(0, 0, worldW, worldH);
       this.cameras.main.setBounds(0, 0, worldW, worldH);
+      this.chunkManager = new ChunkManager(this, this.gameState, (instance) => this.spawnEntitySprite(instance), (instanceId) => this.despawnEntitySprite(instanceId));
+      this.chunkManager.tick(this.gameState.player.x, this.gameState.player.y, Date.now() - 1e3);
+    }
+    // ────────────────────────────────────────
+    // Entity-Sprite: Erstellen / Entfernen
+    // ────────────────────────────────────────
+    spawnEntitySprite(instance) {
+      const def = ENTITY_MAP.get(instance.definitionId);
+      if (!def)
+        return null;
+      const text = this.add.text(instance.x, instance.y, def.icon, { fontSize: "28px" }).setOrigin(0.5).setInteractive();
+      text.on("pointerdown", () => {
+        const dist = Math.hypot(this.gameState.player.x - instance.x, this.gameState.player.y - instance.y);
+        if (dist > 100) {
+          showToast("N\xE4her herangehen!", "system");
+          return;
+        }
+        this.lastNearbyId = instance.instanceId;
+        this.doAbsorb();
+      });
+      this.tweens.add({
+        targets: text,
+        y: instance.y - 5,
+        duration: 1e3 + Math.floor(Math.random() * 500),
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut"
+      });
+      this.entitySprites.set(instance.instanceId, text);
+      return text;
+    }
+    despawnEntitySprite(instanceId) {
+      const sprite = this.entitySprites.get(instanceId);
+      if (sprite) {
+        this.tweens.killTweensOf(sprite);
+        sprite.destroy();
+        this.entitySprites.delete(instanceId);
+      }
     }
     // ----------------------------------------------------------
     // SPIELER
@@ -2644,91 +3399,6 @@
       });
     }
     // ----------------------------------------------------------
-    // ENTITIES
-    // ----------------------------------------------------------
-    createEntities() {
-      const placements = [
-        // --- Cluster A (nahe Spielerstart, ~300,250) ---
-        { defId: "grass", x: 270, y: 220 },
-        { defId: "grass", x: 320, y: 250 },
-        { defId: "grass", x: 295, y: 295 },
-        { defId: "ant", x: 350, y: 225 },
-        { defId: "ladybug", x: 260, y: 300 },
-        // --- Cluster B (oben Mitte, ~760,185) ---
-        { defId: "grass", x: 720, y: 165 },
-        { defId: "grass", x: 770, y: 190 },
-        { defId: "grass", x: 745, y: 235 },
-        { defId: "ant", x: 810, y: 170 },
-        { defId: "jumping_spider", x: 690, y: 210 },
-        // --- Cluster C (links, ~195,650) ---
-        { defId: "grass", x: 160, y: 620 },
-        { defId: "grass", x: 210, y: 645 },
-        { defId: "grass", x: 185, y: 690 },
-        { defId: "ladybug", x: 145, y: 665 },
-        { defId: "ant", x: 245, y: 635 },
-        // --- Cluster D (rechts, ~1060,400) ---
-        { defId: "grass", x: 1010, y: 370 },
-        { defId: "grass", x: 1065, y: 390 },
-        { defId: "grass", x: 1035, y: 440 },
-        { defId: "jumping_spider", x: 1110, y: 375 },
-        { defId: "poison_spider", x: 1090, y: 445 },
-        { defId: "ladybug", x: 1e3, y: 430 },
-        { defId: "ant", x: 1075, y: 450 },
-        // --- Cluster E (unten Mitte, ~860,850) ---
-        { defId: "grass", x: 825, y: 825 },
-        { defId: "grass", x: 880, y: 850 },
-        { defId: "grass", x: 850, y: 895 },
-        { defId: "ant", x: 920, y: 830 },
-        { defId: "jumping_spider", x: 810, y: 880 },
-        { defId: "poison_spider", x: 900, y: 890 },
-        // --- Cluster F (rechts unten, ~1295,680) ---
-        { defId: "grass", x: 1255, y: 660 },
-        { defId: "grass", x: 1310, y: 680 },
-        { defId: "grass", x: 1280, y: 725 },
-        { defId: "ladybug", x: 1350, y: 665 },
-        { defId: "jumping_spider", x: 1240, y: 710 },
-        { defId: "poison_spider", x: 1330, y: 720 }
-      ];
-      for (let i = 0; i < placements.length; i++) {
-        const p = placements[i];
-        const def = ENTITY_MAP.get(p.defId);
-        if (!def)
-          continue;
-        const instanceId = `entity_${i}`;
-        const instance = {
-          instanceId,
-          definitionId: p.defId,
-          x: p.x,
-          y: p.y,
-          currentHp: def.hp ?? 0,
-          isAlive: true,
-          isAggro: false,
-          statusEffects: [],
-          attackCooldownRemaining: 0
-        };
-        this.gameState.world.entities.set(instanceId, instance);
-        const text = this.add.text(p.x, p.y, def.icon, { fontSize: "28px" }).setOrigin(0.5).setInteractive();
-        text.on("pointerdown", () => {
-          const dist = Math.hypot(this.gameState.player.x - p.x, this.gameState.player.y - p.y);
-          if (dist > 100) {
-            showToast("N\xE4her herangehen!", "system");
-            return;
-          }
-          this.lastNearbyId = instanceId;
-          this.doAbsorb();
-        });
-        this.tweens.add({
-          targets: text,
-          y: p.y - 5,
-          duration: 1200 + i * 100,
-          yoyo: true,
-          repeat: -1,
-          ease: "Sine.easeInOut"
-        });
-        this.entitySprites.set(instanceId, text);
-      }
-    }
-    // ----------------------------------------------------------
     // JOYSTICK (Mobile)
     // ----------------------------------------------------------
     setupJoystick() {
@@ -2743,7 +3413,8 @@
     setupFullscreen() {
       const btn = document.getElementById("btnFullscreen");
       const updateBtn = (isFs) => {
-        if (!btn) return;
+        if (!btn)
+          return;
         btn.textContent = isFs ? "\u2715" : "\u26F6";
         btn.title = isFs ? "Vollbild beenden" : "Vollbild";
       };
@@ -2860,7 +3531,6 @@
       }
       this.gameState.player = saved.player;
       this.slimeGraphic.setPosition(saved.player.x, saved.player.y);
-      // maxHp/maxMp aus Level neu berechnen (migriert alte Saves)
       this.gameState.player.maxHp = calcMaxHp(saved.player.level);
       this.gameState.player.maxMp = calcMaxMp(saved.player.level);
       this.gameState.player.hp = Math.min(this.gameState.player.hp, this.gameState.player.maxHp);
@@ -2918,6 +3588,7 @@
       }
       this.handleMovement();
       this.syncPlayerPosition();
+      this.chunkManager.tick(this.gameState.player.x, this.gameState.player.y, Date.now());
       this.processEntityAi(delta);
       this.processCombatEffects(delta);
       this.updateEntityVisuals();
@@ -2979,7 +3650,10 @@
       const now = Date.now();
       const px = this.gameState.player.x;
       const py = this.gameState.player.y;
+      const activeIds = this.chunkManager.getActiveEntityIds();
       for (const [id, instance] of this.gameState.world.entities) {
+        if (!activeIds.has(id))
+          continue;
         if (!instance.isAlive)
           continue;
         const def = ENTITY_MAP.get(instance.definitionId);
@@ -3017,7 +3691,7 @@
               this.showDamageNumber(instance.x, instance.y - 20, reflectDmg, "#ff8800");
               this.skillLevelUp(gainSkillXp(this.gameState.player, "hemolymph", 2), "hemolymph");
               if (instance.currentHp <= 0) {
-                instance.isAlive  = false;
+                instance.isAlive = false;
                 instance.respawnAt = Date.now() + (def?.respawnTime ?? 60) * 1e3;
                 resetAi(instance);
                 addLog(`${def?.icon ?? "?"} ${def?.name ?? "Entity"} wurde vernichtet!`, "system");
@@ -3059,7 +3733,7 @@
             this.showDamageNumber(instance.x, instance.y - 20, -hpDelta, "#44ff88");
           }
           if (instance.currentHp <= 0) {
-            instance.isAlive  = false;
+            instance.isAlive = false;
             instance.respawnAt = Date.now() + (def?.respawnTime ?? 60) * 1e3;
             resetAi(instance);
             if (def)
@@ -3096,6 +3770,7 @@
       this.checkPlayerLevelUp();
       updateUI(this.gameState);
     }
+    /** Hauptlevel neu berechnen und bei Level-Up loggen */
     checkPlayerLevelUp() {
       const r = updatePlayerLevel(this.gameState.player);
       if (r.leveledUp) {
@@ -3157,7 +3832,7 @@
         }
         this.showDamageNumber(target.x, target.y - 20, result.damageDealt, "#ffffff");
         if (target.currentHp <= 0) {
-          target.isAlive  = false;
+          target.isAlive = false;
           const def = ENTITY_MAP.get(target.definitionId);
           target.respawnAt = Date.now() + (def?.respawnTime ?? 60) * 1e3;
           resetAi(target);
@@ -3242,9 +3917,7 @@
   };
   function updateUI(state) {
     const p = state.player;
-    const { xpIntoLevel, xpToNext } = calcPlayerLevel(p.totalExp);
-    setEl("ui-level", `Lv.${p.level} (${xpIntoLevel}/${xpToNext})`);
-    setStyle("xp-bar-fill", "width", `${xpIntoLevel / xpToNext * 100}%`);
+    setEl("ui-level", `Lv.${p.level}`);
     setEl("ui-hp", `${Math.floor(p.hp)}/${p.maxHp}`);
     setEl("ui-mp", `${p.mp}/${p.maxMp}`);
     setStyle("hp-bar-fill", "width", `${p.hp / p.maxHp * 100}%`);
@@ -3465,7 +4138,6 @@ ${detail}` : ""}`, type);
     });
   });
 })();
-
 </script>
 </body>
 </html>

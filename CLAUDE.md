@@ -8,7 +8,7 @@ This file is the project constitution. Read it at the start of every session bef
 
 **Absorb & Evolve** is a browser-based Action-RPG inspired by "That Time I Got Reincarnated as a Slime". The player controls a slime that evolves by absorbing or analyzing entities in a medieval fantasy world. Skills are discovered through interaction, leveled through repetition, and combined into new abilities.
 
-Current state: **v0.2** — Modular TypeScript + Phaser.js architecture, Skill-System + Combat-System implemented. Entities are aggressive, attack the player, and can be fought back with skills.
+Current state: **v0.3** — Modular TypeScript + Phaser.js architecture, Skill-System + Combat-System implemented. Large procedural world (20×20 chunks = 20480×20480px) with 6 biomes, pixel art tiles, and dynamic chunk loading.
 
 ---
 
@@ -33,6 +33,11 @@ Current state: **v0.2** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/ui/SkillBar.ts` | Touch skill slots with cooldown display and long-press menu |
 | `src/ui/SkillMenu.ts` | Full-screen skill management overlay (pauses game) |
 | `src/scenes/GameScene.ts` | Phaser scene — only file that knows about Phaser |
+| `src/world/Chunk.ts` | Types: BiomeId, HeightLevel, ChunkDef, LoadedChunk, SpawnDef + constants |
+| `src/world/BiomeDefinitions.ts` | Zone layout, spawn tables, tile index mapping |
+| `src/world/WorldGenerator.ts` | `generateChunk(cx, cy, seed)` — deterministic chunk generation |
+| `src/world/TilesetGenerator.ts` | Procedural pixel art tileset (24 tiles, Canvas 2D) |
+| `src/world/ChunkManager.ts` | Chunk load/unload, entity lifecycle, active-radius AI filtering |
 | `tsconfig.json` | TypeScript compiler configuration |
 | `docs/GDD-00-Index.md` | Meta-document. Explains all GDD files and conventions. |
 | `docs/GDD-01-Hauptbeschreibung.md` | Vision, core loop, setting, progression. |
@@ -58,6 +63,7 @@ types/   ←  data/  ←  systems/  ←  scenes/
 - `types/` — Pure TypeScript interfaces. No logic.
 - `data/` — Static definitions. Change values here for balancing.
 - `systems/` — Pure game logic. No rendering. Testable in isolation.
+- `world/` — Chunk system: no Phaser imports, scene typed as `any`. DOM Canvas 2D allowed for TilesetGenerator.
 - `ui/` — Self-contained DOM components (e.g. Joystick). No Phaser.
 - `scenes/` — Phaser + DOM glue. Calls systems and ui modules, renders results.
 
