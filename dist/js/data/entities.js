@@ -53,7 +53,7 @@ export const ENTITY_DEFINITIONS = [
             { skillId: "superstrength", chance: 0.10 }, // 50x Körpergewicht
         ],
         materialDrops: [],
-        hp: 8, damage: 3, speed: 60,
+        hp: 8, damage: 3, speed: 28, // worldSize 3 × 9 ≈ 28
         attackRangePx: 40, attackCooldownMs: 1800, attackType: "melee",
         respawnTime: 30,
         interactRadius: 35,
@@ -73,7 +73,7 @@ export const ENTITY_DEFINITIONS = [
             { skillId: "hemolymph", chance: 0.15 }, // Defensivgift bei Treffer
         ],
         materialDrops: [],
-        hp: 6, damage: 2, speed: 50,
+        hp: 6, damage: 2, speed: 35, // worldSize 4 × 9 ≈ 35
         attackRangePx: 38, attackCooldownMs: 2000, attackType: "melee",
         respawnTime: 35,
         interactRadius: 35,
@@ -98,7 +98,7 @@ export const ENTITY_DEFINITIONS = [
             { skillId: "chitin_armor", chance: 0.10 }, // Exoskelett (stärker als Ameise)
         ],
         materialDrops: [],
-        hp: 18, damage: 8, speed: 100,
+        hp: 18, damage: 8, speed: 55, // worldSize 6 × 9 = 54, +1 für aggressiv
         attackRangePx: 55, attackCooldownMs: 1200, attackType: "charge",
         respawnTime: 45,
         interactRadius: 40,
@@ -120,7 +120,7 @@ export const ENTITY_DEFINITIONS = [
             { skillId: "chitin_armor", chance: 0.08 }, // Exoskelett
         ],
         materialDrops: [],
-        hp: 15, damage: 6, speed: 80,
+        hp: 15, damage: 6, speed: 50, // worldSize 6 × 9 = 54, etwas langsamer (lauert)
         attackRangePx: 50, attackCooldownMs: 1600, attackType: "melee",
         respawnTime: 50,
         interactRadius: 40,

@@ -21,7 +21,7 @@ import { calcEntityAi, tickAttackCooldown, setAttackCooldown, resetAi, } from ".
 import { getEffectiveLevel, getScaledMaxHp, getScaledDamage, getScaledSpeed, findLevelingPrey, processEntityVictory, } from "../systems/EntityLevelingSystem.js";
 import { playerAttack, entityAttack, canActivateSkill, consumeSkill, calcDashDistance, executeCheckpoint, regenMp, } from "../systems/CombatSystem.js";
 import { processTicks, triggerAuras, applyEffect, removeExpiredEffects, syncPassiveEffects, } from "../systems/StatusEffectSystem.js";
-import { PLAYER_WORLD_RADIUS_MIN, PLAYER_WORLD_RADIUS_MAX, PLAYER_SIZE_LEVEL_MAX, PLAYER_SCREEN_RADIUS, } from "../data/balance.js";
+import { PLAYER_WORLD_RADIUS_MIN, PLAYER_WORLD_RADIUS_MAX, PLAYER_SIZE_LEVEL_MAX, PLAYER_SCREEN_RADIUS, PLAYER_SPEED_PER_WORLD_RADIUS, } from "../data/balance.js";
 import { generateTileset } from "../world/TilesetGenerator.js";
 import { ChunkManager } from "../world/ChunkManager.js";
 import { CHUNK_PX, WORLD_CHUNKS_X, WORLD_CHUNKS_Y } from "../world/Chunk.js";
@@ -381,7 +381,9 @@ export class GameScene extends Phaser.Scene {
         this.slimeGraphic.setScale(baseScale * (1 + wobble), baseScale * (1 - wobble));
     }
     handleMovement() {
-        const speed = 180;
+        // Geschwindigkeit skaliert mit Weltgröße → Bildschirm-Speed bleibt über alle Level konstant
+        const worldRadius = this.calcPlayerWorldRadius(this.gameState.player.level);
+        const speed = worldRadius * PLAYER_SPEED_PER_WORLD_RADIUS;
         const body = this.slimeGraphic.body;
         let dx = this.joy.active ? this.joy.dx : 0;
         let dy = this.joy.active ? this.joy.dy : 0;
