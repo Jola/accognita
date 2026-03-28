@@ -3235,7 +3235,7 @@
   }
   function generateSpawns(biome, rng) {
     const spawnTable = BIOME_SPAWNS[biome] ?? ["grass"];
-    const count = 16 + Math.floor(rng() * 13);
+    const count = 32 + Math.floor(rng() * 25);
     const spawns = [];
     for (let i = 0; i < count; i++) {
       const defId = spawnTable[Math.floor(rng() * spawnTable.length)];

@@ -83,7 +83,7 @@ function generateSpawns(
   rng: () => number
 ): SpawnDef[] {
   const spawnTable = BIOME_SPAWNS[biome as keyof typeof BIOME_SPAWNS] ?? ["grass"];
-  const count = 16 + Math.floor(rng() * 13); // 16–28
+  const count = 32 + Math.floor(rng() * 25); // 32–56
   const spawns: SpawnDef[] = [];
 
   for (let i = 0; i < count; i++) {
