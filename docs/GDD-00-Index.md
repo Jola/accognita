@@ -17,7 +17,7 @@ Diese Datei ist der **Einstiegspunkt für Menschen und KI-Systeme**, die mit den
 |------|------|
 | Projektname | Absorb & Evolve |
 | Typ | Browser-basiertes Action-RPG |
-| Aktueller Stand | v0.2 (spielbar, modulare Architektur) |
+| Aktueller Stand | v0.3 (spielbar, große prozedurale Welt mit Pixel-Art-Tiles, Kampfsystem, Speichersystem) |
 | Hauptentwickler | Jörn |
 | KI-Assistent | Claude (Anthropic) |
 | Arbeitssprache | Deutsch (Kommunikation), Englisch (Code & Dateinamen) |
@@ -34,15 +34,33 @@ Diese Datei ist der **Einstiegspunkt für Menschen und KI-Systeme**, die mit den
 | **GDD-03-Kampfsystem.md** | Kampfablauf, Gegnertypen, Schadenformeln, Status-Effekte, Tod-Mechanik | Bei Fragen zu Kämpfen, Gegnern, Balance, Spieler-Werten |
 | **GDD-04-LookAndFeel.md** | Farbpalette, Typografie, UI-Layout (Mobile + Desktop), Touch-Controls, Animationen, Audio, Tech-Stack | Bei Fragen zu Design, UI, Grafik, Sound, Technologie, Plattform |
 | **slime-rpg.html** | [VERWORFEN] Ursprünglicher Vanilla-JS-Prototype v0.1 — nicht mehr aktiv gepflegt | Nur als historische Referenz |
-| **absorb-evolve.html** | Aktuelles Spiel v0.2 — Single-File-Build, per Doppelklick öffenbar | Als Referenz für implementierte Mechaniken |
+| **accognita.html** | Aktuelles Spiel v0.3 — Single-File-Build, per Doppelklick öffenbar oder via GitHub Pages | Als Referenz für implementierte Mechaniken |
 | **src/types/Skill.ts** | TypeScript-Interfaces: SkillDefinition, SkillInstance, DiscoveryResult | Beim Erweitern des Skill-Systems |
 | **src/types/Entity.ts** | TypeScript-Interfaces: EntityDefinition, EntityInstance | Beim Erweitern von Entities |
 | **src/types/GameState.ts** | Zentraler GameState, PlayerState, WorldState | Bei State-Fragen |
+| **src/types/Combat.ts** | AttackType, StatusEffect, AttackResult, AiFrame | Bei Kampfsystem-Fragen |
+| **src/types/Material.ts** | Material und Loot-Drop-Interfaces | Beim Erweitern des Loot-Systems |
 | **src/data/skills.ts** | Alle Skill-Definitionen und Balancing-Werte | Beim Balancing |
 | **src/data/entities.ts** | Alle Entity-Definitionen | Beim Hinzufügen von Entities |
+| **src/data/materials.ts** | Alle Material-/Loot-Definitionen | Beim Balancing von Drops |
+| **src/data/balance.ts** | Zentrale Balancing-Konstanten (XP-Kurven, Schaden usw.) | Beim Balancing |
 | **src/systems/SkillSystem.ts** | Reine Skill-Logik (kein Phaser) | Bei Skill-Logik-Fragen |
 | **src/systems/EntitySystem.ts** | Absorb/Analyze/Respawn-Logik (kein Phaser) | Bei Interaktions-Logik-Fragen |
+| **src/systems/CombatSystem.ts** | Schadensberechnung, Skill-Dispatch, Checkpoint-Logik | Bei Kampfsystem-Fragen |
+| **src/systems/AiSystem.ts** | Aggro, Verfolgung, Angriffs-Trigger (kein Phaser) | Bei KI-Fragen |
+| **src/systems/StatusEffectSystem.ts** | DoT/HoT/Aura, passive Skills | Bei Status-Effekt-Fragen |
+| **src/systems/MaterialSystem.ts** | Loot-Drop-Auflösung, Material-Inventar | Beim Erweitern des Loot-Systems |
+| **src/systems/SaveSystem.ts** | Speichern/Laden via localStorage (3 Slots) | Bei Speicher-Fragen |
+| **src/ui/Joystick.ts** | Virtueller Joystick (DOM, kein Phaser) | Bei Touch-Input-Fragen |
+| **src/ui/SkillBar.ts** | Touch-Skill-Slots mit Cooldown-Anzeige | Bei UI-Fragen |
+| **src/ui/SkillMenu.ts** | Vollbild-Skill-Management-Overlay | Bei UI-Fragen |
+| **src/ui/SaveMenu.ts** | Speicher-/Lade-Slot-Overlay | Bei Speicher-UI-Fragen |
 | **src/scenes/GameScene.ts** | Phaser-Scene: Rendering, Input, UI-Bridge | Bei Rendering/Input-Fragen |
+| **src/world/Chunk.ts** | Typen: BiomeId, HeightLevel, ChunkDef, LoadedChunk, SpawnDef | Bei Welt-System-Fragen |
+| **src/world/BiomeDefinitions.ts** | Zonen-Layout, Spawn-Tabellen, Tile-Index-Mapping | Bei Biom-Fragen |
+| **src/world/WorldGenerator.ts** | `generateChunk(cx, cy)` — deterministisch | Bei Welt-Generierungs-Fragen |
+| **src/world/TilesetGenerator.ts** | Prozedurales Pixel-Art-Tileset (24 Tiles, Canvas 2D) | Bei Tile-Fragen |
+| **src/world/ChunkManager.ts** | Chunk-Laden/-Entladen, Entity-Lifecycle, KI-Radius-Filterung | Bei Performance-/Welt-Fragen |
 
 ---
 
@@ -90,9 +108,9 @@ Wenn in einem Dokument `> Status: Konzept-Phase` steht, bedeutet das: dieser Abs
 |---------|-----------|
 | v0.1 | Erster spielbarer Prototype (Desktop, Vanilla JS, Single File) |
 | v0.1.1 | Mobile-First Redesign: Joystick, Touch-Buttons, Bottom Sheet, responsive Layout |
-| v0.2 | **Aktuell.** Modulare Architektur (TypeScript + Phaser.js), Skill-System isoliert & testbar, saubere Trennung von Logik und Rendering. Single-File-Deployment via Claude-Build. |
-| v0.3 | Kampfsystem, aktive Skill-Nutzung im Kampf, Status-Effekte |
-| v0.4 | Isometrische Ansicht, Bosskämpfe, Speichersystem |
+| v0.2 | Modulare Architektur (TypeScript + Phaser.js), Skill-System isoliert & testbar, saubere Trennung von Logik und Rendering. Single-File-Deployment via Claude-Build. |
+| v0.3 | **Aktuell.** Kampfsystem + aktive Skills + Status-Effekte, Speichersystem (3 Slots LocalStorage), Touch-Joystick, große prozedurale Welt (20×20 Chunks = 20480×20480px, 6 Biome, Pixel-Art-Tiles). |
+| v0.4 | Isometrische Ansicht, Bosskämpfe |
 | v1.0 | Vollständiges erstes Release |
 
 Jede GDD-Datei trägt am Ende einen Zeitstempel der letzten Änderung. Dieser sollte bei jeder inhaltlichen Änderung aktualisiert werden.
@@ -129,19 +147,23 @@ Wenn du als KI-Assistent an diesem Projekt arbeitest, gelten folgende Regeln:
 ### Geschlossene Entscheidungen (diese Session)
 
 - [x] **Tech-Stack**: TypeScript + Phaser.js beschlossen und implementiert (v0.2)
-- [x] **Deployment**: Single-File-HTML — Claude kompiliert, Jörn lädt herunter und öffnet per Doppelklick
+- [x] **Deployment**: Single-File-HTML via GitHub Pages — Claude kompiliert und pusht
 - [x] **Architektur**: Modularer Aufbau mit `systems/`, `data/`, `types/`, `scenes/` — Logik vollständig von Rendering getrennt
 - [x] **Build-Workflow**: Kein lokales Node.js/npm nötig — Claude führt den Build aus
+- [x] **Speichersystem**: LocalStorage, 3 Slots (implementiert v0.3)
+- [x] **Touch-Input**: Virtueller Joystick via DOM (implementiert v0.3)
+- [x] **Kampfsystem**: Aktive Skills, Status-Effekte, KI (implementiert v0.3)
+- [x] **Welt-System**: 20×20 Chunks, 6 Biome, Pixel-Art-Tiles, dynamisches Chunk-Laden (implementiert v0.3)
 
 ### Noch offene Entscheidungen
 
 - [ ] Tod-Mechanik: Soft Death, Checkpoint oder Rogue-like? (siehe GDD-03, Abschnitt 7)
 - [ ] Skill-Limit: Gibt es eine Obergrenze für aktive Skills? (siehe GDD-02, Abschnitt 6)
 - [ ] Unbekannte Rezepte: Ab wann werden Kombinations-Rezepte versteckt? (GDD-02, Abschnitt 5)
-- [ ] Speichersystem: LocalStorage oder Server-basiert? (GDD-04, Abschnitt 8)
-- [ ] PWA: Soll das Spiel als installierbare App (PWA) verfügbar sein? (GDD-04, Abschnitt 8)
+- [ ] PWA: Soll das Spiel als installierbare App (PWA) verfügbar sein?
 - [ ] Mobile Interact: Soll Tap auf Entity direkt Absorb/Analyze auslösen, oder erst ein Kontextmenü zeigen?
-- [ ] Balancing: XP-Kurve, Spawn-Dichte und Respawn-Zeiten sind implementiert aber noch nicht getestet und abgestimmt
+- [ ] Material-UI: Gesammelte Materialien in-game sichtbar machen? (MaterialSystem existiert, UI fehlt)
+- [ ] Balancing: XP-Kurve, Spawn-Dichte und Respawn-Zeiten sind implementiert aber noch nicht abgestimmt
 - [ ] Fehlschlag-Formel: Linear oder kurvenbasiert? (GDD-02, Abschnitt 1.2)
 - [ ] Photosynthesis: Was tut diese Fähigkeit konkret? (GDD-02, Abschnitt 3.2)
 - [ ] Grow-Kosten: Welche Materialien und welche Mengen benötigt Grow? (GDD-02, Abschnitt 3.2)
@@ -149,4 +171,4 @@ Wenn du als KI-Assistent an diesem Projekt arbeitest, gelten folgende Regeln:
 
 ---
 
-*Letzte Aktualisierung: v0.3-Konzept — Skill-System Grundlagen neu definiert: Core-Fähigkeiten, Fehlschlag-Mechanik, Materialien, Pflanzen-Skills (März 2026)*
+*Letzte Aktualisierung: v0.3 — Dateistruktur, Versionstabelle, Entscheidungs-Backlog auf aktuellen Stand gebracht (März 2026)*

@@ -11,7 +11,7 @@
 | Perspektive | Top-Down 2D (primär), Isometrisch 2.5D (sekundär, geplant v0.4) |
 | Setting | Medieval Fantasy |
 | Zielplattform | Browser (HTML5/Canvas), Single-File, kein Server nötig |
-| Entwicklungsstand | v0.2 — Modulare Architektur, Skill-System implementiert |
+| Entwicklungsstand | v0.3 — Kampfsystem, Speichersystem, Touch-Joystick, große prozedurale Welt implementiert |
 | Inspirationsquelle | "That Time I Got Reincarnated as a Slime" (Anime/Manga) |
 
 ---
@@ -69,8 +69,8 @@ ERKUNDEN (auf neuem Niveau)
 ### View 1: Top-Down (Standard)
 - Klassische Vogelperspektive
 - Ideal für Erkundung, Interaktion, Übersicht
-- Tilemap-basierte Welt mit organischen Texturen
-- Slime bewegt sich frei in alle Richtungen
+- Chunk-basierte Tilemap-Welt: 20×20 Chunks = 20480×20480px, 6 Biome, Pixel-Art-Tiles (32×32px, prozedural generiert)
+- Slime bewegt sich frei in alle Richtungen (virtueller Joystick auf Mobile)
 
 ### View 2: Isometrisch 2.5D (Dungeon-Modus / geplant)
 - Für Dungeons, Ruinen, geschlossene Räume
@@ -107,4 +107,4 @@ Diese Pfade sind **nicht exklusiv** — der Spieler kann hybride Builds entwicke
 
 ---
 
-*Letzte Aktualisierung: v0.2 — Entwicklungsstand und Plattformangabe aktualisiert (März 2026)*
+*Letzte Aktualisierung: v0.3 — Entwicklungsstand auf v0.3, Welt-System beschrieben (März 2026)*
