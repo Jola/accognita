@@ -7,6 +7,7 @@ export declare class GameScene extends Phaser.Scene {
     private gameState;
     private slimeGraphic;
     private entitySprites;
+    private chunkManager;
     private joy;
     private lastNearbyId;
     private gamePaused;
@@ -14,10 +15,12 @@ export declare class GameScene extends Phaser.Scene {
     private skillBar;
     private playtimeAccumulator;
     constructor();
+    preload(): void;
     create(): void;
     private createWorld;
+    private spawnEntitySprite;
+    private despawnEntitySprite;
     private createPlayer;
-    private createEntities;
     private setupJoystick;
     private setupFullscreen;
     private enterFullscreen;

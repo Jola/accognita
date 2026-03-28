@@ -40,5 +40,6 @@ export interface EntityInstance {
     isAggro: boolean;
     statusEffects: StatusEffect[];
     attackCooldownRemaining: number;
+    chunkKey?: string;
 }
 //# sourceMappingURL=Entity.d.ts.map

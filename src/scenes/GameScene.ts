@@ -65,6 +65,9 @@ import {
   removeExpiredEffects,
   syncPassiveEffects,
 } from "../systems/StatusEffectSystem.js";
+import { generateTileset, TILE_SIZE } from "../world/TilesetGenerator.js";
+import { ChunkManager } from "../world/ChunkManager.js";
+import { CHUNK_PX, WORLD_CHUNKS_X, WORLD_CHUNKS_Y } from "../world/Chunk.js";
 
 // ============================================================
 // BOOT SCENE
@@ -86,6 +89,7 @@ export class GameScene extends Phaser.Scene {
 
   private slimeGraphic!: any;
   private entitySprites: Map<string, any> = new Map();
+  private chunkManager!: ChunkManager;
 
   private joy!: JoystickState;
 
@@ -99,11 +103,14 @@ export class GameScene extends Phaser.Scene {
     super({ key: "GameScene" });
   }
 
+  preload() {
+    generateTileset(this);
+  }
+
   create() {
     this.gameState = createInitialGameState();
 
     this.createWorld();
-    this.createEntities();
     this.createPlayer();
     this.setupJoystick();
     this.setupFullscreen();
@@ -134,50 +141,73 @@ export class GameScene extends Phaser.Scene {
   // WELT
   // ----------------------------------------------------------
   private createWorld() {
-    const worldW = 1600;
-    const worldH = 1200;
-    const g = this.add.graphics();
-
-    g.fillStyle(0x1a3320);
-    g.fillRect(0, 0, worldW, worldH);
-    g.fillStyle(0x142618, 0.5);
-    for (let x = 0; x < worldW; x += 80) {
-      for (let y = 0; y < worldH; y += 80) {
-        if ((x + y) % 160 === 0) g.fillRect(x, y, 40, 40);
-      }
-    }
-
-    // Gras-Patches (visuelle Untermalung für Gras-Cluster)
-    const grassPatches = [
-      { x: 240, y: 200, w: 160, h: 120 }, // Cluster A — nahe Spielerstart
-      { x: 680, y: 130, w: 180, h: 130 }, // Cluster B — oben Mitte
-      { x: 120, y: 590, w: 170, h: 130 }, // Cluster C — links
-      { x: 980, y: 340, w: 180, h: 140 }, // Cluster D — rechts
-      { x: 780, y: 800, w: 190, h: 130 }, // Cluster E — unten Mitte
-      { x: 1230, y: 640, w: 160, h: 120 }, // Cluster F — rechts unten
-    ];
-    g.fillStyle(0x1e4a28, 0.85);
-    for (const p of grassPatches) {
-      g.fillRoundedRect(p.x, p.y, p.w, p.h, 18);
-    }
-    g.fillStyle(0x256030, 0.4);
-    for (const p of grassPatches) {
-      g.fillRoundedRect(p.x + 8, p.y + 8, p.w - 16, p.h - 16, 12);
-    }
-
-    // Dekorationen
-    const decos = [
-      { x: 80,   y: 80,   i: "🌲" }, { x: 1450, y: 90,   i: "🌲" },
-      { x: 180,  y: 1060, i: "🌲" }, { x: 1520, y: 1010, i: "🌲" },
-      { x: 760,  y: 28,   i: "🪨" }, { x: 40,   y: 610,  i: "🪨" },
-      { x: 1560, y: 490,  i: "🪨" }, { x: 810,  y: 1160, i: "🌲" },
-    ];
-    for (const d of decos) {
-      this.add.text(d.x, d.y, d.i, { fontSize: "32px" }).setAlpha(0.5);
-    }
+    const worldW = WORLD_CHUNKS_X * CHUNK_PX; // 20480
+    const worldH = WORLD_CHUNKS_Y * CHUNK_PX; // 20480
 
     this.physics.world.setBounds(0, 0, worldW, worldH);
     this.cameras.main.setBounds(0, 0, worldW, worldH);
+
+    this.chunkManager = new ChunkManager(
+      this,
+      this.gameState,
+      (instance) => this.spawnEntitySprite(instance),
+      (instanceId) => this.despawnEntitySprite(instanceId),
+    );
+
+    // Initialen Tick sofort auslösen (Spielerstart in Chunk 0,0)
+    this.chunkManager.tick(
+      this.gameState.player.x,
+      this.gameState.player.y,
+      Date.now() - 1000, // force: lastTickTime so alt, dass Bedingung greift
+    );
+  }
+
+  // ────────────────────────────────────────
+  // Entity-Sprite: Erstellen / Entfernen
+  // ────────────────────────────────────────
+
+  private spawnEntitySprite(instance: EntityInstance): any {
+    const def = ENTITY_MAP.get(instance.definitionId);
+    if (!def) return null;
+
+    const text = this.add
+      .text(instance.x, instance.y, def.icon, { fontSize: "28px" })
+      .setOrigin(0.5)
+      .setInteractive();
+
+    text.on("pointerdown", () => {
+      const dist = Math.hypot(
+        this.gameState.player.x - instance.x,
+        this.gameState.player.y - instance.y,
+      );
+      if (dist > 100) {
+        showToast("Näher herangehen!", "system");
+        return;
+      }
+      this.lastNearbyId = instance.instanceId;
+      this.doAbsorb();
+    });
+
+    this.tweens.add({
+      targets: text,
+      y: instance.y - 5,
+      duration: 1000 + Math.floor(Math.random() * 500),
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.easeInOut",
+    });
+
+    this.entitySprites.set(instance.instanceId, text);
+    return text;
+  }
+
+  private despawnEntitySprite(instanceId: string): void {
+    const sprite = this.entitySprites.get(instanceId);
+    if (sprite) {
+      this.tweens.killTweensOf(sprite);
+      sprite.destroy();
+      this.entitySprites.delete(instanceId);
+    }
   }
 
   // ----------------------------------------------------------
@@ -209,109 +239,6 @@ export class GameScene extends Phaser.Scene {
       repeat: -1,
       ease: "Sine.easeInOut",
     });
-  }
-
-  // ----------------------------------------------------------
-  // ENTITIES
-  // ----------------------------------------------------------
-  private createEntities() {
-    const placements = [
-      // --- Cluster A (nahe Spielerstart, ~300,250) ---
-      { defId: "grass",          x: 270,  y: 220 },
-      { defId: "grass",          x: 320,  y: 250 },
-      { defId: "grass",          x: 295,  y: 295 },
-      { defId: "ant",            x: 350,  y: 225 },
-      { defId: "ladybug",        x: 260,  y: 300 },
-
-      // --- Cluster B (oben Mitte, ~760,185) ---
-      { defId: "grass",          x: 720,  y: 165 },
-      { defId: "grass",          x: 770,  y: 190 },
-      { defId: "grass",          x: 745,  y: 235 },
-      { defId: "ant",            x: 810,  y: 170 },
-      { defId: "jumping_spider", x: 690,  y: 210 },
-
-      // --- Cluster C (links, ~195,650) ---
-      { defId: "grass",          x: 160,  y: 620 },
-      { defId: "grass",          x: 210,  y: 645 },
-      { defId: "grass",          x: 185,  y: 690 },
-      { defId: "ladybug",        x: 145,  y: 665 },
-      { defId: "ant",            x: 245,  y: 635 },
-
-      // --- Cluster D (rechts, ~1060,400) ---
-      { defId: "grass",          x: 1010, y: 370 },
-      { defId: "grass",          x: 1065, y: 390 },
-      { defId: "grass",          x: 1035, y: 440 },
-      { defId: "jumping_spider", x: 1110, y: 375 },
-      { defId: "poison_spider",  x: 1090, y: 445 },
-      { defId: "ladybug",        x: 1000, y: 430 },
-      { defId: "ant",            x: 1075, y: 450 },
-
-      // --- Cluster E (unten Mitte, ~860,850) ---
-      { defId: "grass",          x: 825,  y: 825 },
-      { defId: "grass",          x: 880,  y: 850 },
-      { defId: "grass",          x: 850,  y: 895 },
-      { defId: "ant",            x: 920,  y: 830 },
-      { defId: "jumping_spider", x: 810,  y: 880 },
-      { defId: "poison_spider",  x: 900,  y: 890 },
-
-      // --- Cluster F (rechts unten, ~1295,680) ---
-      { defId: "grass",          x: 1255, y: 660 },
-      { defId: "grass",          x: 1310, y: 680 },
-      { defId: "grass",          x: 1280, y: 725 },
-      { defId: "ladybug",        x: 1350, y: 665 },
-      { defId: "jumping_spider", x: 1240, y: 710 },
-      { defId: "poison_spider",  x: 1330, y: 720 },
-    ];
-
-    for (let i = 0; i < placements.length; i++) {
-      const p = placements[i];
-      const def = ENTITY_MAP.get(p.defId);
-      if (!def) continue;
-
-      const instanceId = `entity_${i}`;
-      const instance: EntityInstance = {
-        instanceId,
-        definitionId: p.defId,
-        x: p.x,
-        y: p.y,
-        currentHp: def.hp ?? 0,
-        isAlive: true,
-        isAggro: false,
-        statusEffects: [],
-        attackCooldownRemaining: 0,
-      };
-      this.gameState.world.entities.set(instanceId, instance);
-
-      const text = this.add
-        .text(p.x, p.y, def.icon, { fontSize: "28px" })
-        .setOrigin(0.5)
-        .setInteractive();
-
-      // Tap auf Entity (mobil: Absorb)
-      text.on("pointerdown", () => {
-        const dist = Math.hypot(
-          this.gameState.player.x - p.x,
-          this.gameState.player.y - p.y
-        );
-        if (dist > 100) {
-          showToast("Näher herangehen!", "system");
-          return;
-        }
-        this.lastNearbyId = instanceId;
-        this.doAbsorb();
-      });
-
-      this.tweens.add({
-        targets: text,
-        y: p.y - 5,
-        duration: 1200 + i * 100,
-        yoyo: true,
-        repeat: -1,
-        ease: "Sine.easeInOut",
-      });
-
-      this.entitySprites.set(instanceId, text);
-    }
   }
 
   // ----------------------------------------------------------
@@ -530,6 +457,7 @@ export class GameScene extends Phaser.Scene {
     }
     this.handleMovement();
     this.syncPlayerPosition();
+    this.chunkManager.tick(this.gameState.player.x, this.gameState.player.y, Date.now());
     this.processEntityAi(delta);
     this.processCombatEffects(delta);
     this.updateEntityVisuals();
@@ -600,7 +528,11 @@ export class GameScene extends Phaser.Scene {
     const px = this.gameState.player.x;
     const py = this.gameState.player.y;
 
+    // Nur Entities in aktiven Chunks (ACTIVE_RADIUS) simulieren
+    const activeIds = this.chunkManager.getActiveEntityIds();
+
     for (const [id, instance] of this.gameState.world.entities) {
+      if (!activeIds.has(id)) continue;
       if (!instance.isAlive) continue;
       const def = ENTITY_MAP.get(instance.definitionId);
       if (!def) continue;

@@ -82,4 +82,5 @@ export interface EntityInstance {
   isAggro: boolean;         // Entity ist im Kampfmodus
   statusEffects: StatusEffect[];       // Aktive Effekte auf dieser Entity
   attackCooldownRemaining: number;     // ms bis zum nächsten Angriff
+  chunkKey?: string;        // "cx,cy" — welchem Chunk diese Entity gehört
 }
