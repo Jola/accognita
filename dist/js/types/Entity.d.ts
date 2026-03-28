@@ -44,5 +44,8 @@ export interface EntityInstance {
     statusEffects: StatusEffect[];
     attackCooldownRemaining: number;
     chunkKey?: string;
+    bonusLevel?: number;
+    skillWins?: number;
+    levelingCooldown?: number;
 }
 //# sourceMappingURL=Entity.d.ts.map

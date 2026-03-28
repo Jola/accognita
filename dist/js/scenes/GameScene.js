@@ -18,6 +18,7 @@ import { createSkillMenu } from "../ui/SkillMenu.js";
 import { createSaveMenu } from "../ui/SaveMenu.js";
 import { saveToSlot, loadFromSlot, deleteAllSaves } from "../systems/SaveSystem.js";
 import { calcEntityAi, tickAttackCooldown, setAttackCooldown, resetAi, } from "../systems/AiSystem.js";
+import { getEffectiveLevel, getScaledMaxHp, getScaledDamage, getScaledSpeed, findLevelingPrey, processEntityVictory, } from "../systems/EntityLevelingSystem.js";
 import { playerAttack, entityAttack, canActivateSkill, consumeSkill, calcDashDistance, executeCheckpoint, regenMp, } from "../systems/CombatSystem.js";
 import { processTicks, triggerAuras, applyEffect, removeExpiredEffects, syncPassiveEffects, } from "../systems/StatusEffectSystem.js";
 import { PLAYER_WORLD_RADIUS_MIN, PLAYER_WORLD_RADIUS_MAX, PLAYER_SIZE_LEVEL_MAX, PLAYER_SCREEN_RADIUS, } from "../data/balance.js";
@@ -364,6 +365,7 @@ export class GameScene extends Phaser.Scene {
         this.syncPlayerPosition();
         this.chunkManager.tick(this.gameState.player.x, this.gameState.player.y, Date.now());
         this.processEntityAi(delta);
+        this.processEntityLeveling(delta);
         this.processCombatEffects(delta);
         this.updateEntityVisuals();
         this.updateSlimeWobble(_time);
@@ -408,6 +410,11 @@ export class GameScene extends Phaser.Scene {
             if (instance.isAggro) {
                 sprite.setTint(0xff4444);
             }
+            else if ((instance.bonusLevel ?? 0) > 0) {
+                // Gelevelete Entity: goldener Tint als visueller Hinweis
+                sprite.setTint(0xffdd44);
+                sprite.setAlpha(1.0);
+            }
             else {
                 sprite.clearTint();
                 sprite.setAlpha(1.0);
@@ -418,8 +425,9 @@ export class GameScene extends Phaser.Scene {
             // HP-Balken (nur bei Schaden oder Aggro)
             // Breite/Höhe/Abstand in Screen-Pixeln, umgerechnet in Weltkoordinaten via Zoom
             const def = ENTITY_MAP.get(instance.definitionId);
-            if (def && def.hp && (instance.currentHp < def.hp || instance.isAggro)) {
-                const ratio = Math.max(0, instance.currentHp / def.hp);
+            const scaledMaxHp = def ? getScaledMaxHp(def, instance.bonusLevel ?? 0) : 0;
+            if (def && def.hp && (instance.currentHp < scaledMaxHp || instance.isAggro)) {
+                const ratio = Math.max(0, instance.currentHp / scaledMaxHp);
                 const zoom = this.cameras.main.zoom;
                 const worldSize = def.worldSize ?? 5;
                 const bw = 18 / zoom; // 18px Breite auf dem Bildschirm
@@ -491,6 +499,64 @@ export class GameScene extends Phaser.Scene {
                     addLog(result.message, "aggro");
                     this.showDamageNumber(px, py - 30, result.damageDealt, "#ff4444");
                     updateUI(this.gameState);
+                }
+            }
+        }
+    }
+    // ----------------------------------------------------------
+    // ENTITY-LEVELING-LOOP
+    // Kreaturen jagen schwächere Artgenossen und leveln auf.
+    // ----------------------------------------------------------
+    processEntityLeveling(delta) {
+        const activeIds = this.chunkManager.getActiveEntityIds();
+        for (const [id, hunter] of this.gameState.world.entities) {
+            if (!activeIds.has(id))
+                continue;
+            if (!hunter.isAlive || hunter.isAggro)
+                continue;
+            const hunterDef = ENTITY_MAP.get(hunter.definitionId);
+            if (!hunterDef || hunterDef.category !== "creature" || !hunterDef.damage)
+                continue;
+            if (hunterDef.behavior === "passive")
+                continue;
+            // Leveling-Cooldown ticken
+            if ((hunter.levelingCooldown ?? 0) > 0) {
+                hunter.levelingCooldown = Math.max(0, (hunter.levelingCooldown ?? 0) - delta);
+            }
+            // Beute suchen (nur aktive Entities)
+            const prey = findLevelingPrey(hunter, hunterDef, this.gameState.world.entities, ENTITY_MAP);
+            if (!prey || !activeIds.has(prey.instanceId))
+                continue;
+            // Auf Beute zubewegen
+            const dx = prey.x - hunter.x;
+            const dy = prey.y - hunter.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const attackRange = hunterDef.attackRangePx ?? 60;
+            if (dist > attackRange) {
+                const spd = getScaledSpeed(hunterDef, hunter.bonusLevel ?? 0);
+                hunter.x += (dx / dist) * spd * (delta / 1000);
+                hunter.y += (dy / dist) * spd * (delta / 1000);
+            }
+            else if ((hunter.levelingCooldown ?? 0) <= 0) {
+                // Angriff
+                hunter.levelingCooldown = hunterDef.attackCooldownMs ?? 1500;
+                const dmg = getScaledDamage(hunterDef, hunter.bonusLevel ?? 0);
+                const preyDef = ENTITY_MAP.get(prey.definitionId);
+                prey.currentHp = Math.max(0, prey.currentHp - dmg);
+                this.showDamageNumber(prey.x, prey.y - 20, dmg, "#ff8800");
+                if (prey.currentHp <= 0) {
+                    prey.isAlive = false;
+                    prey.respawnAt = Date.now() + (preyDef?.respawnTime ?? 60) * 1000;
+                    resetAi(prey);
+                    const result = processEntityVictory(hunter, hunterDef);
+                    if (result.entityLeveledUp) {
+                        const newLv = getEffectiveLevel(hunterDef, hunter);
+                        addLog(`${hunterDef.icon} ${hunterDef.name} steigt auf Stufe ${newLv} auf! ✨`, "levelup");
+                    }
+                    else if (result.skillLeveledUp) {
+                        const wins = hunter.skillWins ?? 0;
+                        addLog(`${hunterDef.icon} ${hunterDef.name} wird stärker! (${wins}/3)`, "system");
+                    }
                 }
             }
         }

@@ -87,4 +87,9 @@ export interface EntityInstance {
   statusEffects: StatusEffect[];       // Aktive Effekte auf dieser Entity
   attackCooldownRemaining: number;     // ms bis zum nächsten Angriff
   chunkKey?: string;        // "cx,cy" — welchem Chunk diese Entity gehört
+
+  // --- Entity-Leveling-System ---
+  bonusLevel?: number;      // Bonus-Level durch Siege (0–3)
+  skillWins?: number;       // Siege seit letztem bonusLevel-Anstieg (0–2)
+  levelingCooldown?: number; // ms Cooldown für Angriffe auf Beute
 }

@@ -200,6 +200,9 @@ export class ChunkManager {
         statusEffects: [],
         attackCooldownRemaining: 0,
         chunkKey: key,
+        bonusLevel: 0,
+        skillWins: 0,
+        levelingCooldown: 0,
       };
 
       this.gameState.world.entities.set(instanceId, instance);

@@ -3,9 +3,10 @@
 
 ---
 
-> **Status v0.2**: Grundkampfsystem implementiert.
+> **Status v0.3**: Grundkampfsystem implementiert.
 > Echtzeit-Aggro, Nahkampfangriffe, Status-Effekte (DoT/HoT/Auren),
 > Checkpoint-Tod, SkillBar + SkillMenu vollständig spielbar.
+> Entity-Leveling-System implementiert (Kreaturen kämpfen untereinander).
 
 ---
 
@@ -189,16 +190,75 @@ Richtung = Joystick-Vektor (falls inaktiv: kein Bewegungseffekt)
 
 ---
 
-## 9. Technische Architektur (implementiert)
+## 9. Entity-Leveling-System (implementiert)
+
+Kreaturen kämpfen untereinander und werden dadurch stärker. Dies macht die Welt lebendiger und belohnt den Spieler für das Beobachten und Nutzen von Levelunterschieden.
+
+### Mechanik
 
 ```
-types/Combat.ts          ← AttackType, StatusEffect, AttackResult, AiFrame
-systems/StatusEffectSystem.ts  ← alle Effekt-Logik, syncPassiveEffects
-systems/CombatSystem.ts  ← Schaden, Skill-Dispatch, Checkpoint
-systems/AiSystem.ts      ← Aggro, Chase, Attack-Trigger (Phaser-frei)
-ui/SkillBar.ts           ← DOM-Modul, Cooldown-Overlay, Long-Press
-ui/SkillMenu.ts          ← DOM-Overlay, Slot-Zuweisung, Skill-Aktivierung
-scenes/GameScene.ts      ← verdrahtet alle Systeme, Phaser-Rendering
+Kreatur sucht Beute im Radius 300 px
+    ↓ Ziel muss 1–3 Level niedriger sein (effektives Level)
+    ↓ Nur lebende Kreaturen mit Kampfwerten (damage definiert)
+    ↓ Kreatur bewegt sich auf Beute zu
+    ↓ Angriff wenn in attackRangePx
+    ↓
+Beute besiegt → skillWins++ (Skill wurde stärker)
+    ↓
+3 Siege → bonusLevel++ (max 3), HP voll geheilt, Log-Eintrag
+```
+
+### Bonus-Level
+
+| bonusLevel | HP-Faktor | Schaden-Faktor | Speed-Faktor |
+|-----------|-----------|----------------|--------------|
+| +0        | 1.00×     | 1.00×          | 1.00×        |
+| +1        | 1.25×     | 1.25×          | 1.25×        |
+| +2        | 1.56×     | 1.56×          | 1.56×        |
+| +3        | 1.95×     | 1.95×          | 1.95×        |
+
+### Visueller Hinweis
+
+- Gelevelete Entities (bonusLevel > 0): **goldener Tint** (0xffdd44)
+- Aggro auf Spieler überschreibt immer: **roter Tint** (0xff4444)
+- HP-Balken zeigt `currentHp / getScaledMaxHp` (skaliertes Maximum)
+
+### Implementierung
+
+```
+src/systems/EntityLevelingSystem.ts  ← reine Logik (Phaser-frei)
+  getEffectiveLevel()   — def.level + bonusLevel
+  getScaledMaxHp()      — HP skaliert mit 1.25^bonusLevel
+  getScaledDamage()     — Schaden skaliert
+  getScaledSpeed()      — Speed skaliert
+  findLevelingPrey()    — Beute-Suche (Level-Filter, Radius 300 px)
+  processEntityVictory() — skillWins++, evtl. bonusLevel++
+
+scenes/GameScene.ts
+  processEntityLeveling(delta) — im Update-Loop nach processEntityAi()
+```
+
+### Einschränkungen
+
+- Nur aktive Entities (ACTIVE_RADIUS um den Spieler) nehmen teil
+- Entity muss category="creature" und damage definiert haben
+- behavior="passive" wird ausgeschlossen (Pflanzen, Mineralien)
+- Während isAggro (Jagd auf Spieler): kein Leveling-Verhalten
+- bonusLevel geht verloren beim Respawn (Entity startet neu)
+
+---
+
+## 10. Technische Architektur (implementiert)
+
+```
+types/Combat.ts                    ← AttackType, StatusEffect, AttackResult, AiFrame
+systems/StatusEffectSystem.ts      ← alle Effekt-Logik, syncPassiveEffects
+systems/CombatSystem.ts            ← Schaden, Skill-Dispatch, Checkpoint
+systems/AiSystem.ts                ← Aggro, Chase, Attack-Trigger (Phaser-frei)
+systems/EntityLevelingSystem.ts    ← Entity-vs-Entity-Kampf, Leveling-Logik
+ui/SkillBar.ts                     ← DOM-Modul, Cooldown-Overlay, Long-Press
+ui/SkillMenu.ts                    ← DOM-Overlay, Slot-Zuweisung, Skill-Aktivierung
+scenes/GameScene.ts                ← verdrahtet alle Systeme, Phaser-Rendering
 ```
 
 **Performance-Maßnahmen:**
@@ -209,4 +269,4 @@ scenes/GameScene.ts      ← verdrahtet alle Systeme, Phaser-Rendering
 
 ---
 
-*Letzte Aktualisierung: 2026-03-24 — v0.2, Kampfsystem vollständig implementiert*
+*Letzte Aktualisierung: 2026-03-28 — v0.3, Entity-Leveling-System implementiert*
