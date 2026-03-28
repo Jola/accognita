@@ -59,10 +59,10 @@ export function playerAttack(player, targetInst, skillId) {
     // Passiv-Multiplikator (Superstrength etc.)
     const damageMult = calcDamageMult(player.statusEffects);
     let dmg = Math.max(1, Math.round(baseDmg * damageMult));
-    // Rüstung des Ziels (EntityDefinition hat keine Rüstung in v0.3 — Platzhalter 0)
-    // Wird relevant sobald Entities eigene Verteidigung bekommen
-    const targetArmor = 0;
-    dmg = Math.max(1, dmg - targetArmor);
+    // Rüstung des Ziels (Chitin Armor oder vergleichbar)
+    if (def.damageReduction && def.damageReduction > 0) {
+        dmg = Math.max(1, Math.round(dmg * (1 - def.damageReduction)));
+    }
     // Venom: passiv auf Treffer anwenden (wenn Spieler Venom hat)
     const venomInst = player.discoveredSkills.get("venom");
     if (venomInst) {
@@ -93,11 +93,11 @@ export function entityAttack(def, instance, player) {
     // Spieler-Schadensreduktion (Chitin Armor etc.)
     const reduction = calcDamageReduction(player.statusEffects);
     const dmg = Math.max(1, Math.round(baseDmg * (1 - reduction)));
-    // Poison Spider: Vergiftet auch beim Angriff
+    // Venom-Angriff: Entity vergiftet Spieler wenn venomChance > 0
     const appliedEffects = [];
-    if (def.id === "poison_spider") {
-        if (Math.random() < 0.40) {
-            appliedEffects.push(makeVenomEffect(1));
+    if (def.venomChance && def.venomChance > 0) {
+        if (Math.random() < def.venomChance) {
+            appliedEffects.push(makeVenomEffect(1, def.venomDamagePerTick));
         }
     }
     const msg = dmg !== baseDmg

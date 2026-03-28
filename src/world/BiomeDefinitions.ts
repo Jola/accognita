@@ -48,10 +48,10 @@ export function getBiomeAt(cx: number, cy: number): BiomeId {
 export const BIOME_SPAWNS: Record<BiomeId, string[]> = {
   forest:   ["ant", "ladybug", "grass"],
   swamp:    ["poison_spider", "grass"],
-  highland: ["jumping_spider", "ant"],
-  mountain: ["jumping_spider", "poison_spider"],
-  desert:   ["ant"],
-  dungeon:  ["jumping_spider", "poison_spider"],
+  highland: ["jumping_spider", "ant", "small_scorpion"],
+  mountain: ["jumping_spider", "poison_spider", "small_scorpion"],
+  desert:   ["ant", "small_scorpion", "large_scorpion"],
+  dungeon:  ["jumping_spider", "poison_spider", "large_scorpion"],
 };
 
 // ────────────────────────────────────────

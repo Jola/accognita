@@ -171,11 +171,10 @@ export const PLAYER_SCREEN_RADIUS = 16;
 /**
  * Geschwindigkeit des Slimes pro World-Pixel Radius.
  * speed = worldRadius × PLAYER_SPEED_PER_WORLD_RADIUS
- * Formel: 5× eigene Größe pro Sekunde (worldRadius als Größenmaß).
- *   Level 1  (radius 2): world-speed  10 → screen-speed  10 × 8 = 80 px/s
- *   Level 20 (radius 8): world-speed  40 → screen-speed  40 × 2 = 80 px/s
+ *   Level 1  (radius 2): world-speed  20 → screen-speed  20 × 8 = 160 px/s
+ *   Level 20 (radius 8): world-speed  80 → screen-speed  80 × 2 = 160 px/s
  */
-export const PLAYER_SPEED_PER_WORLD_RADIUS = 7.5;
+export const PLAYER_SPEED_PER_WORLD_RADIUS = 10;
 
 /**
  * Grundgeschwindigkeit für Entities pro worldSize-Einheit.

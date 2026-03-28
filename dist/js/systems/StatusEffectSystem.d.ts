@@ -24,5 +24,5 @@ export declare function calcDamageReduction(effects: StatusEffect[]): number;
 export declare function calcDamageMult(effects: StatusEffect[]): number;
 /** Geschwindigkeits-Multiplikator durch Slow-Effekte etc. */
 export declare function calcSpeedMultiplier(effects: StatusEffect[]): number;
-export declare function makeVenomEffect(venomLevel: number): StatusEffect;
+export declare function makeVenomEffect(venomLevel: number, damageOverride?: number): StatusEffect;
 //# sourceMappingURL=StatusEffectSystem.d.ts.map
