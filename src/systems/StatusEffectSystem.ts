@@ -152,6 +152,7 @@ export function syncPassiveEffects(player: PlayerState): void {
   for (const [skillId, instance] of player.discoveredSkills) {
     const def = ALL_SKILLS.get(skillId);
     if (!def || def.activation !== "passive") continue;
+    if (instance.isEnabled === false) continue;
 
     const effectiveness = getSkillEffectiveness(instance.level);
 
@@ -214,7 +215,10 @@ export function syncPassiveEffects(player: PlayerState): void {
     if (!e.id.startsWith("passive_")) return true;
     const skillId = e.sourceSkillId;
     const def = ALL_SKILLS.get(skillId);
-    return player.discoveredSkills.has(skillId) && def?.activation === "passive";
+    const inst = player.discoveredSkills.get(skillId);
+    return player.discoveredSkills.has(skillId)
+      && def?.activation === "passive"
+      && inst?.isEnabled !== false;
   });
 }
 

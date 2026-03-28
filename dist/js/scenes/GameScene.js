@@ -324,6 +324,7 @@ export class GameScene extends Phaser.Scene {
         window.touchAbsorb = () => this.doAbsorb();
         window.touchAnalyze = () => this.doAnalyze();
         window.doGrow = () => this.doGrow();
+        window.togglePassiveSkill = (skillId) => this.togglePassiveSkill(skillId);
         window.resumeFromPause = () => {
             const el = document.documentElement;
             if (el.requestFullscreen || el.webkitRequestFullscreen) {
@@ -677,6 +678,16 @@ export class GameScene extends Phaser.Scene {
         if (result.success)
             updateUI(this.gameState);
     }
+    togglePassiveSkill(skillId) {
+        const inst = this.gameState.player.discoveredSkills.get(skillId);
+        if (!inst)
+            return;
+        inst.isEnabled = inst.isEnabled === false ? true : false;
+        syncPassiveEffects(this.gameState.player);
+        updateUI(this.gameState);
+        const state = inst.isEnabled ? "aktiviert" : "deaktiviert";
+        showToast(`${ALL_SKILLS.get(skillId)?.name ?? skillId} ${state}`, "system");
+    }
     doCombine(skillIdA, skillIdB) {
         const result = combineSkills(this.gameState.player, skillIdA, skillIdB);
         showCombineResult(result);
@@ -737,14 +748,16 @@ function renderSkillList(state) {
         const maxed = isMaxLevel(inst);
         const isPassive = def.activation === "passive";
         const hasGrow = def.id === "grow" && !maxed;
+        const enabled = inst.isEnabled !== false;
         return `
-        <div class="skill-card element-${def.element}">
+        <div class="skill-card element-${def.element}${isPassive && !enabled ? " skill-disabled" : ""}">
           <div class="skill-header">
             <span class="skill-icon">${def.icon}</span>
             <span class="skill-name">${def.name}</span>
             ${def.category === "combo" ? '<span class="combo-badge">COMBO</span>' : ""}
             ${isPassive ? '<span class="combo-badge" style="background:#4af0c8;color:#000">PASSIV</span>' : ""}
             <span class="skill-level">Lv.${inst.level}${maxed ? " MAX" : ""}</span>
+            ${isPassive ? `<button class="btn-passive-toggle" onclick="window.togglePassiveSkill('${def.id}')">${enabled ? "AN" : "AUS"}</button>` : ""}
           </div>
           <div class="xp-bar-wrap">
             <div class="xp-bar-fill" style="width:${progress * 100}%"></div>

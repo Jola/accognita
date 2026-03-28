@@ -117,6 +117,8 @@ export function syncPassiveEffects(player) {
         const def = ALL_SKILLS.get(skillId);
         if (!def || def.activation !== "passive")
             continue;
+        if (instance.isEnabled === false)
+            continue;
         const effectiveness = getSkillEffectiveness(instance.level);
         switch (skillId) {
             case "chitin_armor": {
@@ -174,7 +176,10 @@ export function syncPassiveEffects(player) {
             return true;
         const skillId = e.sourceSkillId;
         const def = ALL_SKILLS.get(skillId);
-        return player.discoveredSkills.has(skillId) && def?.activation === "passive";
+        const inst = player.discoveredSkills.get(skillId);
+        return player.discoveredSkills.has(skillId)
+            && def?.activation === "passive"
+            && inst?.isEnabled !== false;
     });
 }
 // -----------------------------------------------------------

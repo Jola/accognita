@@ -57,6 +57,7 @@ export declare class GameScene extends Phaser.Scene {
     doAbsorb(): void;
     doAnalyze(): void;
     doGrow(): void;
+    togglePassiveSkill(skillId: string): void;
     doCombine(skillIdA: string, skillIdB: string): import("../types/Skill.js").CombineResult;
     private findEntityNear;
 }

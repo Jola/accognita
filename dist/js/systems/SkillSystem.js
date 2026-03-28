@@ -50,6 +50,7 @@ function createSkillInstance(skillId) {
         xpToNextLevel: def.baseXpThreshold,
         discoveredAt: Date.now(),
         totalXpEarned: 0,
+        isEnabled: true,
     };
 }
 // Hilfsfunktion: Ist ein Skill auf max Level?

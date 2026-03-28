@@ -28,6 +28,7 @@ export interface SkillInstance {
     xpToNextLevel: number;
     discoveredAt: number;
     totalXpEarned: number;
+    isEnabled: boolean;
 }
 export type DiscoveryMethod = "absorb" | "analyze";
 export interface SkillDiscoveryResult {
