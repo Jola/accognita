@@ -115,4 +115,25 @@ export function calcSuccessChance(abilityLevel, entityLevel) {
 // -----------------------------------------------------------
 /** Faktor der auf Skill-Drop-Chancen bei Analyze angewendet wird */
 export const ANALYZE_CHANCE_MODIFIER = 0.7;
+// -----------------------------------------------------------
+// SPIELER-WACHSTUM / KAMERA-ZOOM
+//
+// Der Slime wächst mit dem Level. Seine Weltgröße skaliert von
+// PLAYER_WORLD_RADIUS_MIN (Level 1) bis PLAYER_WORLD_RADIUS_MAX (Level PLAYER_SIZE_LEVEL_MAX+).
+// Der Kamera-Zoom wird so angepasst, dass der Slime auf dem Bildschirm
+// immer PLAYER_SCREEN_RADIUS Pixel groß bleibt.
+// Effekt: die Welt schrumpft optisch, während der Slime wächst.
+//
+// Tile-Verhältnis (TILE_SIZE = 32):
+//   Level 1:  Radius 2  ≈ 1/8  Tile-Durchmesser (sehr kleines Lebewesen)
+//   Level 20: Radius 8  ≈ 1/2  Tile-Durchmesser (fuchsgroßes Lebewesen)
+// -----------------------------------------------------------
+/** Welt-Radius des Slimes bei Level 1 (in World-Pixeln, TILE_SIZE=32) */
+export const PLAYER_WORLD_RADIUS_MIN = 2;
+/** Welt-Radius des Slimes ab Level PLAYER_SIZE_LEVEL_MAX */
+export const PLAYER_WORLD_RADIUS_MAX = 8;
+/** Level ab dem die maximale Größe erreicht wird */
+export const PLAYER_SIZE_LEVEL_MAX = 20;
+/** Konstante Bildschirm-Radius des Slimes in Pixeln (ändert sich nie) */
+export const PLAYER_SCREEN_RADIUS = 16;
 //# sourceMappingURL=balance.js.map

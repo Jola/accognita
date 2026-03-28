@@ -523,6 +523,7 @@
 <div class="notification" id="notification"></div>
 
 <script>
+
 "use strict";
 (() => {
   // dist/js/types/GameState.js
@@ -804,7 +805,9 @@
       ],
       respawnTime: 60,
       // 1 Minute — wächst nach
-      interactRadius: 50
+      interactRadius: 50,
+      worldSize: 5
+      // Grashalm — etwas größer als der Slime auf Level 1
     },
     // ==========================================================
     // INSEKTEN — Level 1 (neutral, defensiv)
@@ -836,7 +839,9 @@
       attackType: "melee",
       respawnTime: 30,
       interactRadius: 35,
-      aggroRadius: 60
+      aggroRadius: 60,
+      worldSize: 3
+      // Ameise — winziges Insekt, ähnlich groß wie Level-1-Slime
     },
     {
       id: "ladybug",
@@ -861,7 +866,9 @@
       attackType: "melee",
       respawnTime: 35,
       interactRadius: 35,
-      aggroRadius: 50
+      aggroRadius: 50,
+      worldSize: 4
+      // Marienkäfer — etwas größer als Ameise
     },
     // ==========================================================
     // INSEKTEN — Level 2 (feindlich, angreifend)
@@ -893,7 +900,9 @@
       attackType: "charge",
       respawnTime: 45,
       interactRadius: 40,
-      aggroRadius: 100
+      aggroRadius: 100,
+      worldSize: 6
+      // Springspinne — deutlich größer als Ameisen
     },
     {
       id: "poison_spider",
@@ -921,7 +930,9 @@
       attackType: "melee",
       respawnTime: 50,
       interactRadius: 40,
-      aggroRadius: 90
+      aggroRadius: 90,
+      worldSize: 6
+      // Giftspinne — ähnlich groß wie Springspinne
     }
   ];
   var ENTITY_MAP = new Map(ENTITY_DEFINITIONS.map((e) => [e.id, e]));
@@ -955,6 +966,10 @@
     return abilityLevel / entityLevel;
   }
   var ANALYZE_CHANCE_MODIFIER = 0.7;
+  var PLAYER_WORLD_RADIUS_MIN = 2;
+  var PLAYER_WORLD_RADIUS_MAX = 8;
+  var PLAYER_SIZE_LEVEL_MAX = 20;
+  var PLAYER_SCREEN_RADIUS = 16;
 
   // dist/js/systems/SkillSystem.js
   function calcXpThreshold(baseThreshold, multiplier, level) {
@@ -1074,6 +1089,15 @@
       message: `Neuer Skill entdeckt: ${resultDef.icon} ${resultDef.name}!`
     };
   }
+  function getPassiveSkills(player) {
+    const result = [];
+    for (const instance of player.discoveredSkills.values()) {
+      const def = ALL_SKILLS.get(instance.definitionId);
+      if (def?.activation === "passive")
+        result.push(instance);
+    }
+    return result;
+  }
   function getDiscoveredSkillsSorted(player) {
     return Array.from(player.discoveredSkills.values()).sort((a, b) => a.discoveredAt - b.discoveredAt);
   }
@@ -1177,6 +1201,9 @@
       return;
     const current = getMaterialAmount(player, materialId);
     player.materials.set(materialId, current + amount);
+  }
+  function canAfford(player, cost) {
+    return cost.every(({ materialId, amount }) => getMaterialAmount(player, materialId) >= amount);
   }
   function deductMaterials(player, cost) {
     for (const { materialId, amount } of cost) {
@@ -2316,6 +2343,9 @@
   function removeExpiredEffects(target, now) {
     target.statusEffects = target.statusEffects.filter((e) => e.expiresAt === Infinity || e.expiresAt > now);
   }
+  function clearAllEffects(target) {
+    target.statusEffects = [];
+  }
   function syncPassiveEffects(player) {
     const now = Date.now();
     for (const [skillId, instance] of player.discoveredSkills) {
@@ -2393,6 +2423,14 @@
         mult *= e.damageMult;
     }
     return mult;
+  }
+  function calcSpeedMultiplier(effects) {
+    let mult = 1;
+    for (const e of effects) {
+      if (e.type === "stat_mod")
+        mult *= e.speedMultiplier;
+    }
+    return Math.max(mult, 0.1);
   }
   function makeVenomEffect(venomLevel) {
     const now = Date.now();
@@ -3328,7 +3366,7 @@
       this.setupSkillBar();
       this.setupSaveMenu();
       this.cameras.main.startFollow(this.slimeGraphic, true, 0.1, 0.1);
-      this.cameras.main.setZoom(1.5);
+      this.updateCameraZoom();
       updateUI(this.gameState);
       addLog("Du erwachst als Schleim\u2026", "system");
       addLog("Joystick bewegen \xB7 ABSORB + ANALYZE tippen", "system");
@@ -3351,7 +3389,9 @@
       const def = ENTITY_MAP.get(instance.definitionId);
       if (!def)
         return null;
-      const text = this.add.text(instance.x, instance.y, def.icon, { fontSize: "28px" }).setOrigin(0.5).setInteractive();
+      const RENDER_FONT = 28;
+      const worldSize = def.worldSize ?? 5;
+      const text = this.add.text(instance.x, instance.y, def.icon, { fontSize: `${RENDER_FONT}px` }).setOrigin(0.5).setScale(worldSize / RENDER_FONT).setInteractive();
       text.on("pointerdown", () => {
         const dist = Math.hypot(this.gameState.player.x - instance.x, this.gameState.player.y - instance.y);
         if (dist > 100) {
@@ -3388,15 +3428,18 @@
       g.destroy();
       this.slimeGraphic = this.physics.add.image(this.gameState.player.x, this.gameState.player.y, "slime");
       this.slimeGraphic.setCollideWorldBounds(true);
-      this.tweens.add({
-        targets: this.slimeGraphic,
-        scaleX: 1.08,
-        scaleY: 0.93,
-        duration: 800,
-        yoyo: true,
-        repeat: -1,
-        ease: "Sine.easeInOut"
-      });
+    }
+    // Berechnet den Welt-Radius des Slimes für ein gegebenes Level.
+    // Wächst linear von PLAYER_WORLD_RADIUS_MIN bis PLAYER_WORLD_RADIUS_MAX.
+    calcPlayerWorldRadius(level) {
+      const t = Math.min((level - 1) / (PLAYER_SIZE_LEVEL_MAX - 1), 1);
+      return PLAYER_WORLD_RADIUS_MIN + t * (PLAYER_WORLD_RADIUS_MAX - PLAYER_WORLD_RADIUS_MIN);
+    }
+    // Passt Kamera-Zoom an das aktuelle Level an.
+    // Slime erscheint immer PLAYER_SCREEN_RADIUS px groß.
+    updateCameraZoom() {
+      const worldRadius = this.calcPlayerWorldRadius(this.gameState.player.level);
+      this.cameras.main.setZoom(PLAYER_SCREEN_RADIUS / worldRadius);
     }
     // ----------------------------------------------------------
     // JOYSTICK (Mobile)
@@ -3535,6 +3578,7 @@
       this.gameState.player.maxMp = calcMaxMp(saved.player.level);
       this.gameState.player.hp = Math.min(this.gameState.player.hp, this.gameState.player.maxHp);
       this.gameState.player.mp = Math.min(this.gameState.player.mp, this.gameState.player.maxMp);
+      this.updateCameraZoom();
       syncPassiveEffects(this.gameState.player);
       if (this.skillBar && saved.player.activeSkillSlots) {
         for (let i = 0; i < 4; i++) {
@@ -3593,9 +3637,17 @@
       this.processEntityAi(delta);
       this.processCombatEffects(delta);
       this.updateEntityVisuals();
+      this.updateSlimeWobble(_time);
       this.checkNearbyEntity();
       this.checkPlayerDeath();
       processRespawns(this.gameState.world);
+    }
+    // Setzt Slime-Skalierung (Level-basiert) + organisches Wobble
+    updateSlimeWobble(time) {
+      const worldRadius = this.calcPlayerWorldRadius(this.gameState.player.level);
+      const baseScale = worldRadius / 20;
+      const wobble = Math.sin(time * 628e-5) * 0.04;
+      this.slimeGraphic.setScale(baseScale * (1 + wobble), baseScale * (1 - wobble));
     }
     handleMovement() {
       const speed = 180;
@@ -3635,10 +3687,12 @@
         const def = ENTITY_MAP.get(instance.definitionId);
         if (def && def.hp && (instance.currentHp < def.hp || instance.isAggro)) {
           const ratio = Math.max(0, instance.currentHp / def.hp);
-          const bw = 30;
-          const bh = 4;
+          const zoom = this.cameras.main.zoom;
+          const worldSize = def.worldSize ?? 5;
+          const bw = 18 / zoom;
+          const bh = 2.5 / zoom;
           const bx = instance.x - bw / 2;
-          const by = instance.y - 26;
+          const by = instance.y - worldSize * 0.8 - bh;
           this.hpBarGraphics.fillStyle(2236962, 0.8);
           this.hpBarGraphics.fillRect(bx, by, bw, bh);
           const color = ratio > 0.5 ? 4508740 : ratio > 0.25 ? 14526976 : 13378082;
@@ -3775,6 +3829,7 @@
       if (r.leveledUp) {
         const p = this.gameState.player;
         addLog(`\u{1F31F} Charakter \u2192 Lv.${r.newLevel}! (HP: ${p.maxHp} / MP: ${p.maxMp})`, "levelup");
+        this.updateCameraZoom();
       }
     }
     showDamageNumber(x, y, dmg, color) {

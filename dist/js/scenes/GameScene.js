@@ -20,6 +20,7 @@ import { saveToSlot, loadFromSlot, deleteAllSaves } from "../systems/SaveSystem.
 import { calcEntityAi, tickAttackCooldown, setAttackCooldown, resetAi, } from "../systems/AiSystem.js";
 import { playerAttack, entityAttack, canActivateSkill, consumeSkill, calcDashDistance, executeCheckpoint, regenMp, } from "../systems/CombatSystem.js";
 import { processTicks, triggerAuras, applyEffect, removeExpiredEffects, syncPassiveEffects, } from "../systems/StatusEffectSystem.js";
+import { PLAYER_WORLD_RADIUS_MIN, PLAYER_WORLD_RADIUS_MAX, PLAYER_SIZE_LEVEL_MAX, PLAYER_SCREEN_RADIUS, } from "../data/balance.js";
 import { generateTileset } from "../world/TilesetGenerator.js";
 import { ChunkManager } from "../world/ChunkManager.js";
 import { CHUNK_PX, WORLD_CHUNKS_X, WORLD_CHUNKS_Y } from "../world/Chunk.js";
@@ -65,7 +66,7 @@ export class GameScene extends Phaser.Scene {
         this.setupSkillBar();
         this.setupSaveMenu();
         this.cameras.main.startFollow(this.slimeGraphic, true, 0.1, 0.1);
-        this.cameras.main.setZoom(1.5);
+        this.updateCameraZoom(); // Zoom basierend auf Level 1
         updateUI(this.gameState);
         addLog("Du erwachst als Schleim…", "system");
         addLog("Joystick bewegen · ABSORB + ANALYZE tippen", "system");
@@ -89,9 +90,13 @@ export class GameScene extends Phaser.Scene {
         const def = ENTITY_MAP.get(instance.definitionId);
         if (!def)
             return null;
+        // Emoji in hoher Qualität rendern, dann in Weltgröße skalieren
+        const RENDER_FONT = 28;
+        const worldSize = def.worldSize ?? 5;
         const text = this.add
-            .text(instance.x, instance.y, def.icon, { fontSize: "28px" })
+            .text(instance.x, instance.y, def.icon, { fontSize: `${RENDER_FONT}px` })
             .setOrigin(0.5)
+            .setScale(worldSize / RENDER_FONT)
             .setInteractive();
         text.on("pointerdown", () => {
             const dist = Math.hypot(this.gameState.player.x - instance.x, this.gameState.player.y - instance.y);
@@ -130,15 +135,19 @@ export class GameScene extends Phaser.Scene {
         g.destroy();
         this.slimeGraphic = this.physics.add.image(this.gameState.player.x, this.gameState.player.y, "slime");
         this.slimeGraphic.setCollideWorldBounds(true);
-        this.tweens.add({
-            targets: this.slimeGraphic,
-            scaleX: 1.08,
-            scaleY: 0.93,
-            duration: 800,
-            yoyo: true,
-            repeat: -1,
-            ease: "Sine.easeInOut",
-        });
+        // Wobble wird in update() per Math.sin berechnet (kein Tween — kein Konflikt mit Skalierung)
+    }
+    // Berechnet den Welt-Radius des Slimes für ein gegebenes Level.
+    // Wächst linear von PLAYER_WORLD_RADIUS_MIN bis PLAYER_WORLD_RADIUS_MAX.
+    calcPlayerWorldRadius(level) {
+        const t = Math.min((level - 1) / (PLAYER_SIZE_LEVEL_MAX - 1), 1.0);
+        return PLAYER_WORLD_RADIUS_MIN + t * (PLAYER_WORLD_RADIUS_MAX - PLAYER_WORLD_RADIUS_MIN);
+    }
+    // Passt Kamera-Zoom an das aktuelle Level an.
+    // Slime erscheint immer PLAYER_SCREEN_RADIUS px groß.
+    updateCameraZoom() {
+        const worldRadius = this.calcPlayerWorldRadius(this.gameState.player.level);
+        this.cameras.main.setZoom(PLAYER_SCREEN_RADIUS / worldRadius);
     }
     // ----------------------------------------------------------
     // JOYSTICK (Mobile)
@@ -290,6 +299,8 @@ export class GameScene extends Phaser.Scene {
         this.gameState.player.maxMp = calcMaxMp(saved.player.level);
         this.gameState.player.hp = Math.min(this.gameState.player.hp, this.gameState.player.maxHp);
         this.gameState.player.mp = Math.min(this.gameState.player.mp, this.gameState.player.maxMp);
+        // Kamera-Zoom ans gespeicherte Level anpassen
+        this.updateCameraZoom();
         // Passive Effekte neu aufbauen
         syncPassiveEffects(this.gameState.player);
         // SkillBar-Slots wiederherstellen
@@ -355,9 +366,17 @@ export class GameScene extends Phaser.Scene {
         this.processEntityAi(delta);
         this.processCombatEffects(delta);
         this.updateEntityVisuals();
+        this.updateSlimeWobble(_time);
         this.checkNearbyEntity();
         this.checkPlayerDeath();
         processRespawns(this.gameState.world);
+    }
+    // Setzt Slime-Skalierung (Level-basiert) + organisches Wobble
+    updateSlimeWobble(time) {
+        const worldRadius = this.calcPlayerWorldRadius(this.gameState.player.level);
+        const baseScale = worldRadius / 20; // Textur ist 40×40, Mittelpunkt-Radius = 20
+        const wobble = Math.sin(time * 0.00628) * 0.04;
+        this.slimeGraphic.setScale(baseScale * (1 + wobble), baseScale * (1 - wobble));
     }
     handleMovement() {
         const speed = 180;
@@ -397,13 +416,16 @@ export class GameScene extends Phaser.Scene {
             sprite.x = instance.x;
             sprite.y = instance.y + Math.sin(now * 0.001 + sprite.floatPhase) * 2.5;
             // HP-Balken (nur bei Schaden oder Aggro)
+            // Breite/Höhe/Abstand in Screen-Pixeln, umgerechnet in Weltkoordinaten via Zoom
             const def = ENTITY_MAP.get(instance.definitionId);
             if (def && def.hp && (instance.currentHp < def.hp || instance.isAggro)) {
                 const ratio = Math.max(0, instance.currentHp / def.hp);
-                const bw = 30;
-                const bh = 4;
+                const zoom = this.cameras.main.zoom;
+                const worldSize = def.worldSize ?? 5;
+                const bw = 18 / zoom; // 18px Breite auf dem Bildschirm
+                const bh = 2.5 / zoom; // 2.5px Höhe
                 const bx = instance.x - bw / 2;
-                const by = instance.y - 26;
+                const by = instance.y - worldSize * 0.8 - bh; // knapp über dem Sprite
                 this.hpBarGraphics.fillStyle(0x222222, 0.8);
                 this.hpBarGraphics.fillRect(bx, by, bw, bh);
                 const color = ratio > 0.5 ? 0x44cc44 : ratio > 0.25 ? 0xddaa00 : 0xcc2222;
@@ -550,6 +572,7 @@ export class GameScene extends Phaser.Scene {
         if (r.leveledUp) {
             const p = this.gameState.player;
             addLog(`🌟 Charakter → Lv.${r.newLevel}! (HP: ${p.maxHp} / MP: ${p.maxMp})`, "levelup");
+            this.updateCameraZoom(); // Welt schrumpft optisch mit dem Level-Up
         }
     }
     showDamageNumber(x, y, dmg, color) {

@@ -21,6 +21,8 @@ export declare class GameScene extends Phaser.Scene {
     private spawnEntitySprite;
     private despawnEntitySprite;
     private createPlayer;
+    private calcPlayerWorldRadius;
+    private updateCameraZoom;
     private setupJoystick;
     private setupFullscreen;
     private enterFullscreen;
@@ -41,6 +43,7 @@ export declare class GameScene extends Phaser.Scene {
     resetGame(): void;
     private setupGlobalFunctions;
     update(_time: number, delta: number): void;
+    private updateSlimeWobble;
     private handleMovement;
     private syncPlayerPosition;
     private updateEntityVisuals;

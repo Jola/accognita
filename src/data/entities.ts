@@ -38,6 +38,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     ],
     respawnTime: 60, // 1 Minute — wächst nach
     interactRadius: 50,
+    worldSize: 5,    // Grashalm — etwas größer als der Slime auf Level 1
   },
 
   // ==========================================================
@@ -64,6 +65,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 30,
     interactRadius: 35,
     aggroRadius: 60,
+    worldSize: 3,    // Ameise — winziges Insekt, ähnlich groß wie Level-1-Slime
   },
   {
     id: "ladybug",
@@ -83,6 +85,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 35,
     interactRadius: 35,
     aggroRadius: 50,
+    worldSize: 4,    // Marienkäfer — etwas größer als Ameise
   },
 
   // ==========================================================
@@ -109,6 +112,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 45,
     interactRadius: 40,
     aggroRadius: 100,
+    worldSize: 6,    // Springspinne — deutlich größer als Ameisen
   },
   {
     id: "poison_spider",
@@ -130,6 +134,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 50,
     interactRadius: 40,
     aggroRadius: 90,
+    worldSize: 6,    // Giftspinne — ähnlich groß wie Springspinne
   },
 ];
 
