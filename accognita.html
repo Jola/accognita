@@ -296,6 +296,9 @@
     .btn-analyze:hover { background:#2244aa; }
     .btn-grow    { width:100%; margin-top:6px; padding:6px; background:#1a3a1a; color:var(--green); border:1px solid #2a6a2a; border-radius:4px; font-size:.6rem; cursor:pointer; }
     .btn-grow:hover { background:#2a4a2a; }
+    .btn-passive-toggle { margin-left:auto; padding:2px 7px; border-radius:3px; font-size:.55rem; font-weight:700; cursor:pointer; border:1px solid #4af0c8; background:#0a2a22; color:#4af0c8; }
+    .btn-passive-toggle:hover { background:#0f3a2e; }
+    .skill-disabled { opacity:0.45; }
 
     /* COMBINE PANEL */
     .combine-panel { display:flex; flex-direction:column; gap:8px; }
@@ -987,7 +990,8 @@
       currentXp: 0,
       xpToNextLevel: def.baseXpThreshold,
       discoveredAt: Date.now(),
-      totalXpEarned: 0
+      totalXpEarned: 0,
+      isEnabled: true
     };
   }
   function isAtMaxLevel(instance) {
@@ -1842,7 +1846,7 @@
       spawnX: data.spawnX ?? 400,
       spawnY: data.spawnY ?? 300,
       coreAbilities: data.coreAbilities,
-      discoveredSkills: new Map(data.discoveredSkills),
+      discoveredSkills: new Map(data.discoveredSkills.map(([id, inst]) => [id, { ...inst, isEnabled: inst.isEnabled ?? true }])),
       materials: new Map(data.materials),
       activeSkillSlots: data.activeSkillSlots ?? [null, null, null, null, null],
       // Cooldowns: nach Reload sinnlos — frisch starten
@@ -2318,6 +2322,8 @@
       const def = ALL_SKILLS.get(skillId);
       if (!def || def.activation !== "passive")
         continue;
+      if (instance.isEnabled === false)
+        continue;
       const effectiveness = getSkillEffectiveness(instance.level);
       switch (skillId) {
         case "chitin_armor": {
@@ -2368,7 +2374,8 @@
         return true;
       const skillId = e.sourceSkillId;
       const def = ALL_SKILLS.get(skillId);
-      return player.discoveredSkills.has(skillId) && def?.activation === "passive";
+      const inst = player.discoveredSkills.get(skillId);
+      return player.discoveredSkills.has(skillId) && def?.activation === "passive" && inst?.isEnabled !== false;
     });
   }
   function calcDamageReduction(effects) {
@@ -3559,6 +3566,7 @@
       window.touchAbsorb = () => this.doAbsorb();
       window.touchAnalyze = () => this.doAnalyze();
       window.doGrow = () => this.doGrow();
+      window.togglePassiveSkill = (skillId) => this.togglePassiveSkill(skillId);
       window.resumeFromPause = () => {
         const el = document.documentElement;
         if (el.requestFullscreen || el.webkitRequestFullscreen) {
@@ -3885,6 +3893,16 @@
       if (result.success)
         updateUI(this.gameState);
     }
+    togglePassiveSkill(skillId) {
+      const inst = this.gameState.player.discoveredSkills.get(skillId);
+      if (!inst)
+        return;
+      inst.isEnabled = inst.isEnabled === false ? true : false;
+      syncPassiveEffects(this.gameState.player);
+      updateUI(this.gameState);
+      const state = inst.isEnabled ? "aktiviert" : "deaktiviert";
+      showToast(`${ALL_SKILLS.get(skillId)?.name ?? skillId} ${state}`, "system");
+    }
     doCombine(skillIdA, skillIdB) {
       const result = combineSkills(this.gameState.player, skillIdA, skillIdB);
       showCombineResult(result);
@@ -3938,14 +3956,16 @@
       const maxed = isMaxLevel(inst);
       const isPassive = def.activation === "passive";
       const hasGrow = def.id === "grow" && !maxed;
+      const enabled = inst.isEnabled !== false;
       return `
-        <div class="skill-card element-${def.element}">
+        <div class="skill-card element-${def.element}${isPassive && !enabled ? " skill-disabled" : ""}">
           <div class="skill-header">
             <span class="skill-icon">${def.icon}</span>
             <span class="skill-name">${def.name}</span>
             ${def.category === "combo" ? '<span class="combo-badge">COMBO</span>' : ""}
             ${isPassive ? '<span class="combo-badge" style="background:#4af0c8;color:#000">PASSIV</span>' : ""}
             <span class="skill-level">Lv.${inst.level}${maxed ? " MAX" : ""}</span>
+            ${isPassive ? `<button class="btn-passive-toggle" onclick="window.togglePassiveSkill('${def.id}')">${enabled ? "AN" : "AUS"}</button>` : ""}
           </div>
           <div class="xp-bar-wrap">
             <div class="xp-bar-fill" style="width:${progress * 100}%"></div>

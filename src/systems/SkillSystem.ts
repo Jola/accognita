@@ -92,6 +92,7 @@ function createSkillInstance(skillId: string): SkillInstance {
     xpToNextLevel: def.baseXpThreshold,
     discoveredAt: Date.now(),
     totalXpEarned: 0,
+    isEnabled: true,
   };
 }
 

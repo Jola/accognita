@@ -71,6 +71,7 @@ export interface SkillInstance {
   xpToNextLevel: number;
   discoveredAt: number;             // Timestamp der Entdeckung (0 für core)
   totalXpEarned: number;
+  isEnabled: boolean;               // false = passiver Skill manuell deaktiviert
 }
 
 // -----------------------------------------------------------

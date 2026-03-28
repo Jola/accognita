@@ -103,7 +103,9 @@ function deserializePlayer(data: SerializedPlayer): PlayerState {
     spawnX: data.spawnX ?? 400,
     spawnY: data.spawnY ?? 300,
     coreAbilities: data.coreAbilities,
-    discoveredSkills: new Map(data.discoveredSkills),
+    discoveredSkills: new Map(
+      data.discoveredSkills.map(([id, inst]) => [id, { ...inst, isEnabled: inst.isEnabled ?? true }])
+    ),
     materials: new Map(data.materials),
     activeSkillSlots: data.activeSkillSlots ?? [null, null, null, null, null],
     // Cooldowns: nach Reload sinnlos — frisch starten
