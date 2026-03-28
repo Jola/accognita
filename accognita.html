@@ -833,7 +833,8 @@
       materialDrops: [],
       hp: 8,
       damage: 3,
-      speed: 60,
+      speed: 28,
+      // worldSize 3 × 9 ≈ 28
       attackRangePx: 40,
       attackCooldownMs: 1800,
       attackType: "melee",
@@ -860,7 +861,8 @@
       materialDrops: [],
       hp: 6,
       damage: 2,
-      speed: 50,
+      speed: 35,
+      // worldSize 4 × 9 ≈ 35
       attackRangePx: 38,
       attackCooldownMs: 2e3,
       attackType: "melee",
@@ -894,7 +896,8 @@
       materialDrops: [],
       hp: 18,
       damage: 8,
-      speed: 100,
+      speed: 55,
+      // worldSize 6 × 9 = 54, +1 für aggressiv
       attackRangePx: 55,
       attackCooldownMs: 1200,
       attackType: "charge",
@@ -924,7 +927,8 @@
       materialDrops: [],
       hp: 15,
       damage: 6,
-      speed: 80,
+      speed: 50,
+      // worldSize 6 × 9 = 54, etwas langsamer (lauert)
       attackRangePx: 50,
       attackCooldownMs: 1600,
       attackType: "melee",
@@ -970,6 +974,7 @@
   var PLAYER_WORLD_RADIUS_MAX = 8;
   var PLAYER_SIZE_LEVEL_MAX = 20;
   var PLAYER_SCREEN_RADIUS = 16;
+  var PLAYER_SPEED_PER_WORLD_RADIUS = 20;
 
   // dist/js/systems/SkillSystem.js
   function calcXpThreshold(baseThreshold, multiplier, level) {
@@ -3691,7 +3696,8 @@
       this.slimeGraphic.setScale(baseScale * (1 + wobble), baseScale * (1 - wobble));
     }
     handleMovement() {
-      const speed = 180;
+      const worldRadius = this.calcPlayerWorldRadius(this.gameState.player.level);
+      const speed = worldRadius * PLAYER_SPEED_PER_WORLD_RADIUS;
       const body = this.slimeGraphic.body;
       let dx = this.joy.active ? this.joy.dx : 0;
       let dy = this.joy.active ? this.joy.dy : 0;

@@ -49,4 +49,20 @@ export declare const PLAYER_WORLD_RADIUS_MAX = 8;
 export declare const PLAYER_SIZE_LEVEL_MAX = 20;
 /** Konstante Bildschirm-Radius des Slimes in Pixeln (ändert sich nie) */
 export declare const PLAYER_SCREEN_RADIUS = 16;
+/**
+ * Geschwindigkeit des Slimes pro World-Pixel Radius.
+ * speed = worldRadius × PLAYER_SPEED_PER_WORLD_RADIUS
+ *
+ * Effekt: Bildschirm-Geschwindigkeit bleibt über alle Level konstant,
+ * weil Kamera-Zoom = PLAYER_SCREEN_RADIUS / worldRadius.
+ *   Level 1  (radius 2): world-speed  40 → screen-speed  40 × 8 = 320 px/s
+ *   Level 20 (radius 8): world-speed 160 → screen-speed 160 × 2 = 320 px/s
+ */
+export declare const PLAYER_SPEED_PER_WORLD_RADIUS = 20;
+/**
+ * Grundgeschwindigkeit für Entities pro worldSize-Einheit.
+ * Tatsächliche Entity-Geschwindigkeit in entities.ts = worldSize × ~9,
+ * mit kleinen Korrekturen für Verhalten (aggressiv etwas schneller).
+ */
+export declare const ENTITY_SPEED_PER_WORLD_SIZE = 9;
 //# sourceMappingURL=balance.d.ts.map

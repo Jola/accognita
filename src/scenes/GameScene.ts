@@ -78,6 +78,7 @@ import {
   PLAYER_WORLD_RADIUS_MAX,
   PLAYER_SIZE_LEVEL_MAX,
   PLAYER_SCREEN_RADIUS,
+  PLAYER_SPEED_PER_WORLD_RADIUS,
 } from "../data/balance.js";
 import { generateTileset, TILE_SIZE } from "../world/TilesetGenerator.js";
 import { ChunkManager } from "../world/ChunkManager.js";
@@ -499,7 +500,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   private handleMovement() {
-    const speed = 180;
+    // Geschwindigkeit skaliert mit Weltgröße → Bildschirm-Speed bleibt über alle Level konstant
+    const worldRadius = this.calcPlayerWorldRadius(this.gameState.player.level);
+    const speed = worldRadius * PLAYER_SPEED_PER_WORLD_RADIUS;
     const body = this.slimeGraphic.body;
 
     let dx = this.joy.active ? this.joy.dx : 0;
