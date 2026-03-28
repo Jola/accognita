@@ -3354,14 +3354,7 @@
         this.lastNearbyId = instance.instanceId;
         this.doAbsorb();
       });
-      this.tweens.add({
-        targets: text,
-        y: instance.y - 5,
-        duration: 1e3 + Math.floor(Math.random() * 500),
-        yoyo: true,
-        repeat: -1,
-        ease: "Sine.easeInOut"
-      });
+      text.floatPhase = Math.random() * Math.PI * 2;
       this.entitySprites.set(instance.instanceId, text);
       return text;
     }
@@ -3614,6 +3607,7 @@
     }
     updateEntityVisuals() {
       this.hpBarGraphics.clear();
+      const now = this.time.now;
       for (const [id, instance] of this.gameState.world.entities) {
         const sprite = this.entitySprites.get(id);
         if (!sprite)
@@ -3628,6 +3622,8 @@
           sprite.clearTint();
           sprite.setAlpha(1);
         }
+        sprite.x = instance.x;
+        sprite.y = instance.y + Math.sin(now * 1e-3 + sprite.floatPhase) * 2.5;
         const def = ENTITY_MAP.get(instance.definitionId);
         if (def && def.hp && (instance.currentHp < def.hp || instance.isAggro)) {
           const ratio = Math.max(0, instance.currentHp / def.hp);
@@ -3670,11 +3666,6 @@
         if ((frame.vx !== 0 || frame.vy !== 0) && instance.isAlive) {
           instance.x += frame.vx * (delta / 1e3);
           instance.y += frame.vy * (delta / 1e3);
-          const sprite = this.entitySprites.get(id);
-          if (sprite) {
-            sprite.x = instance.x;
-            sprite.y = instance.y;
-          }
         }
         if (frame.wantToAttack) {
           setAttackCooldown(instance, def);
@@ -3922,6 +3913,8 @@
     setEl("ui-mp", `${p.mp}/${p.maxMp}`);
     setStyle("hp-bar-fill", "width", `${p.hp / p.maxHp * 100}%`);
     setStyle("mp-bar-fill", "width", `${p.mp / p.maxMp * 100}%`);
+    const { xpIntoLevel, xpToNext } = calcPlayerLevel(p.totalExp);
+    setStyle("xp-bar-fill", "width", `${xpIntoLevel / xpToNext * 100}%`);
     setEl("ui-analyze-level", `\u{1F50D} Lv.${p.coreAbilities.analyze.level} (${p.coreAbilities.analyze.currentXp}/${p.coreAbilities.analyze.xpToNextLevel} XP)`);
     setEl("ui-absorb-level", `\u{1F4A5} Lv.${p.coreAbilities.absorb.level} (${p.coreAbilities.absorb.currentXp}/${p.coreAbilities.absorb.xpToNextLevel} XP)`);
     renderSkillList(state);
@@ -4139,5 +4132,4 @@ ${detail}` : ""}`, type);
   });
 })();
 </script>
-</body>
 </html>

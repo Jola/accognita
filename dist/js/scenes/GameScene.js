@@ -9,7 +9,7 @@ import { createInitialGameState } from "../types/GameState.js";
 import { ALL_SKILLS } from "../data/skills.js";
 import { MATERIAL_MAP } from "../data/materials.js";
 import { ENTITY_MAP } from "../data/entities.js";
-import { combineSkills, getDiscoveredSkillsSorted, getXpProgress, isMaxLevel, gainSkillXp, updatePlayerLevel, calcMaxHp, calcMaxMp, } from "../systems/SkillSystem.js";
+import { combineSkills, getDiscoveredSkillsSorted, getXpProgress, isMaxLevel, gainSkillXp, updatePlayerLevel, calcPlayerLevel, calcMaxHp, calcMaxMp, } from "../systems/SkillSystem.js";
 import { absorbEntity, analyzeEntity, findNearestEntity, processRespawns, calcSuccessChance, } from "../systems/EntitySystem.js";
 import { useGrow, getMaterialList, } from "../systems/MaterialSystem.js";
 import { createJoystick } from "../ui/Joystick.js";
@@ -102,14 +102,8 @@ export class GameScene extends Phaser.Scene {
             this.lastNearbyId = instance.instanceId;
             this.doAbsorb();
         });
-        this.tweens.add({
-            targets: text,
-            y: instance.y - 5,
-            duration: 1000 + Math.floor(Math.random() * 500),
-            yoyo: true,
-            repeat: -1,
-            ease: "Sine.easeInOut",
-        });
+        // Float-Phase für jede Entity individuell — wird in updateEntityVisuals() genutzt
+        text.floatPhase = Math.random() * Math.PI * 2;
         this.entitySprites.set(instance.instanceId, text);
         return text;
     }
@@ -382,6 +376,7 @@ export class GameScene extends Phaser.Scene {
     }
     updateEntityVisuals() {
         this.hpBarGraphics.clear();
+        const now = this.time.now;
         for (const [id, instance] of this.gameState.world.entities) {
             const sprite = this.entitySprites.get(id);
             if (!sprite)
@@ -397,6 +392,9 @@ export class GameScene extends Phaser.Scene {
                 sprite.clearTint();
                 sprite.setAlpha(1.0);
             }
+            // Float-Animation: sanftes Schweben ohne Tween-Konflikt
+            sprite.x = instance.x;
+            sprite.y = instance.y + Math.sin(now * 0.001 + sprite.floatPhase) * 2.5;
             // HP-Balken (nur bei Schaden oder Aggro)
             const def = ENTITY_MAP.get(instance.definitionId);
             if (def && def.hp && (instance.currentHp < def.hp || instance.isAggro)) {
@@ -438,15 +436,10 @@ export class GameScene extends Phaser.Scene {
             if (frame.lostAggro) {
                 instance.isAggro = false;
             }
-            // Entity bewegen
+            // Entity bewegen (nur Logik-Position — Sprite-Update in updateEntityVisuals)
             if ((frame.vx !== 0 || frame.vy !== 0) && instance.isAlive) {
                 instance.x += frame.vx * (delta / 1000);
                 instance.y += frame.vy * (delta / 1000);
-                const sprite = this.entitySprites.get(id);
-                if (sprite) {
-                    sprite.x = instance.x;
-                    sprite.y = instance.y;
-                }
             }
             // Entity greift an
             if (frame.wantToAttack) {
@@ -716,6 +709,8 @@ function updateUI(state) {
     setEl("ui-mp", `${p.mp}/${p.maxMp}`);
     setStyle("hp-bar-fill", "width", `${(p.hp / p.maxHp) * 100}%`);
     setStyle("mp-bar-fill", "width", `${(p.mp / p.maxMp) * 100}%`);
+    const { xpIntoLevel, xpToNext } = calcPlayerLevel(p.totalExp);
+    setStyle("xp-bar-fill", "width", `${(xpIntoLevel / xpToNext) * 100}%`);
     // Kern-Fähigkeiten
     setEl("ui-analyze-level", `🔍 Lv.${p.coreAbilities.analyze.level} (${p.coreAbilities.analyze.currentXp}/${p.coreAbilities.analyze.xpToNextLevel} XP)`);
     setEl("ui-absorb-level", `💥 Lv.${p.coreAbilities.absorb.level} (${p.coreAbilities.absorb.currentXp}/${p.coreAbilities.absorb.xpToNextLevel} XP)`);

@@ -11,9 +11,7 @@ Format:
 
 ## Bugs
 
-- `[BUG]` **XP-/Level-Anzeige funktioniert nicht** — Die Erfahrungsanzeige im HUD wird nicht korrekt aktualisiert oder zeigt falsche Werte an.
-
-- `[BUG]` **Spinnen-Icon springt beim Angriff** — Das Icon einer Spinne (und möglicherweise anderer Gegner) springt bei der Angriffs-Animation aus seiner Position. Es kehrt nicht an dieselbe Stelle zurück und bleibt nach dem Angriff versetzt stehen.
+*(leer)*
 
 ---
 
@@ -25,4 +23,6 @@ Format:
 
 ## Erledigt
 
-*(leer)*
+- `[BUG]` **XP-/Level-Anzeige funktioniert nicht** — `updateUI()` hat den XP-Balken nicht befüllt. Fix: `calcPlayerLevel(p.totalExp)` liefert `xpIntoLevel/xpToNext`, daraus wird der Füllstand berechnet.
+
+- `[BUG]` **Spinnen-Icon springt beim Angriff** — Phaser-Tween und direkte Positionssetzung (`sprite.y = instance.y`) haben sich gegenseitig überschrieben. Fix: Tween entfernt, Float-Animation jetzt als `Math.sin()`-Offset in `updateEntityVisuals()` berechnet — kein Konflikt mehr.
