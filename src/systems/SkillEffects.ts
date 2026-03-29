@@ -43,14 +43,42 @@ export function calcVenomDmgPerTick(level: number): number {
 }
 
 // -----------------------------------------------------------
+// Generisch: Angriffsskill-Schaden für beliebigen Skill
+//
+// Liest baseDamage aus SkillDefinition × getSkillEffectiveness.
+// Neue Angriffsskills brauchen nur baseDamage in skills.ts — keine neue Formel.
+// -----------------------------------------------------------
+export function calcSkillAttackDamage(skillId: string, level: number): number {
+  const baseDamage = ALL_SKILLS.get(skillId)?.baseDamage ?? 0;
+  if (baseDamage === 0) return 0;
+  return Math.max(1, Math.round(baseDamage * getSkillEffectiveness(level)));
+}
+
+// -----------------------------------------------------------
 // bite — Direktangriff-Schaden
 //
-// Basiert auf SkillDefinition.baseDamage (7) × getSkillEffectiveness.
 // Lv 1 → 7,  Lv 2 → 8,  Lv 3 → 10,  Lv 6 → 12,  Lv 18 → 20
 // -----------------------------------------------------------
 export function calcBiteDamage(level: number): number {
-  const baseDamage = ALL_SKILLS.get("bite")?.baseDamage ?? 7;
-  return Math.max(1, Math.round(baseDamage * getSkillEffectiveness(level)));
+  return calcSkillAttackDamage("bite", level);
+}
+
+// -----------------------------------------------------------
+// claw — Klauenhieb (Nahkampf)
+//
+// Lv 1 → 8,  Lv 3 → 10,  Lv 10 → 16,  Lv 20 → 24
+// -----------------------------------------------------------
+export function calcClawDamage(level: number): number {
+  return calcSkillAttackDamage("claw", level);
+}
+
+// -----------------------------------------------------------
+// fire_breath — Feueratem (Fernkampf, 8 × worldSize Reichweite)
+//
+// Lv 1 → 10,  Lv 5 → 15,  Lv 10 → 18,  Lv 20 → 31
+// -----------------------------------------------------------
+export function calcFireBreathDamage(level: number): number {
+  return calcSkillAttackDamage("fire_breath", level);
 }
 
 // -----------------------------------------------------------

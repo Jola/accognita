@@ -107,9 +107,10 @@ export interface AttackResult {
 // AiSystem berechnet dies; GameScene setzt die Physik-Velocities.
 // -----------------------------------------------------------
 export interface AiFrame {
-  vx: number;              // Gewünschte Velocity X (px/s)
-  vy: number;              // Gewünschte Velocity Y (px/s)
-  wantToAttack: boolean;   // Entity ist in Reichweite + Cooldown abgelaufen
-  becameAggro: boolean;    // Neu aggro in diesem Frame
-  lostAggro: boolean;      // Aggro verloren (zu weit weg oder tot)
+  vx: number;                    // Gewünschte Velocity X (px/s)
+  vy: number;                    // Gewünschte Velocity Y (px/s)
+  wantToAttack: boolean;         // Nahkampf: in Reichweite + Cooldown abgelaufen
+  wantToRangedAttack: boolean;   // Fernkampf: in Reichweite + Cooldown abgelaufen
+  becameAggro: boolean;          // Neu aggro in diesem Frame
+  lostAggro: boolean;            // Aggro verloren (zu weit weg oder tot)
 }

@@ -42,16 +42,50 @@ export function getBiomeAt(cx: number, cy: number): BiomeId {
 }
 
 // ────────────────────────────────────────
-// Spawn-Tabellen pro Biom
+// Spawn-Tabellen pro Biom (gewichtet)
+//
+// weight: relative Spawn-Wahrscheinlichkeit.
+// Höheres weight = häufiger. Niedrig-level Biome haben keine seltenen Einträge.
 // ────────────────────────────────────────
 
-export const BIOME_SPAWNS: Record<BiomeId, string[]> = {
-  forest:   ["ant", "ladybug", "grass"],
-  swamp:    ["poison_spider", "grass"],
-  highland: ["jumping_spider", "ant", "small_scorpion"],
-  mountain: ["jumping_spider", "poison_spider", "small_scorpion"],
-  desert:   ["ant", "small_scorpion", "large_scorpion", "snake"],
-  dungeon:  ["jumping_spider", "poison_spider", "large_scorpion", "snake"],
+export interface BiomeSpawnEntry {
+  id: string;
+  weight: number;
+}
+
+export const BIOME_SPAWNS: Record<BiomeId, BiomeSpawnEntry[]> = {
+  forest:   [
+    { id: "ant",     weight: 10 },
+    { id: "ladybug", weight: 10 },
+    { id: "grass",   weight: 15 },
+  ],
+  swamp:    [
+    { id: "poison_spider", weight: 10 },
+    { id: "grass",         weight: 10 },
+  ],
+  highland: [
+    { id: "jumping_spider", weight: 10 },
+    { id: "ant",            weight: 10 },
+    { id: "small_scorpion", weight:  6 },
+  ],
+  mountain: [
+    { id: "jumping_spider", weight: 10 },
+    { id: "poison_spider",  weight: 10 },
+    { id: "small_scorpion", weight:  6 },
+  ],
+  desert:   [
+    { id: "ant",            weight:  8 },
+    { id: "small_scorpion", weight:  8 },
+    { id: "large_scorpion", weight:  5 },
+    { id: "snake",          weight:  2 },
+  ],
+  dungeon:  [
+    { id: "jumping_spider", weight: 10 },
+    { id: "poison_spider",  weight: 10 },
+    { id: "large_scorpion", weight:  8 },
+    { id: "snake",          weight:  4 },
+    { id: "dragon",         weight:  1 },  // ~3% → ca. 2–3 Drachen pro Chunk
+  ],
 };
 
 // ────────────────────────────────────────

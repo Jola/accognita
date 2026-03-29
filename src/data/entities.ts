@@ -198,6 +198,40 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     worldSize: 10,
   },
   // ==========================================================
+  // DRACHE — Level 20 (legendär, Dungeon-Boss)
+  // ==========================================================
+
+  {
+    id: "dragon",
+    name: "Drache",
+    icon: "🐉",
+    behavior: "aggressive",
+    disposition: "hostile",
+    category: "creature",
+    rarity: "legendary",
+    level: 20,
+    skillDrops: [
+      { skillId: "fire_breath", chance: 0.40 }, // Seltener und wertvoller Drop
+      { skillId: "claw",        chance: 0.30 },
+      { skillId: "bite",        chance: 0.10 },
+    ],
+    materialDrops: [],
+    hp: 500, speed: 35,              // worldSize 20 × 5 = 100 → langsamer, aber massiv
+    attackRangePx: 40, attackCooldownMs: 1800, attackType: "melee",   // 2 × worldSize
+    // Feueratem: Fernkampf über 8 × worldSize = 160px Distanz
+    rangedAttackSkillId: "fire_breath",
+    rangedAttackRangePx: 160,        // 8 × worldSize
+    rangedAttackCooldownMs: 2500,
+    respawnTime: 600,                // 10 Minuten — sehr seltener Spawn
+    interactRadius: 80,
+    aggroRadius: 50,                 // 2.5 × worldSize
+    // claw Lv20 → 8×3.05 ≈ 24 Nahkampf-Schaden
+    // fire_breath Lv20 → 10×3.05 ≈ 31 Fernkampf-Schaden
+    skillLevels: { claw: 20, fire_breath: 20 },
+    worldSize: 20,                   // Deutlich größer als alle anderen Gegner
+  },
+
+  // ==========================================================
   // SCHLANGE — Level 10 (feindlich, giftig, schnell)
   // ==========================================================
 

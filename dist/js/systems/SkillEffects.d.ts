@@ -1,7 +1,10 @@
 export declare function calcChitinDr(level: number): number;
 export declare function calcVenomChance(level: number): number;
 export declare function calcVenomDmgPerTick(level: number): number;
+export declare function calcSkillAttackDamage(skillId: string, level: number): number;
 export declare function calcBiteDamage(level: number): number;
+export declare function calcClawDamage(level: number): number;
+export declare function calcFireBreathDamage(level: number): number;
 export declare function calcJumpDistance(level: number): number;
 export declare function calcHemolymphReflect(level: number): number;
 export declare function calcSuperstrengthMult(level: number): number;

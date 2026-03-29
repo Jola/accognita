@@ -37,6 +37,7 @@ export interface AiFrame {
     vx: number;
     vy: number;
     wantToAttack: boolean;
+    wantToRangedAttack: boolean;
     becameAggro: boolean;
     lostAggro: boolean;
 }

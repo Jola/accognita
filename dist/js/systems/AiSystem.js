@@ -72,6 +72,7 @@ export function calcEntityAi(def, instance, playerX, playerY, now) {
             vx: instance._aiLastVx ?? 0,
             vy: instance._aiLastVy ?? 0,
             wantToAttack: false,
+            wantToRangedAttack: false,
             becameAggro: false,
             lostAggro: false,
         };
@@ -123,12 +124,20 @@ export function calcEntityAi(def, instance, playerX, playerY, now) {
     // Gecachte Velocity für Throttle-Frames
     instance._aiLastVx = vx;
     instance._aiLastVy = vy;
-    // --- Angriffs-Check ---
+    // --- Nahkampf-Angriffs-Check ---
     const attackRange = def.attackRangePx ?? 60;
-    const inRange = dist <= attackRange;
+    const inMeleeRange = dist <= attackRange;
     const cooldownDone = instance.attackCooldownRemaining <= 0;
-    const wantToAttack = instance.isAggro && inRange && cooldownDone;
-    return { vx, vy, wantToAttack, becameAggro, lostAggro };
+    const wantToAttack = instance.isAggro && inMeleeRange && cooldownDone;
+    // --- Fernkampf-Angriffs-Check ---
+    const rangedRange = def.rangedAttackRangePx ?? 0;
+    const rangedCooldownDone = (instance.rangedCooldownRemaining ?? 0) <= 0;
+    const wantToRangedAttack = !!(instance.isAggro &&
+        rangedRange > 0 &&
+        rangedCooldownDone &&
+        !inMeleeRange && // Nicht schießen wenn im Nahkampf
+        dist <= rangedRange);
+    return { vx, vy, wantToAttack, wantToRangedAttack, becameAggro, lostAggro };
 }
 // -----------------------------------------------------------
 // Angriffs-Cooldown ticken (im Game Loop aufrufen)
@@ -138,6 +147,17 @@ export function tickAttackCooldown(instance, deltaMs) {
     if (instance.attackCooldownRemaining > 0) {
         instance.attackCooldownRemaining = Math.max(0, instance.attackCooldownRemaining - deltaMs);
     }
+}
+// -----------------------------------------------------------
+// Fernkampf-Cooldown ticken und setzen
+// -----------------------------------------------------------
+export function tickRangedCooldown(instance, deltaMs) {
+    if ((instance.rangedCooldownRemaining ?? 0) > 0) {
+        instance.rangedCooldownRemaining = Math.max(0, (instance.rangedCooldownRemaining ?? 0) - deltaMs);
+    }
+}
+export function setRangedCooldown(instance, def) {
+    instance.rangedCooldownRemaining = def.rangedAttackCooldownMs ?? 2000;
 }
 // -----------------------------------------------------------
 // Cooldown nach einem Angriff setzen
@@ -151,6 +171,7 @@ export function setAttackCooldown(instance, def) {
 export function resetAi(instance) {
     instance.isAggro = false;
     instance.attackCooldownRemaining = 0;
+    instance.rangedCooldownRemaining = 0;
     delete instance._aiLastCalcAt;
     delete instance._aiLastVx;
     delete instance._aiLastVy;
@@ -163,7 +184,7 @@ export function resetAi(instance) {
 // Hilfsfunktionen
 // -----------------------------------------------------------
 function idleFrame() {
-    return { vx: 0, vy: 0, wantToAttack: false, becameAggro: false, lostAggro: false };
+    return { vx: 0, vy: 0, wantToAttack: false, wantToRangedAttack: false, becameAggro: false, lostAggro: false };
 }
 // -----------------------------------------------------------
 // Wander-Berechnung — gibt Velocity in Richtung Wanderziel zurück.
@@ -205,6 +226,7 @@ function calcWander(def, instance, now) {
         vx: (dtx / dt) * speed,
         vy: (dty / dt) * speed,
         wantToAttack: false,
+        wantToRangedAttack: false,
         becameAggro: false,
         lostAggro: false,
     };
