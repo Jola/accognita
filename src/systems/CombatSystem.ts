@@ -218,6 +218,27 @@ export function calcDashDistance(player: PlayerState, skillId: string): number {
 }
 
 // -----------------------------------------------------------
+// JUMP / DASH — Positionsverschiebung des Spielers
+//
+// Berechnet neue Weltposition anhand der normalisierten
+// Bewegungsrichtung (dirX/dirY) und klemmt auf Weltgrenzen.
+// Gibt die zurückgelegte Distanz zurück.
+// -----------------------------------------------------------
+export function executeJump(
+  player: PlayerState,
+  dirX: number,
+  dirY: number,
+  skillId: string,
+  worldW: number,
+  worldH: number
+): number {
+  const dist = calcDashDistance(player, skillId);
+  player.x = Math.max(0, Math.min(worldW, player.x + dirX * dist));
+  player.y = Math.max(0, Math.min(worldH, player.y + dirY * dist));
+  return dist;
+}
+
+// -----------------------------------------------------------
 // CHECKPOINT — Spieler respawnen
 //
 // HP und MP auf Max setzen, Position auf Spawn zurücksetzen,

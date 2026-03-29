@@ -523,6 +523,7 @@
 <div class="notification" id="notification"></div>
 
 <script>
+<script>
 "use strict";
 (() => {
   // dist/js/types/GameState.js
@@ -2906,6 +2907,12 @@
     const inst = player.discoveredSkills.get(skillId);
     return calcJumpDistance(inst?.level ?? 1);
   }
+  function executeJump(player, dirX, dirY, skillId, worldW, worldH) {
+    const dist = calcDashDistance(player, skillId);
+    player.x = Math.max(0, Math.min(worldW, player.x + dirX * dist));
+    player.y = Math.max(0, Math.min(worldH, player.y + dirY * dist));
+    return dist;
+  }
   function executeCheckpoint(player) {
     player.hp = player.maxHp;
     player.mp = player.maxMp;
@@ -4379,17 +4386,15 @@
       consumeSkill(this.gameState.player, skillId);
       const skillDef = ALL_SKILLS.get(skillId);
       if (skillDef?.attackType === "dash") {
-        const dist = calcDashDistance(this.gameState.player, skillId);
         const dx = this.joy.active ? this.joy.dx : 0;
         const dy = this.joy.active ? this.joy.dy : 0;
         const len = Math.hypot(dx, dy);
         if (len > 0.1) {
-          const nx = dx / len;
-          const ny = dy / len;
-          this.slimeGraphic.setPosition(Phaser.Math.Clamp(this.slimeGraphic.x + nx * dist, 0, 1600), Phaser.Math.Clamp(this.slimeGraphic.y + ny * dist, 0, 1200));
+          const dist = executeJump(this.gameState.player, dx / len, dy / len, skillId, WORLD_CHUNKS_X * CHUNK_PX, WORLD_CHUNKS_Y * CHUNK_PX);
+          this.slimeGraphic.setPosition(this.gameState.player.x, this.gameState.player.y);
+          showToast(`\u{1F998} Sprung! (${Math.round(dist)}px)`, "system");
         }
         this.skillLevelUp(gainSkillXp(this.gameState.player, skillId, 1), skillId);
-        showToast(`\u{1F998} Sprung! (${dist}px)`, "system");
         updateUI(this.gameState);
         return;
       }
@@ -4759,7 +4764,6 @@ ${detail}` : ""}`, type);
     });
   });
 })();
-
 </script>
 
 </html>

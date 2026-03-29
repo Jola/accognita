@@ -67,7 +67,7 @@ import {
   entityAttack,
   canActivateSkill,
   consumeSkill,
-  calcDashDistance,
+  executeJump,
   executeCheckpoint,
   regenMp,
 } from "../systems/CombatSystem.js";
@@ -927,21 +927,22 @@ export class GameScene extends Phaser.Scene {
     const skillDef = ALL_SKILLS.get(skillId);
 
     if (skillDef?.attackType === "dash") {
-      const dist = calcDashDistance(this.gameState.player, skillId);
       const dx = this.joy.active ? this.joy.dx : 0;
       const dy = this.joy.active ? this.joy.dy : 0;
       const len = Math.hypot(dx, dy);
       if (len > 0.1) {
-        const nx = dx / len;
-        const ny = dy / len;
-        this.slimeGraphic.setPosition(
-          Phaser.Math.Clamp(this.slimeGraphic.x + nx * dist, 0, 1600),
-          Phaser.Math.Clamp(this.slimeGraphic.y + ny * dist, 0, 1200)
+        const dist = executeJump(
+          this.gameState.player,
+          dx / len, dy / len,
+          skillId,
+          WORLD_CHUNKS_X * CHUNK_PX,
+          WORLD_CHUNKS_Y * CHUNK_PX
         );
+        this.slimeGraphic.setPosition(this.gameState.player.x, this.gameState.player.y);
+        showToast(`🦘 Sprung! (${Math.round(dist)}px)`, "system");
       }
       // Jump: XP pro Benutzung
       this.skillLevelUp(gainSkillXp(this.gameState.player, skillId, 1), skillId);
-      showToast(`🦘 Sprung! (${dist}px)`, "system");
       updateUI(this.gameState);
       return;
     }
