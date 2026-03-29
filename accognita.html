@@ -2397,6 +2397,35 @@
     return def.behavior === "aggressive" || def.behavior === "territorial";
   }
 
+  // dist/js/systems/SkillEffects.js
+  function calcChitinDr(level) {
+    return Math.min(0.1 + (level - 1) * 0.05, 0.7);
+  }
+  function calcVenomChance(level) {
+    return 0.3 + (level - 1) * 0.05;
+  }
+  function calcVenomDmgPerTick(level) {
+    return 2 + Math.floor((level - 1) * 0.5);
+  }
+  function calcBiteDamage(level) {
+    const baseDamage = ALL_SKILLS.get("bite")?.baseDamage ?? 7;
+    return Math.max(1, Math.round(baseDamage * getSkillEffectiveness(level)));
+  }
+  var JUMP_BASE_PX = 160;
+  var JUMP_BONUS_PER_LEVEL = 20;
+  function calcJumpDistance(level) {
+    return JUMP_BASE_PX + (level - 1) * JUMP_BONUS_PER_LEVEL;
+  }
+  function calcHemolymphReflect(level) {
+    return 2 * level;
+  }
+  function calcSuperstrengthMult(level) {
+    return 1 + 0.3 * getSkillEffectiveness(level);
+  }
+  function calcPhotosynthesisHeal(level) {
+    return 0.5 * level;
+  }
+
   // dist/js/systems/EntityLevelingSystem.js
   var MAX_BONUS_LEVEL = 3;
   var SKILL_WINS_PER_LVL = 3;
@@ -2411,8 +2440,7 @@
   function getEntityBaseDamage(def) {
     const biteLevel = def.skillLevels?.["bite"];
     if (biteLevel !== void 0) {
-      const biteDef = ALL_SKILLS.get("bite");
-      return Math.max(1, Math.round((biteDef?.baseDamage ?? 7) * getSkillEffectiveness(biteLevel)));
+      return calcBiteDamage(biteLevel);
     }
     return def.damage ?? 1;
   }
@@ -2543,15 +2571,13 @@
         continue;
       if (instance.isEnabled === false)
         continue;
-      const effectiveness = getSkillEffectiveness(instance.level);
       switch (skillId) {
         case "chitin_armor": {
-          const reduction = Math.min(0.1 + (instance.level - 1) * 0.05, 0.7);
           applyEffect(player, makeStatusEffect({
             id: `passive_${skillId}`,
             type: "stat_mod",
             sourceSkillId: skillId,
-            damageReduction: reduction
+            damageReduction: calcChitinDr(instance.level)
           }));
           break;
         }
@@ -2560,7 +2586,7 @@
             id: `passive_${skillId}`,
             type: "stat_mod",
             sourceSkillId: skillId,
-            damageMult: 1 + 0.3 * effectiveness
+            damageMult: calcSuperstrengthMult(instance.level)
           }));
           break;
         }
@@ -2569,7 +2595,7 @@
             id: `passive_${skillId}`,
             type: "aura",
             sourceSkillId: skillId,
-            reflectDamage: 2 * instance.level
+            reflectDamage: calcHemolymphReflect(instance.level)
           }));
           break;
         }
@@ -2579,7 +2605,7 @@
             type: "hot",
             sourceSkillId: skillId,
             tickIntervalMs: 1e3,
-            healPerTick: 0.5 * instance.level,
+            healPerTick: calcPhotosynthesisHeal(instance.level),
             lastTickAt: now
           }));
           break;
@@ -2624,15 +2650,13 @@
       expiresAt: now + durationMs,
       tickIntervalMs: 1e3,
       lastTickAt: now,
-      damagePerTick: damageOverride ?? 2 + Math.floor((venomLevel - 1) * 0.5)
+      damagePerTick: damageOverride ?? calcVenomDmgPerTick(venomLevel)
     });
   }
 
   // dist/js/systems/CombatSystem.js
   var BASE_MELEE_DAMAGE = 3;
   var MELEE_ABSORB_SCALE = 1.5;
-  var DASH_DISTANCE_BASE = 160;
-  var DASH_DISTANCE_PER_LEVEL = 20;
   function playerAttack(player, targetInst, skillId) {
     const def = ENTITY_MAP.get(targetInst.definitionId);
     if (!def) {
@@ -2660,14 +2684,13 @@
     const damageMult = calcDamageMult(player.statusEffects);
     let dmg = Math.max(1, Math.round(baseDmg * damageMult));
     const targetChitinLv = def.skillLevels?.["chitin_armor"] ?? 0;
-    const targetDR = targetChitinLv > 0 ? Math.min(0.1 + (targetChitinLv - 1) * 0.05, 0.7) : def.damageReduction ?? 0;
+    const targetDR = targetChitinLv > 0 ? calcChitinDr(targetChitinLv) : def.damageReduction ?? 0;
     if (targetDR > 0) {
       dmg = Math.max(1, Math.round(dmg * (1 - targetDR)));
     }
     const venomInst = player.discoveredSkills.get("venom");
     if (venomInst) {
-      const venomChance = 0.3 + (venomInst.level - 1) * 0.05;
-      if (Math.random() < venomChance) {
+      if (Math.random() < calcVenomChance(venomInst.level)) {
         appliedEffects.push(makeVenomEffect(venomInst.level));
       }
     }
@@ -2688,9 +2711,9 @@
     const dmg = Math.max(1, Math.round(baseDmg * (1 - reduction)));
     const appliedEffects = [];
     const venomLv = def.skillLevels?.["venom"] ?? 0;
-    const venomChance = venomLv > 0 ? 0.3 + (venomLv - 1) * 0.05 : def.venomChance ?? 0;
+    const venomChance = venomLv > 0 ? calcVenomChance(venomLv) : def.venomChance ?? 0;
     if (venomChance > 0 && Math.random() < venomChance) {
-      const venomDmg = venomLv > 0 ? 2 + Math.floor((venomLv - 1) * 0.5) : def.venomDamagePerTick ?? 2;
+      const venomDmg = venomLv > 0 ? calcVenomDmgPerTick(venomLv) : def.venomDamagePerTick ?? 2;
       appliedEffects.push(makeVenomEffect(1, venomDmg));
     }
     const msg = dmg !== baseDmg ? `${def.icon} ${def.name} trifft! ${baseDmg}\u2192${dmg} (R\xFCstung).` : `${def.icon} ${def.name} trifft f\xFCr ${dmg} Schaden!`;
@@ -2736,9 +2759,7 @@
   }
   function calcDashDistance(player, skillId) {
     const inst = player.discoveredSkills.get(skillId);
-    if (!inst)
-      return DASH_DISTANCE_BASE;
-    return DASH_DISTANCE_BASE + (inst.level - 1) * DASH_DISTANCE_PER_LEVEL;
+    return calcJumpDistance(inst?.level ?? 1);
   }
   function executeCheckpoint(player) {
     player.hp = player.maxHp;

@@ -13,7 +13,7 @@
 // ============================================================
 import { makeStatusEffect } from "../types/Combat";
 import { ALL_SKILLS } from "../data/skills";
-import { getSkillEffectiveness } from "./SkillSystem";
+import { calcChitinDr, calcHemolymphReflect, calcSuperstrengthMult, calcPhotosynthesisHeal, calcVenomDmgPerTick, } from "./SkillEffects";
 // Maximale gleichzeitig aktive Effekte pro Ziel (Performance-Grenze)
 const MAX_EFFECTS = 8;
 // -----------------------------------------------------------
@@ -119,47 +119,41 @@ export function syncPassiveEffects(player) {
             continue;
         if (instance.isEnabled === false)
             continue;
-        const effectiveness = getSkillEffectiveness(instance.level);
         switch (skillId) {
             case "chitin_armor": {
-                // 10% + 5% pro Level Schadensreduktion
-                const reduction = Math.min(0.10 + (instance.level - 1) * 0.05, 0.70);
                 applyEffect(player, makeStatusEffect({
                     id: `passive_${skillId}`,
                     type: "stat_mod",
                     sourceSkillId: skillId,
-                    damageReduction: reduction,
+                    damageReduction: calcChitinDr(instance.level),
                 }));
                 break;
             }
             case "superstrength": {
-                // +30% Schadensbonus * effectiveness (steigt mit Level)
                 applyEffect(player, makeStatusEffect({
                     id: `passive_${skillId}`,
                     type: "stat_mod",
                     sourceSkillId: skillId,
-                    damageMult: 1.0 + 0.3 * effectiveness,
+                    damageMult: calcSuperstrengthMult(instance.level),
                 }));
                 break;
             }
             case "hemolymph": {
-                // Aura: 2 Sofortschaden pro Treffer * Level
                 applyEffect(player, makeStatusEffect({
                     id: `passive_${skillId}`,
                     type: "aura",
                     sourceSkillId: skillId,
-                    reflectDamage: 2 * instance.level,
+                    reflectDamage: calcHemolymphReflect(instance.level),
                 }));
                 break;
             }
             case "photosynthesis": {
-                // HoT: 0.5 HP/s pro Level — wirkt nur außerhalb Aggro (GameScene prüft das)
                 applyEffect(player, makeStatusEffect({
                     id: `passive_${skillId}`,
                     type: "hot",
                     sourceSkillId: skillId,
                     tickIntervalMs: 1000,
-                    healPerTick: 0.5 * instance.level,
+                    healPerTick: calcPhotosynthesisHeal(instance.level),
                     lastTickAt: now,
                 }));
                 break;
@@ -227,7 +221,7 @@ export function makeVenomEffect(venomLevel, damageOverride) {
         expiresAt: now + durationMs,
         tickIntervalMs: 1000,
         lastTickAt: now,
-        damagePerTick: damageOverride ?? (2 + Math.floor((venomLevel - 1) * 0.5)),
+        damagePerTick: damageOverride ?? calcVenomDmgPerTick(venomLevel),
     });
 }
 //# sourceMappingURL=StatusEffectSystem.js.map

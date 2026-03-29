@@ -13,8 +13,7 @@
 // ============================================================
 
 import type { EntityDefinition, EntityInstance } from "../types/Entity";
-import { ALL_SKILLS } from "../data/skills";
-import { getSkillEffectiveness } from "./SkillSystem";
+import { calcBiteDamage } from "./SkillEffects";
 
 // -----------------------------------------------------------
 // Konstanten
@@ -45,8 +44,7 @@ export function getScaledMaxHp(def: EntityDefinition, bonusLevel: number): numbe
 export function getEntityBaseDamage(def: EntityDefinition): number {
   const biteLevel = def.skillLevels?.["bite"];
   if (biteLevel !== undefined) {
-    const biteDef = ALL_SKILLS.get("bite");
-    return Math.max(1, Math.round((biteDef?.baseDamage ?? 7) * getSkillEffectiveness(biteLevel)));
+    return calcBiteDamage(biteLevel);
   }
   return def.damage ?? 1;
 }

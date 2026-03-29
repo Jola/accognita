@@ -17,11 +17,10 @@ import { ENTITY_MAP } from "../data/entities";
 import { getSkillEffectiveness } from "./SkillSystem";
 import { getEntityBaseDamage } from "./EntityLevelingSystem";
 import { calcDamageReduction, calcDamageMult, makeVenomEffect, } from "./StatusEffectSystem";
+import { calcChitinDr, calcVenomChance, calcVenomDmgPerTick, calcJumpDistance, } from "./SkillEffects";
 // Konstanten — Basis-Nahkampf des unausgerüsteten Slimes
 const BASE_MELEE_DAMAGE = 3; // Basisschaden ohne Skills
 const MELEE_ABSORB_SCALE = 1.5; // Bonus pro Absorb-Level
-const DASH_DISTANCE_BASE = 160; // Jump: Basisweite in Pixeln
-const DASH_DISTANCE_PER_LEVEL = 20; // Zusätzliche Pixel pro Jump-Level
 // -----------------------------------------------------------
 // SPIELER-ANGRIFF
 //
@@ -63,7 +62,7 @@ export function playerAttack(player, targetInst, skillId) {
     // Rüstung des Ziels: aus skillLevels.chitin_armor oder standalone damageReduction
     const targetChitinLv = def.skillLevels?.["chitin_armor"] ?? 0;
     const targetDR = targetChitinLv > 0
-        ? Math.min(0.10 + (targetChitinLv - 1) * 0.05, 0.70)
+        ? calcChitinDr(targetChitinLv)
         : (def.damageReduction ?? 0);
     if (targetDR > 0) {
         dmg = Math.max(1, Math.round(dmg * (1 - targetDR)));
@@ -71,9 +70,7 @@ export function playerAttack(player, targetInst, skillId) {
     // Venom: passiv auf Treffer anwenden (wenn Spieler Venom hat)
     const venomInst = player.discoveredSkills.get("venom");
     if (venomInst) {
-        // Vergiftungschance: 30% + 5% pro Level
-        const venomChance = 0.30 + (venomInst.level - 1) * 0.05;
-        if (Math.random() < venomChance) {
+        if (Math.random() < calcVenomChance(venomInst.level)) {
             appliedEffects.push(makeVenomEffect(venomInst.level));
         }
     }
@@ -102,13 +99,9 @@ export function entityAttack(def, instance, player) {
     // Venom: aus skillLevels.venom oder standalone venomChance
     const appliedEffects = [];
     const venomLv = def.skillLevels?.["venom"] ?? 0;
-    const venomChance = venomLv > 0
-        ? 0.30 + (venomLv - 1) * 0.05
-        : (def.venomChance ?? 0);
+    const venomChance = venomLv > 0 ? calcVenomChance(venomLv) : (def.venomChance ?? 0);
     if (venomChance > 0 && Math.random() < venomChance) {
-        const venomDmg = venomLv > 0
-            ? 2 + Math.floor((venomLv - 1) * 0.5)
-            : (def.venomDamagePerTick ?? 2);
+        const venomDmg = venomLv > 0 ? calcVenomDmgPerTick(venomLv) : (def.venomDamagePerTick ?? 2);
         appliedEffects.push(makeVenomEffect(1, venomDmg));
     }
     const msg = dmg !== baseDmg
@@ -174,9 +167,7 @@ export function consumeSkill(player, skillId) {
 // -----------------------------------------------------------
 export function calcDashDistance(player, skillId) {
     const inst = player.discoveredSkills.get(skillId);
-    if (!inst)
-        return DASH_DISTANCE_BASE;
-    return DASH_DISTANCE_BASE + (inst.level - 1) * DASH_DISTANCE_PER_LEVEL;
+    return calcJumpDistance(inst?.level ?? 1);
 }
 // -----------------------------------------------------------
 // CHECKPOINT — Spieler respawnen
