@@ -57,6 +57,7 @@ export declare class GameScene extends Phaser.Scene {
     /** Hauptlevel neu berechnen und bei Level-Up loggen */
     private checkPlayerLevelUp;
     private showDamageNumber;
+    private showFireBreath;
     activateSkill(skillId: string): void;
     private checkNearbyEntity;
     doAbsorb(): void;

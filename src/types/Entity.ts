@@ -67,6 +67,11 @@ export interface EntityDefinition {
   interactRadius: number;
   aggroRadius?: number;          // Ab dieser Distanz wird die Entity aggro (px)
 
+  // Fernkampf — optional (z.B. Drachen-Feueratem)
+  rangedAttackSkillId?: string;      // Skill-ID für Fernkampf (z.B. "fire_breath")
+  rangedAttackRangePx?: number;      // Reichweite in Pixeln
+  rangedAttackCooldownMs?: number;   // Cooldown zwischen Fernkampfangriffen
+
   // Passive Verteidigung & Angriffsgift — skalieren 1:1 mit Skill-Werten
   damageReduction?: number;      // 0–1: Schadensreduktion (wie Chitin Armor)
   venomChance?: number;          // 0–1: Chance Gift zu applizieren bei jedem Treffer
@@ -103,7 +108,10 @@ export interface EntityInstance {
   chunkKey?: string;        // "cx,cy" — welchem Chunk diese Entity gehört
 
   // --- Entity-Leveling-System ---
-  bonusLevel?: number;      // Bonus-Level durch Siege (0–3)
-  skillWins?: number;       // Siege seit letztem bonusLevel-Anstieg (0–2)
-  levelingCooldown?: number; // ms Cooldown für Angriffe auf Beute
+  bonusLevel?: number;              // Bonus-Level durch Siege (0–3)
+  skillWins?: number;               // Siege seit letztem bonusLevel-Anstieg (0–2)
+  levelingCooldown?: number;        // ms Cooldown für Angriffe auf Beute
+
+  // --- Fernkampf ---
+  rangedCooldownRemaining?: number; // ms bis zum nächsten Fernkampfangriff
 }

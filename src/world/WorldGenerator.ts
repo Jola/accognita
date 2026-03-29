@@ -8,6 +8,7 @@
 
 import type { ChunkDef, HeightLevel, SpawnDef } from "./Chunk.js";
 import { TILES_PER_CHUNK, CHUNK_PX } from "./Chunk.js";
+import type { BiomeSpawnEntry } from "./BiomeDefinitions.js";
 import { getBiomeAt, BIOME_SPAWNS, getTileIndex } from "./BiomeDefinitions.js";
 
 // ────────────────────────────────────────
@@ -74,20 +75,35 @@ function generateHeightMap(rng: () => number): HeightLevel[][] {
 }
 
 // ────────────────────────────────────────
+// Gewichtete Zufallsauswahl
+// ────────────────────────────────────────
+
+function weightedPick(table: BiomeSpawnEntry[], rng: () => number): string {
+  const total = table.reduce((s, e) => s + e.weight, 0);
+  let r = rng() * total;
+  for (const entry of table) {
+    r -= entry.weight;
+    if (r <= 0) return entry.id;
+  }
+  return table[table.length - 1].id;
+}
+
+// ────────────────────────────────────────
 // Spawn-Generierung
 // ────────────────────────────────────────
 
-/** ~16–28 Spawns pro Chunk, zufällig verteilt */
+/** 64–112 Spawns pro Chunk, gewichtet nach Biom-Spawn-Tabelle */
 function generateSpawns(
   biome: string,
   rng: () => number
 ): SpawnDef[] {
-  const spawnTable = BIOME_SPAWNS[biome as keyof typeof BIOME_SPAWNS] ?? ["grass"];
+  const spawnTable = BIOME_SPAWNS[biome as keyof typeof BIOME_SPAWNS]
+    ?? [{ id: "grass", weight: 1 }];
   const count = 64 + Math.floor(rng() * 49); // 64–112
   const spawns: SpawnDef[] = [];
 
   for (let i = 0; i < count; i++) {
-    const defId = spawnTable[Math.floor(rng() * spawnTable.length)];
+    const defId = weightedPick(spawnTable, rng);
     // Position: nicht zu nah am Chunk-Rand (mindestens 48px Abstand)
     const localX = 48 + (rng() * (CHUNK_PX - 96)) | 0;
     const localY = 48 + (rng() * (CHUNK_PX - 96)) | 0;

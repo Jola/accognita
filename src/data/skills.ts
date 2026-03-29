@@ -159,6 +159,42 @@ export const BASE_SKILLS: SkillDefinition[] = [
     attackType: "dash",
   },
   {
+    id: "claw",
+    name: "Klauenhieb",
+    element: "none",
+    icon: "🦅",
+    category: "basic",
+    activation: "active",
+    maxLevel: 0,
+    baseXpThreshold: 15,
+    xpThresholdMultiplier: 1.5,
+    description:
+      "Aktiv: Ein mächtiger Nahkampfhieb mit scharfen Klauen (8 Basis-Schaden). " +
+      "Höheres Level = stärkerer Hieb. MP-Kosten: 5.",
+    mpCost: 5,
+    cooldownMs: 1500,
+    attackType: "melee",
+    baseDamage: 8,
+  },
+  {
+    id: "fire_breath",
+    name: "Feueratem",
+    element: "fire",
+    icon: "🔥",
+    category: "basic",
+    activation: "active",
+    maxLevel: 0,
+    baseXpThreshold: 25,
+    xpThresholdMultiplier: 1.5,
+    description:
+      "Aktiv: Fernkampf-Angriff — ein Strom lodernder Flammen über 8× Körpergröße Distanz. " +
+      "Verursacht direkten Feuerschaden (10 Basis). Höheres Level = stärker. MP-Kosten: 8.",
+    mpCost: 8,
+    cooldownMs: 2500,
+    attackType: "ranged_projectile",
+    baseDamage: 10,
+  },
+  {
     id: "hemolymph",
     name: "Hemolymph",
     element: "poison",

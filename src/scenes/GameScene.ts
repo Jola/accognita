@@ -46,7 +46,9 @@ import { saveToSlot, loadFromSlot, deleteAllSaves } from "../systems/SaveSystem.
 import {
   calcEntityAi,
   tickAttackCooldown,
+  tickRangedCooldown,
   setAttackCooldown,
+  setRangedCooldown,
   resetAi,
 } from "../systems/AiSystem.js";
 import {
@@ -55,6 +57,7 @@ import {
   getScaledDamage,
   getScaledSpeed,
   getEntityBaseDamage,
+  getEntityRangedDamage,
   findLevelingPrey,
   processEntityVictory,
   canFight,
@@ -74,6 +77,7 @@ import {
   applyEffect,
   removeExpiredEffects,
   syncPassiveEffects,
+  calcDamageReduction,
 } from "../systems/StatusEffectSystem.js";
 import { calcHemolymphReflect } from "../systems/SkillEffects.js";
 import {
@@ -596,6 +600,7 @@ export class GameScene extends Phaser.Scene {
       if (!def) continue;
 
       tickAttackCooldown(instance, delta);
+      tickRangedCooldown(instance, delta);
 
       const frame = calcEntityAi(def, instance, px, py, now);
 
@@ -612,7 +617,20 @@ export class GameScene extends Phaser.Scene {
         instance.y += frame.vy * (delta / 1000);
       }
 
-      // Entity greift an
+      // Entity setzt Fernkampf ein (z.B. Drachen-Feueratem)
+      if (frame.wantToRangedAttack && def.rangedAttackSkillId) {
+        setRangedCooldown(instance, def);
+        const rangedDmg = getEntityRangedDamage(def);
+        const reduction = calcDamageReduction(this.gameState.player.statusEffects);
+        const finalDmg = Math.max(1, Math.round(rangedDmg * (1 - reduction)));
+        this.gameState.player.hp = Math.max(0, this.gameState.player.hp - finalDmg);
+        this.showFireBreath(instance.x, instance.y, px, py);
+        this.showDamageNumber(px, py, finalDmg, "#ff6600");
+        addLog(`${def.icon} ${def.name} Feueratem! ${finalDmg} Schaden!`, "aggro");
+        updateUI(this.gameState);
+      }
+
+      // Entity greift an (Nahkampf)
       if (frame.wantToAttack) {
         setAttackCooldown(instance, def);
         const result = entityAttack(def, instance, this.gameState.player);
@@ -863,6 +881,39 @@ export class GameScene extends Phaser.Scene {
       ease: "Power1",
       onComplete: () => txt.destroy(),
     });
+  }
+
+  // Feueratem-Animation: drei 🔥-Partikel fliegen von der Entity zum Spieler.
+  // Alle Koordinaten in Weltpixeln; setScale(1/zoom) hält die Anzeigegröße konstant.
+  private showFireBreath(fromX: number, fromY: number, toX: number, toY: number) {
+    const zoom = this.cameras.main.zoom;
+    for (let i = 0; i < 3; i++) {
+      const delay = i * 90;
+      const spread = 12 / zoom;
+      const sx = fromX + (Math.random() - 0.5) * spread;
+      const sy = fromY + (Math.random() - 0.5) * spread;
+      const tx = toX  + (Math.random() - 0.5) * spread * 0.5;
+      const ty = toY  + (Math.random() - 0.5) * spread * 0.5;
+
+      const flame = this.add
+        .text(sx, sy, "🔥", { fontSize: "20px" })
+        .setOrigin(0.5)
+        .setScale(1.8 / zoom)
+        .setDepth(15);
+
+      this.tweens.add({
+        targets: flame,
+        x: tx,
+        y: ty,
+        scaleX: 0.3 / zoom,
+        scaleY: 0.3 / zoom,
+        alpha: 0,
+        delay,
+        duration: 520,
+        ease: "Power2",
+        onComplete: () => flame.destroy(),
+      });
+    }
   }
 
   activateSkill(skillId: string) {

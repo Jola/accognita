@@ -69,15 +69,29 @@ function generateHeightMap(rng) {
     return map;
 }
 // ────────────────────────────────────────
+// Gewichtete Zufallsauswahl
+// ────────────────────────────────────────
+function weightedPick(table, rng) {
+    const total = table.reduce((s, e) => s + e.weight, 0);
+    let r = rng() * total;
+    for (const entry of table) {
+        r -= entry.weight;
+        if (r <= 0)
+            return entry.id;
+    }
+    return table[table.length - 1].id;
+}
+// ────────────────────────────────────────
 // Spawn-Generierung
 // ────────────────────────────────────────
-/** ~16–28 Spawns pro Chunk, zufällig verteilt */
+/** 64–112 Spawns pro Chunk, gewichtet nach Biom-Spawn-Tabelle */
 function generateSpawns(biome, rng) {
-    const spawnTable = BIOME_SPAWNS[biome] ?? ["grass"];
+    const spawnTable = BIOME_SPAWNS[biome]
+        ?? [{ id: "grass", weight: 1 }];
     const count = 64 + Math.floor(rng() * 49); // 64–112
     const spawns = [];
     for (let i = 0; i < count; i++) {
-        const defId = spawnTable[Math.floor(rng() * spawnTable.length)];
+        const defId = weightedPick(spawnTable, rng);
         // Position: nicht zu nah am Chunk-Rand (mindestens 48px Abstand)
         const localX = 48 + (rng() * (CHUNK_PX - 96)) | 0;
         const localY = 48 + (rng() * (CHUNK_PX - 96)) | 0;

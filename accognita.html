@@ -689,6 +689,38 @@
       attackType: "dash"
     },
     {
+      id: "claw",
+      name: "Klauenhieb",
+      element: "none",
+      icon: "\u{1F985}",
+      category: "basic",
+      activation: "active",
+      maxLevel: 0,
+      baseXpThreshold: 15,
+      xpThresholdMultiplier: 1.5,
+      description: "Aktiv: Ein m\xE4chtiger Nahkampfhieb mit scharfen Klauen (8 Basis-Schaden). H\xF6heres Level = st\xE4rkerer Hieb. MP-Kosten: 5.",
+      mpCost: 5,
+      cooldownMs: 1500,
+      attackType: "melee",
+      baseDamage: 8
+    },
+    {
+      id: "fire_breath",
+      name: "Feueratem",
+      element: "fire",
+      icon: "\u{1F525}",
+      category: "basic",
+      activation: "active",
+      maxLevel: 0,
+      baseXpThreshold: 25,
+      xpThresholdMultiplier: 1.5,
+      description: "Aktiv: Fernkampf-Angriff \u2014 ein Strom lodernder Flammen \xFCber 8\xD7 K\xF6rpergr\xF6\xDFe Distanz. Verursacht direkten Feuerschaden (10 Basis). H\xF6heres Level = st\xE4rker. MP-Kosten: 8.",
+      mpCost: 8,
+      cooldownMs: 2500,
+      attackType: "ranged_projectile",
+      baseDamage: 10
+    },
+    {
       id: "hemolymph",
       name: "Hemolymph",
       element: "poison",
@@ -1016,6 +1048,83 @@
       // bite Lv18 → 7×2.85 ≈ 20 Schaden; chitin Lv8 → 45% DR; venom Lv8 → 65%/5Tick
       skillLevels: { bite: 18, chitin_armor: 8, venom: 8 },
       worldSize: 10
+    },
+    // ==========================================================
+    // DRACHE — Level 20 (legendär, Dungeon-Boss)
+    // ==========================================================
+    {
+      id: "dragon",
+      name: "Drache",
+      icon: "\u{1F409}",
+      behavior: "aggressive",
+      disposition: "hostile",
+      category: "creature",
+      rarity: "legendary",
+      level: 20,
+      skillDrops: [
+        { skillId: "fire_breath", chance: 0.4 },
+        // Seltener und wertvoller Drop
+        { skillId: "claw", chance: 0.3 },
+        { skillId: "bite", chance: 0.1 }
+      ],
+      materialDrops: [],
+      hp: 500,
+      speed: 35,
+      // worldSize 20 × 5 = 100 → langsamer, aber massiv
+      attackRangePx: 40,
+      attackCooldownMs: 1800,
+      attackType: "melee",
+      // 2 × worldSize
+      // Feueratem: Fernkampf über 8 × worldSize = 160px Distanz
+      rangedAttackSkillId: "fire_breath",
+      rangedAttackRangePx: 160,
+      // 8 × worldSize
+      rangedAttackCooldownMs: 2500,
+      respawnTime: 600,
+      // 10 Minuten — sehr seltener Spawn
+      interactRadius: 80,
+      aggroRadius: 50,
+      // 2.5 × worldSize
+      // claw Lv20 → 8×3.05 ≈ 24 Nahkampf-Schaden
+      // fire_breath Lv20 → 10×3.05 ≈ 31 Fernkampf-Schaden
+      skillLevels: { claw: 20, fire_breath: 20 },
+      worldSize: 20
+      // Deutlich größer als alle anderen Gegner
+    },
+    // ==========================================================
+    // SCHLANGE — Level 10 (feindlich, giftig, schnell)
+    // ==========================================================
+    {
+      id: "snake",
+      name: "Schlange",
+      icon: "\u{1F40D}",
+      behavior: "aggressive",
+      disposition: "hostile",
+      category: "creature",
+      rarity: "rare",
+      level: 10,
+      skillDrops: [
+        { skillId: "bite", chance: 0.3 },
+        // Giftzahn-Biss
+        { skillId: "venom", chance: 0.3 }
+        // Starkes Schlangengift
+      ],
+      materialDrops: [],
+      hp: 120,
+      speed: 60,
+      // worldSize 12 × 5 = 60
+      attackRangePx: 24,
+      attackCooldownMs: 1200,
+      attackType: "melee",
+      // 2 × worldSize
+      respawnTime: 180,
+      // 3 Minuten — seltener Gegner
+      interactRadius: 60,
+      aggroRadius: 30,
+      // 2.5 × worldSize
+      // bite Lv15 → 7×2.55 ≈ 18 Schaden; venom Lv15 → 100% Chance, 9/Tick
+      skillLevels: { bite: 15, venom: 15 },
+      worldSize: 12
     }
   ];
   var ENTITY_MAP = new Map(ENTITY_DEFINITIONS.map((e) => [e.id, e]));
@@ -2271,9 +2380,17 @@
   function calcVenomDmgPerTick(level) {
     return 2 + Math.floor((level - 1) * 0.5);
   }
-  function calcBiteDamage(level) {
-    const baseDamage = ALL_SKILLS.get("bite")?.baseDamage ?? 7;
+  function calcSkillAttackDamage(skillId, level) {
+    const baseDamage = ALL_SKILLS.get(skillId)?.baseDamage ?? 0;
+    if (baseDamage === 0)
+      return 0;
     return Math.max(1, Math.round(baseDamage * getSkillEffectiveness(level)));
+  }
+  function calcBiteDamage(level) {
+    return calcSkillAttackDamage("bite", level);
+  }
+  function calcClawDamage(level) {
+    return calcSkillAttackDamage("claw", level);
   }
   var JUMP_BASE_PX = 160;
   var JUMP_BONUS_PER_LEVEL = 20;
@@ -2296,7 +2413,7 @@
   var HUNT_RADIUS_PX = 300;
   var STAT_SCALE = 1.25;
   function canFight(def) {
-    return !!(def.damage ?? def.skillLevels?.["bite"]);
+    return !!(def.damage ?? def.skillLevels?.["bite"] ?? def.skillLevels?.["claw"] ?? def.rangedAttackSkillId);
   }
   function getEffectiveLevel(def, instance) {
     return def.level + (instance.bonusLevel ?? 0);
@@ -2306,10 +2423,19 @@
   }
   function getEntityBaseDamage(def) {
     const biteLevel = def.skillLevels?.["bite"];
-    if (biteLevel !== void 0) {
+    if (biteLevel !== void 0)
       return calcBiteDamage(biteLevel);
-    }
+    const clawLevel = def.skillLevels?.["claw"];
+    if (clawLevel !== void 0)
+      return calcClawDamage(clawLevel);
     return def.damage ?? 1;
+  }
+  function getEntityRangedDamage(def) {
+    const skillId = def.rangedAttackSkillId;
+    if (!skillId)
+      return 0;
+    const level = def.skillLevels?.[skillId] ?? 1;
+    return calcSkillAttackDamage(skillId, level);
   }
   function getScaledDamage(def, bonusLevel) {
     return Math.max(1, Math.round(getEntityBaseDamage(def) * Math.pow(STAT_SCALE, bonusLevel)));
@@ -2390,6 +2516,7 @@
         vx: instance._aiLastVx ?? 0,
         vy: instance._aiLastVy ?? 0,
         wantToAttack: false,
+        wantToRangedAttack: false,
         becameAggro: false,
         lostAggro: false
       };
@@ -2433,15 +2560,27 @@
     instance._aiLastVx = vx;
     instance._aiLastVy = vy;
     const attackRange = def.attackRangePx ?? 60;
-    const inRange = dist <= attackRange;
+    const inMeleeRange = dist <= attackRange;
     const cooldownDone = instance.attackCooldownRemaining <= 0;
-    const wantToAttack = instance.isAggro && inRange && cooldownDone;
-    return { vx, vy, wantToAttack, becameAggro, lostAggro };
+    const wantToAttack = instance.isAggro && inMeleeRange && cooldownDone;
+    const rangedRange = def.rangedAttackRangePx ?? 0;
+    const rangedCooldownDone = (instance.rangedCooldownRemaining ?? 0) <= 0;
+    const wantToRangedAttack = !!(instance.isAggro && rangedRange > 0 && rangedCooldownDone && !inMeleeRange && // Nicht schießen wenn im Nahkampf
+    dist <= rangedRange);
+    return { vx, vy, wantToAttack, wantToRangedAttack, becameAggro, lostAggro };
   }
   function tickAttackCooldown(instance, deltaMs) {
     if (instance.attackCooldownRemaining > 0) {
       instance.attackCooldownRemaining = Math.max(0, instance.attackCooldownRemaining - deltaMs);
     }
+  }
+  function tickRangedCooldown(instance, deltaMs) {
+    if ((instance.rangedCooldownRemaining ?? 0) > 0) {
+      instance.rangedCooldownRemaining = Math.max(0, (instance.rangedCooldownRemaining ?? 0) - deltaMs);
+    }
+  }
+  function setRangedCooldown(instance, def) {
+    instance.rangedCooldownRemaining = def.rangedAttackCooldownMs ?? 2e3;
   }
   function setAttackCooldown(instance, def) {
     instance.attackCooldownRemaining = def.attackCooldownMs ?? 1500;
@@ -2449,6 +2588,7 @@
   function resetAi(instance) {
     instance.isAggro = false;
     instance.attackCooldownRemaining = 0;
+    instance.rangedCooldownRemaining = 0;
     delete instance._aiLastCalcAt;
     delete instance._aiLastVx;
     delete instance._aiLastVy;
@@ -2457,7 +2597,7 @@
     delete instance._wanderPauseUntil;
   }
   function idleFrame() {
-    return { vx: 0, vy: 0, wantToAttack: false, becameAggro: false, lostAggro: false };
+    return { vx: 0, vy: 0, wantToAttack: false, wantToRangedAttack: false, becameAggro: false, lostAggro: false };
   }
   function calcWander(def, instance, now) {
     const inst = instance;
@@ -2489,6 +2629,7 @@
       vx: dtx / dt * speed,
       vy: dty / dt * speed,
       wantToAttack: false,
+      wantToRangedAttack: false,
       becameAggro: false,
       lostAggro: false
     };
@@ -3283,12 +3424,39 @@
     return "forest";
   }
   var BIOME_SPAWNS = {
-    forest: ["ant", "ladybug", "grass"],
-    swamp: ["poison_spider", "grass"],
-    highland: ["jumping_spider", "ant", "small_scorpion"],
-    mountain: ["jumping_spider", "poison_spider", "small_scorpion"],
-    desert: ["ant", "small_scorpion", "large_scorpion"],
-    dungeon: ["jumping_spider", "poison_spider", "large_scorpion"]
+    forest: [
+      { id: "ant", weight: 10 },
+      { id: "ladybug", weight: 10 },
+      { id: "grass", weight: 15 }
+    ],
+    swamp: [
+      { id: "poison_spider", weight: 10 },
+      { id: "grass", weight: 10 }
+    ],
+    highland: [
+      { id: "jumping_spider", weight: 10 },
+      { id: "ant", weight: 10 },
+      { id: "small_scorpion", weight: 6 }
+    ],
+    mountain: [
+      { id: "jumping_spider", weight: 10 },
+      { id: "poison_spider", weight: 10 },
+      { id: "small_scorpion", weight: 6 }
+    ],
+    desert: [
+      { id: "ant", weight: 8 },
+      { id: "small_scorpion", weight: 8 },
+      { id: "large_scorpion", weight: 5 },
+      { id: "snake", weight: 2 }
+    ],
+    dungeon: [
+      { id: "jumping_spider", weight: 10 },
+      { id: "poison_spider", weight: 10 },
+      { id: "large_scorpion", weight: 8 },
+      { id: "snake", weight: 4 },
+      { id: "dragon", weight: 1 }
+      // ~3% → ca. 2–3 Drachen pro Chunk
+    ]
   };
   function getTileIndex(biome, height) {
     const offset = BIOME_TILE_OFFSET[biome] ?? 0;
@@ -3341,12 +3509,22 @@
     }
     return map;
   }
+  function weightedPick(table, rng) {
+    const total = table.reduce((s, e) => s + e.weight, 0);
+    let r = rng() * total;
+    for (const entry of table) {
+      r -= entry.weight;
+      if (r <= 0)
+        return entry.id;
+    }
+    return table[table.length - 1].id;
+  }
   function generateSpawns(biome, rng) {
-    const spawnTable = BIOME_SPAWNS[biome] ?? ["grass"];
+    const spawnTable = BIOME_SPAWNS[biome] ?? [{ id: "grass", weight: 1 }];
     const count = 64 + Math.floor(rng() * 49);
     const spawns = [];
     for (let i = 0; i < count; i++) {
-      const defId = spawnTable[Math.floor(rng() * spawnTable.length)];
+      const defId = weightedPick(spawnTable, rng);
       const localX = 48 + rng() * (CHUNK_PX - 96) | 0;
       const localY = 48 + rng() * (CHUNK_PX - 96) | 0;
       spawns.push({ defId, localX, localY });
@@ -3942,6 +4120,7 @@
         if (!def)
           continue;
         tickAttackCooldown(instance, delta);
+        tickRangedCooldown(instance, delta);
         const frame = calcEntityAi(def, instance, px, py, now);
         if (frame.becameAggro) {
           addLog(`${def.icon} ${def.name} wird aggressiv!`, "aggro");
@@ -3952,6 +4131,17 @@
         if ((frame.vx !== 0 || frame.vy !== 0) && instance.isAlive) {
           instance.x += frame.vx * (delta / 1e3);
           instance.y += frame.vy * (delta / 1e3);
+        }
+        if (frame.wantToRangedAttack && def.rangedAttackSkillId) {
+          setRangedCooldown(instance, def);
+          const rangedDmg = getEntityRangedDamage(def);
+          const reduction = calcDamageReduction(this.gameState.player.statusEffects);
+          const finalDmg = Math.max(1, Math.round(rangedDmg * (1 - reduction)));
+          this.gameState.player.hp = Math.max(0, this.gameState.player.hp - finalDmg);
+          this.showFireBreath(instance.x, instance.y, px, py);
+          this.showDamageNumber(px, py, finalDmg, "#ff6600");
+          addLog(`${def.icon} ${def.name} Feueratem! ${finalDmg} Schaden!`, "aggro");
+          updateUI(this.gameState);
         }
         if (frame.wantToAttack) {
           setAttackCooldown(instance, def);
@@ -4153,6 +4343,32 @@
         ease: "Power1",
         onComplete: () => txt.destroy()
       });
+    }
+    // Feueratem-Animation: drei 🔥-Partikel fliegen von der Entity zum Spieler.
+    // Alle Koordinaten in Weltpixeln; setScale(1/zoom) hält die Anzeigegröße konstant.
+    showFireBreath(fromX, fromY, toX, toY) {
+      const zoom = this.cameras.main.zoom;
+      for (let i = 0; i < 3; i++) {
+        const delay = i * 90;
+        const spread = 12 / zoom;
+        const sx = fromX + (Math.random() - 0.5) * spread;
+        const sy = fromY + (Math.random() - 0.5) * spread;
+        const tx = toX + (Math.random() - 0.5) * spread * 0.5;
+        const ty = toY + (Math.random() - 0.5) * spread * 0.5;
+        const flame = this.add.text(sx, sy, "\u{1F525}", { fontSize: "20px" }).setOrigin(0.5).setScale(1.8 / zoom).setDepth(15);
+        this.tweens.add({
+          targets: flame,
+          x: tx,
+          y: ty,
+          scaleX: 0.3 / zoom,
+          scaleY: 0.3 / zoom,
+          alpha: 0,
+          delay,
+          duration: 520,
+          ease: "Power2",
+          onComplete: () => flame.destroy()
+        });
+      }
     }
     activateSkill(skillId) {
       const check = canActivateSkill(this.gameState.player, skillId);

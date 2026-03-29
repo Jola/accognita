@@ -17,10 +17,10 @@ import { createSkillBar } from "../ui/SkillBar.js";
 import { createSkillMenu } from "../ui/SkillMenu.js";
 import { createSaveMenu } from "../ui/SaveMenu.js";
 import { saveToSlot, loadFromSlot, deleteAllSaves } from "../systems/SaveSystem.js";
-import { calcEntityAi, tickAttackCooldown, setAttackCooldown, resetAi, } from "../systems/AiSystem.js";
-import { getEffectiveLevel, getScaledMaxHp, getScaledDamage, getScaledSpeed, getEntityBaseDamage, findLevelingPrey, processEntityVictory, canFight, } from "../systems/EntityLevelingSystem.js";
+import { calcEntityAi, tickAttackCooldown, tickRangedCooldown, setAttackCooldown, setRangedCooldown, resetAi, } from "../systems/AiSystem.js";
+import { getEffectiveLevel, getScaledMaxHp, getScaledDamage, getScaledSpeed, getEntityBaseDamage, getEntityRangedDamage, findLevelingPrey, processEntityVictory, canFight, } from "../systems/EntityLevelingSystem.js";
 import { playerAttack, entityAttack, canActivateSkill, consumeSkill, calcDashDistance, executeCheckpoint, regenMp, } from "../systems/CombatSystem.js";
-import { processTicks, triggerAuras, applyEffect, removeExpiredEffects, syncPassiveEffects, } from "../systems/StatusEffectSystem.js";
+import { processTicks, triggerAuras, applyEffect, removeExpiredEffects, syncPassiveEffects, calcDamageReduction, } from "../systems/StatusEffectSystem.js";
 import { calcHemolymphReflect } from "../systems/SkillEffects.js";
 import { PLAYER_WORLD_RADIUS_MIN, PLAYER_WORLD_RADIUS_MAX, PLAYER_SIZE_LEVEL_MAX, PLAYER_SCREEN_RADIUS, PLAYER_SPEED_PER_WORLD_RADIUS, } from "../data/balance.js";
 import { generateTileset } from "../world/TilesetGenerator.js";
@@ -469,6 +469,7 @@ export class GameScene extends Phaser.Scene {
             if (!def)
                 continue;
             tickAttackCooldown(instance, delta);
+            tickRangedCooldown(instance, delta);
             const frame = calcEntityAi(def, instance, px, py, now);
             if (frame.becameAggro) {
                 addLog(`${def.icon} ${def.name} wird aggressiv!`, "aggro");
@@ -481,7 +482,19 @@ export class GameScene extends Phaser.Scene {
                 instance.x += frame.vx * (delta / 1000);
                 instance.y += frame.vy * (delta / 1000);
             }
-            // Entity greift an
+            // Entity setzt Fernkampf ein (z.B. Drachen-Feueratem)
+            if (frame.wantToRangedAttack && def.rangedAttackSkillId) {
+                setRangedCooldown(instance, def);
+                const rangedDmg = getEntityRangedDamage(def);
+                const reduction = calcDamageReduction(this.gameState.player.statusEffects);
+                const finalDmg = Math.max(1, Math.round(rangedDmg * (1 - reduction)));
+                this.gameState.player.hp = Math.max(0, this.gameState.player.hp - finalDmg);
+                this.showFireBreath(instance.x, instance.y, px, py);
+                this.showDamageNumber(px, py, finalDmg, "#ff6600");
+                addLog(`${def.icon} ${def.name} Feueratem! ${finalDmg} Schaden!`, "aggro");
+                updateUI(this.gameState);
+            }
+            // Entity greift an (Nahkampf)
             if (frame.wantToAttack) {
                 setAttackCooldown(instance, def);
                 const result = entityAttack(def, instance, this.gameState.player);
@@ -703,6 +716,36 @@ export class GameScene extends Phaser.Scene {
             ease: "Power1",
             onComplete: () => txt.destroy(),
         });
+    }
+    // Feueratem-Animation: drei 🔥-Partikel fliegen von der Entity zum Spieler.
+    // Alle Koordinaten in Weltpixeln; setScale(1/zoom) hält die Anzeigegröße konstant.
+    showFireBreath(fromX, fromY, toX, toY) {
+        const zoom = this.cameras.main.zoom;
+        for (let i = 0; i < 3; i++) {
+            const delay = i * 90;
+            const spread = 12 / zoom;
+            const sx = fromX + (Math.random() - 0.5) * spread;
+            const sy = fromY + (Math.random() - 0.5) * spread;
+            const tx = toX + (Math.random() - 0.5) * spread * 0.5;
+            const ty = toY + (Math.random() - 0.5) * spread * 0.5;
+            const flame = this.add
+                .text(sx, sy, "🔥", { fontSize: "20px" })
+                .setOrigin(0.5)
+                .setScale(1.8 / zoom)
+                .setDepth(15);
+            this.tweens.add({
+                targets: flame,
+                x: tx,
+                y: ty,
+                scaleX: 0.3 / zoom,
+                scaleY: 0.3 / zoom,
+                alpha: 0,
+                delay,
+                duration: 520,
+                ease: "Power2",
+                onComplete: () => flame.destroy(),
+            });
+        }
     }
     activateSkill(skillId) {
         const check = canActivateSkill(this.gameState.player, skillId);

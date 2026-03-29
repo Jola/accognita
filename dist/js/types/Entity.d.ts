@@ -28,6 +28,9 @@ export interface EntityDefinition {
     respawnTime: number;
     interactRadius: number;
     aggroRadius?: number;
+    rangedAttackSkillId?: string;
+    rangedAttackRangePx?: number;
+    rangedAttackCooldownMs?: number;
     damageReduction?: number;
     venomChance?: number;
     venomDamagePerTick?: number;
@@ -58,5 +61,6 @@ export interface EntityInstance {
     bonusLevel?: number;
     skillWins?: number;
     levelingCooldown?: number;
+    rangedCooldownRemaining?: number;
 }
 //# sourceMappingURL=Entity.d.ts.map

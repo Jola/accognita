@@ -11,7 +11,7 @@
 //
 // Keine Phaser-Abhängigkeit. Kein Rendering.
 // ============================================================
-import { calcBiteDamage } from "./SkillEffects";
+import { calcBiteDamage, calcClawDamage, calcSkillAttackDamage } from "./SkillEffects";
 // -----------------------------------------------------------
 // Konstanten
 // -----------------------------------------------------------
@@ -27,7 +27,11 @@ const STAT_SCALE = 1.25; // Kampfwert-Faktor pro bonusLevel
 // Wird an mehreren Stellen genutzt (AiSystem, GameScene, findLevelingPrey).
 // -----------------------------------------------------------
 export function canFight(def) {
-    return !!(def.damage ?? def.skillLevels?.["bite"]);
+    return !!(def.damage ??
+        def.skillLevels?.["bite"] ??
+        def.skillLevels?.["claw"] ??
+        def.rangedAttackSkillId // z.B. fire_breath-only Entity
+    );
 }
 // -----------------------------------------------------------
 // Effektives Level (Basislevel + Bonuslevel)
@@ -41,13 +45,23 @@ export function getEffectiveLevel(def, instance) {
 export function getScaledMaxHp(def, bonusLevel) {
     return Math.round((def.hp ?? 1) * Math.pow(STAT_SCALE, bonusLevel));
 }
-/** Basisschaden einer Entity — aus bite-Skill-Level oder standalone damage. */
+/** Nahkampf-Basisschaden einer Entity — Priorität: bite > claw > standalone damage. */
 export function getEntityBaseDamage(def) {
     const biteLevel = def.skillLevels?.["bite"];
-    if (biteLevel !== undefined) {
+    if (biteLevel !== undefined)
         return calcBiteDamage(biteLevel);
-    }
+    const clawLevel = def.skillLevels?.["claw"];
+    if (clawLevel !== undefined)
+        return calcClawDamage(clawLevel);
     return def.damage ?? 1;
+}
+/** Fernkampf-Schaden einer Entity — liest rangedAttackSkillId + level aus skillLevels. */
+export function getEntityRangedDamage(def) {
+    const skillId = def.rangedAttackSkillId;
+    if (!skillId)
+        return 0;
+    const level = def.skillLevels?.[skillId] ?? 1;
+    return calcSkillAttackDamage(skillId, level);
 }
 export function getScaledDamage(def, bonusLevel) {
     return Math.max(1, Math.round(getEntityBaseDamage(def) * Math.pow(STAT_SCALE, bonusLevel)));

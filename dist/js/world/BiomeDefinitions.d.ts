@@ -10,7 +10,11 @@ export interface ZoneDef {
 export declare const WORLD_ZONES: ZoneDef[];
 /** Liefert das Biom für einen Chunk — forest als Fallback */
 export declare function getBiomeAt(cx: number, cy: number): BiomeId;
-export declare const BIOME_SPAWNS: Record<BiomeId, string[]>;
+export interface BiomeSpawnEntry {
+    id: string;
+    weight: number;
+}
+export declare const BIOME_SPAWNS: Record<BiomeId, BiomeSpawnEntry[]>;
 /**
  * Berechnet den Tileset-Index aus Biom und Höhe.
  * Layout: [biomeOffset + heightLevel]
