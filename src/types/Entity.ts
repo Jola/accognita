@@ -72,6 +72,15 @@ export interface EntityDefinition {
   venomChance?: number;          // 0–1: Chance Gift zu applizieren bei jedem Treffer
   venomDamagePerTick?: number;   // Schaden pro Tick des applizierten Gifts
 
+  /**
+   * Skill-Levels der Entity (skillId → Level).
+   * Überschreibt standalone Props wenn gesetzt:
+   *   chitin_armor → damageReduction nach Spielerformel
+   *   venom        → venomChance + venomDamagePerTick nach Spielerformel
+   *   bite         → damage nach Spielerformel (baseDamage × getSkillEffectiveness)
+   */
+  skillLevels?: Record<string, number>;
+
   /** Visuelle Weltgröße in World-Pixeln. Bestimmt wie groß das Icon dargestellt wird.
    *  Kleines Insekt: 3–4, Mittelgroßes: 5–7. Default: 5 wenn nicht angegeben. */
   worldSize?: number;

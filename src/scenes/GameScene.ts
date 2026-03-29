@@ -54,6 +54,7 @@ import {
   getScaledMaxHp,
   getScaledDamage,
   getScaledSpeed,
+  getEntityBaseDamage,
   findLevelingPrey,
   processEntityVictory,
 } from "../systems/EntityLevelingSystem.js";
@@ -144,7 +145,7 @@ export class GameScene extends Phaser.Scene {
     this.setupSkillBar();
     this.setupSaveMenu();
 
-    this.cameras.main.startFollow(this.slimeGraphic, true, 0.1, 0.1);
+    this.cameras.main.startFollow(this.slimeGraphic, true, 1.0, 1.0);
     this.updateCameraZoom(); // Zoom basierend auf Level 1
 
     updateUI(this.gameState);
@@ -1173,25 +1174,27 @@ function updateNearbyPanel(
   // Bonus-Level Sterne
   const bonusStars = bonusLv > 0 ? ` ${"★".repeat(bonusLv)}` : "";
 
-  // Passive Fähigkeiten der Entity
-  const passiveLines: string[] = [];
-  if (entityDef.damageReduction && entityDef.damageReduction > 0) {
-    passiveLines.push(`🛡️ Chitin-Panzer: ${Math.round(entityDef.damageReduction * 100)}% DR`);
-  }
-  if (entityDef.venomChance && entityDef.venomChance > 0) {
-    passiveLines.push(
-      `☠️ Gift: ${Math.round(entityDef.venomChance * 100)}% / ${entityDef.venomDamagePerTick} pro Tick`
-    );
+  // Aktive Skills der Entity (aus skillLevels)
+  const skillLines: string[] = [];
+  if (entityDef.skillLevels) {
+    for (const [skillId, level] of Object.entries(entityDef.skillLevels)) {
+      const s = ALL_SKILLS.get(skillId);
+      if (s) skillLines.push(`${s.icon} ${s.name} Lv.${level}`);
+    }
   }
 
-  // Mögliche Skill-Drops
-  const skillIcons = entityDef.skillDrops
+  // Effektiver Schaden (aus bite-Level oder standalone)
+  const effectiveDmg = getEntityBaseDamage(entityDef);
+
+  // Mögliche Skill-Drops (nur was noch nicht in skillLevels ist)
+  const ownSkillIds = new Set(Object.keys(entityDef.skillLevels ?? {}));
+  const dropLines = entityDef.skillDrops
+    .filter((d) => !ownSkillIds.has(d.skillId))
     .map((drop) => {
       const s = ALL_SKILLS.get(drop.skillId);
-      return s ? `<span title="${s.name} (${Math.round(drop.chance * 100)}%)">${s.icon} ${s.name}</span>` : "";
+      return s ? `${s.icon} ${s.name} (${Math.round(drop.chance * 100)}%)` : "";
     })
-    .filter(Boolean)
-    .join(", ");
+    .filter(Boolean);
 
   panel.innerHTML = `
     <div class="nearby-entity">
@@ -1208,12 +1211,12 @@ function updateNearbyPanel(
           <span style="font-size:.65em;color:var(--muted)">${currentHp}/${scaledMaxHp} HP</span>
         </div>
         <div style="font-size:.68em;color:var(--muted)">
-          ⚔️ ${entityDef.damage ?? "–"} &nbsp;|&nbsp; 💨 ${entityDef.speed ?? "–"}
+          ⚔️ ${effectiveDmg} &nbsp;|&nbsp; 💨 ${entityDef.speed ?? "–"}
         </div>
       </div>
     </div>
-    ${passiveLines.length ? `<div style="font-size:.68em;color:#aaa;margin:4px 0">${passiveLines.join("<br>")}</div>` : ""}
-    ${skillIcons ? `<div style="font-size:.68em;color:var(--muted);margin:2px 0">🎁 ${skillIcons}</div>` : ""}
+    ${skillLines.length ? `<div style="font-size:.68em;color:#ccc;margin:4px 0 2px"><b>Skills:</b> ${skillLines.join(" &nbsp; ")}</div>` : ""}
+    ${dropLines.length ? `<div style="font-size:.68em;color:var(--muted);margin:2px 0">🎁 ${dropLines.join(", ")}</div>` : ""}
     <div style="font-size:.65em;color:var(--muted);margin:3px 0">
       💥 Absorb ${absorbChance}% &nbsp;|&nbsp; 🔍 Analyze ${analyzeChance}%
     </div>

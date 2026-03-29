@@ -19,6 +19,7 @@ import type { AttackResult, StatusEffect } from "../types/Combat";
 import { ALL_SKILLS } from "../data/skills";
 import { ENTITY_MAP } from "../data/entities";
 import { getSkillEffectiveness } from "./SkillSystem";
+import { getEntityBaseDamage } from "./EntityLevelingSystem";
 import {
   calcDamageReduction,
   calcDamageMult,
@@ -77,9 +78,13 @@ export function playerAttack(
   const damageMult = calcDamageMult(player.statusEffects);
   let dmg = Math.max(1, Math.round(baseDmg * damageMult));
 
-  // Rüstung des Ziels (Chitin Armor oder vergleichbar)
-  if (def.damageReduction && def.damageReduction > 0) {
-    dmg = Math.max(1, Math.round(dmg * (1 - def.damageReduction)));
+  // Rüstung des Ziels: aus skillLevels.chitin_armor oder standalone damageReduction
+  const targetChitinLv = def.skillLevels?.["chitin_armor"] ?? 0;
+  const targetDR = targetChitinLv > 0
+    ? Math.min(0.10 + (targetChitinLv - 1) * 0.05, 0.70)
+    : (def.damageReduction ?? 0);
+  if (targetDR > 0) {
+    dmg = Math.max(1, Math.round(dmg * (1 - targetDR)));
   }
 
   // Venom: passiv auf Treffer anwenden (wenn Spieler Venom hat)
@@ -116,18 +121,24 @@ export function entityAttack(
     return missResult("Entity greift nicht an.");
   }
 
-  const baseDmg = def.damage ?? 1;
+  // Basisschaden: aus bite-Skill-Level oder standalone damage
+  const baseDmg = getEntityBaseDamage(def);
 
   // Spieler-Schadensreduktion (Chitin Armor etc.)
   const reduction = calcDamageReduction(player.statusEffects);
   const dmg = Math.max(1, Math.round(baseDmg * (1 - reduction)));
 
-  // Venom-Angriff: Entity vergiftet Spieler wenn venomChance > 0
+  // Venom: aus skillLevels.venom oder standalone venomChance
   const appliedEffects: StatusEffect[] = [];
-  if (def.venomChance && def.venomChance > 0) {
-    if (Math.random() < def.venomChance) {
-      appliedEffects.push(makeVenomEffect(1, def.venomDamagePerTick));
-    }
+  const venomLv = def.skillLevels?.["venom"] ?? 0;
+  const venomChance = venomLv > 0
+    ? 0.30 + (venomLv - 1) * 0.05
+    : (def.venomChance ?? 0);
+  if (venomChance > 0 && Math.random() < venomChance) {
+    const venomDmg = venomLv > 0
+      ? 2 + Math.floor((venomLv - 1) * 0.5)
+      : (def.venomDamagePerTick ?? 2);
+    appliedEffects.push(makeVenomEffect(1, venomDmg));
   }
 
   const msg = dmg !== baseDmg

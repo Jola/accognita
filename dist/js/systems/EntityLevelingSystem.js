@@ -11,6 +11,8 @@
 //
 // Keine Phaser-Abhängigkeit. Kein Rendering.
 // ============================================================
+import { ALL_SKILLS } from "../data/skills";
+import { getSkillEffectiveness } from "./SkillSystem";
 // -----------------------------------------------------------
 // Konstanten
 // -----------------------------------------------------------
@@ -30,8 +32,17 @@ export function getEffectiveLevel(def, instance) {
 export function getScaledMaxHp(def, bonusLevel) {
     return Math.round((def.hp ?? 1) * Math.pow(STAT_SCALE, bonusLevel));
 }
+/** Basisschaden einer Entity — aus bite-Skill-Level oder standalone damage. */
+export function getEntityBaseDamage(def) {
+    const biteLevel = def.skillLevels?.["bite"];
+    if (biteLevel !== undefined) {
+        const biteDef = ALL_SKILLS.get("bite");
+        return Math.max(1, Math.round((biteDef?.baseDamage ?? 7) * getSkillEffectiveness(biteLevel)));
+    }
+    return def.damage ?? 1;
+}
 export function getScaledDamage(def, bonusLevel) {
-    return Math.max(1, Math.round((def.damage ?? 1) * Math.pow(STAT_SCALE, bonusLevel)));
+    return Math.max(1, Math.round(getEntityBaseDamage(def) * Math.pow(STAT_SCALE, bonusLevel)));
 }
 export function getScaledSpeed(def, bonusLevel) {
     return Math.round((def.speed ?? 60) * Math.pow(STAT_SCALE, bonusLevel));

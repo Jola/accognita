@@ -842,6 +842,8 @@
       interactRadius: 35,
       aggroRadius: 15,
       // 5 × worldSize
+      skillLevels: { chitin_armor: 1 },
+      // 10% DR
       worldSize: 3
       // Ameise — winziges Insekt, ähnlich groß wie Level-1-Slime
     },
@@ -898,7 +900,6 @@
       ],
       materialDrops: [],
       hp: 18,
-      damage: 8,
       speed: 30,
       // worldSize 6 × 5 = 30
       attackRangePx: 12,
@@ -909,6 +910,8 @@
       interactRadius: 40,
       aggroRadius: 30,
       // 5 × worldSize
+      // bite Lv2 → 7 × 1.1 ≈ 8 Schaden; chitin_armor Lv3 → 20% DR
+      skillLevels: { bite: 2, chitin_armor: 3 },
       worldSize: 6
       // Springspinne — deutlich größer als Ameisen
     },
@@ -931,7 +934,6 @@
       ],
       materialDrops: [],
       hp: 15,
-      damage: 6,
       speed: 30,
       // worldSize 6 × 5 = 30
       attackRangePx: 12,
@@ -942,9 +944,8 @@
       interactRadius: 40,
       aggroRadius: 30,
       // 5 × worldSize
-      venomChance: 0.4,
-      venomDamagePerTick: 2,
-      // Venom Lv1 — schwächeres Gift
+      // bite Lv1 → 7 Schaden; venom Lv3 → 40% Chance, 3/Tick; chitin_armor Lv3 → 20% DR
+      skillLevels: { bite: 1, venom: 3, chitin_armor: 3 },
       worldSize: 6
       // Giftspinne — ähnlich groß wie Springspinne
     },
@@ -969,7 +970,6 @@
       ],
       materialDrops: [],
       hp: 30,
-      damage: 12,
       speed: 35,
       // worldSize 7 × 5 = 35
       attackRangePx: 14,
@@ -980,11 +980,8 @@
       interactRadius: 45,
       aggroRadius: 35,
       // 5 × worldSize
-      // Chitin Armor Lv5: 10% + 4×5% = 30% Schadensreduktion
-      damageReduction: 0.3,
-      // Venom Lv5: 50% Chance, 2 + floor(4×0.5) = 4 Schaden/Tick
-      venomChance: 0.5,
-      venomDamagePerTick: 4,
+      // bite Lv6 → 7×1.65 ≈ 12 Schaden; chitin Lv5 → 30% DR; venom Lv5 → 50%/4Tick
+      skillLevels: { bite: 6, chitin_armor: 5, venom: 5 },
       worldSize: 7
     },
     {
@@ -1005,7 +1002,6 @@
       ],
       materialDrops: [],
       hp: 55,
-      damage: 20,
       speed: 50,
       // worldSize 10 × 5 = 50
       attackRangePx: 20,
@@ -1016,11 +1012,8 @@
       interactRadius: 55,
       aggroRadius: 50,
       // 5 × worldSize
-      // Chitin Armor Lv8: 10% + 7×5% = 45% Schadensreduktion
-      damageReduction: 0.45,
-      // Venom Lv8: 65% Chance, 2 + floor(7×0.5) = 5 Schaden/Tick
-      venomChance: 0.65,
-      venomDamagePerTick: 5,
+      // bite Lv18 → 7×2.85 ≈ 20 Schaden; chitin Lv8 → 45% DR; venom Lv8 → 65%/5Tick
+      skillLevels: { bite: 18, chitin_armor: 8, venom: 8 },
       worldSize: 10
     }
   ];
@@ -2415,8 +2408,16 @@
   function getScaledMaxHp(def, bonusLevel) {
     return Math.round((def.hp ?? 1) * Math.pow(STAT_SCALE, bonusLevel));
   }
+  function getEntityBaseDamage(def) {
+    const biteLevel = def.skillLevels?.["bite"];
+    if (biteLevel !== void 0) {
+      const biteDef = ALL_SKILLS.get("bite");
+      return Math.max(1, Math.round((biteDef?.baseDamage ?? 7) * getSkillEffectiveness(biteLevel)));
+    }
+    return def.damage ?? 1;
+  }
   function getScaledDamage(def, bonusLevel) {
-    return Math.max(1, Math.round((def.damage ?? 1) * Math.pow(STAT_SCALE, bonusLevel)));
+    return Math.max(1, Math.round(getEntityBaseDamage(def) * Math.pow(STAT_SCALE, bonusLevel)));
   }
   function getScaledSpeed(def, bonusLevel) {
     return Math.round((def.speed ?? 60) * Math.pow(STAT_SCALE, bonusLevel));
@@ -2658,8 +2659,10 @@
     }
     const damageMult = calcDamageMult(player.statusEffects);
     let dmg = Math.max(1, Math.round(baseDmg * damageMult));
-    if (def.damageReduction && def.damageReduction > 0) {
-      dmg = Math.max(1, Math.round(dmg * (1 - def.damageReduction)));
+    const targetChitinLv = def.skillLevels?.["chitin_armor"] ?? 0;
+    const targetDR = targetChitinLv > 0 ? Math.min(0.1 + (targetChitinLv - 1) * 0.05, 0.7) : def.damageReduction ?? 0;
+    if (targetDR > 0) {
+      dmg = Math.max(1, Math.round(dmg * (1 - targetDR)));
     }
     const venomInst = player.discoveredSkills.get("venom");
     if (venomInst) {
@@ -2680,14 +2683,15 @@
     if (!instance.isAlive || !instance.isAggro) {
       return missResult("Entity greift nicht an.");
     }
-    const baseDmg = def.damage ?? 1;
+    const baseDmg = getEntityBaseDamage(def);
     const reduction = calcDamageReduction(player.statusEffects);
     const dmg = Math.max(1, Math.round(baseDmg * (1 - reduction)));
     const appliedEffects = [];
-    if (def.venomChance && def.venomChance > 0) {
-      if (Math.random() < def.venomChance) {
-        appliedEffects.push(makeVenomEffect(1, def.venomDamagePerTick));
-      }
+    const venomLv = def.skillLevels?.["venom"] ?? 0;
+    const venomChance = venomLv > 0 ? 0.3 + (venomLv - 1) * 0.05 : def.venomChance ?? 0;
+    if (venomChance > 0 && Math.random() < venomChance) {
+      const venomDmg = venomLv > 0 ? 2 + Math.floor((venomLv - 1) * 0.5) : def.venomDamagePerTick ?? 2;
+      appliedEffects.push(makeVenomEffect(1, venomDmg));
     }
     const msg = dmg !== baseDmg ? `${def.icon} ${def.name} trifft! ${baseDmg}\u2192${dmg} (R\xFCstung).` : `${def.icon} ${def.name} trifft f\xFCr ${dmg} Schaden!`;
     return {
@@ -3549,7 +3553,7 @@
       window.__ALL_SKILLS = ALL_SKILLS;
       this.setupSkillBar();
       this.setupSaveMenu();
-      this.cameras.main.startFollow(this.slimeGraphic, true, 0.1, 0.1);
+      this.cameras.main.startFollow(this.slimeGraphic, true, 1, 1);
       this.updateCameraZoom();
       updateUI(this.gameState);
       addLog("Du erwachst als Schleim\u2026", "system");
@@ -4364,17 +4368,20 @@
     const hpPct = Math.round(Math.max(0, currentHp / scaledMaxHp) * 100);
     const hpColor = hpPct > 50 ? "#44cc44" : hpPct > 25 ? "#cccc44" : "#cc4444";
     const bonusStars = bonusLv > 0 ? ` ${"\u2605".repeat(bonusLv)}` : "";
-    const passiveLines = [];
-    if (entityDef.damageReduction && entityDef.damageReduction > 0) {
-      passiveLines.push(`\u{1F6E1}\uFE0F Chitin-Panzer: ${Math.round(entityDef.damageReduction * 100)}% DR`);
+    const skillLines = [];
+    if (entityDef.skillLevels) {
+      for (const [skillId, level] of Object.entries(entityDef.skillLevels)) {
+        const s = ALL_SKILLS.get(skillId);
+        if (s)
+          skillLines.push(`${s.icon} ${s.name} Lv.${level}`);
+      }
     }
-    if (entityDef.venomChance && entityDef.venomChance > 0) {
-      passiveLines.push(`\u2620\uFE0F Gift: ${Math.round(entityDef.venomChance * 100)}% / ${entityDef.venomDamagePerTick} pro Tick`);
-    }
-    const skillIcons = entityDef.skillDrops.map((drop) => {
+    const effectiveDmg = getEntityBaseDamage(entityDef);
+    const ownSkillIds = new Set(Object.keys(entityDef.skillLevels ?? {}));
+    const dropLines = entityDef.skillDrops.filter((d) => !ownSkillIds.has(d.skillId)).map((drop) => {
       const s = ALL_SKILLS.get(drop.skillId);
-      return s ? `<span title="${s.name} (${Math.round(drop.chance * 100)}%)">${s.icon} ${s.name}</span>` : "";
-    }).filter(Boolean).join(", ");
+      return s ? `${s.icon} ${s.name} (${Math.round(drop.chance * 100)}%)` : "";
+    }).filter(Boolean);
     panel.innerHTML = `
     <div class="nearby-entity">
       <span class="nearby-icon">${entityDef.icon}</span>
@@ -4390,12 +4397,12 @@
           <span style="font-size:.65em;color:var(--muted)">${currentHp}/${scaledMaxHp} HP</span>
         </div>
         <div style="font-size:.68em;color:var(--muted)">
-          \u2694\uFE0F ${entityDef.damage ?? "\u2013"} &nbsp;|&nbsp; \u{1F4A8} ${entityDef.speed ?? "\u2013"}
+          \u2694\uFE0F ${effectiveDmg} &nbsp;|&nbsp; \u{1F4A8} ${entityDef.speed ?? "\u2013"}
         </div>
       </div>
     </div>
-    ${passiveLines.length ? `<div style="font-size:.68em;color:#aaa;margin:4px 0">${passiveLines.join("<br>")}</div>` : ""}
-    ${skillIcons ? `<div style="font-size:.68em;color:var(--muted);margin:2px 0">\u{1F381} ${skillIcons}</div>` : ""}
+    ${skillLines.length ? `<div style="font-size:.68em;color:#ccc;margin:4px 0 2px"><b>Skills:</b> ${skillLines.join(" &nbsp; ")}</div>` : ""}
+    ${dropLines.length ? `<div style="font-size:.68em;color:var(--muted);margin:2px 0">\u{1F381} ${dropLines.join(", ")}</div>` : ""}
     <div style="font-size:.65em;color:var(--muted);margin:3px 0">
       \u{1F4A5} Absorb ${absorbChance}% &nbsp;|&nbsp; \u{1F50D} Analyze ${analyzeChance}%
     </div>

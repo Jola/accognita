@@ -58,6 +58,7 @@ export const ENTITY_DEFINITIONS = [
         respawnTime: 30,
         interactRadius: 35,
         aggroRadius: 15, // 5 × worldSize
+        skillLevels: { chitin_armor: 1 }, // 10% DR
         worldSize: 3, // Ameise — winziges Insekt, ähnlich groß wie Level-1-Slime
     },
     {
@@ -98,11 +99,13 @@ export const ENTITY_DEFINITIONS = [
             { skillId: "chitin_armor", chance: 0.10 }, // Exoskelett (stärker als Ameise)
         ],
         materialDrops: [],
-        hp: 18, damage: 8, speed: 30, // worldSize 6 × 5 = 30
+        hp: 18, speed: 30, // worldSize 6 × 5 = 30
         attackRangePx: 12, attackCooldownMs: 1200, attackType: "charge", // 2 × worldSize
         respawnTime: 45,
         interactRadius: 40,
         aggroRadius: 30, // 5 × worldSize
+        // bite Lv2 → 7 × 1.1 ≈ 8 Schaden; chitin_armor Lv3 → 20% DR
+        skillLevels: { bite: 2, chitin_armor: 3 },
         worldSize: 6, // Springspinne — deutlich größer als Ameisen
     },
     {
@@ -120,12 +123,13 @@ export const ENTITY_DEFINITIONS = [
             { skillId: "chitin_armor", chance: 0.08 }, // Exoskelett
         ],
         materialDrops: [],
-        hp: 15, damage: 6, speed: 30, // worldSize 6 × 5 = 30
+        hp: 15, speed: 30, // worldSize 6 × 5 = 30
         attackRangePx: 12, attackCooldownMs: 1600, attackType: "melee", // 2 × worldSize
         respawnTime: 50,
         interactRadius: 40,
         aggroRadius: 30, // 5 × worldSize
-        venomChance: 0.40, venomDamagePerTick: 2, // Venom Lv1 — schwächeres Gift
+        // bite Lv1 → 7 Schaden; venom Lv3 → 40% Chance, 3/Tick; chitin_armor Lv3 → 20% DR
+        skillLevels: { bite: 1, venom: 3, chitin_armor: 3 },
         worldSize: 6, // Giftspinne — ähnlich groß wie Springspinne
     },
     // ==========================================================
@@ -146,15 +150,13 @@ export const ENTITY_DEFINITIONS = [
             { skillId: "bite", chance: 0.10 },
         ],
         materialDrops: [],
-        hp: 30, damage: 12, speed: 35, // worldSize 7 × 5 = 35
+        hp: 30, speed: 35, // worldSize 7 × 5 = 35
         attackRangePx: 14, attackCooldownMs: 1400, attackType: "melee", // 2 × worldSize
         respawnTime: 60,
         interactRadius: 45,
         aggroRadius: 35, // 5 × worldSize
-        // Chitin Armor Lv5: 10% + 4×5% = 30% Schadensreduktion
-        damageReduction: 0.30,
-        // Venom Lv5: 50% Chance, 2 + floor(4×0.5) = 4 Schaden/Tick
-        venomChance: 0.50, venomDamagePerTick: 4,
+        // bite Lv6 → 7×1.65 ≈ 12 Schaden; chitin Lv5 → 30% DR; venom Lv5 → 50%/4Tick
+        skillLevels: { bite: 6, chitin_armor: 5, venom: 5 },
         worldSize: 7,
     },
     {
@@ -172,15 +174,13 @@ export const ENTITY_DEFINITIONS = [
             { skillId: "bite", chance: 0.15 },
         ],
         materialDrops: [],
-        hp: 55, damage: 20, speed: 50, // worldSize 10 × 5 = 50
+        hp: 55, speed: 50, // worldSize 10 × 5 = 50
         attackRangePx: 20, attackCooldownMs: 1600, attackType: "melee", // 2 × worldSize
         respawnTime: 120,
         interactRadius: 55,
         aggroRadius: 50, // 5 × worldSize
-        // Chitin Armor Lv8: 10% + 7×5% = 45% Schadensreduktion
-        damageReduction: 0.45,
-        // Venom Lv8: 65% Chance, 2 + floor(7×0.5) = 5 Schaden/Tick
-        venomChance: 0.65, venomDamagePerTick: 5,
+        // bite Lv18 → 7×2.85 ≈ 20 Schaden; chitin Lv8 → 45% DR; venom Lv8 → 65%/5Tick
+        skillLevels: { bite: 18, chitin_armor: 8, venom: 8 },
         worldSize: 10,
     },
 ];

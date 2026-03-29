@@ -18,7 +18,7 @@ import { createSkillMenu } from "../ui/SkillMenu.js";
 import { createSaveMenu } from "../ui/SaveMenu.js";
 import { saveToSlot, loadFromSlot, deleteAllSaves } from "../systems/SaveSystem.js";
 import { calcEntityAi, tickAttackCooldown, setAttackCooldown, resetAi, } from "../systems/AiSystem.js";
-import { getEffectiveLevel, getScaledMaxHp, getScaledDamage, getScaledSpeed, findLevelingPrey, processEntityVictory, } from "../systems/EntityLevelingSystem.js";
+import { getEffectiveLevel, getScaledMaxHp, getScaledDamage, getScaledSpeed, getEntityBaseDamage, findLevelingPrey, processEntityVictory, } from "../systems/EntityLevelingSystem.js";
 import { playerAttack, entityAttack, canActivateSkill, consumeSkill, calcDashDistance, executeCheckpoint, regenMp, } from "../systems/CombatSystem.js";
 import { processTicks, triggerAuras, applyEffect, removeExpiredEffects, syncPassiveEffects, } from "../systems/StatusEffectSystem.js";
 import { PLAYER_WORLD_RADIUS_MIN, PLAYER_WORLD_RADIUS_MAX, PLAYER_SIZE_LEVEL_MAX, PLAYER_SCREEN_RADIUS, PLAYER_SPEED_PER_WORLD_RADIUS, } from "../data/balance.js";
@@ -66,7 +66,7 @@ export class GameScene extends Phaser.Scene {
         window.__ALL_SKILLS = ALL_SKILLS;
         this.setupSkillBar();
         this.setupSaveMenu();
-        this.cameras.main.startFollow(this.slimeGraphic, true, 0.1, 0.1);
+        this.cameras.main.startFollow(this.slimeGraphic, true, 1.0, 1.0);
         this.updateCameraZoom(); // Zoom basierend auf Level 1
         updateUI(this.gameState);
         addLog("Du erwachst als Schleim…", "system");
@@ -963,22 +963,26 @@ function updateNearbyPanel(entityDef, instance, state) {
     const hpColor = hpPct > 50 ? "#44cc44" : hpPct > 25 ? "#cccc44" : "#cc4444";
     // Bonus-Level Sterne
     const bonusStars = bonusLv > 0 ? ` ${"★".repeat(bonusLv)}` : "";
-    // Passive Fähigkeiten der Entity
-    const passiveLines = [];
-    if (entityDef.damageReduction && entityDef.damageReduction > 0) {
-        passiveLines.push(`🛡️ Chitin-Panzer: ${Math.round(entityDef.damageReduction * 100)}% DR`);
+    // Aktive Skills der Entity (aus skillLevels)
+    const skillLines = [];
+    if (entityDef.skillLevels) {
+        for (const [skillId, level] of Object.entries(entityDef.skillLevels)) {
+            const s = ALL_SKILLS.get(skillId);
+            if (s)
+                skillLines.push(`${s.icon} ${s.name} Lv.${level}`);
+        }
     }
-    if (entityDef.venomChance && entityDef.venomChance > 0) {
-        passiveLines.push(`☠️ Gift: ${Math.round(entityDef.venomChance * 100)}% / ${entityDef.venomDamagePerTick} pro Tick`);
-    }
-    // Mögliche Skill-Drops
-    const skillIcons = entityDef.skillDrops
+    // Effektiver Schaden (aus bite-Level oder standalone)
+    const effectiveDmg = getEntityBaseDamage(entityDef);
+    // Mögliche Skill-Drops (nur was noch nicht in skillLevels ist)
+    const ownSkillIds = new Set(Object.keys(entityDef.skillLevels ?? {}));
+    const dropLines = entityDef.skillDrops
+        .filter((d) => !ownSkillIds.has(d.skillId))
         .map((drop) => {
         const s = ALL_SKILLS.get(drop.skillId);
-        return s ? `<span title="${s.name} (${Math.round(drop.chance * 100)}%)">${s.icon} ${s.name}</span>` : "";
+        return s ? `${s.icon} ${s.name} (${Math.round(drop.chance * 100)}%)` : "";
     })
-        .filter(Boolean)
-        .join(", ");
+        .filter(Boolean);
     panel.innerHTML = `
     <div class="nearby-entity">
       <span class="nearby-icon">${entityDef.icon}</span>
@@ -994,12 +998,12 @@ function updateNearbyPanel(entityDef, instance, state) {
           <span style="font-size:.65em;color:var(--muted)">${currentHp}/${scaledMaxHp} HP</span>
         </div>
         <div style="font-size:.68em;color:var(--muted)">
-          ⚔️ ${entityDef.damage ?? "–"} &nbsp;|&nbsp; 💨 ${entityDef.speed ?? "–"}
+          ⚔️ ${effectiveDmg} &nbsp;|&nbsp; 💨 ${entityDef.speed ?? "–"}
         </div>
       </div>
     </div>
-    ${passiveLines.length ? `<div style="font-size:.68em;color:#aaa;margin:4px 0">${passiveLines.join("<br>")}</div>` : ""}
-    ${skillIcons ? `<div style="font-size:.68em;color:var(--muted);margin:2px 0">🎁 ${skillIcons}</div>` : ""}
+    ${skillLines.length ? `<div style="font-size:.68em;color:#ccc;margin:4px 0 2px"><b>Skills:</b> ${skillLines.join(" &nbsp; ")}</div>` : ""}
+    ${dropLines.length ? `<div style="font-size:.68em;color:var(--muted);margin:2px 0">🎁 ${dropLines.join(", ")}</div>` : ""}
     <div style="font-size:.65em;color:var(--muted);margin:3px 0">
       💥 Absorb ${absorbChance}% &nbsp;|&nbsp; 🔍 Analyze ${analyzeChance}%
     </div>
