@@ -12,7 +12,7 @@
 
 ## 1. Kampf-Philosophie
 
-Kämpfe sollen sich nicht wie klassische RPG-Schlachten anfühlen. Der Slime ist kein klassischer Krieger. Kämpfe sind:
+Kämpfe sollen sich nicht wie klassische RPG-Schlachten anfühlen. Der Blob ist kein klassischer Krieger. Kämpfe sind:
 
 - **Kurz und dynamisch** — kein stundenlanges Grinden.
 - **Optional wann immer möglich** — Analysieren ist oft sinnvoller als Kämpfen.
@@ -23,7 +23,7 @@ Kämpfe sollen sich nicht wie klassische RPG-Schlachten anfühlen. Der Slime ist
 
 ## 2. Kampf-Ablauf (Echtzeit, Top-Down)
 
-Der Kampf läuft in Echtzeit. Es gibt keine Runden. Der Slime bewegt sich frei und nutzt Skills über die SkillBar.
+Der Kampf läuft in Echtzeit. Es gibt keine Runden. Der Blob bewegt sich frei und nutzt Skills über die SkillBar.
 
 ```
 Entity betritt Aggro-Radius (isAggro = true, roter Tint)

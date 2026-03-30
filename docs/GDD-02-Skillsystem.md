@@ -7,7 +7,7 @@
 
 > **Status: Neu definiert (v0.3)** — Analyze und Absorb sind ab sofort eigenständige, levelbare Fähigkeiten mit Fehlschlag-Mechanik.
 
-Der Slime besitzt genau **zwei angeborene Kern-Fähigkeiten**. Alle anderen Fähigkeiten werden erst durch diese beiden erworben.
+Der Blob besitzt genau **zwei angeborene Kern-Fähigkeiten**. Alle anderen Fähigkeiten werden erst durch diese beiden erworben.
 
 | Fähigkeit | Typ | Wirkung bei Erfolg | Wirkung bei Fehlschlag |
 |-----------|-----|--------------------|------------------------|
@@ -98,7 +98,7 @@ Fähigkeiten werden **nicht garantiert** übertragen. Ob ein Skill erworben wird
 | chitin_armor | Chitin Armor | passiv | earth | 🛡️ | Ameise, Springspinne, Giftspinne | Reduziert physischen Schaden |
 | superstrength | Superstrength | passiv | none | 💪 | Ameise | Erhöht Material-Ausbeute bei Absorb |
 | venom | Venom | passiv | poison | 🕷️ | Giftspinne | Treffer vergiften Ziel (DoT-Chance) |
-| jump | Jump | aktiv | none | 🦘 | Springspinne | **Bewegungs-Unlock**: Ohne diesen Skill kann der Slime nicht springen. Höheres Level = größere Sprunghöhe/-weite. |
+| jump | Jump | aktiv | none | 🦘 | Springspinne | **Bewegungs-Unlock**: Ohne diesen Skill kann der Blob nicht springen. Höheres Level = größere Sprunghöhe/-weite. |
 | hemolymph | Hemolymph | passiv | poison | 🐞 | Marienkäfer | Bei eigenem Treffer: Angreifer vergiftet |
 
 Alle Basis-Skills haben `maxLevel: 0` (unlimitiert). XP-Skalierung via Option D (`balance.ts`).

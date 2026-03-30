@@ -589,7 +589,7 @@
       baseXpThreshold: 999999,
       // Nie steigerbar
       xpThresholdMultiplier: 1,
-      description: "Der Slime-K\xF6rper ist ein dimensionales Lager ohne Kapazit\xE4tsgrenze. Alle gesammelten Materialien werden unbegrenzt gespeichert. Mengen bis Number.MAX_SAFE_INTEGER (~9 Quadrillionen) werden unterst\xFCtzt."
+      description: "Der Blob-K\xF6rper ist ein dimensionales Lager ohne Kapazit\xE4tsgrenze. Alle gesammelten Materialien werden unbegrenzt gespeichert. Mengen bis Number.MAX_SAFE_INTEGER (~9 Quadrillionen) werden unterst\xFCtzt."
     },
     {
       id: "analyze",
@@ -641,7 +641,7 @@
       maxLevel: 0,
       baseXpThreshold: 15,
       xpThresholdMultiplier: 1.5,
-      description: "Passiv: Ameisen tragen das 50-fache ihres K\xF6rpergewichts \u2014 der Slime \xFCbernimmt diese St\xE4rke. Verst\xE4rkt den Nahkampf-Angriff des Slimes. H\xF6heres Level = h\xF6herer Schadensbonus."
+      description: "Passiv: Ameisen tragen das 50-fache ihres K\xF6rpergewichts \u2014 der Blob \xFCbernimmt diese St\xE4rke. Verst\xE4rkt den Nahkampf-Angriff des Blobs. H\xF6heres Level = h\xF6herer Schadensbonus."
       // Wirkt als damageMult-Modifikator im CombatSystem
     },
     {
@@ -654,7 +654,7 @@
       maxLevel: 0,
       baseXpThreshold: 15,
       xpThresholdMultiplier: 1.5,
-      description: "Passiv: Jeder Nahkampftreffer des Slimes hat eine Chance, dem Ziel Gift zu injizieren. Gift verursacht 2 Schaden/s f\xFCr 4s. H\xF6heres Level = h\xF6here Chance und st\xE4rkeres Gift."
+      description: "Passiv: Jeder Nahkampftreffer des Blobs hat eine Chance, dem Ziel Gift zu injizieren. Gift verursacht 2 Schaden/s f\xFCr 4s. H\xF6heres Level = h\xF6here Chance und st\xE4rkeres Gift."
       // Appliziert DoT-StatusEffect auf getroffene Ziele
     },
     {
@@ -730,7 +730,7 @@
       maxLevel: 0,
       baseXpThreshold: 12,
       xpThresholdMultiplier: 1.5,
-      description: "Passiv: Wird der Slime getroffen, gibt er bitteres H\xE4molymph ab \u2014 der Angreifer erleidet 2 Sofortschaden. H\xF6heres Level = st\xE4rkerer R\xFCckschlag."
+      description: "Passiv: Wird der Blob getroffen, gibt er bitteres H\xE4molymph ab \u2014 der Angreifer erleidet 2 Sofortschaden. H\xF6heres Level = st\xE4rkerer R\xFCckschlag."
       // Appliziert Aura-StatusEffect der bei jedem eingehenden Treffer feuert
     }
   ];
@@ -746,7 +746,7 @@
       maxLevel: 0,
       baseXpThreshold: 15,
       xpThresholdMultiplier: 1.5,
-      description: "Passiv: Regeneriert langsam HP, solange der Slime sich nicht k\xE4mpfend fortbewegt. Wirkt automatisch nach Entdeckung. H\xF6heres Level = st\xE4rkere Regeneration."
+      description: "Passiv: Regeneriert langsam HP, solange der Blob sich nicht k\xE4mpfend fortbewegt. Wirkt automatisch nach Entdeckung. H\xF6heres Level = st\xE4rkere Regeneration."
     }
   ];
   var COMBO_SKILLS = [
@@ -838,7 +838,7 @@
       // 1 Minute — wächst nach
       interactRadius: 50,
       worldSize: 5
-      // Grashalm — etwas größer als der Slime auf Level 1
+      // Grashalm — etwas größer als der Blob auf Level 1
     },
     // ==========================================================
     // INSEKTEN — Level 1 (neutral, defensiv)
@@ -876,7 +876,7 @@
       skillLevels: { bite: 1, chitin_armor: 1 },
       // bite Lv1 → 7 Schaden; chitin → 10% DR
       worldSize: 3
-      // Ameise — winziges Insekt, ähnlich groß wie Level-1-Slime
+      // Ameise — winziges Insekt, ähnlich groß wie Level-1-Blob
     },
     {
       id: "ladybug",
@@ -905,7 +905,7 @@
       aggroRadius: 10,
       // 2.5 × worldSize
       // Kein bite — Marienkäfer greifen nicht aktiv an.
-      // Hemolymph Lv1: 2 Rückschlag-Schaden wenn der Slime ihn trifft.
+      // Hemolymph Lv1: 2 Rückschlag-Schaden wenn der Blob ihn trifft.
       skillLevels: { hemolymph: 1 },
       worldSize: 4
       // Marienkäfer — etwas größer als Ameise
@@ -3762,10 +3762,10 @@
       window.__ALL_SKILLS = ALL_SKILLS;
       this.setupSkillBar();
       this.setupSaveMenu();
-      this.cameras.main.startFollow(this.slimeGraphic, true, 1, 1);
+      this.cameras.main.startFollow(this.blobGraphic, true, 1, 1);
       this.updateCameraZoom();
       updateUI(this.gameState);
-      addLog("Du erwachst als Schleim\u2026", "system");
+      addLog("Du erwachst als Blob\u2026", "system");
       addLog("Joystick bewegen \xB7 ABSORB + ANALYZE tippen", "system");
     }
     // ----------------------------------------------------------
@@ -3821,24 +3821,24 @@
       g.fillCircle(20, 20, 15);
       g.fillStyle(9502668, 0.7);
       g.fillCircle(14, 14, 7);
-      g.generateTexture("slime", 40, 40);
+      g.generateTexture("blob", 40, 40);
       g.destroy();
-      this.slimeGraphic = this.physics.add.image(this.gameState.player.x, this.gameState.player.y, "slime");
-      this.slimeGraphic.setCollideWorldBounds(true);
+      this.blobGraphic = this.physics.add.image(this.gameState.player.x, this.gameState.player.y, "blob");
+      this.blobGraphic.setCollideWorldBounds(true);
     }
-    // Berechnet den Welt-Radius des Slimes für ein gegebenes Level.
+    // Berechnet den Welt-Radius des Blobs für ein gegebenes Level.
     // Wächst linear von PLAYER_WORLD_RADIUS_MIN bis PLAYER_WORLD_RADIUS_MAX.
     calcPlayerWorldRadius(level) {
       const t = Math.min((level - 1) / (PLAYER_SIZE_LEVEL_MAX - 1), 1);
       return PLAYER_WORLD_RADIUS_MIN + t * (PLAYER_WORLD_RADIUS_MAX - PLAYER_WORLD_RADIUS_MIN);
     }
-    // Nahkampf-Angriffsreichweite des Slimes in Weltpixeln.
+    // Nahkampf-Angriffsreichweite des Blobs in Weltpixeln.
     // = Rand des Charakters + nochmal eine Charaktergröße = 2 × worldRadius.
     getPlayerAttackRange() {
       return this.calcPlayerWorldRadius(this.gameState.player.level) * 2;
     }
     // Passt Kamera-Zoom an das aktuelle Level an.
-    // Slime erscheint immer PLAYER_SCREEN_RADIUS px groß.
+    // Blob erscheint immer PLAYER_SCREEN_RADIUS px groß.
     updateCameraZoom() {
       const worldRadius = this.calcPlayerWorldRadius(this.gameState.player.level);
       this.cameras.main.setZoom(PLAYER_SCREEN_RADIUS / worldRadius);
@@ -3975,7 +3975,7 @@
         return;
       }
       this.gameState.player = saved.player;
-      this.slimeGraphic.setPosition(saved.player.x, saved.player.y);
+      this.blobGraphic.setPosition(saved.player.x, saved.player.y);
       this.gameState.player.maxHp = calcMaxHp(saved.player.level);
       this.gameState.player.maxMp = calcMaxMp(saved.player.level);
       this.gameState.player.hp = Math.min(this.gameState.player.hp, this.gameState.player.maxHp);
@@ -4040,22 +4040,22 @@
       this.processEntityLeveling(delta);
       this.processCombatEffects(delta);
       this.updateEntityVisuals();
-      this.updateSlimeWobble(_time);
+      this.updateBlobWobble(_time);
       this.checkNearbyEntity();
       this.checkPlayerDeath();
       processRespawns(this.gameState.world);
     }
-    // Setzt Slime-Skalierung (Level-basiert) + organisches Wobble
-    updateSlimeWobble(time) {
+    // Setzt Blob-Skalierung (Level-basiert) + organisches Wobble
+    updateBlobWobble(time) {
       const worldRadius = this.calcPlayerWorldRadius(this.gameState.player.level);
       const baseScale = worldRadius / 20;
       const wobble = Math.sin(time * 628e-5) * 0.04;
-      this.slimeGraphic.setScale(baseScale * (1 + wobble), baseScale * (1 - wobble));
+      this.blobGraphic.setScale(baseScale * (1 + wobble), baseScale * (1 - wobble));
     }
     handleMovement() {
       const worldRadius = this.calcPlayerWorldRadius(this.gameState.player.level);
       const speed = worldRadius * PLAYER_SPEED_PER_WORLD_RADIUS;
-      const body = this.slimeGraphic.body;
+      const body = this.blobGraphic.body;
       let dx = this.joy.active ? this.joy.dx : 0;
       let dy = this.joy.active ? this.joy.dy : 0;
       const len = Math.hypot(dx, dy);
@@ -4066,8 +4066,8 @@
       body.setVelocity(dx * speed, dy * speed);
     }
     syncPlayerPosition() {
-      this.gameState.player.x = this.slimeGraphic.x;
-      this.gameState.player.y = this.slimeGraphic.y;
+      this.gameState.player.x = this.blobGraphic.x;
+      this.gameState.player.y = this.blobGraphic.y;
     }
     updateEntityVisuals() {
       this.hpBarGraphics.clear();
@@ -4295,7 +4295,7 @@
       for (const instance of this.gameState.world.entities.values()) {
         resetAi(instance);
       }
-      this.slimeGraphic.setPosition(this.gameState.player.x, this.gameState.player.y);
+      this.blobGraphic.setPosition(this.gameState.player.x, this.gameState.player.y);
       this.cameras.main.flash(400, 255, 50, 50);
       addLog("\u{1F480} Besiegt! Checkpoint \u2014 HP/MP wiederhergestellt.", "system");
       updateUI(this.gameState);
@@ -4390,7 +4390,7 @@
         const len = Math.hypot(dx, dy);
         if (len > 0.1) {
           const dist = executeJump(this.gameState.player, dx / len, dy / len, skillId, WORLD_CHUNKS_X * CHUNK_PX, WORLD_CHUNKS_Y * CHUNK_PX);
-          this.slimeGraphic.setPosition(this.gameState.player.x, this.gameState.player.y);
+          this.blobGraphic.setPosition(this.gameState.player.x, this.gameState.player.y);
           showToast(`\u{1F998} Sprung! (${Math.round(dist)}px)`, "system");
         }
         this.skillLevelUp(gainSkillXp(this.gameState.player, skillId, 1), skillId);
@@ -4763,6 +4763,5 @@ ${detail}` : ""}`, type);
     });
   });
 })();
-</script>
 
 </html>

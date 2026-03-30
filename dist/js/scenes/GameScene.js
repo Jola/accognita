@@ -67,10 +67,10 @@ export class GameScene extends Phaser.Scene {
         window.__ALL_SKILLS = ALL_SKILLS;
         this.setupSkillBar();
         this.setupSaveMenu();
-        this.cameras.main.startFollow(this.slimeGraphic, true, 1.0, 1.0);
+        this.cameras.main.startFollow(this.blobGraphic, true, 1.0, 1.0);
         this.updateCameraZoom(); // Zoom basierend auf Level 1
         updateUI(this.gameState);
-        addLog("Du erwachst als Schleim…", "system");
+        addLog("Du erwachst als Blob…", "system");
         addLog("Joystick bewegen · ABSORB + ANALYZE tippen", "system");
     }
     // ----------------------------------------------------------
@@ -134,25 +134,25 @@ export class GameScene extends Phaser.Scene {
         g.fillCircle(20, 20, 15);
         g.fillStyle(0x90ffcc, 0.7);
         g.fillCircle(14, 14, 7);
-        g.generateTexture("slime", 40, 40);
+        g.generateTexture("blob", 40, 40);
         g.destroy();
-        this.slimeGraphic = this.physics.add.image(this.gameState.player.x, this.gameState.player.y, "slime");
-        this.slimeGraphic.setCollideWorldBounds(true);
+        this.blobGraphic = this.physics.add.image(this.gameState.player.x, this.gameState.player.y, "blob");
+        this.blobGraphic.setCollideWorldBounds(true);
         // Wobble wird in update() per Math.sin berechnet (kein Tween — kein Konflikt mit Skalierung)
     }
-    // Berechnet den Welt-Radius des Slimes für ein gegebenes Level.
+    // Berechnet den Welt-Radius des Blobs für ein gegebenes Level.
     // Wächst linear von PLAYER_WORLD_RADIUS_MIN bis PLAYER_WORLD_RADIUS_MAX.
     calcPlayerWorldRadius(level) {
         const t = Math.min((level - 1) / (PLAYER_SIZE_LEVEL_MAX - 1), 1.0);
         return PLAYER_WORLD_RADIUS_MIN + t * (PLAYER_WORLD_RADIUS_MAX - PLAYER_WORLD_RADIUS_MIN);
     }
-    // Nahkampf-Angriffsreichweite des Slimes in Weltpixeln.
+    // Nahkampf-Angriffsreichweite des Blobs in Weltpixeln.
     // = Rand des Charakters + nochmal eine Charaktergröße = 2 × worldRadius.
     getPlayerAttackRange() {
         return this.calcPlayerWorldRadius(this.gameState.player.level) * 2;
     }
     // Passt Kamera-Zoom an das aktuelle Level an.
-    // Slime erscheint immer PLAYER_SCREEN_RADIUS px groß.
+    // Blob erscheint immer PLAYER_SCREEN_RADIUS px groß.
     updateCameraZoom() {
         const worldRadius = this.calcPlayerWorldRadius(this.gameState.player.level);
         this.cameras.main.setZoom(PLAYER_SCREEN_RADIUS / worldRadius);
@@ -301,7 +301,7 @@ export class GameScene extends Phaser.Scene {
         // Spieler-State ersetzen
         this.gameState.player = saved.player;
         // Spieler-Sprite an gespeicherte Position
-        this.slimeGraphic.setPosition(saved.player.x, saved.player.y);
+        this.blobGraphic.setPosition(saved.player.x, saved.player.y);
         // maxHp/maxMp aus Level neu berechnen (migriert alte Saves)
         this.gameState.player.maxHp = calcMaxHp(saved.player.level);
         this.gameState.player.maxMp = calcMaxMp(saved.player.level);
@@ -375,23 +375,23 @@ export class GameScene extends Phaser.Scene {
         this.processEntityLeveling(delta);
         this.processCombatEffects(delta);
         this.updateEntityVisuals();
-        this.updateSlimeWobble(_time);
+        this.updateBlobWobble(_time);
         this.checkNearbyEntity();
         this.checkPlayerDeath();
         processRespawns(this.gameState.world);
     }
-    // Setzt Slime-Skalierung (Level-basiert) + organisches Wobble
-    updateSlimeWobble(time) {
+    // Setzt Blob-Skalierung (Level-basiert) + organisches Wobble
+    updateBlobWobble(time) {
         const worldRadius = this.calcPlayerWorldRadius(this.gameState.player.level);
         const baseScale = worldRadius / 20; // Textur ist 40×40, Mittelpunkt-Radius = 20
         const wobble = Math.sin(time * 0.00628) * 0.04;
-        this.slimeGraphic.setScale(baseScale * (1 + wobble), baseScale * (1 - wobble));
+        this.blobGraphic.setScale(baseScale * (1 + wobble), baseScale * (1 - wobble));
     }
     handleMovement() {
         // Geschwindigkeit skaliert mit Weltgröße → Bildschirm-Speed bleibt über alle Level konstant
         const worldRadius = this.calcPlayerWorldRadius(this.gameState.player.level);
         const speed = worldRadius * PLAYER_SPEED_PER_WORLD_RADIUS;
-        const body = this.slimeGraphic.body;
+        const body = this.blobGraphic.body;
         let dx = this.joy.active ? this.joy.dx : 0;
         let dy = this.joy.active ? this.joy.dy : 0;
         const len = Math.hypot(dx, dy);
@@ -402,8 +402,8 @@ export class GameScene extends Phaser.Scene {
         body.setVelocity(dx * speed, dy * speed);
     }
     syncPlayerPosition() {
-        this.gameState.player.x = this.slimeGraphic.x;
-        this.gameState.player.y = this.slimeGraphic.y;
+        this.gameState.player.x = this.blobGraphic.x;
+        this.gameState.player.y = this.blobGraphic.y;
     }
     updateEntityVisuals() {
         this.hpBarGraphics.clear();
@@ -658,7 +658,7 @@ export class GameScene extends Phaser.Scene {
         for (const instance of this.gameState.world.entities.values()) {
             resetAi(instance);
         }
-        this.slimeGraphic.setPosition(this.gameState.player.x, this.gameState.player.y);
+        this.blobGraphic.setPosition(this.gameState.player.x, this.gameState.player.y);
         this.cameras.main.flash(400, 255, 50, 50);
         addLog("💀 Besiegt! Checkpoint — HP/MP wiederhergestellt.", "system");
         updateUI(this.gameState);
@@ -761,7 +761,7 @@ export class GameScene extends Phaser.Scene {
             const len = Math.hypot(dx, dy);
             if (len > 0.1) {
                 const dist = executeJump(this.gameState.player, dx / len, dy / len, skillId, WORLD_CHUNKS_X * CHUNK_PX, WORLD_CHUNKS_Y * CHUNK_PX);
-                this.slimeGraphic.setPosition(this.gameState.player.x, this.gameState.player.y);
+                this.blobGraphic.setPosition(this.gameState.player.x, this.gameState.player.y);
                 showToast(`🦘 Sprung! (${Math.round(dist)}px)`, "system");
             }
             // Jump: XP pro Benutzung

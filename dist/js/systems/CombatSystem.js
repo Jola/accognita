@@ -18,13 +18,13 @@ import { getSkillEffectiveness } from "./SkillSystem";
 import { getEntityBaseDamage } from "./EntityLevelingSystem";
 import { calcDamageReduction, calcDamageMult, makeVenomEffect, } from "./StatusEffectSystem";
 import { calcChitinDr, calcVenomChance, calcVenomDmgPerTick, calcJumpDistance, } from "./SkillEffects";
-// Konstanten — Basis-Nahkampf des unausgerüsteten Slimes
+// Konstanten — Basis-Nahkampf des unausgerüsteten Blobs
 const BASE_MELEE_DAMAGE = 3; // Basisschaden ohne Skills
 const MELEE_ABSORB_SCALE = 1.5; // Bonus pro Absorb-Level
 // -----------------------------------------------------------
 // SPIELER-ANGRIFF
 //
-// skillId = undefined → unausgerüsteter Nahkampf (Slime-Körper)
+// skillId = undefined → unausgerüsteter Nahkampf (Blob-Körper)
 // skillId = "jump"    → Dash (kein Schaden, nur Positionsverschiebung)
 // Gibt AttackResult zurück — GameScene wendet HP-Änderungen an.
 // -----------------------------------------------------------

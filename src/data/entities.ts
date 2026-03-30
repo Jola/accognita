@@ -38,7 +38,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     ],
     respawnTime: 60, // 1 Minute — wächst nach
     interactRadius: 50,
-    worldSize: 5,    // Grashalm — etwas größer als der Slime auf Level 1
+    worldSize: 5,    // Grashalm — etwas größer als der Blob auf Level 1
   },
 
   // ==========================================================
@@ -66,7 +66,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     interactRadius: 35,
     aggroRadius: 8,    // 2.5 × worldSize
     skillLevels: { bite: 1, chitin_armor: 1 },   // bite Lv1 → 7 Schaden; chitin → 10% DR
-    worldSize: 3,    // Ameise — winziges Insekt, ähnlich groß wie Level-1-Slime
+    worldSize: 3,    // Ameise — winziges Insekt, ähnlich groß wie Level-1-Blob
   },
   {
     id: "ladybug",
@@ -87,7 +87,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     interactRadius: 35,
     aggroRadius: 10,   // 2.5 × worldSize
     // Kein bite — Marienkäfer greifen nicht aktiv an.
-    // Hemolymph Lv1: 2 Rückschlag-Schaden wenn der Slime ihn trifft.
+    // Hemolymph Lv1: 2 Rückschlag-Schaden wenn der Blob ihn trifft.
     skillLevels: { hemolymph: 1 },
     worldSize: 4,    // Marienkäfer — etwas größer als Ameise
   },

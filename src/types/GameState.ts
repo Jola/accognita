@@ -20,7 +20,7 @@ export interface CoreAbilityState {
 }
 
 // -----------------------------------------------------------
-// PlayerState: Alles was den Slime beschreibt
+// PlayerState: Alles was den Blob beschreibt
 // -----------------------------------------------------------
 export interface PlayerState {
   // Position

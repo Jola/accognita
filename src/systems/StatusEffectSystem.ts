@@ -67,7 +67,7 @@ export function processTicks(
 // Aura-Reaktion — aufrufen wenn Ziel getroffen wird
 //
 // Gibt Sofortschaden zurück der an den Angreifer geht.
-// Beispiel: Hemolymph gibt Schaden zurück wenn Slime getroffen wird.
+// Beispiel: Hemolymph gibt Schaden zurück wenn Blob getroffen wird.
 // -----------------------------------------------------------
 export function triggerAuras(
   target: { statusEffects: StatusEffect[] }

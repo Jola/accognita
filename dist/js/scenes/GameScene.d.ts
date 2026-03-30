@@ -5,7 +5,7 @@ export declare class BootScene extends Phaser.Scene {
 }
 export declare class GameScene extends Phaser.Scene {
     private gameState;
-    private slimeGraphic;
+    private blobGraphic;
     private entitySprites;
     private chunkManager;
     private joy;
@@ -44,7 +44,7 @@ export declare class GameScene extends Phaser.Scene {
     resetGame(): void;
     private setupGlobalFunctions;
     update(_time: number, delta: number): void;
-    private updateSlimeWobble;
+    private updateBlobWobble;
     private handleMovement;
     private syncPlayerPosition;
     private updateEntityVisuals;

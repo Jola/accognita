@@ -13,7 +13,7 @@ export type ElementType =
   | "water"
   | "earth"
   | "wind"
-  | "slime"
+  | "blob"
   | "poison"
   | "dark"
   | "light"

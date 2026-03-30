@@ -6,7 +6,7 @@ This file is the project constitution. Read it at the start of every session bef
 
 ## Project Summary
 
-**Absorb & Evolve** is a browser-based Action-RPG inspired by "That Time I Got Reincarnated as a Slime". The player controls a slime that evolves by absorbing or analyzing entities in a medieval fantasy world. Skills are discovered through interaction, leveled through repetition, and combined into new abilities.
+**Absorb & Evolve** is a browser-based Action-RPG. The player controls a Blob (inspired by the real organism *Physarum polycephalum*) that evolves by absorbing or analyzing entities in a medieval fantasy world. Skills are discovered through interaction, leveled through repetition, and combined into new abilities.
 
 Current state: **v0.3** — Modular TypeScript + Phaser.js architecture, Skill-System + Combat-System implemented. Large procedural world (20×20 chunks = 20480×20480px) with 6 biomes, pixel art tiles, and dynamic chunk loading.
 

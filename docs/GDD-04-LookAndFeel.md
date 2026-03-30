@@ -6,11 +6,11 @@
 ## 1. Visuelle Identität
 
 ### Kern-Ästhetik
-**Dark Fantasy meets biolumineszente Natur.** Die Welt ist dunkel und leicht bedrohlich, aber der Slime selbst leuchtet. Kontrast zwischen der düsteren Umgebung und dem lebendigen, glühenden Protagonisten.
+**Dark Fantasy meets biolumineszente Natur.** Die Welt ist dunkel und leicht bedrohlich, aber der Blob selbst leuchtet. Kontrast zwischen der düsteren Umgebung und dem lebendigen, glühenden Protagonisten.
 
 Kein Cartoon-Look. Stattdessen:
 - Atmosphärische Dunkelheit mit punktuellen Lichteffekten
-- Organische Formen (der Slime ist nie perfekt rund)
+- Organische Formen (der Blob ist nie perfekt rund)
 - Mittelalterliche Welt ohne Technologie-Elemente
 - **Pixel-Art-Tiles** (32×32px, prozedural generiert): Grashalme, Steinfugen, Dünenstreifen, Wasserreflexionen — jedes Biom hat einen eigenen Look
 
@@ -51,7 +51,7 @@ Höhe 3 (Gipfel): Schnee-Overlay bei Mountain, dichter Baumschatten bei Forest
 | Text | Helles Blaugrau | `#c8d8e8` |
 | Gedämpft / Inaktiv | Mittelgrau | `#5a6a7a` |
 
-### Der Slime
+### Der Blob
 | Zustand | Farben |
 |---------|-------|
 | Standard | Gradient: `#90ffcc` → `#40e890` → `#20a860` |
@@ -157,7 +157,7 @@ Das Spiel ist primär für Mobilgeräte entwickelt. Desktop wird vollständig un
 
 ## 5. Animationen & Feedback
 
-### Der Slime
+### Der Blob
 - **Idle**: Leichtes organisches Pulsieren (Sinus-Wobble auf Radius)
 - **Bewegung**: Dezentes Verformen in Bewegungsrichtung (geplant)
 - **Absorb**: Kurzes Ausweiten, dann Zusammenziehen (geplant)
@@ -189,7 +189,7 @@ Das Spiel ist primär für Mobilgeräte entwickelt. Desktop wird vollständig un
 ### View 2: Isometrisch (geplant, v0.4)
 - 2:1 Isometrische Projektion
 - Tiles werden als Rauten dargestellt
-- Entities und Slime bekommen Schatten-Ellipsen für Tiefenwirkung
+- Entities und Blob bekommen Schatten-Ellipsen für Tiefenwirkung
 - Separate Render-Pipeline, Perspektive wechselt beim Betreten von Dungeons
 
 ---

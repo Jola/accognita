@@ -34,7 +34,7 @@ export const CORE_SKILLS: SkillDefinition[] = [
     baseXpThreshold: 999999, // Nie steigerbar
     xpThresholdMultiplier: 1.0,
     description:
-      "Der Slime-Körper ist ein dimensionales Lager ohne Kapazitätsgrenze. " +
+      "Der Blob-Körper ist ein dimensionales Lager ohne Kapazitätsgrenze. " +
       "Alle gesammelten Materialien werden unbegrenzt gespeichert. " +
       "Mengen bis Number.MAX_SAFE_INTEGER (~9 Quadrillionen) werden unterstützt.",
   },
@@ -103,8 +103,8 @@ export const BASE_SKILLS: SkillDefinition[] = [
     baseXpThreshold: 15,
     xpThresholdMultiplier: 1.5,
     description:
-      "Passiv: Ameisen tragen das 50-fache ihres Körpergewichts — der Slime übernimmt diese Stärke. " +
-      "Verstärkt den Nahkampf-Angriff des Slimes. Höheres Level = höherer Schadensbonus.",
+      "Passiv: Ameisen tragen das 50-fache ihres Körpergewichts — der Blob übernimmt diese Stärke. " +
+      "Verstärkt den Nahkampf-Angriff des Blobs. Höheres Level = höherer Schadensbonus.",
     // Wirkt als damageMult-Modifikator im CombatSystem
   },
   {
@@ -118,7 +118,7 @@ export const BASE_SKILLS: SkillDefinition[] = [
     baseXpThreshold: 15,
     xpThresholdMultiplier: 1.5,
     description:
-      "Passiv: Jeder Nahkampftreffer des Slimes hat eine Chance, dem Ziel Gift zu injizieren. " +
+      "Passiv: Jeder Nahkampftreffer des Blobs hat eine Chance, dem Ziel Gift zu injizieren. " +
       "Gift verursacht 2 Schaden/s für 4s. Höheres Level = höhere Chance und stärkeres Gift.",
     // Appliziert DoT-StatusEffect auf getroffene Ziele
   },
@@ -205,7 +205,7 @@ export const BASE_SKILLS: SkillDefinition[] = [
     baseXpThreshold: 12,
     xpThresholdMultiplier: 1.5,
     description:
-      "Passiv: Wird der Slime getroffen, gibt er bitteres Hämolymph ab — " +
+      "Passiv: Wird der Blob getroffen, gibt er bitteres Hämolymph ab — " +
       "der Angreifer erleidet 2 Sofortschaden. Höheres Level = stärkerer Rückschlag.",
     // Appliziert Aura-StatusEffect der bei jedem eingehenden Treffer feuert
   },
@@ -228,7 +228,7 @@ export const PLANT_SKILLS: SkillDefinition[] = [
     baseXpThreshold: 15,
     xpThresholdMultiplier: 1.5,
     description:
-      "Passiv: Regeneriert langsam HP, solange der Slime sich nicht kämpfend fortbewegt. " +
+      "Passiv: Regeneriert langsam HP, solange der Blob sich nicht kämpfend fortbewegt. " +
       "Wirkt automatisch nach Entdeckung. Höheres Level = stärkere Regeneration.",
   },
 ];

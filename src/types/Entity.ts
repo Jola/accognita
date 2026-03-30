@@ -8,7 +8,7 @@ import type { StatusEffect } from "./Combat";
 
 // Verhalten im Spiel — wie reagiert die Entity auf Nähe?
 export type EntityBehavior =
-  | "passive"     // Greift nie an, ignoriert den Slime
+  | "passive"     // Greift nie an, ignoriert den Blob
   | "defensive"   // Greift nur an wenn angegriffen
   | "aggressive"  // Greift bei Sichtkontakt an
   | "territorial" // Greift in eigenem Radius an
