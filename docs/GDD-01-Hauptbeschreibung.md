@@ -127,4 +127,114 @@ Diese Pfade sind **nicht exklusiv** — der Spieler kann hybride Builds entwicke
 
 ---
 
-*Letzte Aktualisierung: v0.3 — Protagonist von „Slime" zu „Blob" (Physarum polycephalum) umbenannt, biologische Grundlagen ergänzt (März 2026)*
+## 9. Startsequenz & Ursprung
+
+> Status: Konzept — zwei Alternativen, Entscheidung offen
+
+### Setting
+
+Das Spiel beginnt im feuchten, schattigen Unterholz eines uralten Waldes. Der Blob ist an einem bemoosten Baumstamm gewachsen — unscheinbar, still, ohne Bewusstsein. Irgendwann in dieser Nacht erwacht er.
+
+Wie dieses Erwachen geschieht, ist noch nicht entschieden. Zwei Konzepte stehen zur Wahl:
+
+---
+
+### Option A — Die magische Quelle
+
+Der Baumstamm, an dem der Blob wächst, steht unmittelbar an einer verborgenen magischen Quelle. Das Quellwasser sickert durch Wurzeln und Moos bis zum Blob. Im Kontakt mit dem magischen Wasser erwirbt der Blob eine erste, rohe Magie — und damit Bewusstsein.
+
+**Ton:** Ruhig, geheimnisvoll. Der Blob erwacht ohne Wissen über die Welt — nur Neugierde.
+
+---
+
+### Option B — Der sterbende Elf
+
+In derselben Nacht kriecht ein schwer verwundeter Elf bis an den Baumstamm. Er ist ein Bote — einer der letzten seines Volkes. Er trägt eine Botschaft, die er nicht mehr überbringen kann: Eine Dämonenarmee rückt vor. Sein Volk weiß es nicht. Er weiß, dass er scheitert.
+
+Im letzten Atemzug berührt das Blut des Elfen den Blob. Weil der Elf ein magisches Wesen ist, überträgt sich mit seinem Blut auch sein letzter Wille — eine Art magisches Echo seines Bewusstseins und seiner Mission. Der Blob erwacht.
+
+**Ton:** Melancholischer Einstieg. Der Blob trägt von Anfang an eine unbewusste Aufgabe — auch wenn er sie zunächst nicht versteht.
+
+---
+
+### Gemeinsame erste Schritte (beide Optionen)
+
+Unabhängig vom Ursprung gilt für die ersten Minuten des Spiels:
+
+1. **Erste Wahrnehmung** — Der Blob erlebt die Umgebung: Baumwurzeln, Moos, Nässe, die Geräusche des Waldes.
+2. **Skill: Fortbewegung** — Der Blob entdeckt, dass er mehr kann als nur langsam fließen. Er erwirbt die Fähigkeit, sich aktiv zu bewegen (Joystick-Steuerung freigeschaltet).
+3. **Skill: Feste Form** — Um sich effektiv fortbewegen zu können, erlernt der Blob eine halbfeste Körperform — er kann seine Masse zielgerichtet führen statt nur auszubreiten.
+4. **Erkundung** — Der Blob verlässt den Baumstamm und erkundet die unmittelbare Umgebung. Erste Interaktionen: Moos, Blätter, kleine Insekten.
+
+---
+
+## 10. Blob-Teilung & Respawn-System
+
+> Status: Konzept — noch nicht implementiert
+
+### Grundprinzip
+
+Der Blob, mit dem der Spieler die Welt erkundet, ist **nicht der gesamte Blob**. Er ist ein abgespaltener Teil. Der **Hauptblob** (größer, immobil) bleibt an einem sicheren Ort zurück und dient als Anker.
+
+Diese Mechanik spiegelt die biologische Realität wider: Physarum polycephalum kann sich teilen, und abgetrennte Teile tragen das Wissen des Mutterkörpers.
+
+---
+
+### Der Hauptblob
+
+- Ist größer als der Reise-Blob und kann nicht bewegt werden.
+- Dient als **Respawn-Punkt**: Kehrt das Bewusstsein aus dem Feld zurück, entsteht hier ein neuer Reise-Blob.
+- Kann an **mehreren Orten** in der Welt angesiedelt werden (z. B. bei Lagerfeuern, in sicheren Höhlen, bei Ruinen). Welcher aktiv ist, entscheidet der Spieler.
+- Der Spieler muss den Hauptblob aktiv aufsuchen und dort eine Teilung durchführen, um einen neuen Reise-Blob abzuspalten.
+
+---
+
+### Tod: Vertrocknen
+
+Wenn der Reise-Blob auf 0 HP fällt, stirbt er **nicht im klassischen Sinne**. Er trocknet aus — ein biologischer Schutzmechanismus von Physarum polycephalum.
+
+```
+Reise-Blob HP ≤ 0
+    ↓
+Blob vertrocknet an seiner aktuellen Position (bleibt als Objekt in der Welt)
+    ↓
+Bewusstsein kehrt zum aktiven Hauptblob zurück
+    ↓
+Neuer Reise-Blob wird vom Hauptblob abgespalten
+    ↓
+Spieler startet ohne die Skills/XP des vertrockneten Blobs
+```
+
+---
+
+### Wissen wiederherstellen
+
+Das angesammelte Wissen (Skills, XP, Level) des vertrockneten Blobs geht **vorübergehend verloren** — nicht permanent.
+
+Der Spieler kann die Stelle aufsuchen, an der der Blob vertrocknet ist, und ihn **mit Wasser wiederbeleben**. Danach kann sich der Reise-Blob mit dem wiedererweckten Blob vereinigen und erhält so alles Wissen zurück.
+
+```
+Spieler findet getrockneten Blob
+    ↓
+Wasser einsetzen → Blob erwacht
+    ↓
+Reise-Blob berührt wiedererweckten Blob → Verschmelzung
+    ↓
+Alle Skills und XP des vertrockneten Blobs übertragen
+```
+
+**Spannung:** Der Spieler muss entscheiden, ob es das Risiko wert ist, die Stelle erneut aufzusuchen — denn dort ist er schon einmal gestorben.
+
+---
+
+### Offen zu entscheiden
+
+- Wie kommt der Spieler an Wasser? (Flüsse, Brunnen, Skill, Item?)
+- Wie lange bleibt ein vertrockneter Blob in der Welt, bevor er verschwindet?
+- Kann ein vertrockneter Blob von Feinden zerstört werden?
+- Wie wird dem Spieler die Position des vertrockneten Blobs angezeigt?
+- Wie viele aktive Hauptblobs kann der Spieler gleichzeitig unterhalten?
+
+---
+
+*Letzte Aktualisierung: v0.3 — Startsequenz (Abschnitt 9) und Blob-Teilungs-Respawn-System (Abschnitt 10) als Konzepte ergänzt (März 2026)*

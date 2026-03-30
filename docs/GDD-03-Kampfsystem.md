@@ -162,20 +162,52 @@ Richtung = Joystick-Vektor (falls inaktiv: kein Bewegungseffekt)
 
 ---
 
-## 7. Tod & Checkpoint (implementiert)
+## 7. Tod & Checkpoint
 
-**Checkpoint-System** (Entscheidung vom Entwickler):
+### Aktuell implementiert (v0.3): Einfaches Checkpoint-System
+
+Das aktuelle System ist ein Platzhalter bis das Blob-Teilungs-System (siehe unten) implementiert ist:
 
 - HP ≤ 0 → `executeCheckpoint(player)`:
   - HP und MP werden auf Maximum gesetzt
   - Spieler-Position springt zu `player.spawnX / spawnY` (400/300)
   - Alle zeitlich begrenzten StatusEffekte werden entfernt (permanente bleiben)
   - Alle Entities verlieren ihren Aggro-Status (`resetAi`)
-- Kein dauerhafter Verlust (keine Skill- oder XP-Strafe)
+- Kein dauerhafter Verlust
 - Visuelles Feedback: Kamera-Rot-Flash (400 ms)
 
-> **Spawn-Punkte**: Fest auf 400/300 (Mitte von Cluster A).
-> Bewegliche Checkpoints (z. B. in der Nähe von Lagerfeuern) sind für v0.3 geplant.
+---
+
+### Geplant (Konzept): Blob-Teilungs-Respawn-System
+
+> Status: Konzept — ersetzt das Checkpoint-System sobald implementiert
+
+Das Respawn-System basiert auf der biologischen Teilungsfähigkeit von *Physarum polycephalum* und der Desiccations-Widerstandsfähigkeit des Blobs. Vollständige Beschreibung in **GDD-01, Abschnitt 10**.
+
+**Kurzfassung der neuen Mechanik:**
+
+```
+Reise-Blob HP ≤ 0
+    ↓
+Blob vertrocknet an Ort des Todes (bleibt als Weltobjekt)
+    ↓
+Bewusstsein → Hauptblob (Respawn-Anker, vom Spieler platziert)
+    ↓
+Neuer Reise-Blob wird abgespalten
+    ↓
+Spieler startet ohne Skills/XP des vertrockneten Blobs
+```
+
+**Wissen zurückgewinnen:**
+- Spieler sucht Ort des Todes auf
+- Wasser auf vertrockneten Blob → Blob erwacht
+- Berührung → Verschmelzung → alle Skills/XP übertragen
+
+**Unterschied zum alten Checkpoint-System:**
+- Skills/XP **vorübergehend verlierbar** (nicht permanent)
+- Todesort wird zu einem Spielziel (Wissen zurückholen)
+- Mehrere Hauptblob-Positionen = strategische Respawn-Planung
+- Kein permanenter Tod — der Blob kann immer zurückgebracht werden
 
 ---
 
@@ -269,4 +301,4 @@ scenes/GameScene.ts                ← verdrahtet alle Systeme, Phaser-Rendering
 
 ---
 
-*Letzte Aktualisierung: 2026-03-28 — v0.3, Entity-Leveling-System implementiert*
+*Letzte Aktualisierung: 2026-03-30 — Abschnitt 7 um geplantes Blob-Teilungs-Respawn-System ergänzt*
