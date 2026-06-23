@@ -91,10 +91,13 @@ types/   ←  data/  ←  systems/  ←  scenes/
 
 ### Build Workflow
 1. Jörn describes what to change (in German, on mobile).
-2. Claude writes/edits the TypeScript source files.
-3. Claude compiles with `tsc` and bundles into `accognita.html` (root).
-4. Claude commits and pushes — GitHub Pages deploys automatically.
-5. Jörn opens the game via GitHub Pages URL — no terminal needed.
+2. Claude writes/edits the TypeScript source files in `src/`.
+3. Claude commits and pushes — GitHub Actions baut automatisch und deployt auf GitHub Pages.
+4. Jörn öffnet das Spiel über die GitHub Pages URL — kein Terminal nötig.
+
+**Lokaler Build (nur wenn nötig):** `node build.js` → erzeugt `accognita.html` im Projektordner.
+**Build-Artefakte:** `dist/`, `accognita.html`, `_site/` sind gitignored — nur `src/` wird committet.
+**CI-Pipeline:** `.github/workflows/deploy.yml` — wird bei jedem Push auf `main` ausgelöst.
 
 ### Communication
 - Talk to the developer in **German**.

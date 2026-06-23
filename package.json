@@ -1,0 +1,13 @@
+{
+  "name": "absorb-and-evolve",
+  "version": "0.3.0",
+  "private": true,
+  "scripts": {
+    "build": "node build.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "esbuild": "^0.27.0",
+    "typescript": "^5.0.0"
+  }
+}
