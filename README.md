@@ -1,5 +1,5 @@
 # Absorb & Evolve
 
-A browser-based Action-RPG inspired by "That Time I Got Reincarnated as a Slime".
+A browser-based Action-RPG where you control a Blob (*Physarum polycephalum*) that evolves by absorbing and analyzing entities in a medieval fantasy world.
 
 **[▶ Spiel starten](accognita.html)**
