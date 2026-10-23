@@ -13,6 +13,7 @@ import {
   formatPlaytime,
   type SaveMeta,
 } from "../systems/SaveSystem.js";
+import { GAME_VERSION } from "../data/version.js";
 
 function injectStyles() {
   if (document.getElementById("savemenu-styles")) return;
@@ -33,6 +34,8 @@ function injectStyles() {
       margin-bottom: 16px;
     }
     #smv-title { color: #eee; font-size: 1.05em; font-weight: bold; }
+    #smv-version { color: #777; font-size: .7em; font-weight: normal; margin-left: 6px; }
+    .smv-slot-version.outdated { color: #d9a441; }
     #smv-close {
       background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.18);
       color: #ccc; font-size: .85em; padding: 6px 16px;
@@ -155,6 +158,8 @@ export function createSaveMenu(): { open(): void; close(): void } {
       const date    = formatDate(meta.savedAt);
       const time    = formatPlaytime(meta.playtimeSeconds);
       const hpPct   = Math.round((meta.hp / meta.maxHp) * 100);
+      const outdated = meta.gameVersion !== GAME_VERSION;
+      const verText  = meta.gameVersion ? `v${meta.gameVersion}` : "alte Version";
 
       return `
         <div class="smv-slot">
@@ -162,7 +167,7 @@ export function createSaveMenu(): { open(): void; close(): void } {
             <span class="smv-slot-num">Slot ${i + 1}</span>
             <div class="smv-slot-info">
               <div class="smv-slot-title">Lv.${meta.playerLevel} · ${meta.skillCount} Skills · HP ${hpPct}%</div>
-              <div class="smv-slot-detail">${date} · ${time} gespielt</div>
+              <div class="smv-slot-detail">${date} · ${time} gespielt · <span class="smv-slot-version${outdated ? " outdated" : ""}">${verText}</span></div>
             </div>
           </div>
           <div class="smv-slot-actions">
@@ -175,7 +180,7 @@ export function createSaveMenu(): { open(): void; close(): void } {
 
     overlay.innerHTML = `
       <div id="smv-header">
-        <span id="smv-title">💾 Spielstand</span>
+        <span id="smv-title">💾 Spielstand<span id="smv-version">v${GAME_VERSION}</span></span>
         <button id="smv-close">✕ Zurück</button>
       </div>
       ${slotHtml}

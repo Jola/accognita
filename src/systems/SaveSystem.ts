@@ -12,6 +12,7 @@
 
 import type { PlayerState } from "../types/GameState";
 import type { SkillInstance } from "../types/Skill";
+import { GAME_VERSION } from "../data/version";
 
 export const NUM_SAVE_SLOTS = 3;
 const SAVE_PREFIX    = "accognita_save_";
@@ -22,7 +23,8 @@ const SAVE_VERSION   = 1;
 // -----------------------------------------------------------
 export interface SaveMeta {
   slot: number;
-  version: number;
+  version: number;          // Format-Version des Spielstands
+  gameVersion?: string;     // Spielversion beim Speichern (fehlt bei alten Spielständen)
   savedAt: number;          // Date.now()
   playerLevel: number;
   hp: number;
@@ -142,6 +144,7 @@ export function saveToSlot(
   const meta: SaveMeta = {
     slot,
     version: SAVE_VERSION,
+    gameVersion: GAME_VERSION,
     savedAt: Date.now(),
     playerLevel: player.level,
     hp: player.hp,

@@ -13,6 +13,14 @@ const args = process.argv.slice(2);
 const outIdx = args.indexOf("--out");
 const outDir = outIdx !== -1 ? args[outIdx + 1] : ".";
 
+// 0. Versionsnummern abgleichen (package.json ↔ src/data/version.ts)
+const pkgVersion = require("./package.json").version;
+const srcVersion = (fs.readFileSync("src/data/version.ts", "utf8").match(/GAME_VERSION\s*=\s*"([^"]+)"/) || [])[1];
+if (pkgVersion !== srcVersion) {
+  console.error(`Versions-Konflikt: package.json=${pkgVersion}, src/data/version.ts=${srcVersion}`);
+  process.exit(1);
+}
+
 // 1. TypeScript kompilieren
 console.log("tsc...");
 execFileSync("node_modules/.bin/tsc", [], { stdio: "inherit" });

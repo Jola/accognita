@@ -6,6 +6,7 @@
 import type { SkillInstance } from "./Skill";
 import type { EntityInstance } from "./Entity";
 import type { StatusEffect } from "./Combat";
+import { GAME_VERSION } from "../data/version";
 
 // -----------------------------------------------------------
 // CoreAbilityState: Zustand einer Kern-Fähigkeit (Analyze/Absorb)
@@ -108,7 +109,7 @@ export { CORE_BASE_XP, CORE_XP_MULTIPLIER, CORE_MAX_LEVEL };
 // -----------------------------------------------------------
 export function createInitialGameState(): GameState {
   return {
-    version: "0.3.0",
+    version: GAME_VERSION,
     player: {
       x: 400,
       y: 300,
