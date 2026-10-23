@@ -182,7 +182,7 @@ Das aktuelle System ist ein Platzhalter bis das Blob-Teilungs-System (siehe unte
 
 > Status: Konzept — ersetzt das Checkpoint-System sobald implementiert
 
-Das Respawn-System basiert auf der biologischen Teilungsfähigkeit von *Physarum polycephalum* und der Desiccations-Widerstandsfähigkeit des Blobs. Vollständige Beschreibung in **GDD-01, Abschnitt 10**.
+Das Respawn-System basiert auf der biologischen Teilungsfähigkeit von *Physarum polycephalum* und der Desiccations-Widerstandsfähigkeit des Blobs. Vollständige Beschreibung in [GDD-01, Abschnitt 10](GDD-01-Hauptbeschreibung.md#10-blob-teilung--respawn-system).
 
 **Kurzfassung der neuen Mechanik:**
 
@@ -301,4 +301,18 @@ scenes/GameScene.ts                ← verdrahtet alle Systeme, Phaser-Rendering
 
 ---
 
-*Letzte Aktualisierung: 2026-03-30 — Abschnitt 7 um geplantes Blob-Teilungs-Respawn-System ergänzt*
+## Siehe auch
+
+| Dokument | Relevanz |
+|----------|----------|
+| [GDD-01 Abschnitt 10](GDD-01-Hauptbeschreibung.md#10-blob-teilung--respawn-system) | Blob-Teilungs-Respawn — biologische Grundlage und Spielmechanik |
+| [GDD-02](GDD-02-Skillsystem.md) | Skill-Definitionen und Entdeckungsmechaniken |
+| [GDD-05](GDD-05-Kampfmathematik.md) | Mathematisches Modell für Schadensberechnung und Skill-Effekte (v0.4) |
+| [src/systems/CombatSystem.ts](../src/systems/CombatSystem.ts) | Aktuelle Kampfimplementierung |
+| [src/systems/AiSystem.ts](../src/systems/AiSystem.ts) | KI-Logik: Aggro, Verfolgung, Angriffe |
+| [src/systems/StatusEffectSystem.ts](../src/systems/StatusEffectSystem.ts) | DoT/HoT/Aura-Verarbeitung |
+| [src/data/entities.ts](../src/data/entities.ts) | Alle Entity-Definitionen mit Kampfwerten |
+
+---
+
+*Letzte Aktualisierung: 2026-10-23 — GDD-05-Verweis und Querverlinkungen ergänzt*

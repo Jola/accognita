@@ -3,6 +3,13 @@
 
 > **Status: Konzept** — Dieses Dokument beschreibt die geplante Neuarchitektur des Kampf- und Skill-Systems. Es ist der Entwurf für v0.4. Nichts hierin ist implementiert, sofern nicht explizit anders markiert.
 
+**Voraussetzungen:** Dieses Dokument setzt Kenntnis der folgenden Dateien voraus:
+- [GDD-02-Skillsystem.md](GDD-02-Skillsystem.md) — Skill-Konzepte, Entdeckung, Leveling
+- [GDD-03-Kampfsystem.md](GDD-03-Kampfsystem.md) — Kampfablauf, Status-Effekte, KI
+- [src/types/Combat.ts](../src/types/Combat.ts) — Aktuelle TypeScript-Interfaces
+- [src/data/skills.ts](../src/data/skills.ts) — Aktuelle Skill-Definitionen (Migrationsquelle)
+- [src/data/entities.ts](../src/data/entities.ts) — Aktuelle Entity-Definitionen (Migrationsquelle)
+
 ---
 
 ## 1. Designziele
@@ -399,13 +406,13 @@ Powerlevel_Defense(skill, level) = erwartete Schadensmitigation pro Sekunde
 
 | Schraube | Wo im Code | Was sie verändert |
 |----------|------------|-------------------|
-| `base` in LinearFormula | `src/data/skills.ts` | Wert bei Level 1 |
-| `perLevel` in LinearFormula | `src/data/skills.ts` | Skalierung pro Level |
-| `curve` in LinearFormula | `src/data/skills.ts` | Wachstumskurve |
+| `base` in LinearFormula | [`src/data/skills.ts`](../src/data/skills.ts) | Wert bei Level 1 |
+| `perLevel` in LinearFormula | [`src/data/skills.ts`](../src/data/skills.ts) | Skalierung pro Level |
+| `curve` in LinearFormula | [`src/data/skills.ts`](../src/data/skills.ts) | Wachstumskurve |
 
 Nichts anderes sollte verändert werden müssen um ein Skill zu rebalancen.
 
-### 9.3 Globale Balance-Konstanten (`balance.ts`)
+### 9.3 Globale Balance-Konstanten ([`balance.ts`](../src/data/balance.ts))
 
 ```typescript
 // Schadensskalierung
@@ -428,21 +435,21 @@ export const MIN_RESISTANCE_MULT = 0.1;     // minimaler Resistenz-Multiplikator
 ```
 src/
 ├── types/
-│   ├── Combat.ts          ← DamageType, EffectTrigger, EffectType, etc. (NEU: erweitert)
-│   ├── Skill.ts           ← SkillEffect, LinearFormula, EffectCondition (NEU)
-│   └── Entity.ts          ← EntityDefinition mit baseStats + skillLevels (GEÄNDERT)
+│   ├── Combat.ts          ← DamageType, EffectTrigger, EffectType, etc. (NEU: erweitert)  → [ansehen](../src/types/Combat.ts)
+│   ├── Skill.ts           ← SkillEffect, LinearFormula, EffectCondition (NEU)             → [ansehen](../src/types/Skill.ts)
+│   └── Entity.ts          ← EntityDefinition mit baseStats + skillLevels (GEÄNDERT)       → [ansehen](../src/types/Entity.ts)
 │
 ├── data/
-│   ├── skills.ts          ← Skill-Definitionen mit effects[]-Array (GEÄNDERT)
-│   ├── entities.ts        ← Entity-Definitionen ohne hardcoded damage (GEÄNDERT)
-│   └── balance.ts         ← Globale Konstanten, Caps, Multiplier (GEÄNDERT)
+│   ├── skills.ts          ← Skill-Definitionen mit effects[]-Array (GEÄNDERT)             → [ansehen](../src/data/skills.ts)
+│   ├── entities.ts        ← Entity-Definitionen ohne hardcoded damage (GEÄNDERT)          → [ansehen](../src/data/entities.ts)
+│   └── balance.ts         ← Globale Konstanten, Caps, Multiplier (GEÄNDERT)               → [ansehen](../src/data/balance.ts)
 │
 ├── systems/
 │   ├── DamageSystem.ts    ← Die 8-stufige Pipeline (NEU)
 │   ├── SkillEffectSystem.ts ← Effekt-Auflösung aus SkillEffect-Deklarationen (NEU)
-│   ├── CombatSystem.ts    ← Angriff/Ziel/Ergebnis-Orchestrierung (VEREINFACHT)
-│   ├── StatusEffectSystem.ts ← DoT/HoT (BLEIBT, leicht angepasst)
-│   └── AiSystem.ts        ← KI (BLEIBT, leicht angepasst)
+│   ├── CombatSystem.ts    ← Angriff/Ziel/Ergebnis-Orchestrierung (VEREINFACHT)            → [ansehen](../src/systems/CombatSystem.ts)
+│   ├── StatusEffectSystem.ts ← DoT/HoT (BLEIBT, leicht angepasst)                        → [ansehen](../src/systems/StatusEffectSystem.ts)
+│   └── AiSystem.ts        ← KI (BLEIBT, leicht angepasst)                                → [ansehen](../src/systems/AiSystem.ts)
 ```
 
 ### Verantwortlichkeiten der neuen Module
@@ -494,4 +501,23 @@ src/
 
 ---
 
-*Letzte Aktualisierung: v0.4-Konzept — Kampfmathematik, Skill-Effekt-Deklaration, Entity-Format (Oktober 2026)*
+## Siehe auch
+
+| Dokument / Datei | Relevanz |
+|-----------------|----------|
+| [GDD-00-Index.md](GDD-00-Index.md) | Einstiegspunkt, alle Dateireferenzen |
+| [GDD-02-Skillsystem.md](GDD-02-Skillsystem.md) | Skill-Konzepte und Entdeckungsmechaniken |
+| [GDD-03-Kampfsystem.md](GDD-03-Kampfsystem.md) | Kampfablauf, KI, Status-Effekte (implementiert) |
+| [src/types/Combat.ts](../src/types/Combat.ts) | StatusEffect, AttackResult — Interfaces für Migration |
+| [src/types/Skill.ts](../src/types/Skill.ts) | SkillDefinition, SkillInstance — Interfaces für Migration |
+| [src/types/Entity.ts](../src/types/Entity.ts) | EntityDefinition, EntityInstance — Interfaces für Migration |
+| [src/data/skills.ts](../src/data/skills.ts) | Aktuelle Skill-Definitionen (Zielformat: Abschnitt 6) |
+| [src/data/entities.ts](../src/data/entities.ts) | Aktuelle Entity-Definitionen (Zielformat: Abschnitt 7) |
+| [src/data/balance.ts](../src/data/balance.ts) | Globale Balancing-Konstanten (Abschnitt 9.3) |
+| [src/systems/CombatSystem.ts](../src/systems/CombatSystem.ts) | Aktuelle Kampflogik — wird zu DamageSystem.ts + CombatSystem.ts aufgespalten |
+| [src/systems/StatusEffectSystem.ts](../src/systems/StatusEffectSystem.ts) | Aktuelle Effektverarbeitung — wird zu SkillEffectSystem.ts erweitert |
+| [src/systems/SkillEffects.ts](../src/systems/SkillEffects.ts) | Aktuelle Effekt-Formeln — migrieren nach DamageSystem.ts |
+
+---
+
+*Letzte Aktualisierung: v0.4-Konzept — Kampfmathematik, Skill-Effekt-Deklaration, Entity-Format, Querverlinkungen (Oktober 2026)*

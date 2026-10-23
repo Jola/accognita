@@ -120,10 +120,12 @@ Diese Pfade sind **nicht exklusiv** — der Spieler kann hybride Builds entwicke
 
 | Datei | Inhalt |
 |-------|--------|
-| GDD-01-Hauptbeschreibung.md | Diese Datei — Vision, Loop, Setting |
-| GDD-02-Skillsystem.md | Alle Skill-Mechaniken, Kombinationen, Leveling |
-| GDD-03-Kampfsystem.md | Kampfmechaniken, Gegner, Balance |
-| GDD-04-LookAndFeel.md | Visuelles Design, UI/UX, Audio-Richtlinien |
+| [GDD-00-Index.md](GDD-00-Index.md) | Einstiegspunkt, Konventionen, alle Dateireferenzen |
+| [GDD-01-Hauptbeschreibung.md](GDD-01-Hauptbeschreibung.md) | Diese Datei — Vision, Loop, Setting |
+| [GDD-02-Skillsystem.md](GDD-02-Skillsystem.md) | Alle Skill-Mechaniken, Kombinationen, Leveling |
+| [GDD-03-Kampfsystem.md](GDD-03-Kampfsystem.md) | Kampfmechaniken, Gegner, Balance |
+| [GDD-04-LookAndFeel.md](GDD-04-LookAndFeel.md) | Visuelles Design, UI/UX, Audio-Richtlinien |
+| [GDD-05-Kampfmathematik.md](GDD-05-Kampfmathematik.md) | Kampfmathematik, Schadenstypen, Skill-Engine (v0.4) |
 
 ---
 
