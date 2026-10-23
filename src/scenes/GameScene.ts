@@ -303,6 +303,8 @@ export class GameScene extends Phaser.Scene {
         (document as any).webkitFullscreenElement
       );
       updateBtn(isFs);
+      document.body.classList.toggle("fs", isFs);
+      document.body.classList.remove("panel-open");
       if (!isFs) {
         this.pauseGame();
       } else {
@@ -1399,6 +1401,11 @@ function syncMobileTab(name: string) {
 }
 
 function toggleSheet() {
+  // Querformat (gleicher Breakpoint wie im CSS): Side-Panel-Schublade statt Bottom Sheet
+  if (window.matchMedia("(min-width:701px)").matches) {
+    document.body.classList.toggle("panel-open");
+    return;
+  }
   document.getElementById("bottomSheet")?.classList.toggle("open");
   syncMobileTab((window as any)._currentTab ?? "skills");
 }

@@ -267,6 +267,20 @@
       #actionBtns { right:calc(280px + 18px); }
       #btnPanel   { display:none; }   /* Side-Panel ersetzt das Sheet */
       #bottomSheet{ display:none !important; }
+
+      /* Vollbild-Querformat: Side-Panel als einklappbare Schublade über dem Spielfeld */
+      body.fs .side-panel {
+        position:absolute; top:0; right:0; bottom:0; z-index:44;
+        transform:translateX(100%); transition:transform .3s ease;
+        box-shadow:-4px 0 16px rgba(0,0,0,.5);
+      }
+      body.fs.panel-open .side-panel { transform:translateX(0); }
+      body.fs #btnPanel { display:flex; transition:right .3s ease; }
+      body.fs #skillBarWrap,
+      body.fs #actionBtns { right:18px; transition:right .3s ease; }
+      body.fs.panel-open #btnPanel     { right:calc(280px + 12px); }
+      body.fs.panel-open #skillBarWrap,
+      body.fs.panel-open #actionBtns   { right:calc(280px + 18px); }
     }
   
 
