@@ -177,6 +177,28 @@ export function calcCombatXpMultiplier(entityLevel: number, skillLevel: number):
 }
 
 // -----------------------------------------------------------
+// SCHADENSPIPELINE-CAPS (GDD-05 Abschnitt 9.3)
+// -----------------------------------------------------------
+
+/** Maximale prozentuale Schadensreduktion — nie unverwundbar */
+export const MAX_PERCENT_REDUCTION = 0.85;
+
+/** Minimaler Endschaden (außer bei Immunität) — immer mindestens 1 milli-HP */
+export const MIN_FINAL_DAMAGE = 1;
+
+/** Maximaler Schwäche-Multiplikator */
+export const MAX_WEAKNESS_MULT = 3.0;
+
+/** Minimaler Resistenz-Multiplikator */
+export const MIN_RESISTANCE_MULT = 0.1;
+
+/** Globaler Schadens-Multiplikator (Balancing-Hebel) */
+export const SKILL_DAMAGE_BASE_MULTIPLIER = 1.0;
+
+/** Globaler Verteidigungs-Multiplikator (Balancing-Hebel) */
+export const SKILL_DEFENSE_BASE_MULTIPLIER = 1.0;
+
+// -----------------------------------------------------------
 // ANALYZE-MODIFIKATOR
 // Analyze hat niedrigere Skill-Drop-Chancen als Absorb,
 // weil man nichts physisch aufnimmt.

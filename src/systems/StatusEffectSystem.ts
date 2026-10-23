@@ -18,11 +18,7 @@ import type { StatusEffect } from "../types/Combat";
 import { makeStatusEffect } from "../types/Combat";
 import { ALL_SKILLS } from "../data/skills";
 import {
-  calcChitinDr,
-  calcHemolymphReflect,
-  calcSuperstrengthMult,
   calcPhotosynthesisHeal,
-  calcVenomDmgPerTick,
 } from "./SkillEffects";
 
 // Maximale gleichzeitig aktive Effekte pro Ziel (Performance-Grenze)
@@ -160,37 +156,10 @@ export function syncPassiveEffects(player: PlayerState): void {
     if (!def || def.activation !== "passive") continue;
     if (instance.isEnabled === false) continue;
 
+    // chitin_armor, superstrength, hemolymph, venom:
+    // → Vollständig deklarativ über SkillEffectSystem (effects[])
+    // → Kein StatusEffect auf dem Spieler nötig
     switch (skillId) {
-      case "chitin_armor": {
-        applyEffect(player, makeStatusEffect({
-          id: `passive_${skillId}`,
-          type: "stat_mod",
-          sourceSkillId: skillId,
-          damageReduction: calcChitinDr(instance.level),
-        }));
-        break;
-      }
-
-      case "superstrength": {
-        applyEffect(player, makeStatusEffect({
-          id: `passive_${skillId}`,
-          type: "stat_mod",
-          sourceSkillId: skillId,
-          damageMult: calcSuperstrengthMult(instance.level),
-        }));
-        break;
-      }
-
-      case "hemolymph": {
-        applyEffect(player, makeStatusEffect({
-          id: `passive_${skillId}`,
-          type: "aura",
-          sourceSkillId: skillId,
-          reflectDamage: calcHemolymphReflect(instance.level),
-        }));
-        break;
-      }
-
       case "photosynthesis": {
         applyEffect(player, makeStatusEffect({
           id: `passive_${skillId}`,
@@ -202,9 +171,6 @@ export function syncPassiveEffects(player: PlayerState): void {
         }));
         break;
       }
-
-      // venom wirkt als StatusEffect auf dem Ziel (nicht auf dem Spieler)
-      // — wird in CombatSystem bei Treffer angewendet
     }
   }
 
@@ -252,21 +218,3 @@ export function calcSpeedMultiplier(effects: StatusEffect[]): number {
   return Math.max(mult, 0.1); // Mindestens 10% Geschwindigkeit
 }
 
-// -----------------------------------------------------------
-// Hilfsfunktion: Venom-DoT-Effekt auf einer Entity erzeugen
-// (aufgerufen von CombatSystem nach erfolgreichem Treffer)
-// -----------------------------------------------------------
-export function makeVenomEffect(venomLevel: number, damageOverride?: number): StatusEffect {
-  const now = Date.now();
-  const durationMs = 4000;
-  return makeStatusEffect({
-    id: `venom_dot_${now}`,
-    type: "dot",
-    sourceSkillId: "venom",
-    durationMs,
-    expiresAt: now + durationMs,
-    tickIntervalMs: 1000,
-    lastTickAt: now,
-    damagePerTick: damageOverride ?? calcVenomDmgPerTick(venomLevel),
-  });
-}

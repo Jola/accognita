@@ -88,9 +88,52 @@ export const BASE_SKILLS: SkillDefinition[] = [
     xpThresholdMultiplier: 1.5,
     description:
       "Passiv: Zieht eine harte Chitinschicht über die Außenhaut. " +
-      "Reduziert eingehenden physischen Schaden um 10% + 5% pro Level. " +
-      "Quelle: Ameisen (Lv1) und Spinnen (Lv2).",
-    // Kein Kampf-Direktangriff — wirkt als stat_mod StatusEffect
+      "Schützt gegen Stiche und Schnitte (Flat-Block), dämpft Wucht (%-Reduktion), " +
+      "ist aber anfällig für Feuer und Säure. Quelle: Ameisen (Lv1) und Spinnen (Lv2).",
+    effects: [
+      {
+        trigger: "on_receive_damage",
+        condition: { damageType: "pierce" },
+        effectType: "flat_block",
+        formula: { base: 3, perLevel: 3, curve: "sqrt" },
+        reasoning:
+          "Chitin ist hart und spröde — Stiche stoppen an der Oberfläche. " +
+          "Sqrt-Kurve: frühe Level sehr effektiv, höhere Level Diminishing Returns.",
+      },
+      {
+        trigger: "on_receive_damage",
+        condition: { damageType: "slash" },
+        effectType: "flat_block",
+        formula: { base: 2, perLevel: 2, curve: "sqrt" },
+        reasoning:
+          "Klingen können entlang der Plattenränder eindringen — weniger Schutz als gegen Stiche.",
+      },
+      {
+        trigger: "on_receive_damage",
+        condition: { damageType: "blunt" },
+        effectType: "percent_reduce",
+        formula: { base: 0.03, perLevel: 0.03 },
+        reasoning:
+          "Erschütterung wird durch das starre Chitin weitergeleitet. " +
+          "Dämpfung ist gering — Chitin ist kein Stoßdämpfer.",
+      },
+      {
+        trigger: "on_receive_damage",
+        condition: { damageType: "fire" },
+        effectType: "weakness",
+        formula: { base: 1.3, perLevel: 0 },
+        reasoning:
+          "Chitin ist organisch und brennt leicht. Kein Level-Scaling — " +
+          "diese Schwäche ist eine inhärente Materialeigenschaft.",
+      },
+      {
+        trigger: "on_receive_damage",
+        condition: { damageType: "acid" },
+        effectType: "weakness",
+        formula: { base: 1.5, perLevel: 0 },
+        reasoning: "Säure zersetzt Chitin chemisch. Kritische Schwachstelle.",
+      },
+    ],
   },
   {
     id: "superstrength",
@@ -104,8 +147,17 @@ export const BASE_SKILLS: SkillDefinition[] = [
     xpThresholdMultiplier: 1.5,
     description:
       "Passiv: Ameisen tragen das 50-fache ihres Körpergewichts — der Blob übernimmt diese Stärke. " +
-      "Verstärkt den Nahkampf-Angriff des Blobs. Höheres Level = höherer Schadensbonus.",
-    // Wirkt als damageMult-Modifikator im CombatSystem
+      "Verstärkt den Nahkampf-Angriff des Blobs. Lv1: +30%, +5% pro Level.",
+    effects: [
+      {
+        trigger: "on_hit_enemy",
+        effectType: "damage_mult",
+        formula: { base: 1.30, perLevel: 0.05 },
+        reasoning:
+          "Ameisen tragen das 50-fache ihres Körpergewichts. " +
+          "Lineare Skalierung: Lv1 = 1.30×, Lv5 = 1.50×, Lv10 = 1.75×.",
+      },
+    ],
   },
   {
     id: "venom",
@@ -119,8 +171,21 @@ export const BASE_SKILLS: SkillDefinition[] = [
     xpThresholdMultiplier: 1.5,
     description:
       "Passiv: Jeder Nahkampftreffer des Blobs hat eine Chance, dem Ziel Gift zu injizieren. " +
-      "Gift verursacht 2 Schaden/s für 4s. Höheres Level = höhere Chance und stärkeres Gift.",
-    // Appliziert DoT-StatusEffect auf getroffene Ziele
+      "Lv1: 30% Chance, 2 Schaden/s für 4s. +5% Chance und +0.5 Schaden/s pro Level.",
+    effects: [
+      {
+        trigger: "on_hit_enemy",
+        effectType: "apply_status",
+        formula: { base: 0.30, perLevel: 0.05 },
+        reasoning: "Giftdrüsen injizieren Gift bei Treffer. Chance: 30% + 5%×(level-1).",
+        statusConfig: {
+          type: "dot",
+          durationMs: 4000,
+          tickIntervalMs: 1000,
+          damageFormula: { base: 2, perLevel: 0.5 },
+        },
+      },
+    ],
   },
   {
     id: "bite",
@@ -133,13 +198,14 @@ export const BASE_SKILLS: SkillDefinition[] = [
     baseXpThreshold: 12,
     xpThresholdMultiplier: 1.5,
     description:
-      "Aktiv: Gezielter Biss — verursacht direkten Schaden (7 Basis). " +
+      "Aktiv: Gezielter Biss — verursacht direkten Stich-Schaden (7 HP Basis). " +
       "Ist Venom bekannt, hat jeder Biss zusätzliche Chance das Ziel zu vergiften. " +
       "Höheres Level = stärkerer Biss. MP-Kosten: 3.",
     mpCost: 3_000,
     cooldownMs: 1200,
     attackType: "melee",
     baseDamage: 7_000,
+    damageType: "pierce",
   },
   {
     id: "jump",
@@ -169,12 +235,13 @@ export const BASE_SKILLS: SkillDefinition[] = [
     baseXpThreshold: 15,
     xpThresholdMultiplier: 1.5,
     description:
-      "Aktiv: Ein mächtiger Nahkampfhieb mit scharfen Klauen (8 Basis-Schaden). " +
+      "Aktiv: Ein mächtiger Nahkampfhieb mit scharfen Klauen (8 HP Basis-Schaden, Schnitt). " +
       "Höheres Level = stärkerer Hieb. MP-Kosten: 5.",
     mpCost: 5_000,
     cooldownMs: 1500,
     attackType: "melee",
     baseDamage: 8_000,
+    damageType: "slash",
   },
   {
     id: "fire_breath",
@@ -188,11 +255,12 @@ export const BASE_SKILLS: SkillDefinition[] = [
     xpThresholdMultiplier: 1.5,
     description:
       "Aktiv: Fernkampf-Angriff — ein Strom lodernder Flammen über 8× Körpergröße Distanz. " +
-      "Verursacht direkten Feuerschaden (10 Basis). Höheres Level = stärker. MP-Kosten: 8.",
+      "Verursacht Feuer-Schaden (10 HP Basis) — schmilzt Chitin-Panzer. MP-Kosten: 8.",
     mpCost: 8_000,
     cooldownMs: 2500,
     attackType: "ranged_projectile",
     baseDamage: 10_000,
+    damageType: "fire",
   },
   {
     id: "hemolymph",
@@ -206,8 +274,17 @@ export const BASE_SKILLS: SkillDefinition[] = [
     xpThresholdMultiplier: 1.5,
     description:
       "Passiv: Wird der Blob getroffen, gibt er bitteres Hämolymph ab — " +
-      "der Angreifer erleidet 2 Sofortschaden. Höheres Level = stärkerer Rückschlag.",
-    // Appliziert Aura-StatusEffect der bei jedem eingehenden Treffer feuert
+      "der Angreifer erleidet Sofortschaden (2 HP pro Level). Höheres Level = stärkerer Rückschlag.",
+    effects: [
+      {
+        trigger: "on_receive_damage",
+        effectType: "reflect_damage",
+        formula: { base: 2, perLevel: 2 },
+        reasoning:
+          "Bitteres Hämolymph tritt aus und verletzt den Angreifer beim Kontakt. " +
+          "Lv1 = 2 HP, Lv3 = 6 HP, linear mit Level.",
+      },
+    ],
   },
 ];
 

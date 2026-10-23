@@ -73,13 +73,15 @@ import {
 } from "../systems/CombatSystem.js";
 import {
   processTicks,
-  triggerAuras,
   applyEffect,
   removeExpiredEffects,
   syncPassiveEffects,
-  calcDamageReduction,
 } from "../systems/StatusEffectSystem.js";
-import { calcHemolymphReflect } from "../systems/SkillEffects.js";
+import {
+  getPlayerPassiveSkillLevels,
+  resolveDefenderEffects,
+} from "../systems/SkillEffectSystem.js";
+import { calcFinalDamage } from "../systems/DamageSystem.js";
 import {
   PLAYER_WORLD_RADIUS_MIN,
   PLAYER_WORLD_RADIUS_MAX,
@@ -620,9 +622,21 @@ export class GameScene extends Phaser.Scene {
       // Entity setzt Fernkampf ein (z.B. Drachen-Feueratem)
       if (frame.wantToRangedAttack && def.rangedAttackSkillId) {
         setRangedCooldown(instance, def);
-        const rangedDmg = getEntityRangedDamage(def);
-        const reduction = calcDamageReduction(this.gameState.player.statusEffects);
-        const finalDmg = Math.max(1, Math.round(rangedDmg * (1 - reduction)));
+        const rangedSkillDef = ALL_SKILLS.get(def.rangedAttackSkillId);
+        const rangedDamageType = rangedSkillDef?.damageType;
+        const rangedBaseDmg = getEntityRangedDamage(def);
+        const playerPassiveLevels = getPlayerPassiveSkillLevels(this.gameState.player);
+        const rangedDefenderEffects = resolveDefenderEffects(playerPassiveLevels, rangedDamageType);
+        const finalDmg = calcFinalDamage({
+          baseDmg: rangedBaseDmg,
+          damageType: rangedDamageType,
+          attackerMult: 1.0,
+          attackerPenetration: 0,
+          defenderFlatBlock: rangedDefenderEffects.flatBlock,
+          defenderPercentReduce: rangedDefenderEffects.percentReduce,
+          defenderWeaknessMult: rangedDefenderEffects.weaknessMult,
+          defenderImmune: rangedDefenderEffects.immune,
+        });
         this.gameState.player.hp = Math.max(0, this.gameState.player.hp - finalDmg);
         this.showFireBreath(instance.x, instance.y, px, py);
         this.showDamageNumber(px, py, finalDmg, "#ff6600");
@@ -640,17 +654,16 @@ export class GameScene extends Phaser.Scene {
             applyEffect(this.gameState.player, effect);
           }
 
-          // Chitin Armor: XP = tatsächlich absorbierter Schaden
-          const absorbed = Math.max(0, (def.damage ?? 0) - result.damageDealt);
-          if (absorbed > 0) {
-            this.skillLevelUp(gainSkillXp(this.gameState.player, "chitin_armor", Math.round(absorbed / 1000), def.level), "chitin_armor");
+          // Chitin Armor: XP = durch Verteidigung absorbierter Schaden
+          if ((result.absorbedDamage ?? 0) > 0) {
+            this.skillLevelUp(gainSkillXp(this.gameState.player, "chitin_armor", Math.round(result.absorbedDamage! / 1000), def.level), "chitin_armor");
           }
 
-          const reflectDmg = triggerAuras(this.gameState.player);
+          // Hemolymph: Rückschlag-Schaden an die angreifende Entity
+          const reflectDmg = result.reflectDamage ?? 0;
           if (reflectDmg > 0) {
             instance.currentHp = Math.max(0, instance.currentHp - reflectDmg);
             this.showDamageNumber(instance.x, instance.y, reflectDmg, "#ff8800");
-            // Hemolymph: XP = zurückgeworfener Schaden (÷1000: milli-HP → XP)
             this.skillLevelUp(gainSkillXp(this.gameState.player, "hemolymph", Math.round(reflectDmg / 1000), def.level), "hemolymph");
             if (instance.currentHp <= 0) {
               instance.isAlive  = false;
@@ -977,15 +990,14 @@ export class GameScene extends Phaser.Scene {
         target.isAggro = true;
 
         // Hemolymph: Rückschlag-Schaden wenn Entity diesen Skill trägt
-        const hemolymphLv = def?.skillLevels?.["hemolymph"] ?? 0;
-        if (hemolymphLv > 0) {
-          const reflectDmg = calcHemolymphReflect(hemolymphLv);
-          this.gameState.player.hp = Math.max(0, this.gameState.player.hp - reflectDmg);
+        const reflectDmgPlayer = result.reflectDamage ?? 0;
+        if (reflectDmgPlayer > 0) {
+          this.gameState.player.hp = Math.max(0, this.gameState.player.hp - reflectDmgPlayer);
           this.showDamageNumber(
             this.gameState.player.x, this.gameState.player.y,
-            reflectDmg, "#ff8800"
+            reflectDmgPlayer, "#ff8800"
           );
-          addLog(`${def?.icon ?? "🐞"} Hemolymph! ${Math.round(reflectDmg / 1000)} Rückschlag-Schaden.`, "aggro");
+          addLog(`${def?.icon ?? "🐞"} Hemolymph! ${Math.round(reflectDmgPlayer / 1000)} Rückschlag-Schaden.`, "aggro");
         }
       }
 

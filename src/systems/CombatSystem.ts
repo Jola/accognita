@@ -9,32 +9,46 @@
 //   - Checkpoint-Logik (Respawn nach Tod)
 //
 // Keine Phaser-Abhängigkeit. Kein Rendering.
-// StatusEffects werden durch StatusEffectSystem appliziert,
-// nicht direkt hier — CombatSystem gibt sie im AttackResult zurück.
+// Schadenberechnung läuft durch DamageSystem (8-stufige Pipeline).
+// Effektauflösung läuft durch SkillEffectSystem.
 // ============================================================
 
 import type { PlayerState } from "../types/GameState";
 import type { EntityDefinition, EntityInstance } from "../types/Entity";
-import type { AttackResult, StatusEffect } from "../types/Combat";
+import type { AttackResult, DamageType, StatusEffect } from "../types/Combat";
 import { ALL_SKILLS } from "../data/skills";
 import { ENTITY_MAP } from "../data/entities";
 import { getSkillEffectiveness } from "./SkillSystem";
-import { getEntityBaseDamage } from "./EntityLevelingSystem";
+import { getEntityBaseDamage, getScaledDamage } from "./EntityLevelingSystem";
+import { applyEffect } from "./StatusEffectSystem";
+import { calcFinalDamage } from "./DamageSystem";
 import {
-  calcDamageReduction,
-  calcDamageMult,
-  makeVenomEffect,
-} from "./StatusEffectSystem";
+  resolveDefenderEffects,
+  resolveAttackerEffects,
+  resolveOnHitStatusEffects,
+  getPlayerPassiveSkillLevels,
+} from "./SkillEffectSystem";
 import {
-  calcChitinDr,
-  calcVenomChance,
-  calcVenomDmgPerTick,
   calcJumpDistance,
 } from "./SkillEffects";
 
 // Konstanten — Basis-Nahkampf des unausgerüsteten Blobs (milli-HP)
 const BASE_MELEE_DAMAGE  = 3_000;   // 3 HP Basisschaden ohne Skills
 const MELEE_ABSORB_SCALE = 1_500;   // 1.5 HP Bonus pro Absorb-Level
+const UNARMED_DAMAGE_TYPE: DamageType = "blunt";  // Körpermasse = Wucht
+
+// -----------------------------------------------------------
+// Hilfsfunktion: Schadenstyp einer Entity bestimmen
+//
+// Priorität: bite → pierce, claw → slash, fire_breath → fire,
+//            kein Skill → blunt
+// -----------------------------------------------------------
+function getEntityAttackDamageType(def: EntityDefinition): DamageType {
+  if (def.skillLevels?.["bite"] !== undefined)  return "pierce";
+  if (def.skillLevels?.["claw"] !== undefined)  return "slash";
+  if (def.rangedAttackSkillId === "fire_breath") return "fire";
+  return "blunt";
+}
 
 // -----------------------------------------------------------
 // SPIELER-ANGRIFF
@@ -61,13 +75,13 @@ export function playerAttack(
     }
   }
 
-  // --- Schadenberechnung ---
+  // --- Basisschaden und Schadenstyp bestimmen ---
   let baseDmg: number;
-  const appliedEffects: StatusEffect[] = [];
+  let damageType: DamageType;
 
   if (!skillId) {
-    // Unausgerüsteter Nahkampf: skaliert mit Absorb-Level
     baseDmg = BASE_MELEE_DAMAGE + player.coreAbilities.absorb.level * MELEE_ABSORB_SCALE;
+    damageType = UNARMED_DAMAGE_TYPE;
   } else {
     const skillDef = ALL_SKILLS.get(skillId);
     if (!skillDef || !skillDef.baseDamage) {
@@ -76,29 +90,41 @@ export function playerAttack(
     const inst = player.discoveredSkills.get(skillId);
     const lvl = inst?.level ?? 1;
     baseDmg = skillDef.baseDamage * getSkillEffectiveness(lvl);
+    damageType = skillDef.damageType ?? "blunt";
   }
 
-  // Passiv-Multiplikator (Superstrength etc.)
-  const damageMult = calcDamageMult(player.statusEffects);
-  let dmg = Math.max(1, Math.round(baseDmg * damageMult));
+  // --- Angreifer-Effekte (Superstrength etc.) ---
+  const playerPassiveLevels = getPlayerPassiveSkillLevels(player);
+  const attackerEffects = resolveAttackerEffects(playerPassiveLevels);
 
-  // Rüstung des Ziels: aus skillLevels.chitin_armor oder standalone damageReduction
-  const targetChitinLv = def.skillLevels?.["chitin_armor"] ?? 0;
-  const targetDR = targetChitinLv > 0
-    ? calcChitinDr(targetChitinLv)
-    : (def.damageReduction ?? 0);
-  if (targetDR > 0) {
-    dmg = Math.max(1, Math.round(dmg * (1 - targetDR)));
-  }
+  // --- Verteidiger-Effekte der Entity (Chitin etc.) ---
+  const entitySkillLevels = def.skillLevels ?? {};
+  const defenderEffects = resolveDefenderEffects(entitySkillLevels, damageType);
 
-  // Venom: passiv auf Treffer anwenden (wenn Spieler Venom hat)
-  const venomInst = player.discoveredSkills.get("venom");
-  if (venomInst) {
-    if (Math.random() < calcVenomChance(venomInst.level)) {
-      appliedEffects.push(makeVenomEffect(venomInst.level));
-    }
-  }
+  // --- Schadenspipeline ---
+  const rawDmg = baseDmg;  // Basisschaden vor Pipeline (für absorbedDamage)
+  const dmg = calcFinalDamage({
+    baseDmg,
+    damageType,
+    attackerMult: attackerEffects.damageMult,
+    attackerPenetration: attackerEffects.penetration,
+    defenderFlatBlock: defenderEffects.flatBlock,
+    defenderPercentReduce: defenderEffects.percentReduce,
+    defenderWeaknessMult: defenderEffects.weaknessMult,
+    defenderImmune: defenderEffects.immune,
+  });
 
+  const absorbedDamage = Math.max(0, Math.round(rawDmg * attackerEffects.damageMult) - dmg);
+
+  // --- Entity Hemolymph: Rückschlag-Schaden an den Spieler ---
+  const reflectDamage = defenderEffects.reflectDamage > 0
+    ? defenderEffects.reflectDamage
+    : 0;
+
+  // --- Angreifer-seitige On-Hit-Effekte (Venom etc.) ---
+  const appliedEffects: StatusEffect[] = resolveOnHitStatusEffects(playerPassiveLevels);
+
+  // Entfernte Entities können nicht weiter behandelt werden
   const dmgDisplay = Math.round(dmg / 1000);
   const msg = appliedEffects.length > 0
     ? `${def.icon} ${def.name}: ${dmgDisplay} Schaden + vergiftet!`
@@ -107,6 +133,8 @@ export function playerAttack(
   return {
     hit: true,
     damageDealt: dmg,
+    absorbedDamage,
+    reflectDamage,
     statusApplied: appliedEffects,
     message: msg,
   };
@@ -124,31 +152,53 @@ export function entityAttack(
     return missResult("Entity greift nicht an.");
   }
 
-  // Basisschaden: aus bite-Skill-Level oder standalone damage
-  const baseDmg = getEntityBaseDamage(def);
+  // Basisschaden: skaliert mit bonusLevel
+  const bonusLevel = instance.bonusLevel ?? 0;
+  const baseDmg = getScaledDamage(def, bonusLevel);
+  const damageType = getEntityAttackDamageType(def);
 
-  // Spieler-Schadensreduktion (Chitin Armor etc.)
-  const reduction = calcDamageReduction(player.statusEffects);
-  const dmg = Math.max(1, Math.round(baseDmg * (1 - reduction)));
+  // Angreifer-Effekte der Entity (aktuell: keine damage_mult-Skills auf Entities)
+  const entitySkillLevels = def.skillLevels ?? {};
+  const attackerEffects = resolveAttackerEffects(entitySkillLevels);
 
-  // Venom: aus skillLevels.venom oder standalone venomChance
-  const appliedEffects: StatusEffect[] = [];
-  const venomLv = def.skillLevels?.["venom"] ?? 0;
-  const venomChance = venomLv > 0 ? calcVenomChance(venomLv) : (def.venomChance ?? 0);
-  if (venomChance > 0 && Math.random() < venomChance) {
-    const venomDmg = venomLv > 0 ? calcVenomDmgPerTick(venomLv) : (def.venomDamagePerTick ?? 2);
-    appliedEffects.push(makeVenomEffect(1, venomDmg));
-  }
+  // Verteidiger-Effekte des Spielers (Chitin Armor etc.)
+  const playerPassiveLevels = getPlayerPassiveSkillLevels(player);
+  const defenderEffects = resolveDefenderEffects(playerPassiveLevels, damageType);
 
-  const baseDmgDisplay = Math.round(baseDmg / 1000);
-  const dmgDisplay2    = Math.round(dmg / 1000);
-  const msg = dmg !== baseDmg
-    ? `${def.icon} ${def.name} trifft! ${baseDmgDisplay}→${dmgDisplay2} (Rüstung).`
-    : `${def.icon} ${def.name} trifft für ${dmgDisplay2} Schaden!`;
+  // Schadenspipeline
+  const rawDmg = baseDmg;
+  const dmg = calcFinalDamage({
+    baseDmg,
+    damageType,
+    attackerMult: attackerEffects.damageMult,
+    attackerPenetration: attackerEffects.penetration,
+    defenderFlatBlock: defenderEffects.flatBlock,
+    defenderPercentReduce: defenderEffects.percentReduce,
+    defenderWeaknessMult: defenderEffects.weaknessMult,
+    defenderImmune: defenderEffects.immune,
+  });
+
+  const absorbedDamage = Math.max(0, Math.round(rawDmg * attackerEffects.damageMult) - dmg);
+
+  // Spieler-Hemolymph: Rückschlag-Schaden an die Entity
+  const reflectDamage = defenderEffects.reflectDamage > 0
+    ? defenderEffects.reflectDamage
+    : 0;
+
+  // Venom der Entity (kommt aus entitySkillLevels)
+  const appliedEffects: StatusEffect[] = resolveOnHitStatusEffects(entitySkillLevels);
+
+  const baseDmgDisplay = Math.round(rawDmg / 1000);
+  const dmgDisplay     = Math.round(dmg / 1000);
+  const msg = dmg !== rawDmg
+    ? `${def.icon} ${def.name} trifft! ${baseDmgDisplay}→${dmgDisplay} (Rüstung).`
+    : `${def.icon} ${def.name} trifft für ${dmgDisplay} Schaden!`;
 
   return {
     hit: true,
     damageDealt: dmg,
+    absorbedDamage,
+    reflectDamage,
     statusApplied: appliedEffects,
     message: msg,
   };
@@ -156,11 +206,6 @@ export function entityAttack(
 
 // -----------------------------------------------------------
 // SKILL-AKTIVIERBARKEIT PRÜFEN
-//
-// Prüft ob der Spieler den Skill gerade einsetzen kann:
-//   - Skill entdeckt?
-//   - Genug MP?
-//   - Cooldown abgelaufen?
 // -----------------------------------------------------------
 export function canActivateSkill(
   player: PlayerState,
@@ -193,9 +238,6 @@ export function canActivateSkill(
 
 // -----------------------------------------------------------
 // SKILL AKTIVIEREN — MP abziehen + Cooldown setzen
-//
-// Gibt den verbrauchten MP-Betrag zurück.
-// Wird von GameScene nach canActivateSkill() aufgerufen.
 // -----------------------------------------------------------
 export function consumeSkill(player: PlayerState, skillId: string): number {
   const def = ALL_SKILLS.get(skillId);
@@ -213,7 +255,6 @@ export function consumeSkill(player: PlayerState, skillId: string): number {
 
 // -----------------------------------------------------------
 // DASH-REICHWEITE berechnen (für Jump-Skill)
-// Gibt zurück wie weit der Dash in Pixeln geht.
 // -----------------------------------------------------------
 export function calcDashDistance(player: PlayerState, skillId: string): number {
   const inst = player.discoveredSkills.get(skillId);
@@ -222,10 +263,6 @@ export function calcDashDistance(player: PlayerState, skillId: string): number {
 
 // -----------------------------------------------------------
 // JUMP / DASH — Positionsverschiebung des Spielers
-//
-// Berechnet neue Weltposition anhand der normalisierten
-// Bewegungsrichtung (dirX/dirY) und klemmt auf Weltgrenzen.
-// Gibt die zurückgelegte Distanz zurück.
 // -----------------------------------------------------------
 export function executeJump(
   player: PlayerState,
@@ -243,10 +280,6 @@ export function executeJump(
 
 // -----------------------------------------------------------
 // CHECKPOINT — Spieler respawnen
-//
-// HP und MP auf Max setzen, Position auf Spawn zurücksetzen,
-// alle aktiven (nicht-permanenten) StatusEffekte entfernen.
-// Passiv-Effekte bleiben erhalten (werden durch syncPassiveEffects neu gesetzt).
 // -----------------------------------------------------------
 export function executeCheckpoint(player: PlayerState): void {
   player.hp = player.maxHp;
@@ -262,7 +295,6 @@ export function executeCheckpoint(player: PlayerState): void {
 
 // -----------------------------------------------------------
 // MP-REGENERATION — im Game Loop aufrufen (delta in ms)
-// 1 MP/s = 1000 mMP/s = 1 mMP/ms
 // -----------------------------------------------------------
 export function regenMp(player: PlayerState, deltaMs: number): void {
   if (player.mp < player.maxMp) {
