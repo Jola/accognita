@@ -33,6 +33,7 @@ Diese Datei ist der **Einstiegspunkt für Menschen und KI-Systeme**, die mit den
 | **GDD-02-Skillsystem.md** | Alle Skill-Mechaniken, Absorb/Analyze, Leveling, Kombinationen, Rezepte | Bei Fragen zu Skills, Entdeckung, Kombination, Balancing |
 | **GDD-03-Kampfsystem.md** | Kampfablauf, Gegnertypen, Schadenformeln, Status-Effekte, Tod-Mechanik | Bei Fragen zu Kämpfen, Gegnern, Balance, Spieler-Werten |
 | **GDD-04-LookAndFeel.md** | Farbpalette, Typografie, UI-Layout (Mobile + Desktop), Touch-Controls, Animationen, Audio, Tech-Stack | Bei Fragen zu Design, UI, Grafik, Sound, Technologie, Plattform |
+| **GDD-05-Kampfmathematik.md** | Schadenstypen-Taxonomie, 8-stufige Damage-Pipeline, Verteidigungsmodell, SkillEffect-Deklarationssystem, LinearFormula, Beispiel-Konfigurationen, Migrations-Strategie v0.3→v0.4 | Bei Fragen zur Kampfmathematik, Skill-Balancing, Schadensformeln, neuen Skills/Entities konfigurieren |
 | **slime-rpg.html** | [VERWORFEN] Ursprünglicher Vanilla-JS-Prototype v0.1 — nicht mehr aktiv gepflegt | Nur als historische Referenz |
 | **accognita.html** | Aktuelles Spiel v0.3 — Single-File-Build, per Doppelklick öffenbar oder via GitHub Pages | Als Referenz für implementierte Mechaniken |
 | **src/types/Skill.ts** | TypeScript-Interfaces: SkillDefinition, SkillInstance, DiscoveryResult | Beim Erweitern des Skill-Systems |
