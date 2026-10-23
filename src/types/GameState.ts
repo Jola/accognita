@@ -27,7 +27,7 @@ export interface PlayerState {
   x: number;
   y: number;
 
-  // Vitals
+  // Vitals (alle in milli-Einheiten: 1 HP = 1000 mHP)
   hp: number;
   maxHp: number;
   mp: number;
@@ -112,10 +112,10 @@ export function createInitialGameState(): GameState {
     player: {
       x: 400,
       y: 300,
-      hp: 80,
-      maxHp: 80,
-      mp: 40,
-      maxMp: 40,
+      hp: 80_000,
+      maxHp: 80_000,
+      mp: 40_000,
+      maxMp: 40_000,
       level: 1,
       totalExp: 0,
       coreAbilities: {

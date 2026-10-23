@@ -626,7 +626,7 @@ export class GameScene extends Phaser.Scene {
         this.gameState.player.hp = Math.max(0, this.gameState.player.hp - finalDmg);
         this.showFireBreath(instance.x, instance.y, px, py);
         this.showDamageNumber(px, py, finalDmg, "#ff6600");
-        addLog(`${def.icon} ${def.name} Feueratem! ${finalDmg} Schaden!`, "aggro");
+        addLog(`${def.icon} ${def.name} Feueratem! ${Math.round(finalDmg / 1000)} Schaden!`, "aggro");
         updateUI(this.gameState);
       }
 
@@ -641,17 +641,17 @@ export class GameScene extends Phaser.Scene {
           }
 
           // Chitin Armor: XP = tatsächlich absorbierter Schaden
-          const absorbed = Math.max(0, (def.damage ?? 1) - result.damageDealt);
+          const absorbed = Math.max(0, (def.damage ?? 0) - result.damageDealt);
           if (absorbed > 0) {
-            this.skillLevelUp(gainSkillXp(this.gameState.player, "chitin_armor", absorbed), "chitin_armor");
+            this.skillLevelUp(gainSkillXp(this.gameState.player, "chitin_armor", Math.round(absorbed / 1000), def.level), "chitin_armor");
           }
 
           const reflectDmg = triggerAuras(this.gameState.player);
           if (reflectDmg > 0) {
             instance.currentHp = Math.max(0, instance.currentHp - reflectDmg);
             this.showDamageNumber(instance.x, instance.y, reflectDmg, "#ff8800");
-            // Hemolymph: XP = zurückgeworfener Schaden
-            this.skillLevelUp(gainSkillXp(this.gameState.player, "hemolymph", reflectDmg), "hemolymph");
+            // Hemolymph: XP = zurückgeworfener Schaden (÷1000: milli-HP → XP)
+            this.skillLevelUp(gainSkillXp(this.gameState.player, "hemolymph", Math.round(reflectDmg / 1000), def.level), "hemolymph");
             if (instance.currentHp <= 0) {
               instance.isAlive  = false;
               instance.respawnAt = Date.now() + (def?.respawnTime ?? 60) * 1000;
@@ -747,8 +747,8 @@ export class GameScene extends Phaser.Scene {
           -playerHpDelta, "#aa44ff"
         );
       } else if (playerHpDelta > 0) {
-        // Photosynthesis: XP = regenerierte Lebenspunkte
-        this.skillLevelUp(gainSkillXp(this.gameState.player, "photosynthesis", playerHpDelta), "photosynthesis");
+        // Photosynthesis: XP = regenerierte HP (÷1000: milli-HP → XP, kein Entity-Level)
+        this.skillLevelUp(gainSkillXp(this.gameState.player, "photosynthesis", Math.round(playerHpDelta / 1000)), "photosynthesis");
       }
       updateUI(this.gameState);
     }
@@ -785,9 +785,9 @@ export class GameScene extends Phaser.Scene {
           if (def) addLog(`${def.icon} ${def.name} wurde vernichtet!`, "system");
         }
       }
-      // Venom: XP = Schaden der getickten Venom-DoTs
+      // Venom: XP = Schaden der getickten Venom-DoTs (÷1000: milli-HP → XP)
       if (venomXp > 0) {
-        this.skillLevelUp(gainSkillXp(this.gameState.player, "venom", venomXp), "venom");
+        this.skillLevelUp(gainSkillXp(this.gameState.player, "venom", Math.round(venomXp / 1000), def?.level), "venom");
       }
       removeExpiredEffects(instance, now);
 
@@ -843,7 +843,7 @@ export class GameScene extends Phaser.Scene {
     const r = updatePlayerLevel(this.gameState.player);
     if (r.leveledUp) {
       const p = this.gameState.player;
-      addLog(`🌟 Charakter → Lv.${r.newLevel}! (HP: ${p.maxHp} / MP: ${p.maxMp})`, "levelup");
+      addLog(`🌟 Charakter → Lv.${r.newLevel}! (HP: ${p.maxHp / 1000} / MP: ${p.maxMp / 1000})`, "levelup");
       this.updateCameraZoom(); // Welt schrumpft optisch mit dem Level-Up
     }
   }
@@ -862,7 +862,7 @@ export class GameScene extends Phaser.Scene {
     const rise   = 18 / zoom;   // 18 Bildschirmpixel Aufstieg
 
     const txt = this.add
-      .text(x, y - offset, `${Math.round(dmg)}`, {
+      .text(x, y - offset, `${Math.round(dmg / 1000)}`, {
         fontSize: "14px",
         color,
         fontStyle: "bold",
@@ -985,16 +985,16 @@ export class GameScene extends Phaser.Scene {
             this.gameState.player.x, this.gameState.player.y,
             reflectDmg, "#ff8800"
           );
-          addLog(`${def?.icon ?? "🐞"} Hemolymph! ${reflectDmg} Rückschlag-Schaden.`, "aggro");
+          addLog(`${def?.icon ?? "🐞"} Hemolymph! ${Math.round(reflectDmg / 1000)} Rückschlag-Schaden.`, "aggro");
         }
       }
 
       addLog(result.message, "absorb");
 
-      // XP = angerichteter Schaden (Bite, Biss usw.)
-      this.skillLevelUp(gainSkillXp(this.gameState.player, skillId, result.damageDealt), skillId);
-      // Superstrength: XP für jeden Nahkampftreffer
-      this.skillLevelUp(gainSkillXp(this.gameState.player, "superstrength", 1), "superstrength");
+      // XP = angerichteter Schaden (÷1000: milli-HP → XP, Entity-Level für Skalierung)
+      this.skillLevelUp(gainSkillXp(this.gameState.player, skillId, Math.round(result.damageDealt / 1000), def?.level), skillId);
+      // Superstrength: 1 XP pro Treffer, skaliert nach Entity-Level
+      this.skillLevelUp(gainSkillXp(this.gameState.player, "superstrength", 1, def?.level), "superstrength");
       // Venom: XP kommt von den DoT-Ticks in processCombatEffects
     } else {
       showToast(result.message, "system");
@@ -1106,8 +1106,8 @@ function updateUI(state: GameState) {
 
   // HUD
   setEl("ui-level", `Lv.${p.level}`);
-  setEl("ui-hp", `${Math.floor(p.hp)}/${p.maxHp}`);
-  setEl("ui-mp", `${p.mp}/${p.maxMp}`);
+  setEl("ui-hp", `${Math.floor(p.hp / 1000)}/${Math.floor(p.maxHp / 1000)}`);
+  setEl("ui-mp", `${Math.floor(p.mp / 1000)}/${Math.floor(p.maxMp / 1000)}`);
   setStyle("hp-bar-fill", "width", `${(p.hp / p.maxHp) * 100}%`);
   setStyle("mp-bar-fill", "width", `${(p.mp / p.maxMp) * 100}%`);
   const { xpIntoLevel, xpToNext } = calcPlayerLevel(p.totalExp);
@@ -1237,10 +1237,12 @@ function updateNearbyPanel(
   const absorbChance = Math.round(calcSuccessChance(absorbLevel,  effectiveLv) * 100);
   const analyzeChance= Math.round(calcSuccessChance(analyzeLevel, effectiveLv) * 100);
 
-  // HP-Leiste
-  const scaledMaxHp = getScaledMaxHp(entityDef, bonusLv);
-  const currentHp   = Math.ceil(instance?.currentHp ?? scaledMaxHp);
-  const hpPct       = Math.round(Math.max(0, currentHp / scaledMaxHp) * 100);
+  // HP-Leiste (intern milli-HP, Anzeige in HP)
+  const scaledMaxHp    = getScaledMaxHp(entityDef, bonusLv);
+  const currentHp      = instance?.currentHp ?? scaledMaxHp;
+  const currentHpDisp  = Math.ceil(currentHp / 1000);
+  const scaledMaxDisp  = Math.ceil(scaledMaxHp / 1000);
+  const hpPct          = Math.round(Math.max(0, currentHp / scaledMaxHp) * 100);
   const hpColor     = hpPct > 50 ? "#44cc44" : hpPct > 25 ? "#cccc44" : "#cc4444";
 
   // Bonus-Level Sterne
@@ -1280,10 +1282,10 @@ function updateNearbyPanel(
           <div style="height:6px;background:#222;border-radius:3px;overflow:hidden">
             <div style="height:100%;width:${hpPct}%;background:${hpColor};transition:width .2s"></div>
           </div>
-          <span style="font-size:.65em;color:var(--muted)">${currentHp}/${scaledMaxHp} HP</span>
+          <span style="font-size:.65em;color:var(--muted)">${currentHpDisp}/${scaledMaxDisp} HP</span>
         </div>
         <div style="font-size:.68em;color:var(--muted)">
-          ⚔️ ${effectiveDmg} &nbsp;|&nbsp; 💨 ${entityDef.speed ?? "–"}
+          ⚔️ ${Math.round(effectiveDmg / 1000)} &nbsp;|&nbsp; 💨 ${entityDef.speed ?? "–"}
         </div>
       </div>
     </div>

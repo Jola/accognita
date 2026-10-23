@@ -32,9 +32,9 @@ import {
   calcJumpDistance,
 } from "./SkillEffects";
 
-// Konstanten — Basis-Nahkampf des unausgerüsteten Blobs
-const BASE_MELEE_DAMAGE  = 3;   // Basisschaden ohne Skills
-const MELEE_ABSORB_SCALE = 1.5; // Bonus pro Absorb-Level
+// Konstanten — Basis-Nahkampf des unausgerüsteten Blobs (milli-HP)
+const BASE_MELEE_DAMAGE  = 3_000;   // 3 HP Basisschaden ohne Skills
+const MELEE_ABSORB_SCALE = 1_500;   // 1.5 HP Bonus pro Absorb-Level
 
 // -----------------------------------------------------------
 // SPIELER-ANGRIFF
@@ -99,9 +99,10 @@ export function playerAttack(
     }
   }
 
+  const dmgDisplay = Math.round(dmg / 1000);
   const msg = appliedEffects.length > 0
-    ? `${def.icon} ${def.name}: ${dmg} Schaden + vergiftet!`
-    : `${def.icon} ${def.name}: ${dmg} Schaden.`;
+    ? `${def.icon} ${def.name}: ${dmgDisplay} Schaden + vergiftet!`
+    : `${def.icon} ${def.name}: ${dmgDisplay} Schaden.`;
 
   return {
     hit: true,
@@ -139,9 +140,11 @@ export function entityAttack(
     appliedEffects.push(makeVenomEffect(1, venomDmg));
   }
 
+  const baseDmgDisplay = Math.round(baseDmg / 1000);
+  const dmgDisplay2    = Math.round(dmg / 1000);
   const msg = dmg !== baseDmg
-    ? `${def.icon} ${def.name} trifft! ${baseDmg}→${dmg} (Rüstung).`
-    : `${def.icon} ${def.name} trifft für ${dmg} Schaden!`;
+    ? `${def.icon} ${def.name} trifft! ${baseDmgDisplay}→${dmgDisplay2} (Rüstung).`
+    : `${def.icon} ${def.name} trifft für ${dmgDisplay2} Schaden!`;
 
   return {
     hit: true,
@@ -175,7 +178,7 @@ export function canActivateSkill(
 
   const mpCost = def.mpCost ?? 0;
   if (player.mp < mpCost) {
-    return { ok: false, reason: `Nicht genug MP (${mpCost} benötigt, ${Math.floor(player.mp)} vorhanden).` };
+    return { ok: false, reason: `Nicht genug MP (${mpCost / 1000} benötigt, ${Math.floor(player.mp / 1000)} vorhanden).` };
   }
 
   const now = Date.now();
@@ -259,11 +262,11 @@ export function executeCheckpoint(player: PlayerState): void {
 
 // -----------------------------------------------------------
 // MP-REGENERATION — im Game Loop aufrufen (delta in ms)
-// 1 MP/s Basisregeneration
+// 1 MP/s = 1000 mMP/s = 1 mMP/ms
 // -----------------------------------------------------------
 export function regenMp(player: PlayerState, deltaMs: number): void {
   if (player.mp < player.maxMp) {
-    player.mp = Math.min(player.maxMp, player.mp + deltaMs / 1000);
+    player.mp = Math.min(player.maxMp, player.mp + deltaMs);
   }
 }
 

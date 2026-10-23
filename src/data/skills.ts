@@ -136,10 +136,10 @@ export const BASE_SKILLS: SkillDefinition[] = [
       "Aktiv: Gezielter Biss — verursacht direkten Schaden (7 Basis). " +
       "Ist Venom bekannt, hat jeder Biss zusätzliche Chance das Ziel zu vergiften. " +
       "Höheres Level = stärkerer Biss. MP-Kosten: 3.",
-    mpCost: 3,
+    mpCost: 3_000,
     cooldownMs: 1200,
     attackType: "melee",
-    baseDamage: 7,
+    baseDamage: 7_000,
   },
   {
     id: "jump",
@@ -154,7 +154,7 @@ export const BASE_SKILLS: SkillDefinition[] = [
     description:
       "Aktiv: Springt 160px in Bewegungsrichtung — überwindet Hindernisse und erzeugt Distanz. " +
       "Höheres Level = größere Sprungweite. MP-Kosten: 4.",
-    mpCost: 4,
+    mpCost: 4_000,
     cooldownMs: 1800,
     attackType: "dash",
   },
@@ -171,10 +171,10 @@ export const BASE_SKILLS: SkillDefinition[] = [
     description:
       "Aktiv: Ein mächtiger Nahkampfhieb mit scharfen Klauen (8 Basis-Schaden). " +
       "Höheres Level = stärkerer Hieb. MP-Kosten: 5.",
-    mpCost: 5,
+    mpCost: 5_000,
     cooldownMs: 1500,
     attackType: "melee",
-    baseDamage: 8,
+    baseDamage: 8_000,
   },
   {
     id: "fire_breath",
@@ -189,10 +189,10 @@ export const BASE_SKILLS: SkillDefinition[] = [
     description:
       "Aktiv: Fernkampf-Angriff — ein Strom lodernder Flammen über 8× Körpergröße Distanz. " +
       "Verursacht direkten Feuerschaden (10 Basis). Höheres Level = stärker. MP-Kosten: 8.",
-    mpCost: 8,
+    mpCost: 8_000,
     cooldownMs: 2500,
     attackType: "ranged_projectile",
-    baseDamage: 10,
+    baseDamage: 10_000,
   },
   {
     id: "hemolymph",

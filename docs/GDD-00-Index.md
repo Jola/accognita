@@ -28,39 +28,40 @@ Diese Datei ist der **Einstiegspunkt für Menschen und KI-Systeme**, die mit den
 
 | Datei | Inhalt | Wann konsultieren |
 |-------|--------|-------------------|
-| **GDD-00-Index.md** | Diese Datei. Struktur, Konventionen, Meta. | Immer zuerst |
-| **GDD-01-Hauptbeschreibung.md** | Vision, Kernidee, Core Game Loop, Setting, Perspektiven, Progressionspfade | Bei Fragen zur Spielidee, zum Genre, zur Gesamtstruktur |
-| **GDD-02-Skillsystem.md** | Alle Skill-Mechaniken, Absorb/Analyze, Leveling, Kombinationen, Rezepte | Bei Fragen zu Skills, Entdeckung, Kombination, Balancing |
-| **GDD-03-Kampfsystem.md** | Kampfablauf, Gegnertypen, Schadenformeln, Status-Effekte, Tod-Mechanik | Bei Fragen zu Kämpfen, Gegnern, Balance, Spieler-Werten |
-| **GDD-04-LookAndFeel.md** | Farbpalette, Typografie, UI-Layout (Mobile + Desktop), Touch-Controls, Animationen, Audio, Tech-Stack | Bei Fragen zu Design, UI, Grafik, Sound, Technologie, Plattform |
+| **[GDD-00-Index.md](GDD-00-Index.md)** | Diese Datei. Struktur, Konventionen, Meta. | Immer zuerst |
+| **[GDD-01-Hauptbeschreibung.md](GDD-01-Hauptbeschreibung.md)** | Vision, Kernidee, Core Game Loop, Setting, Perspektiven, Progressionspfade | Bei Fragen zur Spielidee, zum Genre, zur Gesamtstruktur |
+| **[GDD-02-Skillsystem.md](GDD-02-Skillsystem.md)** | Alle Skill-Mechaniken, Absorb/Analyze, Leveling, Kombinationen, Rezepte | Bei Fragen zu Skills, Entdeckung, Kombination, Balancing |
+| **[GDD-03-Kampfsystem.md](GDD-03-Kampfsystem.md)** | Kampfablauf, Gegnertypen, Schadenformeln, Status-Effekte, Tod-Mechanik | Bei Fragen zu Kämpfen, Gegnern, Balance, Spieler-Werten |
+| **[GDD-04-LookAndFeel.md](GDD-04-LookAndFeel.md)** | Farbpalette, Typografie, UI-Layout (Mobile + Desktop), Touch-Controls, Animationen, Audio, Tech-Stack | Bei Fragen zu Design, UI, Grafik, Sound, Technologie, Plattform |
+| **[GDD-05-Kampfmathematik.md](GDD-05-Kampfmathematik.md)** | Schadenstypen-Taxonomie, 8-stufige Damage-Pipeline, Verteidigungsmodell, SkillEffect-Deklarationssystem, LinearFormula, Beispiel-Konfigurationen, Migrations-Strategie v0.3→v0.4 | Bei Fragen zur Kampfmathematik, Skill-Balancing, Schadensformeln, neuen Skills/Entities konfigurieren |
 | **slime-rpg.html** | [VERWORFEN] Ursprünglicher Vanilla-JS-Prototype v0.1 — nicht mehr aktiv gepflegt | Nur als historische Referenz |
 | **accognita.html** | Aktuelles Spiel v0.3 — Single-File-Build, per Doppelklick öffenbar oder via GitHub Pages | Als Referenz für implementierte Mechaniken |
-| **src/types/Skill.ts** | TypeScript-Interfaces: SkillDefinition, SkillInstance, DiscoveryResult | Beim Erweitern des Skill-Systems |
-| **src/types/Entity.ts** | TypeScript-Interfaces: EntityDefinition, EntityInstance | Beim Erweitern von Entities |
-| **src/types/GameState.ts** | Zentraler GameState, PlayerState, WorldState | Bei State-Fragen |
-| **src/types/Combat.ts** | AttackType, StatusEffect, AttackResult, AiFrame | Bei Kampfsystem-Fragen |
-| **src/types/Material.ts** | Material und Loot-Drop-Interfaces | Beim Erweitern des Loot-Systems |
-| **src/data/skills.ts** | Alle Skill-Definitionen und Balancing-Werte | Beim Balancing |
-| **src/data/entities.ts** | Alle Entity-Definitionen | Beim Hinzufügen von Entities |
-| **src/data/materials.ts** | Alle Material-/Loot-Definitionen | Beim Balancing von Drops |
-| **src/data/balance.ts** | Zentrale Balancing-Konstanten (XP-Kurven, Schaden usw.) | Beim Balancing |
-| **src/systems/SkillSystem.ts** | Reine Skill-Logik (kein Phaser) | Bei Skill-Logik-Fragen |
-| **src/systems/EntitySystem.ts** | Absorb/Analyze/Respawn-Logik (kein Phaser) | Bei Interaktions-Logik-Fragen |
-| **src/systems/CombatSystem.ts** | Schadensberechnung, Skill-Dispatch, Checkpoint-Logik | Bei Kampfsystem-Fragen |
-| **src/systems/AiSystem.ts** | Aggro, Verfolgung, Angriffs-Trigger (kein Phaser) | Bei KI-Fragen |
-| **src/systems/StatusEffectSystem.ts** | DoT/HoT/Aura, passive Skills | Bei Status-Effekt-Fragen |
-| **src/systems/MaterialSystem.ts** | Loot-Drop-Auflösung, Material-Inventar | Beim Erweitern des Loot-Systems |
-| **src/systems/SaveSystem.ts** | Speichern/Laden via localStorage (3 Slots) | Bei Speicher-Fragen |
-| **src/ui/Joystick.ts** | Virtueller Joystick (DOM, kein Phaser) | Bei Touch-Input-Fragen |
-| **src/ui/SkillBar.ts** | Touch-Skill-Slots mit Cooldown-Anzeige | Bei UI-Fragen |
-| **src/ui/SkillMenu.ts** | Vollbild-Skill-Management-Overlay | Bei UI-Fragen |
-| **src/ui/SaveMenu.ts** | Speicher-/Lade-Slot-Overlay | Bei Speicher-UI-Fragen |
-| **src/scenes/GameScene.ts** | Phaser-Scene: Rendering, Input, UI-Bridge | Bei Rendering/Input-Fragen |
-| **src/world/Chunk.ts** | Typen: BiomeId, HeightLevel, ChunkDef, LoadedChunk, SpawnDef | Bei Welt-System-Fragen |
-| **src/world/BiomeDefinitions.ts** | Zonen-Layout, Spawn-Tabellen, Tile-Index-Mapping | Bei Biom-Fragen |
-| **src/world/WorldGenerator.ts** | `generateChunk(cx, cy)` — deterministisch | Bei Welt-Generierungs-Fragen |
-| **src/world/TilesetGenerator.ts** | Prozedurales Pixel-Art-Tileset (24 Tiles, Canvas 2D) | Bei Tile-Fragen |
-| **src/world/ChunkManager.ts** | Chunk-Laden/-Entladen, Entity-Lifecycle, KI-Radius-Filterung | Bei Performance-/Welt-Fragen |
+| **[src/types/Skill.ts](../src/types/Skill.ts)** | TypeScript-Interfaces: SkillDefinition, SkillInstance, DiscoveryResult | Beim Erweitern des Skill-Systems |
+| **[src/types/Entity.ts](../src/types/Entity.ts)** | TypeScript-Interfaces: EntityDefinition, EntityInstance | Beim Erweitern von Entities |
+| **[src/types/GameState.ts](../src/types/GameState.ts)** | Zentraler GameState, PlayerState, WorldState | Bei State-Fragen |
+| **[src/types/Combat.ts](../src/types/Combat.ts)** | AttackType, StatusEffect, AttackResult, AiFrame | Bei Kampfsystem-Fragen |
+| **[src/types/Material.ts](../src/types/Material.ts)** | Material und Loot-Drop-Interfaces | Beim Erweitern des Loot-Systems |
+| **[src/data/skills.ts](../src/data/skills.ts)** | Alle Skill-Definitionen und Balancing-Werte | Beim Balancing |
+| **[src/data/entities.ts](../src/data/entities.ts)** | Alle Entity-Definitionen | Beim Hinzufügen von Entities |
+| **[src/data/materials.ts](../src/data/materials.ts)** | Alle Material-/Loot-Definitionen | Beim Balancing von Drops |
+| **[src/data/balance.ts](../src/data/balance.ts)** | Zentrale Balancing-Konstanten (XP-Kurven, Schaden usw.) | Beim Balancing |
+| **[src/systems/SkillSystem.ts](../src/systems/SkillSystem.ts)** | Reine Skill-Logik (kein Phaser) | Bei Skill-Logik-Fragen |
+| **[src/systems/EntitySystem.ts](../src/systems/EntitySystem.ts)** | Absorb/Analyze/Respawn-Logik (kein Phaser) | Bei Interaktions-Logik-Fragen |
+| **[src/systems/CombatSystem.ts](../src/systems/CombatSystem.ts)** | Schadensberechnung, Skill-Dispatch, Checkpoint-Logik | Bei Kampfsystem-Fragen |
+| **[src/systems/AiSystem.ts](../src/systems/AiSystem.ts)** | Aggro, Verfolgung, Angriffs-Trigger (kein Phaser) | Bei KI-Fragen |
+| **[src/systems/StatusEffectSystem.ts](../src/systems/StatusEffectSystem.ts)** | DoT/HoT/Aura, passive Skills | Bei Status-Effekt-Fragen |
+| **[src/systems/MaterialSystem.ts](../src/systems/MaterialSystem.ts)** | Loot-Drop-Auflösung, Material-Inventar | Beim Erweitern des Loot-Systems |
+| **[src/systems/SaveSystem.ts](../src/systems/SaveSystem.ts)** | Speichern/Laden via localStorage (3 Slots) | Bei Speicher-Fragen |
+| **[src/ui/Joystick.ts](../src/ui/Joystick.ts)** | Virtueller Joystick (DOM, kein Phaser) | Bei Touch-Input-Fragen |
+| **[src/ui/SkillBar.ts](../src/ui/SkillBar.ts)** | Touch-Skill-Slots mit Cooldown-Anzeige | Bei UI-Fragen |
+| **[src/ui/SkillMenu.ts](../src/ui/SkillMenu.ts)** | Vollbild-Skill-Management-Overlay | Bei UI-Fragen |
+| **[src/ui/SaveMenu.ts](../src/ui/SaveMenu.ts)** | Speicher-/Lade-Slot-Overlay | Bei Speicher-UI-Fragen |
+| **[src/scenes/GameScene.ts](../src/scenes/GameScene.ts)** | Phaser-Scene: Rendering, Input, UI-Bridge | Bei Rendering/Input-Fragen |
+| **[src/world/Chunk.ts](../src/world/Chunk.ts)** | Typen: BiomeId, HeightLevel, ChunkDef, LoadedChunk, SpawnDef | Bei Welt-System-Fragen |
+| **[src/world/BiomeDefinitions.ts](../src/world/BiomeDefinitions.ts)** | Zonen-Layout, Spawn-Tabellen, Tile-Index-Mapping | Bei Biom-Fragen |
+| **[src/world/WorldGenerator.ts](../src/world/WorldGenerator.ts)** | `generateChunk(cx, cy)` — deterministisch | Bei Welt-Generierungs-Fragen |
+| **[src/world/TilesetGenerator.ts](../src/world/TilesetGenerator.ts)** | Prozedurales Pixel-Art-Tileset (24 Tiles, Canvas 2D) | Bei Tile-Fragen |
+| **[src/world/ChunkManager.ts](../src/world/ChunkManager.ts)** | Chunk-Laden/-Entladen, Entity-Lifecycle, KI-Radius-Filterung | Bei Performance-/Welt-Fragen |
 
 ---
 
@@ -76,13 +77,18 @@ GDD-00 (Index)
     │       └── baut auf dem Core Loop aus GDD-01 auf
     │
     ├── GDD-03 (Kampfsystem)
-    │       └── nutzt Skills aus GDD-02 als Grundlage
+    │       ├── nutzt Skills aus GDD-02 als Grundlage
+    │       └── Tod-Mechanik referenziert GDD-01 Abschnitt 10
     │
-    └── GDD-04 (Look & Feel)
-            └── beschreibt wie GDD-01 bis 03 visuell umgesetzt werden
+    ├── GDD-04 (Look & Feel)
+    │       └── beschreibt wie GDD-01 bis 03 visuell umgesetzt werden
+    │
+    └── GDD-05 (Kampfmathematik)
+            ├── setzt GDD-02 (Skill-Konzepte) und GDD-03 (Kampfablauf) voraus
+            └── definiert Zielformat für src/data/skills.ts und src/data/entities.ts
 ```
 
-**Abhängigkeitsregel**: Änderungen an GDD-01 können alle anderen Dokumente betreffen. Änderungen an GDD-02 betreffen GDD-03. GDD-04 ist weitgehend unabhängig.
+**Abhängigkeitsregel**: Änderungen an GDD-01 können alle anderen Dokumente betreffen. Änderungen an GDD-02 betreffen GDD-03 und GDD-05. GDD-04 ist weitgehend unabhängig. GDD-05 ist die mathematische Grundlage für alle Kampf-Implementierungen.
 
 ---
 
@@ -157,18 +163,19 @@ Wenn du als KI-Assistent an diesem Projekt arbeitest, gelten folgende Regeln:
 
 ### Noch offene Entscheidungen
 
-- [ ] Tod-Mechanik: Soft Death, Checkpoint oder Rogue-like? (siehe GDD-03, Abschnitt 7)
-- [ ] Skill-Limit: Gibt es eine Obergrenze für aktive Skills? (siehe GDD-02, Abschnitt 6)
-- [ ] Unbekannte Rezepte: Ab wann werden Kombinations-Rezepte versteckt? (GDD-02, Abschnitt 5)
-- [ ] PWA: Soll das Spiel als installierbare App (PWA) verfügbar sein?
-- [ ] Mobile Interact: Soll Tap auf Entity direkt Absorb/Analyze auslösen, oder erst ein Kontextmenü zeigen?
-- [ ] Material-UI: Gesammelte Materialien in-game sichtbar machen? (MaterialSystem existiert, UI fehlt)
-- [ ] Balancing: XP-Kurve, Spawn-Dichte und Respawn-Zeiten sind implementiert aber noch nicht abgestimmt
-- [ ] Fehlschlag-Formel: Linear oder kurvenbasiert? (GDD-02, Abschnitt 1.2)
-- [ ] Photosynthesis: Was tut diese Fähigkeit konkret? (GDD-02, Abschnitt 3.2)
-- [ ] Grow-Kosten: Welche Materialien und welche Mengen benötigt Grow? (GDD-02, Abschnitt 3.2)
-- [ ] Grow-Effekt: Welche Stats erhöht Grow konkret, und um wie viel? (GDD-02, Abschnitt 3.2)
+- [ ] Tod-Mechanik: Soft Death, Checkpoint oder Rogue-like? → [GDD-03 Abschnitt 7](GDD-03-Kampfsystem.md#7-tod-mechanik--respawn)
+- [ ] Skill-Limit: Gibt es eine Obergrenze für aktive Skills? → [GDD-02 Abschnitt 6](GDD-02-Skillsystem.md#6-skill-slots--limits)
+- [ ] Unbekannte Rezepte: Ab wann werden Kombinations-Rezepte versteckt? → [GDD-02 Abschnitt 5](GDD-02-Skillsystem.md#5-kombinationssystem)
+- [ ] PWA: Soll das Spiel als installierbare App (PWA) verfügbar sein? → [GDD-04](GDD-04-LookAndFeel.md)
+- [ ] Mobile Interact: Soll Tap auf Entity direkt Absorb/Analyze auslösen, oder erst ein Kontextmenü zeigen? → [GDD-04](GDD-04-LookAndFeel.md)
+- [ ] Material-UI: Gesammelte Materialien in-game sichtbar machen? ([src/systems/MaterialSystem.ts](../src/systems/MaterialSystem.ts) existiert, UI fehlt)
+- [ ] Balancing: XP-Kurve, Spawn-Dichte und Respawn-Zeiten sind implementiert aber noch nicht abgestimmt → [src/data/balance.ts](../src/data/balance.ts)
+- [ ] Fehlschlag-Formel: Linear oder kurvenbasiert? → [GDD-02 Abschnitt 1.2](GDD-02-Skillsystem.md#12-erfolgswahrscheinlichkeit)
+- [ ] Photosynthesis: Was tut diese Fähigkeit konkret? → [GDD-02 Abschnitt 3.2](GDD-02-Skillsystem.md#32-skill-beschreibungen)
+- [ ] Grow-Kosten: Welche Materialien und welche Mengen benötigt Grow? → [GDD-02 Abschnitt 3.2](GDD-02-Skillsystem.md#32-skill-beschreibungen)
+- [ ] Grow-Effekt: Welche Stats erhöht Grow konkret, und um wie viel? → [GDD-02 Abschnitt 3.2](GDD-02-Skillsystem.md#32-skill-beschreibungen)
+- [ ] Kampfmathematik v0.4: Neue Schadenstypen und SkillEffect-System implementieren → [GDD-05](GDD-05-Kampfmathematik.md)
 
 ---
 
-*Letzte Aktualisierung: v0.3 — Dateistruktur, Versionstabelle, Entscheidungs-Backlog auf aktuellen Stand gebracht (März 2026)*
+*Letzte Aktualisierung: v0.3 — GDD-05 ergänzt, alle Dateireferenzen als Markdown-Links, Dependency-Diagramm und Backlog aktualisiert (Oktober 2026)*
