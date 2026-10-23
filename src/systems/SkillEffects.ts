@@ -36,10 +36,11 @@ export function calcVenomChance(level: number): number {
 // -----------------------------------------------------------
 // venom — Schaden pro Tick (DoT läuft 4 s in 1-Sekunden-Ticks)
 //
-// Lv 1 → 2/s,  Lv 3 → 3/s,  Lv 5 → 4/s,  Lv 8 → 5/s
+// Lv 1 → 2/s,  Lv 3 → 3/s,  Lv 5 → 4/s,  Lv 8 → 5/s  (in HP)
+// Gespeichert in milli-HP: ×1000
 // -----------------------------------------------------------
 export function calcVenomDmgPerTick(level: number): number {
-  return 2 + Math.floor((level - 1) * 0.5);
+  return (2 + Math.floor((level - 1) * 0.5)) * 1000;
 }
 
 // -----------------------------------------------------------
@@ -96,10 +97,11 @@ export function calcJumpDistance(level: number): number {
 // -----------------------------------------------------------
 // hemolymph — Rückschlag-Schaden pro Treffer (Aura)
 //
-// Lv 1 → 2,  Lv 3 → 6,  Lv 5 → 10
+// Lv 1 → 2,  Lv 3 → 6,  Lv 5 → 10  (in HP)
+// Gespeichert in milli-HP: ×1000
 // -----------------------------------------------------------
 export function calcHemolymphReflect(level: number): number {
-  return 2 * level;
+  return 2 * level * 1000;
 }
 
 // -----------------------------------------------------------
@@ -114,8 +116,9 @@ export function calcSuperstrengthMult(level: number): number {
 // -----------------------------------------------------------
 // photosynthesis — HP-Regeneration pro Sekunde (HoT)
 //
-// Lv 1 → 0.5/s,  Lv 3 → 1.5/s,  Lv 5 → 2.5/s
+// Lv 1 → 0.5/s,  Lv 3 → 1.5/s,  Lv 5 → 2.5/s  (in HP)
+// Gespeichert in milli-HP: ×1000
 // -----------------------------------------------------------
 export function calcPhotosynthesisHeal(level: number): number {
-  return 0.5 * level;
+  return Math.round(0.5 * level * 1000);
 }

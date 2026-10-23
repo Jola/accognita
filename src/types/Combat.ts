@@ -45,12 +45,14 @@ export interface StatusEffect {
 
   // Effekt-Werte — nur das befüllen was für diesen Effekt relevant ist.
   // Ungenutzte Felder bleiben auf dem Defaultwert.
-  damagePerTick: number;    // DoT: Schaden pro Tick
-  healPerTick: number;      // HoT: Heilung pro Tick
+  // Absolute Werte (damagePerTick, healPerTick, reflectDamage, damageBonus)
+  // sind in Milli-Einheiten (1 HP = 1000). Faktoren bleiben als Dezimalzahl.
+  damagePerTick: number;    // DoT: Schaden pro Tick (milli-HP)
+  healPerTick: number;      // HoT: Heilung pro Tick (milli-HP)
   speedMultiplier: number;  // stat_mod: 1.0 = neutral, 0.5 = halb so schnell
   damageReduction: number;  // stat_mod: 0.0–1.0 (Anteil abgefangener Schaden)
-  reflectDamage: number;    // aura: Schaden zurück an Angreifer
-  damageBonus: number;      // stat_mod: Absoluter Schadensbonus
+  reflectDamage: number;    // aura: Schaden zurück an Angreifer (milli-HP)
+  damageBonus: number;      // stat_mod: Absoluter Schadensbonus (milli-HP)
   damageMult: number;       // stat_mod: Multiplikativer Schadensbonus (1.0 = neutral)
 }
 

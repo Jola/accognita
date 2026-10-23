@@ -60,7 +60,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
       { skillId: "superstrength", chance: 0.10 }, // 50x Körpergewicht
     ],
     materialDrops: [],
-    hp: 8, speed: 15,              // worldSize 3 × 5 = 15
+    hp: 8_000, speed: 15,          // worldSize 3 × 5 = 15
     attackRangePx: 6, attackCooldownMs: 1800, attackType: "melee",  // 2 × worldSize
     respawnTime: 30,
     interactRadius: 35,
@@ -81,7 +81,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
       { skillId: "hemolymph", chance: 0.15 }, // Defensivgift bei Treffer
     ],
     materialDrops: [],
-    hp: 6, speed: 20,              // worldSize 4 × 5 = 20
+    hp: 6_000, speed: 20,          // worldSize 4 × 5 = 20
     attackRangePx: 8, attackCooldownMs: 2000, attackType: "melee",   // 2 × worldSize
     respawnTime: 35,
     interactRadius: 35,
@@ -111,7 +111,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
       { skillId: "chitin_armor", chance: 0.10 }, // Exoskelett (stärker als Ameise)
     ],
     materialDrops: [],
-    hp: 18, speed: 30,              // worldSize 6 × 5 = 30
+    hp: 18_000, speed: 30,         // worldSize 6 × 5 = 30
     attackRangePx: 12, attackCooldownMs: 1200, attackType: "charge", // 2 × worldSize
     respawnTime: 45,
     interactRadius: 40,
@@ -135,7 +135,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
       { skillId: "chitin_armor", chance: 0.08 }, // Exoskelett
     ],
     materialDrops: [],
-    hp: 15, speed: 30,              // worldSize 6 × 5 = 30
+    hp: 15_000, speed: 30,         // worldSize 6 × 5 = 30
     attackRangePx: 12, attackCooldownMs: 1600, attackType: "melee",  // 2 × worldSize
     respawnTime: 50,
     interactRadius: 40,
@@ -164,7 +164,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
       { skillId: "bite",         chance: 0.10 },
     ],
     materialDrops: [],
-    hp: 30, speed: 35,              // worldSize 7 × 5 = 35
+    hp: 30_000, speed: 35,         // worldSize 7 × 5 = 35
     attackRangePx: 14, attackCooldownMs: 1400, attackType: "melee",  // 2 × worldSize
     respawnTime: 60,
     interactRadius: 45,
@@ -188,7 +188,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
       { skillId: "bite",         chance: 0.15 },
     ],
     materialDrops: [],
-    hp: 55, speed: 50,              // worldSize 10 × 5 = 50
+    hp: 55_000, speed: 50,         // worldSize 10 × 5 = 50
     attackRangePx: 20, attackCooldownMs: 1600, attackType: "melee",  // 2 × worldSize
     respawnTime: 120,
     interactRadius: 55,
@@ -216,7 +216,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
       { skillId: "bite",        chance: 0.10 },
     ],
     materialDrops: [],
-    hp: 500, speed: 35,              // worldSize 20 × 5 = 100 → langsamer, aber massiv
+    hp: 500_000, speed: 35,        // worldSize 20 × 5 = 100 → langsamer, aber massiv
     attackRangePx: 40, attackCooldownMs: 1800, attackType: "melee",   // 2 × worldSize
     // Feueratem: Fernkampf über 8 × worldSize = 160px Distanz
     rangedAttackSkillId: "fire_breath",
@@ -249,7 +249,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
       { skillId: "venom", chance: 0.30 }, // Starkes Schlangengift
     ],
     materialDrops: [],
-    hp: 120, speed: 60,             // worldSize 12 × 5 = 60
+    hp: 120_000, speed: 60,        // worldSize 12 × 5 = 60
     attackRangePx: 24, attackCooldownMs: 1200, attackType: "melee", // 2 × worldSize
     respawnTime: 180,               // 3 Minuten — seltener Gegner
     interactRadius: 60,

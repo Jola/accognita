@@ -13,6 +13,16 @@
 // ============================================================
 
 // -----------------------------------------------------------
+// MILLI-EINHEITEN
+//
+// HP, MP, Schaden und Heilung werden intern als ganze Zahlen
+// in Milli-Einheiten gespeichert und berechnet (1 HP = 1000 mHP).
+// Für die Anzeige immer durch MILLI teilen.
+// Faktoren (damageReduction, damageMult …) und Level/XP bleiben unverändert.
+// -----------------------------------------------------------
+export const MILLI = 1_000;
+
+// -----------------------------------------------------------
 // BASIS-XP (Rohwert vor Skalierung)
 // -----------------------------------------------------------
 
@@ -54,14 +64,14 @@ export const PLAYER_LEVEL_XP_MULTIPLIER = 2.0;
 // maxMp(level) = BASE_MP + (level - 1) * MP_PER_LEVEL
 // -----------------------------------------------------------
 
-/** Basis-HP bei Lv 1 */
-export const BASE_HP = 80;
-/** HP-Zuwachs pro Level-Up */
-export const HP_PER_LEVEL = 15;
-/** Basis-MP bei Lv 1 */
-export const BASE_MP = 40;
-/** MP-Zuwachs pro Level-Up */
-export const MP_PER_LEVEL = 8;
+/** Basis-HP bei Lv 1 (milli-HP) */
+export const BASE_HP = 80_000;
+/** HP-Zuwachs pro Level-Up (milli-HP) */
+export const HP_PER_LEVEL = 15_000;
+/** Basis-MP bei Lv 1 (milli-MP) */
+export const BASE_MP = 40_000;
+/** MP-Zuwachs pro Level-Up (milli-MP) */
+export const MP_PER_LEVEL = 8_000;
 
 // -----------------------------------------------------------
 // XP-SKALIERUNG: ENTITY-LEVEL vs. SKILL-LEVEL
