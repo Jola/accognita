@@ -7,6 +7,20 @@
 // ============================================================
 
 // -----------------------------------------------------------
+// DamageType: Physikalischer oder elementarer Schadenstyp
+// Bestimmt welche Verteidigungseffekte greifen.
+// -----------------------------------------------------------
+export type DamageType =
+  | "pierce"    // Stich (Zähne, Stacheln, Pfeile)
+  | "slash"     // Schnitt (Klauen, Klingen)
+  | "blunt"     // Wucht (Körpermasse, Aufprall)
+  | "acid"      // Säure (chemische Zersetzung)
+  | "fire"      // Feuer (thermische Energie)
+  | "poison"    // Gift (biochemischer DoT)
+  | "magic"     // Magie (umgeht physische Abwehr)
+  | "psychic";  // Psychisch (nur gegen Wesen mit Nervensystem)
+
+// -----------------------------------------------------------
 // AttackType: Wie ein Angriff / Skill ausgeführt wird
 // -----------------------------------------------------------
 export type AttackType =
@@ -102,6 +116,8 @@ export interface AttackResult {
   statusApplied: StatusEffect[];       // Neu applizierte Effekte auf dem Ziel
   projectile?: ProjectileData;         // Nur bei ranged_projectile / magic
   message: string;
+  reflectDamage?: number;              // milli-HP: Rückschlag-Schaden an den Angreifer (z.B. Hemolymph)
+  absorbedDamage?: number;             // milli-HP: Schaden der durch Verteidigung aufgefangen wurde
 }
 
 // -----------------------------------------------------------

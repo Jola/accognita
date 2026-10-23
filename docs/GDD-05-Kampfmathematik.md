@@ -1,7 +1,7 @@
 # ABSORB & EVOLVE — Game Design Document
 ## Datei 05: Kampfmathematik, Skill-Engine & Entity-Architektur
 
-> **Status: Konzept** — Dieses Dokument beschreibt die geplante Neuarchitektur des Kampf- und Skill-Systems. Es ist der Entwurf für v0.4. Nichts hierin ist implementiert, sofern nicht explizit anders markiert.
+> **Status: Implementiert (v0.4)** — Dieses Dokument beschreibt die Neuarchitektur des Kampf- und Skill-Systems. Die Schadenspipeline, das Schadenstyp-System und das deklarative SkillEffect-System sind vollständig implementiert.
 
 **Voraussetzungen:** Dieses Dokument setzt Kenntnis der folgenden Dateien voraus:
 - [GDD-02-Skillsystem.md](GDD-02-Skillsystem.md) — Skill-Konzepte, Entdeckung, Leveling
@@ -520,4 +520,4 @@ src/
 
 ---
 
-*Letzte Aktualisierung: v0.4-Konzept — Kampfmathematik, Skill-Effekt-Deklaration, Entity-Format, Querverlinkungen (Oktober 2026)*
+*Letzte Aktualisierung: v0.4 implementiert — DamageSystem (8-stufige Pipeline), SkillEffectSystem (deklarative Effekte), DamageType-System, Skill-Effekt-Deklaration für chitin_armor/superstrength/hemolymph/venom (Oktober 2026)*
