@@ -24,6 +24,7 @@ import {
   BASE_MP,
   MP_PER_LEVEL,
   scaleXp,
+  calcCombatXpMultiplier,
 } from "../data/balance";
 
 // -----------------------------------------------------------
@@ -271,10 +272,18 @@ export function getSkillEffectiveness(level: number): number {
 // oder sein Effekt ausgelöst wird (passive Skills).
 // Gibt zurück ob ein Level-Up eingetreten ist.
 // -----------------------------------------------------------
+/**
+ * Gibt einem Skill XP.
+ * amount:       Rohbetrag (in normalen XP-Einheiten, nicht milli-HP).
+ * entityLevel:  Optional — wenn übergeben wird der Betrag per calcCombatXpMultiplier
+ *               skaliert. Fehlt er, wird amount direkt verwendet (z.B. bei
+ *               Selbst-Effekten wie Photosynthesis oder flachen Fixbeträgen wie Jump).
+ */
 export function gainSkillXp(
   player: PlayerState,
   skillId: string,
-  amount: number
+  amount: number,
+  entityLevel?: number
 ): { leveledUp: boolean; newLevel?: number } {
   const instance = player.discoveredSkills.get(skillId);
   if (!instance) return { leveledUp: false };
@@ -282,8 +291,14 @@ export function gainSkillXp(
   const def = ALL_SKILLS.get(skillId);
   if (!def || isAtMaxLevel(instance)) return { leveledUp: false };
 
-  instance.currentXp += amount;
-  instance.totalXpEarned += amount;
+  const xpGained = entityLevel !== undefined
+    ? Math.round(amount * calcCombatXpMultiplier(entityLevel, instance.level))
+    : Math.round(amount);
+
+  if (xpGained <= 0) return { leveledUp: false };
+
+  instance.currentXp     += xpGained;
+  instance.totalXpEarned += xpGained;
 
   let leveledUp = false;
   let newLevel: number | undefined;

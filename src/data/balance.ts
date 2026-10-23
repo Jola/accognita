@@ -144,6 +144,39 @@ export function calcSuccessChance(
 }
 
 // -----------------------------------------------------------
+// KAMPF-XP-SKALIERUNG (Skill-Nutzung gegen Gegner)
+//
+// Steuert wie viel XP ein Skill bekommt wenn er gegen einen Gegner
+// eingesetzt wird, basierend auf entityLevel vs. aktuellem Skill-Level.
+// Unabhängig von der Absorb/Analyze-Kurve einstellbar.
+//
+// Beispiele bei EXPONENT=2.0:
+//   Entity Lv 1,  Skill Lv 5  → ×0.04  (kaum XP — Gegner viel zu schwach)
+//   Entity Lv 3,  Skill Lv 5  → ×0.36  (wenig)
+//   Entity Lv 5,  Skill Lv 5  → ×1.00  (normal)
+//   Entity Lv 7,  Skill Lv 5  → ×1.50  (Bonus, gedeckelt)
+//   Entity Lv 10, Skill Lv 5  → ×1.50  (Bonus, gedeckelt)
+// -----------------------------------------------------------
+
+/** Exponent der Combat-XP-Kurve — höher = steiler Abfall bei schwachen Gegnern */
+export const XP_COMBAT_EXPONENT = 2.0;
+/** Minimum-Multiplikator — verhindert dass Gegner jemals 0 XP geben */
+export const XP_COMBAT_MIN      = 0.02;
+/** Maximum-Multiplikator — Bonus für starke Gegner (kleiner als Absorb-Bonus) */
+export const XP_COMBAT_MAX      = 1.5;
+
+/**
+ * Multiplikator für Skill-Nutzungs-XP basierend auf Entity- und Skill-Level.
+ * Gibt einen Wert zwischen XP_COMBAT_MIN und XP_COMBAT_MAX zurück.
+ */
+export function calcCombatXpMultiplier(entityLevel: number, skillLevel: number): number {
+  const level = Math.max(1, skillLevel);
+  const ratio = entityLevel / level;
+  const raw   = Math.pow(ratio, XP_COMBAT_EXPONENT);
+  return Math.min(XP_COMBAT_MAX, Math.max(XP_COMBAT_MIN, raw));
+}
+
+// -----------------------------------------------------------
 // ANALYZE-MODIFIKATOR
 // Analyze hat niedrigere Skill-Drop-Chancen als Absorb,
 // weil man nichts physisch aufnimmt.
