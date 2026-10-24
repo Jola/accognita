@@ -81,8 +81,9 @@ Das Spiel ist primär für Mobilgeräte entwickelt. Desktop wird vollständig un
 
 | Aspekt | Mobile | Desktop |
 |--------|--------|---------|
-| Layout | Vollbild-Canvas + Touch-Overlay | Canvas + festes Side Panel |
-| Navigation | Bottom Sheet (hochziehbares Panel) | Tabs im Side Panel |
+| Layout | Vollbild-Canvas + Touch-Overlay | Vollbild-Canvas + Touch-Overlay (v0.4: gleiches Layout wie Mobile) |
+| Navigation | Spielmenü (Vollbild-Overlay, pausiert) — siehe unten | Spielmenü (Vollbild-Overlay, pausiert) |
+| ~~Layout / Navigation (bis v0.3)~~ | ~~Bottom Sheet~~ | ~~Canvas + festes Side Panel mit Tabs~~ — **[VERWORFEN]** durch Spielmenü |
 | Bewegung | Virtueller Joystick (links unten) | WASD / Pfeiltasten |
 | Interaktion | ABSORB / ANALYZE Touch-Buttons | E / Q Tasten oder Mausklick |
 | Entity-Klick (Absorb) | Tap auf Entity (wenn in Reichweite) | Linksklick |
@@ -100,10 +101,10 @@ Das Spiel ist primär für Mobilgeräte entwickelt. Desktop wird vollständig un
 │                                    │
 │  [Joystick]      [💥] [🔍]        │  ← Touch Controls (über Canvas)
 └────────────────────────────────────┘
-         ▲ Bottom Sheet (hochziehbar)
+         ▲ Bottom Sheet (hochziehbar) — [VERWORFEN], 📋 öffnet jetzt das Spielmenü
 ```
 
-### Layout Desktop
+### Layout Desktop — [VERWORFEN] (v0.4: Desktop nutzt dasselbe Layout wie Mobile)
 ```
 ┌──────────────────────────┬──────────────┐
 │  HEADER                  │              │
@@ -117,18 +118,27 @@ Das Spiel ist primär für Mobilgeräte entwickelt. Desktop wird vollständig un
 └─────────────────────────────────────────┘
 ```
 
-### Responsive Breakpoint
+### Responsive Breakpoint — [VERWORFEN] (v0.4: kein Breakpoint mehr, ein Layout für alle Bildschirme)
 - `≤ 700px`: Mobile Layout (Side Panel ausgeblendet, Touch Controls aktiv, Bottom Sheet aktiv)
 - `> 700px`: Desktop Layout (Side Panel sichtbar, Footer sichtbar, Touch Controls ausgeblendet)
 - `> 700px` **im Vollbild** (z.B. Handy im Querformat): Side Panel wird zur einklappbaren Schublade. Beim Betreten des Vollbilds ist sie zugeklappt, das Spielfeld nutzt die volle Breite. Der 📋 Panel-Button (oben rechts) fährt sie von rechts über das Spielfeld herein; Panel-Button, Skill-Bar und Absorb/Analyze-Buttons rücken dabei links neben die Schublade. Außerhalb des Vollbilds bleibt das Side Panel fest aufgeklappt.
+
+### Spielmenü (v0.4, implementiert)
+Ein einziges Menü für alle Bildschirmgrößen und Ausrichtungen ([src/ui/GameMenu.ts](../src/ui/GameMenu.ts)):
+- Beim Spielen geschlossen — das Spielfeld nutzt immer den ganzen Bildschirm.
+- Der 📋-Button (oben rechts) öffnet es als **Vollbild-Overlay**; das Spiel ist pausiert, solange es offen ist. „✕ Weiterspielen" schließt es.
+- Tabs: **SKILLS · COMBO · INVENTAR · NEARBY · LOG · INDEX**
+- **INDEX** ([src/ui/IndexView.ts](../src/ui/IndexView.ts)): Nachschlagewerk aller Skills und Einheiten, umschaltbar, mit Suche. Ein Eintrag öffnet die Detailansicht mit allen Parametern: bei Skills Effekte mit Formel, Begründung und Werten für Lv 1/2/3/5/10/20, Schaden/Sprungweite/Heilung pro Level, Fundorte mit Absorb-/Analyze-Chance und welche Einheiten den Skill nutzen; bei Einheiten Grundwerte, Vorkommen pro Biom, Skills, Nahkampf, Treffer-Effekte, Verteidigung je Schadenstyp, Bonus-Level-Skalierung und Drops. Skills und Einheiten sind untereinander verlinkt, „← Zurück" geht einen Schritt zurück. Alle Werte werden zur Laufzeit über die echten Systeme berechnet und sind daher immer aktuell.
+
+**Pause-Regel:** Gespielt wird nur im Vollbild-Modus. Das Spiel läuft nur, wenn der Vollbildmodus aktiv ist und kein Menü offen ist (Spielmenü, Skill-Menü, Speichern). Schon beim Start ist das Spiel pausiert und das Pause-Overlay fordert zum Wechsel in den Vollbild-Modus auf („⛶ Vollbild & Spielen"); dasselbe passiert, sobald der Vollbildmodus verlassen wird. Ist zusätzlich ein Menü offen, liegt das Menü oben; nach dem Schließen erscheint das Pause-Overlay. Ausnahme: Browser ohne Fullscreen-API (iPhone-Safari) spielen ohne Vollbild, sonst wäre das Spiel dort nicht spielbar.
 
 ### Touch Controls (Mobile)
 - **Virtueller Joystick** (links unten): Kreis mit beweglichem Thumb, max. Radius 44px. Bewegung wird als Vektor (dx/dy) an den Spieler übergeben und mit Keyboard-Input addiert.
 - **ABSORB-Button** (rechts unten): Großer runder Button, greift das nächste Entity in Reichweite an.
 - **ANALYZE-Button** (neben Absorb): Analysiert das nächste Entity in Reichweite.
-- **Panel-Button** (oben rechts): Öffnet/schließt das Bottom Sheet.
+- **Panel-Button** (oben rechts): Öffnet das Spielmenü (bis v0.3: Bottom Sheet).
 
-### Bottom Sheet (Mobile Panel)
+### Bottom Sheet (Mobile Panel) — [VERWORFEN], ersetzt durch Spielmenü
 - Gleiche 4 Tabs wie Desktop: SKILLS / COMBINE / NEARBY / LOG
 - Hochziehbar, max. 60% der Bildschirmhöhe
 - Handle-Bar zum Schließen
@@ -272,4 +282,4 @@ Kein lokales Node.js, npm oder Terminal auf Jörns Seite nötig.
 
 ---
 
-*Letzte Aktualisierung: v0.4 — Einklappbares Side Panel im Vollbild-Querformat (Oktober 2026)*
+*Letzte Aktualisierung: v0.4 — Spielmenü als pausierendes Vollbild-Overlay mit INDEX-Tab; Side Panel, Bottom Sheet und Schublade verworfen (Oktober 2026)*

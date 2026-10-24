@@ -34,7 +34,7 @@ Diese Datei ist der **Einstiegspunkt für Menschen und KI-Systeme**, die mit den
 | **[GDD-03-Kampfsystem.md](GDD-03-Kampfsystem.md)** | Kampfablauf, Gegnertypen, Schadenformeln, Status-Effekte, Tod-Mechanik | Bei Fragen zu Kämpfen, Gegnern, Balance, Spieler-Werten |
 | **[GDD-04-LookAndFeel.md](GDD-04-LookAndFeel.md)** | Farbpalette, Typografie, UI-Layout (Mobile + Desktop), Touch-Controls, Animationen, Audio, Tech-Stack | Bei Fragen zu Design, UI, Grafik, Sound, Technologie, Plattform |
 | **[GDD-05-Kampfmathematik.md](GDD-05-Kampfmathematik.md)** | Schadenstypen-Taxonomie, 8-stufige Damage-Pipeline, Verteidigungsmodell, SkillEffect-Deklarationssystem, LinearFormula, Beispiel-Konfigurationen, Migrations-Strategie v0.3→v0.4 | Bei Fragen zur Kampfmathematik, Skill-Balancing, Schadensformeln, neuen Skills/Entities konfigurieren |
-| **[GDD-06-Referenz.md](GDD-06-Referenz.md)** | **Automatisch generiert** (`scripts/gen-reference.ts`, läuft bei jedem Build). Alle Skills und Einheiten mit allen Parametern: Effekte mit Werten pro Level, Drops, Vorkommen, Verteidigung je Schadenstyp, Bonus-Level-Skalierung | Beim Balancing — aktuelle Ist-Werte nachschlagen. Nie von Hand bearbeiten |
+| ~~GDD-06-Referenz.md~~ **[VERWORFEN]** | War eine generierte Markdown-Referenz aller Skills und Einheiten. Ersetzt durch den **INDEX-Tab im Spielmenü** ([src/ui/IndexView.ts](../src/ui/IndexView.ts), beschrieben in [GDD-04](GDD-04-LookAndFeel.md)) | Ist-Werte im Spiel unter 📋 → INDEX nachschlagen |
 | **slime-rpg.html** | [VERWORFEN] Ursprünglicher Vanilla-JS-Prototype v0.1 — nicht mehr aktiv gepflegt | Nur als historische Referenz |
 | **accognita.html** | Aktuelles Spiel v0.3 — Single-File-Build, per Doppelklick öffenbar oder via GitHub Pages | Als Referenz für implementierte Mechaniken |
 | **[src/types/Skill.ts](../src/types/Skill.ts)** | TypeScript-Interfaces: SkillDefinition, SkillInstance, DiscoveryResult | Beim Erweitern des Skill-Systems |
@@ -88,8 +88,7 @@ GDD-00 (Index)
     │       ├── setzt GDD-02 (Skill-Konzepte) und GDD-03 (Kampfablauf) voraus
     │       └── definiert Zielformat für src/data/skills.ts und src/data/entities.ts
     │
-    └── GDD-06 (Referenz) — automatisch generiert
-            └── alle Skills und Einheiten mit allen Parametern, aus src/data/ erzeugt
+    └── GDD-06 (Referenz) — [VERWORFEN], ersetzt durch INDEX-Tab im Spielmenü
 ```
 
 **Abhängigkeitsregel**: Änderungen an GDD-01 können alle anderen Dokumente betreffen. Änderungen an GDD-02 betreffen GDD-03 und GDD-05. GDD-04 ist weitgehend unabhängig. GDD-05 ist die mathematische Grundlage für alle Kampf-Implementierungen.
@@ -182,4 +181,4 @@ Wenn du als KI-Assistent an diesem Projekt arbeitest, gelten folgende Regeln:
 
 ---
 
-*Letzte Aktualisierung: v0.4 — GDD-06 (generierte Referenz aller Skills und Einheiten) ergänzt, SaveSystem-Migration vermerkt (Oktober 2026)*
+*Letzte Aktualisierung: v0.4 — GDD-06 verworfen (Referenz jetzt als INDEX-Tab im Spiel), SaveSystem-Migration vermerkt (Oktober 2026)*
