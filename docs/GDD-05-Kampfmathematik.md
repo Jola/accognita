@@ -119,7 +119,8 @@ Alle **absoluten** Werte — HP, MP, Schaden, Heilung, Flat-Block, Rückschlag �
 In `LinearFormula` stehen absolute Werte in Anzeige-HP (z.B. Flat-Block `base: 3` = 3 HP); das SkillEffectSystem rechnet sie in Milli um.
 
 **Vorgabe (Entwickler):** Keine Floats, sondern Integers in Tausendsteln; ausgenommen Faktoren, Level und Erfahrung.
-**Begründung (Entwickler):** Damit auch kleinere Effekte nicht verloren gehen (z.B. 0,5 HP Heilung pro Sekunde, Bruchteile durch Rüstung).
+**Begründung (Entwickler):** Ein technischer Grund: Gerechnet wird nur mit Integers, nicht mit Fließkommazahlen — trotzdem braucht die Berechnung eine höhere Präzision als 1 HP, damit beim Verrechnen mit Faktoren keine Präzision verloren geht und sich Rundungsfehler nicht fortpflanzen. Daher Milli-HP.
+Umsetzung: Faktoren werden auf den Milli-Wert angewendet und erst am Ende einer Berechnung einmal auf ganze Milli gerundet (z.B. Schadenspipeline Schritt [7]).
 **Begründung der Ausnahmen (Vorschlag Claude):** Faktoren, Level und XP sind dimensionslose Größen bzw. Zählwerte, dort entstehen keine Rundungsverluste.
 MP-Regeneration: 1 mMP pro Millisekunde = 1 MP/s — **Begründung (rekonstruiert, bitte bestätigen):** entspricht dem Wert vor der Umstellung (1 MP/s).
 
@@ -466,8 +467,9 @@ export const MIN_RESISTANCE_MULT = 0.1;     // minimaler Resistenz-Multiplikator
 - `MAX_PERCENT_REDUCTION = 0.85` — **Begründung (rekonstruiert, bitte bestätigen):** nie unverwundbar; auch stark gestapelte Rüstung lässt 15 % durch. Der Wert 85 % stammt aus dem v0.3-Chitin-Cap.
 - [VERWORFEN] `MIN_FINAL_DAMAGE` — ursprüngliche Idee: jeder Treffer macht mindestens **1 Schaden**, damit Angriffe nie völlig wirkungslos sind. Seit der Milli-Umstellung stand der Wert aber auf `1` milli-HP, und es war offen, ob das gewollt ist.
 - **Mindestschaden (implementiert):** `MIN_SKILL_DAMAGE` = 1 HP gilt für den Schaden des Skills **vor** allen Effekten. Rüstung, leichte Treffer usw. dürfen ihn danach weiter senken; `MIN_FINAL_DAMAGE` = 1 milli-HP bleibt als Untergrenze am Ende, und auch Bruchteile von HP werden voll abgezogen.
-  **Vorgabe (Entwickler):** Der Schaden von Skills ist mindestens 1, kann aber durch die verschiedenen Effekte verringert werden. Auch wenn ein Schaden in milli-HP herauskommt, wird er angewendet.
-  > Begründung offen
+  **Vorgabe (Entwickler):** Der Schaden von Skills ist mindestens 1 HP, kann aber durch die verschiedenen Effekte verringert werden. Auch wenn ein Schaden in milli-HP herauskommt, wird er angewendet.
+  **Begründung (Entwickler):** Damit Luft zum Rechnen bleibt: Unter 1 HP Grundschaden hätten Faktoren und Abzüge kaum noch Spielraum, bevor sie die Milli-Grenze erreichen. (Ursprünglicher Grund „Schaden unter 1 HP sieht doof aus“ — [VERWORFEN], weil die Anzeige ohnehin immer auf volle HP aufrundet.)
+  **Vorgabe (Entwickler) — Designregel:** Wird jemals ein Skill-Schaden unter 1 HP gebraucht, wird stattdessen alles andere nach oben korrigiert (HP, übrige Schadenswerte), statt den Mindestschaden zu senken.
   Folge: Biss Lv1 (7 HP Stich) gegen Chitin Lv3+ macht weiterhin nur 1 mHP pro Treffer (angezeigt als 1 HP); ein kritischer Treffer schlägt jedoch durch (z.B. ~10 HP gegen 7,24 HP Flat-Block).
 - `MAX_WEAKNESS_MULT = 3.0`, `MIN_RESISTANCE_MULT = 0.1` — **Begründung (rekonstruiert, bitte bestätigen):** Gestapelte Schwächen/Resistenzen sollen keine Ausreißer erzeugen (One-Shots bzw. Unverwundbarkeit durch Kombination).
 - `SKILL_DAMAGE_BASE_MULTIPLIER`, `SKILL_DEFENSE_BASE_MULTIPLIER` — globale Hebel, um alle Skills auf einmal stärker/schwächer zu machen, ohne Einzelwerte anzufassen. (Derzeit wird nur der Verteidigungs-Hebel im Code ausgewertet.)
@@ -564,4 +566,4 @@ src/
 
 ---
 
-*Letzte Aktualisierung: v0.4 implementiert — DamageSystem (8-stufige Pipeline), SkillEffectSystem (deklarative Effekte), DamageType-System, Skill-Effekt-Deklaration für chitin_armor/superstrength/hemolymph/venom (Oktober 2026); LinearFormula.max, Treffer-Stufe 1b, dexterity; Milli-Einheiten (3.4) und Begründungen der Caps ergänzt; Mindestschaden 1 HP vor Effekten, HP-Anzeige immer aufgerundet*
+*Letzte Aktualisierung: v0.4 implementiert — DamageSystem (8-stufige Pipeline), SkillEffectSystem (deklarative Effekte), DamageType-System, Skill-Effekt-Deklaration für chitin_armor/superstrength/hemolymph/venom (Oktober 2026); LinearFormula.max, Treffer-Stufe 1b, dexterity; Milli-Einheiten (3.4) und Begründungen der Caps ergänzt; Mindestschaden 1 HP vor Effekten, HP-Anzeige immer aufgerundet; Begründungen für Milli-HP und Mindestschaden vom Entwickler*
