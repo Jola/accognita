@@ -47,24 +47,32 @@ Spieler HP ≤ 0 → Checkpoint (HP/MP voll, Spawn-Position, kein Verlust)
 
 | Attribut | Startwert | Wächst durch |
 |----------|-----------|-------------|
-| HP (Lebenspunkte) | 80 | Level-Up (+10 pro Level) |
-| MP (Magiepunkte) | 40 | Level-Up (+5 pro Level) |
+| HP (Lebenspunkte) | 80 | Level-Up: ~~+10 pro Level~~ [VERWORFEN] → **+15 pro Level** |
+| MP (Magiepunkte) | 40 | Level-Up: ~~+5 pro Level~~ [VERWORFEN] → **+8 pro Level** |
 | Geschwindigkeit | 180 px/s | geplant: Wind-Skills |
-| Schaden-Multiplikator | 1.0 | Superstrength-Skill (+0.3/Level) |
-| Schadensreduktion | 0 % | Chitin Armor-Skill (10 %+5 %/Level, max 85 %) |
+| Schaden-Multiplikator | 1.0 | ~~Superstrength +0.3/Level~~ [VERWORFEN] → Superstrength ×1,30 + 0,05/Level ([GDD-05](GDD-05-Kampfmathematik.md)) |
+| Schadensreduktion | 0 % | ~~Chitin 10 %+5 %/Level, max 85 %~~ [VERWORFEN] → Chitin wirkt je Schadenstyp ([GDD-05 Abschnitt 4.2](GDD-05-Kampfmathematik.md)) |
 | MP-Regeneration | 1 MP/s | konstant, passiv |
+
+Alle Werte intern in Milli-Einheiten ([GDD-05 Abschnitt 3.4](GDD-05-Kampfmathematik.md)).
+> Begründung offen — Startwerte (80 HP / 40 MP), Zuwachs pro Level (+15 / +8) und MP-Regeneration 1 MP/s.
 
 **Basis-Nahkampfschaden:**
 ```
-baseDmg = 3 + absorb.level × 1.5
-effDmg  = baseDmg × calcDamageMult(player.statusEffects)
+baseDmg = 3 + absorb.level × 1.5              (HP, Schadenstyp Wucht)
+effDmg  = baseDmg × calcDamageMult(player.statusEffects)   [VERWORFEN — jetzt Schadenspipeline mit Treffer-Stufe, GDD-05]
 ```
+**Begründung Schadenstyp Wucht (rekonstruiert, bitte bestätigen):** Der unbewaffnete Blob schlägt mit seiner Körpermasse zu.
+> Begründung offen — Skalierung mit dem Absorb-Level (3 + 1,5 × Level).
 
 ---
 
 ## 4. Entity-Kampfwerte (implementiert)
 
-### Aktuelle Entities mit Kampfwerten
+### Aktuelle Entities mit Kampfwerten — [VERWORFEN] (Werte veraltet)
+
+Aktuelle Werte aller Einheiten: im Spiel unter 📋 → INDEX (live aus [entities.ts](../src/data/entities.ts) berechnet).
+**Begründung (Vorschlag Claude):** Eine von Hand gepflegte Tabelle veraltet bei jedem Balancing — der Index ist die einzige, immer aktuelle Quelle.
 
 | Entity | HP | Schaden | Aggro-Radius | Angriffs-Reichweite | Cooldown |
 |--------|-----|---------|-------------|---------------------|----------|
@@ -81,6 +89,10 @@ effDmg  = baseDmg × calcDamageMult(player.statusEffects)
 - **Angriff**: Nur wenn `attackCooldownRemaining = 0` und Spieler in `attackRangePx`
 - **Performance**: AI wird alle 100 ms berechnet; Entities > 500 px werden übersprungen
 
+**Begründungen:**
+- Aggro-Verlust erst bei 2,5 × Aggro-Radius — **Begründung (rekonstruiert, bitte bestätigen):** Abstand zwischen „wird aggro" und „verliert Aggro" verhindert, dass ein Gegner am Rand des Radius ständig hin- und herschaltet; man muss sich wirklich absetzen.
+- 100 ms Takt, 500 px Grenze — **Begründung (rekonstruiert, bitte bestätigen):** Performance auf Mobilgeräten bei großer Welt mit vielen Einheiten.
+
 ---
 
 ## 5. Status-Effekte (StatusEffectSystem — implementiert)
@@ -95,7 +107,10 @@ Passive Skills werden als permanente Effekte (`durationMs: -1`) geführt.
 | `stat_mod` | `speedMultiplier`, `damageBonus`, `damageMult`, `damageReduction` | Chitin Armor, Superstrength |
 | `aura` | `reflectDamage` bei jedem Treffer | Hemolymph |
 
-### Passive Skills → permanente Effekte
+### Passive Skills → permanente Effekte — [VERWORFEN] für Chitin Armor, Superstrength, Hemolymph
+
+Seit v0.4 wirken diese drei deklarativ über `effects[]` und die Schadenspipeline ([GDD-05](GDD-05-Kampfmathematik.md)); nur Photosynthesis ist noch ein permanenter HoT-Effekt.
+**Begründung (Designziele in GDD-05):** Skills sollen ohne Code-Änderung konfigurierbar sein; Abwehr hängt vom Schadenstyp ab.
 
 | Skill | Effekt-ID | Was passiert |
 |-------|----------|-------------|
@@ -114,14 +129,19 @@ Chance (Venom-Skill)   = 30 % + 5 % × level           [VERWORFEN — überschri
 Chance (Venom-Skill)   = min(100 %, 30 % + 10 % × √(level − 1))
                          Lv1 30 % · Lv5 50 % · Lv10 60 % · Lv20 74 % · ab Lv50 100 %
 ```
+**Vorgabe (Entwickler):** Die Chance soll nicht über 100 % steigen — die alte lineare Formel überschritt sie ab Level 15 (von Claude im Index entdeckt).
+**Begründung √-Kurve (Vorschlag Claude):** Skills haben kein Level-Limit, jede steigende Kurve erreicht irgendwann 100 % — daher zusätzlich `max: 1.0`. Die √-Kurve lässt Level 1–5 nahezu unverändert (Lv5 weiterhin 50 %) und flacht danach ab, statt abrupt an den Deckel zu stoßen.
+Schaden/Tick 2 + 0,5/Level und Dauer 4 s:
+> Begründung offen
 
-### Schadensreduktion (Stacking)
+### Schadensreduktion (Stacking) — [VERWORFEN], ersetzt durch Schadenspipeline ([GDD-05 Abschnitt 3](GDD-05-Kampfmathematik.md))
 ```
 reduction = min(0.85, sum aller damageReduction-Effekte)
 finalDmg  = baseDmg × (1 - reduction)
 ```
 
 **Max-Effekte pro Entity:** 8 (ältester Effekt wird verdrängt)
+**Begründung (rekonstruiert, bitte bestätigen):** Performance-Grenze; zeitlich begrenzte Effekte werden zuerst verdrängt, damit passive Dauer-Effekte nie verloren gehen.
 
 ---
 
@@ -197,6 +217,20 @@ Skill-Level: beim unbewaffneten Angriff zählt das Absorb-Level; bei Gegnern das
 Geschick kommt aus `dexterity`-Effekten aller bekannten Skills (derzeit Jump; Springspinne hat Jump Lv2).
 
 **Anzeige:** Schadenszahl nach Stufe — leicht klein, schwer mit „!", kritisch groß, golden mit „!!", verfehlt als graues „verfehlt". Der INDEX im Spielmenü zeigt die Verteilung pro Skill und Level sowie für jeden Gegner.
+
+**Begründungen:**
+- **Vorgabe (Entwickler):** Fünf Stufen (verfehlt, leicht, normal, schwer, kritisch); Wahrscheinlichkeiten skalieren mit Skill-Level und Geschick; jeder Skill hat eigene Wahrscheinlichkeiten; Krit und Verfehlen generell sehr selten.
+  > Begründung offen — warum Treffer-Stufen eingeführt wurden.
+- **Vorgabe (Entwickler, aus Varianten gewählt):** Multiplikatoren 0 / 0,6 / 1 / 1,3 / 2,5, für alle Skills gleich. Kennzeichen dieser Variante laut Vorschlag: flach in der Mitte, dafür sehr starke kritische Treffer.
+  > Begründung offen — warum diese Variante.
+- **Verteilung kippen statt Stufen einzeln erhöhen, mit tanh begrenzt — Begründung (Vorschlag Claude):** Eine einzige Kurve verschiebt alle Stufen gemeinsam; die Wahrscheinlichkeiten bleiben immer gültig (Summe 100 %, nie negativ), und die Begrenzung erfüllt die Vorgabe „Krit und Verfehlen sehr selten" auch bei sehr hohen Leveln.
+- **Charakter der Skill-Verteilungen — Begründung (Vorschlag Claude):** Biss ist gezielt (mehr Krits), Klauenhieb holt weit aus (öfter schwer, öfter daneben), Feueratem ist ein Flammenstrom (trifft fast immer, selten eine Schwachstelle).
+- **Gleiche Regeln für Gegner — Begründung (Vorschlag Claude, übernommen):** Spieler und Gegner nutzen dieselben Skills und Formeln (Grundprinzip aus [GDD-05](GDD-05-Kampfmathematik.md)).
+- **Verfehlen: keine XP, kein Gift, kein Rückschlag; Ziel wird trotzdem aggressiv — Begründung (Vorschlag Claude):** Ohne Körperkontakt kann kein Gift übertragen und kein Hämolymph ausgelöst werden; XP richtet sich nach dem angerichteten Schaden (= 0). Das Ziel hat den Angriff aber bemerkt.
+- **Konstanten 0,4 / 0,05 / 0,1 — Begründung (Vorschlag Claude):** so gewählt, dass Krit ≤ ~8 % und Verfehlen ≤ ~11 % bleiben und Skill-Level 20 bzw. 5 Geschick-Punkte Vorsprung spürbar, aber nicht dominant wirken.
+  > Begründung offen — Werte sind noch nicht im Spiel abgestimmt.
+- Kämpfe zwischen Gegnern (Entity-Leveling, Abschnitt 9) würfeln derzeit **keine** Treffer-Stufen. **Begründung (Vorschlag Claude):** Die Vorgabe bezog sich auf Angriffe zwischen Blob und Gegnern.
+  > Begründung offen — Soll das Entity-Leveling ebenfalls Treffer-Stufen nutzen?
 
 ---
 
@@ -287,6 +321,9 @@ Beute besiegt → skillWins++ (Skill wurde stärker)
 | +2        | 1.56×     | 1.56×          | 1.56×        |
 | +3        | 1.95×     | 1.95×          | 1.95×        |
 
+**Begründung des Systems (aus der bestehenden Einleitung, rekonstruiert, bitte bestätigen):** Die Welt soll lebendiger wirken, und der Spieler soll vom Beobachten und Ausnutzen von Levelunterschieden profitieren.
+> Begründung offen — Parameter: Beute 1–3 Level schwächer, Suchradius 300 px, 3 Siege pro Bonus-Level, maximal +3, Faktor 1,25 pro Bonus-Level, Bonus geht beim Respawn verloren.
+
 ### Visueller Hinweis
 
 - Gelevelete Entities (bonusLevel > 0): **goldener Tint** (0xffdd44)
@@ -311,7 +348,7 @@ scenes/GameScene.ts
 ### Einschränkungen
 
 - Nur aktive Entities (ACTIVE_RADIUS um den Spieler) nehmen teil
-- Entity muss category="creature" und damage definiert haben
+- Entity muss category="creature" sein und kämpfen können (~~damage definiert~~ [VERWORFEN] → Angriffsskill bite/claw, Fernkampf oder Altfeld `damage`, siehe `canFight()`)
 - behavior="passive" wird ausgeschlossen (Pflanzen, Mineralien)
 - Während isAggro (Jagd auf Spieler): kein Leveling-Verhalten
 - bonusLevel geht verloren beim Respawn (Entity startet neu)
@@ -354,4 +391,4 @@ scenes/GameScene.ts                ← verdrahtet alle Systeme, Phaser-Rendering
 
 ---
 
-*Letzte Aktualisierung: 2026-10-24 — Treffer-Stufen (verfehlt bis kritisch) und Geschick; Venom-Chance auf √-Kurve mit 100-%-Deckel; GDD-06 verworfen*
+*Letzte Aktualisierung: 2026-10-24 — Begründungen ergänzt bzw. als offen markiert, veraltete Werte (Spieler-Wachstum, Entity-Tabelle, Passiv-Effekte) als VERWORFEN gekennzeichnet; Treffer-Stufen und Geschick; Venom-Chance mit 100-%-Deckel*

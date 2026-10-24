@@ -47,6 +47,9 @@ Ist das Entitäts-Level höher als das Fähigkeits-Level, steigt die Fehlschlags
 
 **Offene Entscheidung:** Genaue Formel für die Erfolgswahrscheinlichkeit (linear, kurvenbasiert?).
 
+**Implementiert (vorläufig):** `Erfolg = min(1, Fähigkeits-Level / Entitäts-Level)` ([balance.ts](../src/data/balance.ts) `calcSuccessChance`) — gleiches oder höheres Level = sicherer Erfolg, darunter proportional weniger.
+> Begründung offen — die Formel ist als Platzhalter umgesetzt; die Entscheidung linear vs. Kurve steht noch aus (GDD-00 Backlog).
+
 ---
 
 ## 2. Material-System
@@ -96,7 +99,7 @@ Fähigkeiten werden **nicht garantiert** übertragen. Ob ein Skill erworben wird
 | Skill-ID | Name | Typ | Element | Icon | Quellen | Beschreibung |
 |----------|------|-----|---------|------|---------|--------------|
 | chitin_armor | Chitin Armor | passiv | earth | 🛡️ | Ameise, Springspinne, Giftspinne | Reduziert physischen Schaden |
-| superstrength | Superstrength | passiv | none | 💪 | Ameise | Erhöht Material-Ausbeute bei Absorb |
+| superstrength | Superstrength | passiv | none | 💪 | Ameise | ~~Erhöht Material-Ausbeute bei Absorb~~ [VERWORFEN] → verstärkt Nahkampfschaden (×1,30 + 0,05/Level) — Begründung im `reasoning` des Skills |
 | venom | Venom | passiv | poison | 🕷️ | Giftspinne | Treffer vergiften Ziel (DoT-Chance) |
 | jump | Jump | aktiv | none | 🦘 | Springspinne | **Bewegungs-Unlock**: Ohne diesen Skill kann der Blob nicht springen. Höheres Level = größere Sprunghöhe/-weite. |
 | hemolymph | Hemolymph | passiv | poison | 🐞 | Marienkäfer | Bei eigenem Treffer: Angreifer vergiftet |
@@ -130,8 +133,40 @@ Alle Basis-Skills haben `maxLevel: 0` (unlimitiert). XP-Skalierung via Option D 
 
 **Gilt auch für Analyze und Absorb als Kern-Fähigkeiten** — jeder erfolgreiche Einsatz gibt Fähigkeits-XP.
 
-### Levelaufstieg durch Nutzung (geplant, v0.3)
-- Jeder aktive Einsatz eines Skills im Kampf: +1 XP.
+> Begründung offen — Absorb +3 vs. Analyze +1 und Schwellen-Faktor 1,5.
+> (Rekonstruiert, bitte bestätigen: Absorb zerstört das Wesen und ist riskanter, daher mehr XP; Analyze-Skill-Chance ist aus demselben Grund ×0,7 — „man nimmt nichts physisch auf", Kommentar in balance.ts.)
+
+#### XP-Skalierung nach Level-Differenz (Absorb/Analyze, implementiert)
+```
+Multiplikator = clamp( (Entitäts-Level / Skill-Level)^1,5 ; 0,05 ; 4,0 )
+```
+Schwache Wesen geben für hohe Skills kaum XP, starke Wesen einen Bonus.
+**Begründung (rekonstruiert aus balance.ts, bitte bestätigen):** Spieler sollen sich stärkeren Wesen stellen statt schwache zu farmen. Untergrenze 0,05, damit es nie ganz 0 gibt; Obergrenze 4, damit sehr starke Wesen kein exzessives Farming erlauben.
+
+### Levelaufstieg durch Nutzung (implementiert, v0.4)
+
+~~Jeder aktive Einsatz eines Skills im Kampf: +1 XP.~~ [VERWORFEN] → XP richtet sich nach der Wirkung:
+
+| Skill | XP pro Einsatz | Skaliert mit Gegner-Level |
+|-------|----------------|---------------------------|
+| Angriffsskills (Biss, Klaue, …) | angerichteter Schaden in HP | ja |
+| Chitin Armor | abgewehrter Schaden in HP | ja |
+| Hemolymph | Rückschlag-Schaden in HP | ja |
+| Venom | Gift-Schaden in HP | ja |
+| Superstrength | 1 pro Treffer | ja |
+| Photosynthesis | geheilte HP | nein (kein Gegner beteiligt) |
+| Jump | 1 pro Sprung | nein (kein Gegner beteiligt) |
+
+**Skalierung nach Gegner-Level** ([balance.ts](../src/data/balance.ts) `calcCombatXpMultiplier`):
+```
+Multiplikator = clamp( (Gegner-Level / Skill-Level)^2 ; 0,02 ; 1,5 )
+```
+Beispiel Skill Lv5: Gegner Lv1 → ×0,04 (kaum XP), Lv3 → ×0,36, Lv5 → ×1, ab Lv7 → ×1,5. Ergebnisse werden gerundet — bei kleinen Beträgen gegen viel zu schwache Gegner gibt es dadurch 0 XP. Ein verfehlter Angriff gibt keine XP.
+
+**Vorgabe (Entwickler):** Skill-Nutzung gegen Gegner mit zu niedrigem Level gibt keine oder nur sehr wenig Erfahrung.
+**Begründung (Entwickler):** Es soll balancierbar sein, wie sich Erfahrung auswirkt.
+**Begründung Parameter (Vorschlag Claude):** Eigene Kurve, getrennt von Absorb/Analyze, damit beide unabhängig abgestimmt werden können. Exponent 2 ist steiler als bei Absorb (1,5), weil Kampf-XP sehr viel häufiger anfällt; aus demselben Grund ist der Bonus für starke Gegner mit 1,5 deutlich kleiner als bei Absorb (4).
+> Begründung offen — Werte noch nicht im Spiel abgestimmt.
 
 ---
 
@@ -176,4 +211,4 @@ Aktuell gibt es keine kombinierbaren Skills. Rezepte werden einzeln und gezielt 
 
 ---
 
-*Letzte Aktualisierung: v0.3 — Basisset auf Gras + Insekten reduziert; neue Skills: Chitin Armor, Superstrength, Venom, Pounce, Hemolymph; alte Skills entfernt (März 2026)*
+*Letzte Aktualisierung: v0.4 — XP-Skalierung (Absorb/Analyze und Kampf-XP nach Gegner-Level) mit Begründungen dokumentiert, Erfolgsformel als vorläufig vermerkt, Superstrength-Beschreibung korrigiert (Oktober 2026)*

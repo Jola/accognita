@@ -108,6 +108,19 @@ finalDmg       = max(1, round(afterWeakness))                     // Schritt 7
 - **Penetration vor Blockierung**: Penetration "bricht" einen Teil der Rüstung auf, bevor der Effekt berechnet wird.
 - **Flat-Block vor %Reduction**: Flache Rüstung ist das "Schild" — was dahinter kommt, wird weich gedämpft.
 - **Schwäche/Stärke am Ende**: Trifft den "echten" Schaden, nicht den Rohen — Feuer auf einer Wunde brennt mehr.
+- **Treffer-Stufe [1b] ganz vorne**: Kritische Treffer sollen durch Rüstung durchschlagen, leichte Treffer eher daran hängen bleiben — so wirkt ein Krit gegen gepanzerte Gegner spürbar.
+  **Begründung (Vorschlag Claude):** Die Stufe beschreibt, *wie gut* der Angriff sitzt — das ist eine Eigenschaft des Angriffs, nicht der Rüstung, gehört also vor die Verteidigung.
+
+### 3.4 Einheiten: Milli-Werte (implementiert)
+
+Alle **absoluten** Werte — HP, MP, Schaden, Heilung, Flat-Block, Rückschlag — werden intern als **ganze Zahlen in Tausendsteln** gespeichert und berechnet (1 HP = 1000 mHP, Konstante `MILLI` in [balance.ts](../src/data/balance.ts)). Angezeigt wird immer durch 1000 geteilt.
+**Ausgenommen:** Faktoren und Prozente (Multiplikatoren, Reduktion, Chancen), Level und XP — sie bleiben wie sie sind.
+In `LinearFormula` stehen absolute Werte in Anzeige-HP (z.B. Flat-Block `base: 3` = 3 HP); das SkillEffectSystem rechnet sie in Milli um.
+
+**Vorgabe (Entwickler):** Keine Floats, sondern Integers in Tausendsteln; ausgenommen Faktoren, Level und Erfahrung.
+**Begründung (Entwickler):** Damit auch kleinere Effekte nicht verloren gehen (z.B. 0,5 HP Heilung pro Sekunde, Bruchteile durch Rüstung).
+**Begründung der Ausnahmen (Vorschlag Claude):** Faktoren, Level und XP sind dimensionslose Größen bzw. Zählwerte, dort entstehen keine Rundungsverluste.
+MP-Regeneration: 1 mMP pro Millisekunde = 1 MP/s — **Begründung (rekonstruiert, bitte bestätigen):** entspricht dem Wert vor der Umstellung (1 MP/s).
 
 ---
 
@@ -232,6 +245,9 @@ interface LinearFormula {
 | `speed_mod` | Verändert Bewegungsgeschwindigkeit | Faktor |
 | `grant_penetration` | Ignoriert X Punkte Flat-Block beim Angriff | Punkte |
 | `dexterity` | Geschick (Trigger `passive`): verschiebt Treffer-Stufen beim Angriff nach oben, beim Verteidigen nach unten. Zählt auch bei aktiven Skills, solange sie bekannt sind (z.B. Jump) | Punkte |
+
+**Begründung `dexterity` (Vorschlag Claude, übernommen):** Geschick kommt über Skills — kein separates Attribut. Damit gilt die Grundregel dieses Dokuments: Eigenschaften ergeben sich deklarativ aus Skills, für Spieler und Gegner gleich. Geschick wirkt auch beim Verteidigen (Ausweichen), damit flinke Gegner seltener schwer getroffen werden.
+**Begründung „zählt auch bei aktiven Skills" (Vorschlag Claude):** Geschick ist eine Körpereigenschaft, die man durch das Erlernen eines Skills erwirbt — nicht nur während man ihn einsetzt.
 
 ---
 
@@ -437,6 +453,14 @@ export const MAX_WEAKNESS_MULT = 3.0;       // maximaler Schwäche-Multiplikator
 export const MIN_RESISTANCE_MULT = 0.1;     // minimaler Resistenz-Multiplikator
 ```
 
+**Begründungen:**
+- `MAX_PERCENT_REDUCTION = 0.85` — **Begründung (rekonstruiert, bitte bestätigen):** nie unverwundbar; auch stark gestapelte Rüstung lässt 15 % durch. Der Wert 85 % stammt aus dem v0.3-Chitin-Cap.
+- `MIN_FINAL_DAMAGE` — ursprüngliche Idee: jeder Treffer macht mindestens **1 Schaden**, damit Angriffe nie völlig wirkungslos sind.
+  ⚠️ Seit der Milli-Umstellung steht der Wert auf `1` **milli**-HP = 0,001 HP — faktisch also kein Mindestschaden mehr. Das erklärt, warum Biss gegen Chitin-Gegner nur 0,001 HP macht.
+  > Begründung offen — Soll der Mindestschaden 1 HP (= 1000) sein, ein Anteil des Rohschadens, oder bewusst ~0?
+- `MAX_WEAKNESS_MULT = 3.0`, `MIN_RESISTANCE_MULT = 0.1` — **Begründung (rekonstruiert, bitte bestätigen):** Gestapelte Schwächen/Resistenzen sollen keine Ausreißer erzeugen (One-Shots bzw. Unverwundbarkeit durch Kombination).
+- `SKILL_DAMAGE_BASE_MULTIPLIER`, `SKILL_DEFENSE_BASE_MULTIPLIER` — globale Hebel, um alle Skills auf einmal stärker/schwächer zu machen, ohne Einzelwerte anzufassen. (Derzeit wird nur der Verteidigungs-Hebel im Code ausgewertet.)
+
 ---
 
 ## 10. Modulstruktur (Zielarchitektur)
@@ -529,4 +553,4 @@ src/
 
 ---
 
-*Letzte Aktualisierung: v0.4 implementiert — DamageSystem (8-stufige Pipeline), SkillEffectSystem (deklarative Effekte), DamageType-System, Skill-Effekt-Deklaration für chitin_armor/superstrength/hemolymph/venom (Oktober 2026); LinearFormula.max (Obergrenze), Treffer-Stufe als Pipeline-Schritt 1b, Effekt-Typ dexterity*
+*Letzte Aktualisierung: v0.4 implementiert — DamageSystem (8-stufige Pipeline), SkillEffectSystem (deklarative Effekte), DamageType-System, Skill-Effekt-Deklaration für chitin_armor/superstrength/hemolymph/venom (Oktober 2026); LinearFormula.max, Treffer-Stufe 1b, dexterity; Milli-Einheiten (3.4) und Begründungen der Caps ergänzt, MIN_FINAL_DAMAGE-Unstimmigkeit vermerkt*
