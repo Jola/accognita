@@ -253,7 +253,7 @@ interface LinearFormula {
 | `damage_mult` | Multipliziert ausgehenden Schaden | Faktor |
 | `speed_mod` | Verändert Bewegungsgeschwindigkeit | Faktor |
 | `grant_penetration` | Ignoriert X Punkte Flat-Block beim Angriff | Punkte |
-| `dexterity` | Geschick (Trigger `passive`): verschiebt Treffer-Stufen beim Angriff nach oben, beim Verteidigen nach unten. Zählt auch bei aktiven Skills, solange sie bekannt sind (z.B. Jump) | Punkte |
+| `dexterity` | Geschick (Trigger `passive`): verschiebt Treffer-Stufen beim Angriff nach oben, beim Verteidigen nach unten. Zählt auch bei aktiven Skills, solange sie bekannt sind (z.B. Jump). Beim Angriff zählt der Beitrag des eingesetzten Skills nicht mit (GDD-03, Treffer-Stufen) | Punkte |
 
 **Begründung `dexterity` (Vorschlag Claude, übernommen):** Geschick kommt über Skills — kein separates Attribut. Damit gilt die Grundregel dieses Dokuments: Eigenschaften ergeben sich deklarativ aus Skills, für Spieler und Gegner gleich. Geschick wirkt auch beim Verteidigen (Ausweichen), damit flinke Gegner seltener schwer getroffen werden.
 **Begründung „zählt auch bei aktiven Skills" (Vorschlag Claude):** Geschick ist eine Körpereigenschaft, die man durch das Erlernen eines Skills erwirbt — nicht nur während man ihn einsetzt.
@@ -566,4 +566,4 @@ src/
 
 ---
 
-*Letzte Aktualisierung: v0.4 implementiert — DamageSystem (8-stufige Pipeline), SkillEffectSystem (deklarative Effekte), DamageType-System, Skill-Effekt-Deklaration für chitin_armor/superstrength/hemolymph/venom (Oktober 2026); LinearFormula.max, Treffer-Stufe 1b, dexterity; Milli-Einheiten (3.4) und Begründungen der Caps ergänzt; Mindestschaden 1 HP vor Effekten, HP-Anzeige immer aufgerundet; Begründungen für Milli-HP und Mindestschaden vom Entwickler*
+*Letzte Aktualisierung: v0.4 implementiert — DamageSystem (8-stufige Pipeline), SkillEffectSystem (deklarative Effekte), DamageType-System, Skill-Effekt-Deklaration für chitin_armor/superstrength/hemolymph/venom (Oktober 2026); LinearFormula.max, Treffer-Stufe 1b, dexterity; Milli-Einheiten (3.4) und Begründungen der Caps ergänzt; Mindestschaden 1 HP vor Effekten, HP-Anzeige immer aufgerundet; Begründungen für Milli-HP und Mindestschaden vom Entwickler; Geschick ohne eigenen Skill-Beitrag*

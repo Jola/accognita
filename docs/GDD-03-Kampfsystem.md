@@ -215,6 +215,9 @@ p_i  ∝ grund_i · e^(kipp · stufe_i)      stufe = −2 (verfehlt) … +2 (kri
 Die tanh-Begrenzung hält Ränder klein: kritisch höchstens ≈ 2,2× Grundwert, verfehlt mindestens ≈ 0,45× — in der Praxis Krit ≤ ~8 %, Verfehlen ≤ ~11 %.
 Skill-Level: beim unbewaffneten Angriff zählt das Absorb-Level; bei Gegnern das Level ihres Angriffsskills (bite/claw/fire_breath), ohne Angriffsskill ihr Entity-Level.
 Geschick kommt aus `dexterity`-Effekten aller bekannten Skills (derzeit Jump; Springspinne hat Jump Lv2).
+**Eigener Beitrag zählt nicht:** Beim Angriff wird das Geschick ohne den Beitrag des eingesetzten Skills gerechnet — z.B. 10 Geschick gesamt, der Skill liefert davon 2 → für die Treffer-Stufen zählen 8. Der Verteidiger setzt keinen Skill ein und rechnet mit vollem Geschick.
+**Vorgabe (Entwickler):** Das Geschick wird gegen den eigenen Beitrag des Skills gerechnet.
+**Begründung (Entwickler):** Der Bonus aus dem Skill-Level ist im Skill selbst schon angelegt — sonst würde das Level doppelt zählen.
 
 **Anzeige:** Schadenszahl nach Stufe — leicht klein, schwer mit „!", kritisch groß, golden mit „!!", verfehlt als graues „verfehlt". Der INDEX im Spielmenü zeigt die Verteilung pro Skill und Level sowie für jeden Gegner.
 
@@ -391,4 +394,4 @@ scenes/GameScene.ts                ← verdrahtet alle Systeme, Phaser-Rendering
 
 ---
 
-*Letzte Aktualisierung: 2026-10-24 — Begründungen ergänzt bzw. als offen markiert, veraltete Werte (Spieler-Wachstum, Entity-Tabelle, Passiv-Effekte) als VERWORFEN gekennzeichnet; Treffer-Stufen und Geschick; Venom-Chance mit 100-%-Deckel*
+*Letzte Aktualisierung: 2026-10-24 — Geschick ohne Beitrag des eingesetzten Skills; Begründungen ergänzt bzw. als offen markiert, veraltete Werte (Spieler-Wachstum, Entity-Tabelle, Passiv-Effekte) als VERWORFEN gekennzeichnet; Treffer-Stufen und Geschick; Venom-Chance mit 100-%-Deckel*

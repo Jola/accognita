@@ -20,7 +20,7 @@ import { calcSkillAttackDamage, calcJumpDistance, calcPhotosynthesisHeal } from 
 import {
   getEntityBaseDamage, getEntityRangedDamage, getScaledMaxHp, getScaledDamage, getScaledSpeed,
 } from "../systems/EntityLevelingSystem.js";
-import { getEntityAttackDamageType, getEntityMeleeHitBasis } from "../systems/CombatSystem.js";
+import { getEntityAttackDamageType, getEntityMeleeHitBasis, getEntityMeleeSkillId } from "../systems/CombatSystem.js";
 
 const LEVELS = [1, 2, 3, 5, 10, 20];
 const ALL_DAMAGE_TYPES: DamageType[] = ["pierce", "slash", "blunt", "acid", "fire", "poison", "magic", "psychic"];
@@ -310,7 +310,8 @@ function entityDetail(e: EntityDefinition): string {
       (atk.damageMult !== 1 ? ` ${factor(atk.damageMult)}` : "") +
       ` alle ${seconds(cd)} ≈ ${num((dmg * atk.damageMult) / MILLI / (cd / 1000))} HP/s (normaler Treffer, vor Rüstung)`);
     const { profile, skillLevel } = getEntityMeleeHitBasis(e);
-    combat.push(`<b>Treffer-Stufen</b> gegen Geschick 0: ${hitLine(calcHitChances(profile, skillLevel, dex, 0))}`);
+    const attackDex = resolveDexterity(skillLevels, getEntityMeleeSkillId(e));
+    combat.push(`<b>Treffer-Stufen</b> gegen Geschick 0: ${hitLine(calcHitChances(profile, skillLevel, attackDex, 0))}`);
   }
   for (const id of skillIds) {
     const s = ALL_SKILLS.get(id);

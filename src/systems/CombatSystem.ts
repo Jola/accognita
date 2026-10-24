@@ -110,16 +110,18 @@ function resolveHit(
   return { grade, dmg, absorbed, reflect: def.reflectDamage };
 }
 
-function playerCombatant(player: PlayerState): Combatant {
+// attackSkillId: nur beim Angreifer — der Geschick-Beitrag des eingesetzten
+// Skills wird abgezogen (siehe resolveDexterity). Verteidiger: volles Geschick.
+function playerCombatant(player: PlayerState, attackSkillId?: string): Combatant {
   return {
     effects: getPlayerPassiveSkillLevels(player),
-    dex: resolveDexterity(getPlayerAllSkillLevels(player)),
+    dex: resolveDexterity(getPlayerAllSkillLevels(player), attackSkillId),
   };
 }
 
-function entityCombatant(def: EntityDefinition): Combatant {
+function entityCombatant(def: EntityDefinition, attackSkillId?: string): Combatant {
   const levels = def.skillLevels ?? {};
-  return { effects: levels, dex: resolveDexterity(levels) };
+  return { effects: levels, dex: resolveDexterity(levels, attackSkillId) };
 }
 
 /** "(Schwerer Treffer)" usw.; bei normalem Treffer leer */
@@ -176,7 +178,7 @@ export function playerAttack(
     profile = skillDef.hitProfile ?? DEFAULT_HIT_PROFILE;
   }
 
-  const attacker = playerCombatant(player);
+  const attacker = playerCombatant(player, skillId);
   const outcome = resolveHit(baseDmg, damageType, profile, skillLevel, attacker, entityCombatant(def));
 
   if (outcome.grade === "miss") {
@@ -217,7 +219,7 @@ export function entityAttack(
 
   const baseDmg = getScaledDamage(def, instance.bonusLevel ?? 0);
   const { profile, skillLevel } = getEntityMeleeHitBasis(def);
-  const attacker = entityCombatant(def);
+  const attacker = entityCombatant(def, getEntityMeleeSkillId(def));
   const outcome = resolveHit(
     baseDmg, getEntityAttackDamageType(def), profile, skillLevel, attacker, playerCombatant(player)
   );
@@ -261,7 +263,7 @@ export function entityRangedAttack(def: EntityDefinition, player: PlayerState): 
     skillDef.damageType ?? "blunt",
     skillDef.hitProfile ?? DEFAULT_HIT_PROFILE,
     def.skillLevels?.[skillId] ?? 1,
-    entityCombatant(def),
+    entityCombatant(def, skillId),
     playerCombatant(player)
   );
 
