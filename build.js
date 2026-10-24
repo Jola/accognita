@@ -23,7 +23,13 @@ if (pkgVersion !== srcVersion) {
 
 // 1. TypeScript kompilieren
 console.log("tsc...");
-execFileSync("node_modules/.bin/tsc", [], { stdio: "inherit" });
+try {
+  execFileSync("node_modules/.bin/tsc", [], { stdio: "inherit" });
+} catch {
+  // tsc hat seine Fehler bereits ausgegeben — kein zusätzlicher Stacktrace
+  console.error("Build abgebrochen: TypeScript-Fehler (siehe oben).");
+  process.exit(1);
+}
 
 // 2. Bundle mit esbuild
 console.log("esbuild...");
