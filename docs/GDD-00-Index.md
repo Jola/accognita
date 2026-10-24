@@ -51,7 +51,7 @@ Diese Datei ist der **Einstiegspunkt für Menschen und KI-Systeme**, die mit den
 | **[src/systems/AiSystem.ts](../src/systems/AiSystem.ts)** | Aggro, Verfolgung, Angriffs-Trigger (kein Phaser) | Bei KI-Fragen |
 | **[src/systems/StatusEffectSystem.ts](../src/systems/StatusEffectSystem.ts)** | DoT/HoT/Aura, passive Skills | Bei Status-Effekt-Fragen |
 | **[src/systems/MaterialSystem.ts](../src/systems/MaterialSystem.ts)** | Loot-Drop-Auflösung, Material-Inventar | Beim Erweitern des Loot-Systems |
-| **[src/systems/SaveSystem.ts](../src/systems/SaveSystem.ts)** | Speichern/Laden via localStorage (3 Slots) | Bei Speicher-Fragen |
+| **[src/systems/SaveSystem.ts](../src/systems/SaveSystem.ts)** | Speichern/Laden via localStorage (3 Slots), Migration alter Spielstände (`SAVE_VERSION` + `MIGRATIONS`) | Bei Speicher-Fragen |
 | **[src/ui/Joystick.ts](../src/ui/Joystick.ts)** | Virtueller Joystick (DOM, kein Phaser) | Bei Touch-Input-Fragen |
 | **[src/ui/SkillBar.ts](../src/ui/SkillBar.ts)** | Touch-Skill-Slots mit Cooldown-Anzeige | Bei UI-Fragen |
 | **[src/ui/SkillMenu.ts](../src/ui/SkillMenu.ts)** | Vollbild-Skill-Management-Overlay | Bei UI-Fragen |
