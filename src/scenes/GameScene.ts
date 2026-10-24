@@ -42,6 +42,7 @@ import { createJoystick, type JoystickState } from "../ui/Joystick.js";
 import { createSkillBar, type SkillBarState } from "../ui/SkillBar.js";
 import { createSkillMenu } from "../ui/SkillMenu.js";
 import { createSaveMenu } from "../ui/SaveMenu.js";
+import { createGameMenu } from "../ui/GameMenu.js";
 import { saveToSlot, loadFromSlot, deleteAllSaves } from "../systems/SaveSystem.js";
 import {
   calcEntityAi,
@@ -119,6 +120,7 @@ export class GameScene extends Phaser.Scene {
 
   private lastNearbyId: string | null = null;
   private gamePaused = false;
+  private pauseReasons = new Set<"fullscreen" | "ui">();
   private hpBarGraphics!: any;
   private skillBar!: SkillBarState;
   private playtimeAccumulator = 0; // Sekunden akkumulieren für player.playtimeSeconds
@@ -152,6 +154,7 @@ export class GameScene extends Phaser.Scene {
 
     this.setupSkillBar();
     this.setupSaveMenu();
+    this.setupGameMenu();
 
     this.cameras.main.startFollow(this.blobGraphic, true, 1.0, 1.0);
     this.updateCameraZoom(); // Zoom basierend auf Level 1
@@ -303,8 +306,6 @@ export class GameScene extends Phaser.Scene {
         (document as any).webkitFullscreenElement
       );
       updateBtn(isFs);
-      document.body.classList.toggle("fs", isFs);
-      document.body.classList.remove("panel-open");
       if (!isFs) {
         this.pauseGame();
       } else {
@@ -341,21 +342,27 @@ export class GameScene extends Phaser.Scene {
     } catch (_) {}
   }
 
-  private pauseGame() {
-    if (this.gamePaused) return;
-    this.gamePaused = true;
-    this.physics.pause();
-    const ov = document.getElementById("pauseOverlay");
-    if (ov) ov.classList.add("visible");
+  // Das Spiel läuft nur, wenn kein Pause-Grund aktiv ist. So setzt das Schließen
+  // eines Menüs das Spiel nicht fort, solange der Vollbildmodus verlassen ist.
+  private setPaused(reason: "fullscreen" | "ui", on: boolean) {
+    if (on) this.pauseReasons.add(reason);
+    else this.pauseReasons.delete(reason);
+
+    const paused = this.pauseReasons.size > 0;
+    if (paused !== this.gamePaused) {
+      this.gamePaused = paused;
+      if (paused) this.physics.pause();
+      else this.physics.resume();
+    }
+    // Pause-Overlay nur zeigen, wenn kein Menü darüber liegt
+    document.getElementById("pauseOverlay")?.classList.toggle(
+      "visible",
+      this.pauseReasons.has("fullscreen") && !this.pauseReasons.has("ui")
+    );
   }
 
-  private resumeGame() {
-    if (!this.gamePaused) return;
-    this.gamePaused = false;
-    this.physics.resume();
-    const ov = document.getElementById("pauseOverlay");
-    if (ov) ov.classList.remove("visible");
-  }
+  private pauseGame()  { this.setPaused("fullscreen", true); }
+  private resumeGame() { this.setPaused("fullscreen", false); }
 
   // ----------------------------------------------------------
   // SKILL BAR + SKILL MENU
@@ -372,15 +379,17 @@ export class GameScene extends Phaser.Scene {
   }
 
   /** Spiel für UI pausieren (ohne Pause-Overlay) */
-  pauseForUI() {
-    this.gamePaused = true;
-    this.physics.pause();
-  }
+  pauseForUI()  { this.setPaused("ui", true); }
 
-  /** Spiel nach UI-Schließen fortsetzen */
-  resumeForUI() {
-    this.gamePaused = false;
-    this.physics.resume();
+  /** Spiel nach UI-Schließen fortsetzen (sofern kein anderer Pause-Grund aktiv) */
+  resumeForUI() { this.setPaused("ui", false); }
+
+  // ----------------------------------------------------------
+  // SPIELMENÜ
+  // ----------------------------------------------------------
+  private setupGameMenu() {
+    const menu = createGameMenu();
+    document.getElementById("btnPanel")?.addEventListener("click", () => menu.open());
   }
 
   // ----------------------------------------------------------
@@ -391,11 +400,7 @@ export class GameScene extends Phaser.Scene {
     // 💾-Button im HUD verdrahten
     document.getElementById("btnSave")?.addEventListener("click", () => menu.open());
     // Auch aus der Pause-Overlay heraus öffnen
-    document.getElementById("btnSaveFromPause")?.addEventListener("click", () => {
-      const ov = document.getElementById("pauseOverlay");
-      if (ov) ov.classList.remove("visible");
-      menu.open();
-    });
+    document.getElementById("btnSaveFromPause")?.addEventListener("click", () => menu.open());
   }
 
   /** Spielstand in Slot speichern */
@@ -467,8 +472,6 @@ export class GameScene extends Phaser.Scene {
   // GLOBALE FUNKTIONEN (für HTML-Buttons)
   // ----------------------------------------------------------
   private setupGlobalFunctions() {
-    (window as any).switchTab    = switchTab;
-    (window as any).toggleSheet  = toggleSheet;
     (window as any).touchAbsorb  = () => this.doAbsorb();
     (window as any).touchAnalyze = () => this.doAnalyze();
     (window as any).doGrow       = () => this.doGrow();
@@ -1380,34 +1383,6 @@ function showCombineResult(result: any) {
   if (!out) return;
   out.textContent = result.message;
   out.className   = `combine-result outcome-${result.outcome}`;
-}
-
-function switchTab(name: string) {
-  (window as any)._currentTab = name;
-  document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
-  document.querySelectorAll(".tab-content").forEach((c) => c.classList.remove("active"));
-  document.querySelectorAll(`.tab-btn[data-tab="${name}"]`).forEach((b) =>
-    b.classList.add("active")
-  );
-  const el = document.getElementById(`tab-${name}`);
-  if (el) el.classList.add("active");
-  syncMobileTab(name);
-}
-
-function syncMobileTab(name: string) {
-  const mc  = document.getElementById("mobileTabContent");
-  const src = document.getElementById(`tab-${name}`);
-  if (mc && src) mc.innerHTML = src.innerHTML;
-}
-
-function toggleSheet() {
-  // Querformat (gleicher Breakpoint wie im CSS): Side-Panel-Schublade statt Bottom Sheet
-  if (window.matchMedia("(min-width:701px)").matches) {
-    document.body.classList.toggle("panel-open");
-    return;
-  }
-  document.getElementById("bottomSheet")?.classList.toggle("open");
-  syncMobileTab((window as any)._currentTab ?? "skills");
 }
 
 // -----------------------------------------------------------

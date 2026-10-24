@@ -39,6 +39,8 @@ Current state: **v0.3** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/ui/SkillBar.ts` | Touch skill slots with cooldown display and long-press menu |
 | `src/ui/SkillMenu.ts` | Full-screen skill management overlay (pauses game) |
 | `src/ui/SaveMenu.ts` | Save/load slot UI overlay |
+| `src/ui/GameMenu.ts` | Full-screen game menu (Skills, Combo, Inventar, Nearby, Log, Index) — pauses game; markup in `accognita.template.html` |
+| `src/ui/IndexView.ts` | INDEX tab: in-game reference of all skills and entities with all parameters, computed live from data + systems |
 | `src/scenes/GameScene.ts` | Phaser scene — only file that knows about Phaser |
 | `src/world/Chunk.ts` | Types: BiomeId, HeightLevel, ChunkDef, LoadedChunk, SpawnDef + constants |
 | `src/world/BiomeDefinitions.ts` | Zone layout, spawn tables, tile index mapping |
@@ -52,8 +54,6 @@ Current state: **v0.3** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `docs/GDD-03-Kampfsystem.md` | Combat design — v0.3 implemented. |
 | `docs/GDD-04-LookAndFeel.md` | Colors, typography, UI layout, mobile/desktop, tech stack. |
 | `docs/GDD-05-Kampfmathematik.md` | Damage pipeline, damage types, declarative skill effects. |
-| `docs/GDD-06-Referenz.md` | **Generated** by `scripts/gen-reference.ts` on every `node build.js` — all skills and entities with all parameters. Never edit by hand; commit it together with data changes. |
-| `scripts/gen-reference.ts` | Generator for GDD-06 (bundled and run by build.js). |
 
 ---
 

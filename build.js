@@ -25,14 +25,6 @@ if (pkgVersion !== srcVersion) {
 console.log("tsc...");
 execFileSync("node_modules/.bin/tsc", [], { stdio: "inherit" });
 
-// 1b. Referenz-Doku (docs/GDD-06-Referenz.md) aus den Spieldaten erzeugen
-console.log("gen-reference...");
-execFileSync("node_modules/.bin/esbuild", [
-  "scripts/gen-reference.ts", "--bundle", "--platform=node",
-  "--outfile=dist/gen-reference.cjs", "--log-level=warning",
-], { stdio: "inherit" });
-execFileSync("node", ["dist/gen-reference.cjs"], { stdio: "inherit" });
-
 // 2. Bundle mit esbuild
 console.log("esbuild...");
 const bundle = execFileSync(
