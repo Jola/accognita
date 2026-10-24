@@ -24,6 +24,15 @@ import type { HitProfile } from "../types/Combat";
 // -----------------------------------------------------------
 export const MILLI = 1_000;
 
+/**
+ * Milli-HP → angezeigte HP. Immer aufrunden: Solange auch nur 1 mHP übrig ist,
+ * lebt die Einheit und darf nicht als 0 HP erscheinen. Gilt für alle HP-Werte
+ * (Lebenspunkte, Schaden, Heilung), nicht für MP.
+ */
+export function toDisplayHp(milli: number): number {
+  return Math.ceil(milli / MILLI);
+}
+
 // -----------------------------------------------------------
 // BASIS-XP (Rohwert vor Skalierung)
 // -----------------------------------------------------------
@@ -185,7 +194,10 @@ export function calcCombatXpMultiplier(entityLevel: number, skillLevel: number):
 /** Maximale prozentuale Schadensreduktion — nie unverwundbar */
 export const MAX_PERCENT_REDUCTION = 0.85;
 
-/** Minimaler Endschaden (außer bei Immunität) — immer mindestens 1 milli-HP */
+/** Mindest-Schaden eines Skills VOR allen Effekten (milli-HP) — 1 HP */
+export const MIN_SKILL_DAMAGE = 1_000;
+
+/** Minimaler Endschaden NACH allen Effekten (außer Verfehlen/Immunität) — 1 milli-HP */
 export const MIN_FINAL_DAMAGE = 1;
 
 /** Maximaler Schwäche-Multiplikator */

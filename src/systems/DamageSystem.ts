@@ -11,6 +11,7 @@
 import type { DamageType } from "../types/Combat";
 import {
   MAX_PERCENT_REDUCTION,
+  MIN_SKILL_DAMAGE,
   MIN_FINAL_DAMAGE,
   MAX_WEAKNESS_MULT,
   MIN_RESISTANCE_MULT,
@@ -39,7 +40,7 @@ export interface DamageInput {
 // calcFinalDamage — Die Pipeline
 //
 // Schritte (aus GDD-05 Abschnitt 3.2):
-//   [1] Basis-Schaden (Input)
+//   [1] Basis-Schaden (Input), mindestens MIN_SKILL_DAMAGE (1 HP)
 //   [1b] × Treffer-Stufe (verfehlt → 0, kritisch ×2,5 — vor Rüstung, damit
 //        Krits durch Flat-Block durchschlagen und leichte Treffer daran hängen bleiben)
 //   [2] × Angreifer-Multiplikator
@@ -52,8 +53,11 @@ export interface DamageInput {
 export function calcFinalDamage(input: DamageInput): number {
   if (input.defenderImmune || input.hitMult <= 0) return 0;
 
+  // [1] Skill-Schaden mindestens 1 HP; alle folgenden Effekte dürfen ihn weiter senken
+  const base = Math.max(MIN_SKILL_DAMAGE, input.baseDmg);
+
   // [1b+2] Treffer-Stufe und Angreifer-Multiplikator
-  const afterMult = input.baseDmg * input.hitMult * Math.max(0, input.attackerMult);
+  const afterMult = base * input.hitMult * Math.max(0, input.attackerMult);
 
   // [3+4] Penetration + Flat-Block
   // Penetration "bricht" einen Teil des Flat-Blocks auf
@@ -72,6 +76,6 @@ export function calcFinalDamage(input: DamageInput): number {
   );
   const afterWeakness = afterReduction * weaknessMult;
 
-  // [7+8] Minimum-Clamp + Integer
+  // [7+8] Minimum-Clamp + Integer — Bruchteile von HP werden voll angewendet
   return Math.max(MIN_FINAL_DAMAGE, Math.round(afterWeakness));
 }

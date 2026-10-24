@@ -85,6 +85,7 @@ import {
   PLAYER_SIZE_LEVEL_MAX,
   PLAYER_SCREEN_RADIUS,
   PLAYER_SPEED_PER_WORLD_RADIUS,
+  toDisplayHp,
 } from "../data/balance.js";
 import { generateTileset, TILE_SIZE } from "../world/TilesetGenerator.js";
 import { ChunkManager } from "../world/ChunkManager.js";
@@ -845,7 +846,7 @@ export class GameScene extends Phaser.Scene {
     const r = updatePlayerLevel(this.gameState.player);
     if (r.leveledUp) {
       const p = this.gameState.player;
-      addLog(`🌟 Charakter → Lv.${r.newLevel}! (HP: ${p.maxHp / 1000} / MP: ${p.maxMp / 1000})`, "levelup");
+      addLog(`🌟 Charakter → Lv.${r.newLevel}! (HP: ${toDisplayHp(p.maxHp)} / MP: ${Math.floor(p.maxMp / 1000)})`, "levelup");
       this.updateCameraZoom(); // Welt schrumpft optisch mit dem Level-Up
     }
   }
@@ -864,7 +865,7 @@ export class GameScene extends Phaser.Scene {
     const rise   = 18 / zoom;   // 18 Bildschirmpixel Aufstieg
 
     // Treffer-Stufe sichtbar machen: Größe, Farbe, Text
-    const n = `${Math.round(dmg / 1000)}`;
+    const n = `${toDisplayHp(dmg)}`;
     const style: Record<HitGrade, { text: string; size: number; color: string }> = {
       miss:   { text: "verfehlt", size: 12, color: "#aaaaaa" },
       light:  { text: n,          size: 11, color },
@@ -997,7 +998,7 @@ export class GameScene extends Phaser.Scene {
             this.gameState.player.x, this.gameState.player.y,
             reflectDmgPlayer, "#ff8800"
           );
-          addLog(`${def?.icon ?? "🐞"} Hemolymph! ${Math.round(reflectDmgPlayer / 1000)} Rückschlag-Schaden.`, "aggro");
+          addLog(`${def?.icon ?? "🐞"} Hemolymph! ${toDisplayHp(reflectDmgPlayer)} Rückschlag-Schaden.`, "aggro");
         }
       }
 
@@ -1123,7 +1124,8 @@ function updateUI(state: GameState) {
 
   // HUD
   setEl("ui-level", `Lv.${p.level}`);
-  setEl("ui-hp", `${Math.floor(p.hp / 1000)}/${Math.floor(p.maxHp / 1000)}`);
+  setEl("ui-hp", `${toDisplayHp(p.hp)}/${toDisplayHp(p.maxHp)}`);
+  // MP abrunden: sonst stünde z.B. „3 MP vorhanden“, obwohl ein 3-MP-Skill nicht geht
   setEl("ui-mp", `${Math.floor(p.mp / 1000)}/${Math.floor(p.maxMp / 1000)}`);
   setStyle("hp-bar-fill", "width", `${(p.hp / p.maxHp) * 100}%`);
   setStyle("mp-bar-fill", "width", `${(p.mp / p.maxMp) * 100}%`);
@@ -1257,8 +1259,8 @@ function updateNearbyPanel(
   // HP-Leiste (intern milli-HP, Anzeige in HP)
   const scaledMaxHp    = getScaledMaxHp(entityDef, bonusLv);
   const currentHp      = instance?.currentHp ?? scaledMaxHp;
-  const currentHpDisp  = Math.ceil(currentHp / 1000);
-  const scaledMaxDisp  = Math.ceil(scaledMaxHp / 1000);
+  const currentHpDisp  = toDisplayHp(currentHp);
+  const scaledMaxDisp  = toDisplayHp(scaledMaxHp);
   const hpPct          = Math.round(Math.max(0, currentHp / scaledMaxHp) * 100);
   const hpColor     = hpPct > 50 ? "#44cc44" : hpPct > 25 ? "#cccc44" : "#cc4444";
 
@@ -1302,7 +1304,7 @@ function updateNearbyPanel(
           <span style="font-size:.65em;color:var(--muted)">${currentHpDisp}/${scaledMaxDisp} HP</span>
         </div>
         <div style="font-size:.68em;color:var(--muted)">
-          ⚔️ ${Math.round(effectiveDmg / 1000)} &nbsp;|&nbsp; 💨 ${entityDef.speed ?? "–"}
+          ⚔️ ${toDisplayHp(effectiveDmg)} &nbsp;|&nbsp; 💨 ${entityDef.speed ?? "–"}
         </div>
       </div>
     </div>

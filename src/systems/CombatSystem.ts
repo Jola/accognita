@@ -18,7 +18,7 @@ import type { EntityDefinition, EntityInstance } from "../types/Entity";
 import type { AttackResult, DamageType, HitGrade, HitProfile, StatusEffect } from "../types/Combat";
 import { ALL_SKILLS } from "../data/skills";
 import { ENTITY_MAP } from "../data/entities";
-import { DEFAULT_HIT_PROFILE, HIT_DAMAGE_MULT } from "../data/balance";
+import { DEFAULT_HIT_PROFILE, HIT_DAMAGE_MULT, MIN_SKILL_DAMAGE, toDisplayHp } from "../data/balance";
 import { getSkillEffectiveness } from "./SkillSystem";
 import { getScaledDamage, getEntityRangedDamage } from "./EntityLevelingSystem";
 import { calcFinalDamage } from "./DamageSystem";
@@ -105,7 +105,8 @@ function resolveHit(
     defenderWeaknessMult: def.weaknessMult,
     defenderImmune: def.immune,
   });
-  const absorbed = Math.max(0, Math.round(baseDmg * hitMult * atk.damageMult) - dmg);
+  const rawDmg = Math.max(MIN_SKILL_DAMAGE, baseDmg) * hitMult * atk.damageMult;
+  const absorbed = Math.max(0, Math.round(rawDmg) - dmg);
   return { grade, dmg, absorbed, reflect: def.reflectDamage };
 }
 
@@ -126,7 +127,7 @@ function gradeSuffix(grade: HitGrade): string {
   return grade === "normal" ? "" : ` (${HIT_GRADE_DE[grade]})`;
 }
 
-const hp = (milli: number) => Math.round(milli / 1000);
+const hp = toDisplayHp;
 
 // -----------------------------------------------------------
 // SPIELER-ANGRIFF

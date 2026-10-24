@@ -83,7 +83,7 @@ Jeder Angriff durchläuft exakt diese Stufen in dieser Reihenfolge:
       ↓
 [6] Schwäche/Stärke-Modifikator (Schadenstyp trifft Schwachstelle oder Resistenz)
       ↓
-[7] Minimum-Clamp         (mindestens 1 Schaden, außer bei Immunität)
+[7] Minimum-Clamp         (mindestens 1 milli-HP, außer bei Verfehlen/Immunität — der Mindestschaden von 1 HP gilt in Schritt [1])
       ↓
 [8] Final-Schaden         → HP-Abzug
 ```
@@ -97,7 +97,8 @@ effectiveBlock = max(0, defenderFlatBlock - attackerPenetration)  // Schritt 3+4
 afterBlock     = max(0, afterMult - effectiveBlock)
 afterReduction = afterBlock * (1 - defenderPercentReduction)      // Schritt 5
 afterWeakness  = afterReduction * weaknessMultiplier              // Schritt 6
-finalDmg       = max(1, round(afterWeakness))                     // Schritt 7
+finalDmg       = max(1, round(afterWeakness))                     // Schritt 7 (milli-HP)
+// implementiert: baseDmg = max(1000, baseDmg) vor Schritt [1b] — Skill-Schaden mindestens 1 HP
 ```
 
 **Ausnahme Immunität:** Wenn `defenderImmune(damageType) = true`, dann `finalDmg = 0`.
@@ -113,7 +114,7 @@ finalDmg       = max(1, round(afterWeakness))                     // Schritt 7
 
 ### 3.4 Einheiten: Milli-Werte (implementiert)
 
-Alle **absoluten** Werte — HP, MP, Schaden, Heilung, Flat-Block, Rückschlag — werden intern als **ganze Zahlen in Tausendsteln** gespeichert und berechnet (1 HP = 1000 mHP, Konstante `MILLI` in [balance.ts](../src/data/balance.ts)). Angezeigt wird immer durch 1000 geteilt.
+Alle **absoluten** Werte — HP, MP, Schaden, Heilung, Flat-Block, Rückschlag — werden intern als **ganze Zahlen in Tausendsteln** gespeichert und berechnet (1 HP = 1000 mHP, Konstante `MILLI` in [balance.ts](../src/data/balance.ts)). ~~Angezeigt wird immer durch 1000 geteilt.~~ [VERWORFEN — Rundung war uneinheitlich: teils gerundet, teils abgeschnitten]
 **Ausgenommen:** Faktoren und Prozente (Multiplikatoren, Reduktion, Chancen), Level und XP — sie bleiben wie sie sind.
 In `LinearFormula` stehen absolute Werte in Anzeige-HP (z.B. Flat-Block `base: 3` = 3 HP); das SkillEffectSystem rechnet sie in Milli um.
 
@@ -121,6 +122,13 @@ In `LinearFormula` stehen absolute Werte in Anzeige-HP (z.B. Flat-Block `base: 3
 **Begründung (Entwickler):** Damit auch kleinere Effekte nicht verloren gehen (z.B. 0,5 HP Heilung pro Sekunde, Bruchteile durch Rüstung).
 **Begründung der Ausnahmen (Vorschlag Claude):** Faktoren, Level und XP sind dimensionslose Größen bzw. Zählwerte, dort entstehen keine Rundungsverluste.
 MP-Regeneration: 1 mMP pro Millisekunde = 1 MP/s — **Begründung (rekonstruiert, bitte bestätigen):** entspricht dem Wert vor der Umstellung (1 MP/s).
+
+**Anzeige (implementiert):** HP-Werte — Lebenspunkte, Schaden, Heilung, Rückschlag — werden in vollen HP angezeigt und **immer aufgerundet** (`toDisplayHp` in [balance.ts](../src/data/balance.ts)): 1 mHP → 1 HP, 1001 mHP → 2 HP.
+**Vorgabe (Entwickler):** Gerechnet wird mit milli-HP und milli-Schaden, angezeigt werden immer volle HP, aufgerundet.
+**Begründung (Entwickler):** Solange auch nur ein milli-HP übrig ist, ist die Einheit nicht tot — sie darf also nicht mit 0 HP angezeigt werden.
+MP werden dagegen **abgerundet** angezeigt. **Begründung (Vorschlag Claude):** Bei aufgerundeten MP stünde z.B. „3 vorhanden“, obwohl ein Skill mit 3 MP Kosten nicht einsetzbar ist.
+> Begründung offen — Soll auch MP aufgerundet werden?
+Der INDEX im Spielmenü zeigt Werte dagegen exakt mit Nachkommastellen (z.B. Flat-Block 7,24 HP). **Begründung (Vorschlag Claude):** Er ist ein Nachschlagewerk für Balancing; gerundet ließen sich Formeln nicht nachvollziehen.
 
 ---
 
@@ -446,7 +454,8 @@ export const SKILL_DEFENSE_BASE_MULTIPLIER = 1.0;  // globaler Verteidigungs-Mul
 
 // Caps
 export const MAX_PERCENT_REDUCTION = 0.85;  // maximale prozentuale Schadensreduktion
-export const MIN_FINAL_DAMAGE = 1;          // Minimum-Schaden (außer bei Immunität)
+export const MIN_SKILL_DAMAGE = 1_000;      // Skill-Schaden vor allen Effekten mindestens 1 HP (implementiert)
+export const MIN_FINAL_DAMAGE = 1;          // Endschaden nach allen Effekten mindestens 1 milli-HP
 
 // Schwäche/Stärke-Grenzen
 export const MAX_WEAKNESS_MULT = 3.0;       // maximaler Schwäche-Multiplikator
@@ -455,9 +464,11 @@ export const MIN_RESISTANCE_MULT = 0.1;     // minimaler Resistenz-Multiplikator
 
 **Begründungen:**
 - `MAX_PERCENT_REDUCTION = 0.85` — **Begründung (rekonstruiert, bitte bestätigen):** nie unverwundbar; auch stark gestapelte Rüstung lässt 15 % durch. Der Wert 85 % stammt aus dem v0.3-Chitin-Cap.
-- `MIN_FINAL_DAMAGE` — ursprüngliche Idee: jeder Treffer macht mindestens **1 Schaden**, damit Angriffe nie völlig wirkungslos sind.
-  ⚠️ Seit der Milli-Umstellung steht der Wert auf `1` **milli**-HP = 0,001 HP — faktisch also kein Mindestschaden mehr. Das erklärt, warum Biss gegen Chitin-Gegner nur 0,001 HP macht.
-  > Begründung offen — Soll der Mindestschaden 1 HP (= 1000) sein, ein Anteil des Rohschadens, oder bewusst ~0?
+- [VERWORFEN] `MIN_FINAL_DAMAGE` — ursprüngliche Idee: jeder Treffer macht mindestens **1 Schaden**, damit Angriffe nie völlig wirkungslos sind. Seit der Milli-Umstellung stand der Wert aber auf `1` milli-HP, und es war offen, ob das gewollt ist.
+- **Mindestschaden (implementiert):** `MIN_SKILL_DAMAGE` = 1 HP gilt für den Schaden des Skills **vor** allen Effekten. Rüstung, leichte Treffer usw. dürfen ihn danach weiter senken; `MIN_FINAL_DAMAGE` = 1 milli-HP bleibt als Untergrenze am Ende, und auch Bruchteile von HP werden voll abgezogen.
+  **Vorgabe (Entwickler):** Der Schaden von Skills ist mindestens 1, kann aber durch die verschiedenen Effekte verringert werden. Auch wenn ein Schaden in milli-HP herauskommt, wird er angewendet.
+  > Begründung offen
+  Folge: Biss Lv1 (7 HP Stich) gegen Chitin Lv3+ macht weiterhin nur 1 mHP pro Treffer (angezeigt als 1 HP); ein kritischer Treffer schlägt jedoch durch (z.B. ~10 HP gegen 7,24 HP Flat-Block).
 - `MAX_WEAKNESS_MULT = 3.0`, `MIN_RESISTANCE_MULT = 0.1` — **Begründung (rekonstruiert, bitte bestätigen):** Gestapelte Schwächen/Resistenzen sollen keine Ausreißer erzeugen (One-Shots bzw. Unverwundbarkeit durch Kombination).
 - `SKILL_DAMAGE_BASE_MULTIPLIER`, `SKILL_DEFENSE_BASE_MULTIPLIER` — globale Hebel, um alle Skills auf einmal stärker/schwächer zu machen, ohne Einzelwerte anzufassen. (Derzeit wird nur der Verteidigungs-Hebel im Code ausgewertet.)
 
@@ -553,4 +564,4 @@ src/
 
 ---
 
-*Letzte Aktualisierung: v0.4 implementiert — DamageSystem (8-stufige Pipeline), SkillEffectSystem (deklarative Effekte), DamageType-System, Skill-Effekt-Deklaration für chitin_armor/superstrength/hemolymph/venom (Oktober 2026); LinearFormula.max, Treffer-Stufe 1b, dexterity; Milli-Einheiten (3.4) und Begründungen der Caps ergänzt, MIN_FINAL_DAMAGE-Unstimmigkeit vermerkt*
+*Letzte Aktualisierung: v0.4 implementiert — DamageSystem (8-stufige Pipeline), SkillEffectSystem (deklarative Effekte), DamageType-System, Skill-Effekt-Deklaration für chitin_armor/superstrength/hemolymph/venom (Oktober 2026); LinearFormula.max, Treffer-Stufe 1b, dexterity; Milli-Einheiten (3.4) und Begründungen der Caps ergänzt; Mindestschaden 1 HP vor Effekten, HP-Anzeige immer aufgerundet*
