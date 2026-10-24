@@ -132,6 +132,20 @@ Ein einziges Menü für alle Bildschirmgrößen und Ausrichtungen ([src/ui/GameM
 
 **Pause-Regel:** Gespielt wird nur im Vollbild-Modus. Das Spiel läuft nur, wenn der Vollbildmodus aktiv ist und kein Menü offen ist (Spielmenü, Skill-Menü, Speichern). Schon beim Start ist das Spiel pausiert und das Pause-Overlay fordert zum Wechsel in den Vollbild-Modus auf („⛶ Vollbild & Spielen"); dasselbe passiert, sobald der Vollbildmodus verlassen wird. Ist zusätzlich ein Menü offen, liegt das Menü oben; nach dem Schließen erscheint das Pause-Overlay. Ausnahme: Browser ohne Fullscreen-API (iPhone-Safari) spielen ohne Vollbild, sonst wäre das Spiel dort nicht spielbar.
 
+**Begründungen:**
+- **Vorgabe (Entwickler):** Das Spiel pausiert, sobald das Menü geöffnet wird.
+  **Begründung (rekonstruiert, bitte bestätigen):** Wer Skills, Inventar, Log oder Index liest, soll nicht nebenbei angegriffen werden.
+- **Vorgabe (Entwickler):** Beim Spielen ist das Menü geschlossen; geöffnet geht es über den ganzen Bildschirm.
+  **Begründung (rekonstruiert, bitte bestätigen):** Im Vollbild-Querformat nahm die aufgeklappte Seitenleiste dauerhaft Spielfläche weg.
+- **Ein Layout für alle Bildschirme statt Seitenleiste/Bottom Sheet — Begründung (Vorschlag Claude, übernommen):** Da nur im Vollbild gespielt wird und das Menü ohnehin pausiert, braucht es kein dauerhaft sichtbares Panel mehr; ein einziges Menü ist einfacher und verhält sich überall gleich. Nebeneffekt: Das alte Bottom Sheet kopierte den Tab-Inhalt als HTML und verlor dabei z.B. die Combo-Auswahl.
+- **Vorgabe (Entwickler):** Die Übersicht aller Skills und Einheiten gehört in die App, nicht als Markdown-Datei ins Repo.
+  **Begründung (Vorschlag Claude):** Die Werte werden live berechnet und können nicht veralten.
+  > Begründung offen — Grund des Entwicklers für „in die App statt ins Repo".
+- **Vorgabe (Entwickler):** Gespielt wird nur im Vollbild; sonst Pause mit Hinweis.
+  > Begründung offen
+- **Ausnahme ohne Fullscreen-API — Begründung (Vorschlag Claude):** Auf dem iPhone gibt es keinen Vollbild-Modus für Webseiten; ohne Ausnahme wäre das Spiel dort gar nicht spielbar.
+- **Pause nach Gründen (Vollbild verlassen / Menü offen) — Begründung (Vorschlag Claude):** Vorher setzte das Schließen eines Menüs das Spiel fort, obwohl der Vollbildmodus schon verlassen war.
+
 ### Touch Controls (Mobile)
 - **Virtueller Joystick** (links unten): Kreis mit beweglichem Thumb, max. Radius 44px. Bewegung wird als Vektor (dx/dy) an den Spieler übergeben und mit Keyboard-Input addiert.
 - **ABSORB-Button** (rechts unten): Großer runder Button, greift das nächste Entity in Reichweite an.
@@ -269,6 +283,18 @@ Kein lokales Node.js, npm oder Terminal auf Jörns Seite nötig.
 | Welt | 20×20 Chunk-System, Pixel-Art-Tiles, 6 Biome | Isometrisch (v0.4) |
 | PWA | Nein | Noch offen |
 
+### Versionsnummer & Spielstände (implementiert, v0.4)
+
+- **Versionsnummer** steht an genau einer Stelle im Code: [src/data/version.ts](../src/data/version.ts) (`GAME_VERSION`, derzeit 0.4.0). `build.js` bricht ab, wenn sie nicht mit `package.json` übereinstimmt. Angezeigt wird sie im Speichern-Dialog; jeder Spielstand speichert, mit welcher Version er gespeichert wurde, und Spielstände anderer Versionen werden dort gelb markiert.
+  **Vorgabe (Entwickler):** Es braucht eine Stelle, an der die Version angezeigt wird; falls es keine Versionsnummer gibt, eine einführen; Anzeige im Speichern-Dialog.
+  **Begründung einzige Quelle + Build-Prüfung (Vorschlag Claude):** Vorher stand `0.3.0` an zwei Stellen, die nur von Hand gleich gehalten wurden.
+  **Begründung Version im Spielstand (Vorschlag Claude):** So lässt sich erkennen, mit welcher Version ein Spielstand gespeichert wurde — Grundlage für Migrationen.
+  > Begründung offen — Ob 0.4.0 die richtige Nummer ist: Die isometrische Ansicht war ursprünglich für v0.4 geplant (GDD-00 Abschnitt 6).
+- **Migration alter Spielstände** ([src/systems/SaveSystem.ts](../src/systems/SaveSystem.ts)): Das Speicherformat hat eine eigene Formatversion (derzeit 2) und eine Kette von Migrationsschritten, die beim Lesen angewendet werden. v1 → v2 rechnet HP/MP **anteilig** auf Milli-Einheiten um (Füllstand bleibt, Maximum aus dem Level).
+  **Vorgabe (Entwickler):** Migration für gespeicherte Spielstände schreiben.
+  **Begründung (Vorschlag Claude, übernommen):** Ohne Migration hätte der Blob nach dem Laden eines alten Spielstands (HP in ganzen Punkten) nur 0,05 HP gehabt.
+  **Begründung anteilig statt ×1000 (Vorschlag Claude):** Auch Spielstände nach der Umstellung tragen noch Formatversion 1 und sind schon in Milli — ein pauschales ×1000 hätte sie zerstört. **Migration nur beim Lesen, nicht zurückschreiben (Vorschlag Claude):** Geht bei einer Migration etwas schief, bleibt der Original-Spielstand erhalten.
+
 ### [VERWORFEN] Ursprünglicher Stack v0.1
 
 > Status: Verworfen — ersetzt durch modulare TypeScript-Architektur in v0.2
@@ -282,4 +308,4 @@ Kein lokales Node.js, npm oder Terminal auf Jörns Seite nötig.
 
 ---
 
-*Letzte Aktualisierung: v0.4 — Spielmenü als pausierendes Vollbild-Overlay mit INDEX-Tab; Side Panel, Bottom Sheet und Schublade verworfen (Oktober 2026)*
+*Letzte Aktualisierung: v0.4 — Begründungen für Spielmenü, Vollbild-Regel, Version und Spielstand-Migration ergänzt; Spielmenü als pausierendes Vollbild-Overlay mit INDEX-Tab (Oktober 2026)*

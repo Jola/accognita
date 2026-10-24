@@ -49,6 +49,7 @@ Diese Datei ist der **Einstiegspunkt für Menschen und KI-Systeme**, die mit den
 | **[src/systems/SkillSystem.ts](../src/systems/SkillSystem.ts)** | Reine Skill-Logik (kein Phaser) | Bei Skill-Logik-Fragen |
 | **[src/systems/EntitySystem.ts](../src/systems/EntitySystem.ts)** | Absorb/Analyze/Respawn-Logik (kein Phaser) | Bei Interaktions-Logik-Fragen |
 | **[src/systems/CombatSystem.ts](../src/systems/CombatSystem.ts)** | Schadensberechnung, Skill-Dispatch, Checkpoint-Logik | Bei Kampfsystem-Fragen |
+| **[src/systems/HitSystem.ts](../src/systems/HitSystem.ts)** | Treffer-Stufen (verfehlt bis kritisch): Wahrscheinlichkeiten aus Skill-Profil, Level und Geschick; Würfeln | Bei Fragen zu Treffer-Chancen |
 | **[src/systems/AiSystem.ts](../src/systems/AiSystem.ts)** | Aggro, Verfolgung, Angriffs-Trigger (kein Phaser) | Bei KI-Fragen |
 | **[src/systems/StatusEffectSystem.ts](../src/systems/StatusEffectSystem.ts)** | DoT/HoT/Aura, passive Skills | Bei Status-Effekt-Fragen |
 | **[src/systems/MaterialSystem.ts](../src/systems/MaterialSystem.ts)** | Loot-Drop-Auflösung, Material-Inventar | Beim Erweitern des Loot-Systems |
@@ -109,6 +110,20 @@ Jede Datei und jeder Abschnitt kann einen dieser Status haben:
 
 Wenn in einem Dokument `> Status: Konzept-Phase` steht, bedeutet das: dieser Abschnitt ist noch nicht im Spiel.
 
+### Begründungspflicht
+
+Jede Regel, Formel, Konstante und Balancing-Entscheidung wird **mit ihrem Grund** dokumentiert — direkt beim Abschnitt. Nur so lässt sich später nachvollziehen, warum etwas so ist, und eine Änderung bewusst abwägen.
+
+| Kennzeichnung | Bedeutung |
+|---------------|-----------|
+| `**Vorgabe (Entwickler):**` | *Was* der Entwickler entschieden hat — getrennt vom *Warum* |
+| `**Begründung (Entwickler):**` | Grund vom Entwickler selbst genannt (nichts hinzugedichtet) |
+| `**Begründung (Vorschlag Claude, übernommen):**` | Von Claude vorgeschlagen, vom Entwickler bestätigt |
+| `**Begründung (rekonstruiert, bitte bestätigen):**` | Aus Code oder Kommentaren abgeleitet — noch nicht bestätigt |
+| `> Begründung offen` | Grund unbekannt — beim Entwickler nachfragen |
+
+Bei Skill-Effekten steht die Begründung im Pflichtfeld `reasoning` ([src/data/skills.ts](../src/data/skills.ts)). Ändert sich eine Entscheidung, bleibt die alte Begründung unter `[VERWORFEN]` erhalten; die neue Begründung nennt auch den Grund der Änderung.
+
 ---
 
 ## 6. Versionierung
@@ -144,6 +159,7 @@ Wenn du als KI-Assistent an diesem Projekt arbeitest, gelten folgende Regeln:
 1. Nie Informationen löschen — veraltete Einträge mit Status "Verworfen" markieren.
 2. Datum am Ende der geänderten Datei aktualisieren.
 3. Wenn eine neue GDD-Datei nötig wird: hier in GDD-00 eintragen.
+4. Jede Regel mit Begründung dokumentieren (siehe Abschnitt 5, Begründungspflicht). Keine Gründe erfinden — unbekannte Gründe als `> Begründung offen` markieren und nachfragen.
 
 **Kommunikation:**
 - Mit dem Entwickler auf Deutsch kommunizieren.
@@ -181,4 +197,4 @@ Wenn du als KI-Assistent an diesem Projekt arbeitest, gelten folgende Regeln:
 
 ---
 
-*Letzte Aktualisierung: v0.4 — GDD-06 verworfen (Referenz jetzt als INDEX-Tab im Spiel), SaveSystem-Migration vermerkt (Oktober 2026)*
+*Letzte Aktualisierung: v0.4 — Begründungspflicht (Abschnitt 5 und 7) eingeführt; HitSystem (Treffer-Stufen) ergänzt; GDD-06 verworfen (Referenz jetzt als INDEX-Tab im Spiel), SaveSystem-Migration vermerkt (Oktober 2026)*

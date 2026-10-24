@@ -4,33 +4,34 @@
 //
 // Zuständig für:
 //   - Angriffe des Spielers (Nahkampf-Basis + Skill-Angriffe)
-//   - Angriffe von Entities auf den Spieler
+//   - Angriffe von Entities auf den Spieler (Nah- und Fernkampf)
 //   - Skill-Aktivierbarkeit prüfen (MP, Cooldown)
 //   - Checkpoint-Logik (Respawn nach Tod)
 //
 // Keine Phaser-Abhängigkeit. Kein Rendering.
-// Schadenberechnung läuft durch DamageSystem (8-stufige Pipeline).
-// Effektauflösung läuft durch SkillEffectSystem.
+// Ablauf eines Angriffs: Treffer-Stufe würfeln (HitSystem) →
+// Schadenspipeline (DamageSystem) mit Effekten aus SkillEffectSystem.
 // ============================================================
 
 import type { PlayerState } from "../types/GameState";
 import type { EntityDefinition, EntityInstance } from "../types/Entity";
-import type { AttackResult, DamageType, StatusEffect } from "../types/Combat";
+import type { AttackResult, DamageType, HitGrade, HitProfile, StatusEffect } from "../types/Combat";
 import { ALL_SKILLS } from "../data/skills";
 import { ENTITY_MAP } from "../data/entities";
+import { DEFAULT_HIT_PROFILE, HIT_DAMAGE_MULT, MIN_SKILL_DAMAGE, toDisplayHp } from "../data/balance";
 import { getSkillEffectiveness } from "./SkillSystem";
-import { getEntityBaseDamage, getScaledDamage } from "./EntityLevelingSystem";
-import { applyEffect } from "./StatusEffectSystem";
+import { getScaledDamage, getEntityRangedDamage } from "./EntityLevelingSystem";
 import { calcFinalDamage } from "./DamageSystem";
+import { calcHitChances, rollHitGrade, HIT_GRADE_DE } from "./HitSystem";
 import {
   resolveDefenderEffects,
   resolveAttackerEffects,
   resolveOnHitStatusEffects,
+  resolveDexterity,
   getPlayerPassiveSkillLevels,
+  getPlayerAllSkillLevels,
 } from "./SkillEffectSystem";
-import {
-  calcJumpDistance,
-} from "./SkillEffects";
+import { calcJumpDistance } from "./SkillEffects";
 
 // Konstanten — Basis-Nahkampf des unausgerüsteten Blobs (milli-HP)
 const BASE_MELEE_DAMAGE  = 3_000;   // 3 HP Basisschaden ohne Skills
@@ -38,17 +39,97 @@ const MELEE_ABSORB_SCALE = 1_500;   // 1.5 HP Bonus pro Absorb-Level
 const UNARMED_DAMAGE_TYPE: DamageType = "blunt";  // Körpermasse = Wucht
 
 // -----------------------------------------------------------
-// Hilfsfunktion: Schadenstyp einer Entity bestimmen
-//
-// Priorität: bite → pierce, claw → slash, fire_breath → fire,
-//            kein Skill → blunt
+// Hilfsfunktionen: Angriffsskill und Schadenstyp einer Entity
+// Priorität: bite → pierce, claw → slash, fire_breath → fire, sonst blunt
 // -----------------------------------------------------------
+export function getEntityMeleeSkillId(def: EntityDefinition): string | undefined {
+  if (def.skillLevels?.["bite"] !== undefined) return "bite";
+  if (def.skillLevels?.["claw"] !== undefined) return "claw";
+  return undefined;
+}
+
 export function getEntityAttackDamageType(def: EntityDefinition): DamageType {
-  if (def.skillLevels?.["bite"] !== undefined)  return "pierce";
-  if (def.skillLevels?.["claw"] !== undefined)  return "slash";
+  const skillId = getEntityMeleeSkillId(def);
+  if (skillId) return ALL_SKILLS.get(skillId)?.damageType ?? "blunt";
   if (def.rangedAttackSkillId === "fire_breath") return "fire";
   return "blunt";
 }
+
+/** Treffer-Profil und Skill-Level, mit denen eine Entity im Nahkampf würfelt */
+export function getEntityMeleeHitBasis(def: EntityDefinition): { profile: HitProfile; skillLevel: number } {
+  const skillId = getEntityMeleeSkillId(def);
+  if (!skillId) return { profile: DEFAULT_HIT_PROFILE, skillLevel: def.level };
+  return {
+    profile: ALL_SKILLS.get(skillId)?.hitProfile ?? DEFAULT_HIT_PROFILE,
+    skillLevel: def.skillLevels![skillId],
+  };
+}
+
+// -----------------------------------------------------------
+// Gemeinsamer Kern: Treffer-Stufe würfeln + Schadenspipeline
+//
+// attacker/defender.effects: Skills, deren Kampf-Effekte gelten
+// attacker/defender.dex:     Geschick (aus allen bekannten Skills)
+// -----------------------------------------------------------
+interface Combatant { effects: Record<string, number>; dex: number }
+
+interface HitOutcome {
+  grade: HitGrade;
+  dmg: number;            // milli-HP Endschaden
+  absorbed: number;       // milli-HP durch Verteidigung abgefangen
+  reflect: number;        // milli-HP Rückschlag an den Angreifer (nur bei Treffer)
+}
+
+function resolveHit(
+  baseDmg: number,
+  damageType: DamageType,
+  profile: HitProfile,
+  skillLevel: number,
+  attacker: Combatant,
+  defender: Combatant
+): HitOutcome {
+  const grade = rollHitGrade(calcHitChances(profile, skillLevel, attacker.dex, defender.dex));
+  if (grade === "miss") return { grade, dmg: 0, absorbed: 0, reflect: 0 };
+
+  const atk = resolveAttackerEffects(attacker.effects);
+  const def = resolveDefenderEffects(defender.effects, damageType);
+  const hitMult = HIT_DAMAGE_MULT[grade];
+  const dmg = calcFinalDamage({
+    baseDmg,
+    damageType,
+    hitMult,
+    attackerMult: atk.damageMult,
+    attackerPenetration: atk.penetration,
+    defenderFlatBlock: def.flatBlock,
+    defenderPercentReduce: def.percentReduce,
+    defenderWeaknessMult: def.weaknessMult,
+    defenderImmune: def.immune,
+  });
+  const rawDmg = Math.max(MIN_SKILL_DAMAGE, baseDmg) * hitMult * atk.damageMult;
+  const absorbed = Math.max(0, Math.round(rawDmg) - dmg);
+  return { grade, dmg, absorbed, reflect: def.reflectDamage };
+}
+
+// attackSkillId: nur beim Angreifer — der Geschick-Beitrag des eingesetzten
+// Skills wird abgezogen (siehe resolveDexterity). Verteidiger: volles Geschick.
+function playerCombatant(player: PlayerState, attackSkillId?: string): Combatant {
+  return {
+    effects: getPlayerPassiveSkillLevels(player),
+    dex: resolveDexterity(getPlayerAllSkillLevels(player), attackSkillId),
+  };
+}
+
+function entityCombatant(def: EntityDefinition, attackSkillId?: string): Combatant {
+  const levels = def.skillLevels ?? {};
+  return { effects: levels, dex: resolveDexterity(levels, attackSkillId) };
+}
+
+/** "(Schwerer Treffer)" usw.; bei normalem Treffer leer */
+function gradeSuffix(grade: HitGrade): string {
+  return grade === "normal" ? "" : ` (${HIT_GRADE_DE[grade]})`;
+}
+
+const hp = toDisplayHp;
 
 // -----------------------------------------------------------
 // SPIELER-ANGRIFF
@@ -75,73 +156,57 @@ export function playerAttack(
     }
   }
 
-  // --- Basisschaden und Schadenstyp bestimmen ---
+  // --- Basisschaden, Schadenstyp, Treffer-Profil ---
   let baseDmg: number;
   let damageType: DamageType;
+  let profile: HitProfile = DEFAULT_HIT_PROFILE;
+  let skillLevel: number;
 
   if (!skillId) {
-    baseDmg = BASE_MELEE_DAMAGE + player.coreAbilities.absorb.level * MELEE_ABSORB_SCALE;
+    // Unbewaffnet: Absorb-Level bestimmt Schaden und Treffer-Güte
+    skillLevel = player.coreAbilities.absorb.level;
+    baseDmg = BASE_MELEE_DAMAGE + skillLevel * MELEE_ABSORB_SCALE;
     damageType = UNARMED_DAMAGE_TYPE;
   } else {
     const skillDef = ALL_SKILLS.get(skillId);
     if (!skillDef || !skillDef.baseDamage) {
       return missResult(`Skill ${skillId} hat keinen Schadenswert.`);
     }
-    const inst = player.discoveredSkills.get(skillId);
-    const lvl = inst?.level ?? 1;
-    baseDmg = skillDef.baseDamage * getSkillEffectiveness(lvl);
+    skillLevel = player.discoveredSkills.get(skillId)?.level ?? 1;
+    baseDmg = skillDef.baseDamage * getSkillEffectiveness(skillLevel);
     damageType = skillDef.damageType ?? "blunt";
+    profile = skillDef.hitProfile ?? DEFAULT_HIT_PROFILE;
   }
 
-  // --- Angreifer-Effekte (Superstrength etc.) ---
-  const playerPassiveLevels = getPlayerPassiveSkillLevels(player);
-  const attackerEffects = resolveAttackerEffects(playerPassiveLevels);
+  const attacker = playerCombatant(player, skillId);
+  const outcome = resolveHit(baseDmg, damageType, profile, skillLevel, attacker, entityCombatant(def));
 
-  // --- Verteidiger-Effekte der Entity (Chitin etc.) ---
-  const entitySkillLevels = def.skillLevels ?? {};
-  const defenderEffects = resolveDefenderEffects(entitySkillLevels, damageType);
+  if (outcome.grade === "miss") {
+    return {
+      hit: false, hitGrade: "miss", damageDealt: 0, statusApplied: [],
+      message: `${def.icon} ${def.name}: verfehlt!`,
+    };
+  }
 
-  // --- Schadenspipeline ---
-  const rawDmg = baseDmg;  // Basisschaden vor Pipeline (für absorbedDamage)
-  const dmg = calcFinalDamage({
-    baseDmg,
-    damageType,
-    attackerMult: attackerEffects.damageMult,
-    attackerPenetration: attackerEffects.penetration,
-    defenderFlatBlock: defenderEffects.flatBlock,
-    defenderPercentReduce: defenderEffects.percentReduce,
-    defenderWeaknessMult: defenderEffects.weaknessMult,
-    defenderImmune: defenderEffects.immune,
-  });
+  // Angreifer-seitige On-Hit-Effekte (Venom etc.)
+  const appliedEffects: StatusEffect[] = resolveOnHitStatusEffects(attacker.effects);
 
-  const absorbedDamage = Math.max(0, Math.round(rawDmg * attackerEffects.damageMult) - dmg);
-
-  // --- Entity Hemolymph: Rückschlag-Schaden an den Spieler ---
-  const reflectDamage = defenderEffects.reflectDamage > 0
-    ? defenderEffects.reflectDamage
-    : 0;
-
-  // --- Angreifer-seitige On-Hit-Effekte (Venom etc.) ---
-  const appliedEffects: StatusEffect[] = resolveOnHitStatusEffects(playerPassiveLevels);
-
-  // Entfernte Entities können nicht weiter behandelt werden
-  const dmgDisplay = Math.round(dmg / 1000);
-  const msg = appliedEffects.length > 0
-    ? `${def.icon} ${def.name}: ${dmgDisplay} Schaden + vergiftet!`
-    : `${def.icon} ${def.name}: ${dmgDisplay} Schaden.`;
+  const msg = `${def.icon} ${def.name}: ${hp(outcome.dmg)} Schaden${gradeSuffix(outcome.grade)}` +
+    (appliedEffects.length > 0 ? " + vergiftet!" : ".");
 
   return {
     hit: true,
-    damageDealt: dmg,
-    absorbedDamage,
-    reflectDamage,
+    hitGrade: outcome.grade,
+    damageDealt: outcome.dmg,
+    absorbedDamage: outcome.absorbed,
+    reflectDamage: outcome.reflect,  // Hemolymph der Entity trifft den Spieler
     statusApplied: appliedEffects,
     message: msg,
   };
 }
 
 // -----------------------------------------------------------
-// ENTITY-ANGRIFF AUF DEN SPIELER
+// ENTITY-ANGRIFF AUF DEN SPIELER (Nahkampf)
 // -----------------------------------------------------------
 export function entityAttack(
   def: EntityDefinition,
@@ -152,55 +217,69 @@ export function entityAttack(
     return missResult("Entity greift nicht an.");
   }
 
-  // Basisschaden: skaliert mit bonusLevel
-  const bonusLevel = instance.bonusLevel ?? 0;
-  const baseDmg = getScaledDamage(def, bonusLevel);
-  const damageType = getEntityAttackDamageType(def);
+  const baseDmg = getScaledDamage(def, instance.bonusLevel ?? 0);
+  const { profile, skillLevel } = getEntityMeleeHitBasis(def);
+  const attacker = entityCombatant(def, getEntityMeleeSkillId(def));
+  const outcome = resolveHit(
+    baseDmg, getEntityAttackDamageType(def), profile, skillLevel, attacker, playerCombatant(player)
+  );
 
-  // Angreifer-Effekte der Entity (aktuell: keine damage_mult-Skills auf Entities)
-  const entitySkillLevels = def.skillLevels ?? {};
-  const attackerEffects = resolveAttackerEffects(entitySkillLevels);
+  if (outcome.grade === "miss") {
+    return {
+      hit: false, hitGrade: "miss", damageDealt: 0, statusApplied: [],
+      message: `${def.icon} ${def.name} verfehlt dich!`,
+    };
+  }
 
-  // Verteidiger-Effekte des Spielers (Chitin Armor etc.)
-  const playerPassiveLevels = getPlayerPassiveSkillLevels(player);
-  const defenderEffects = resolveDefenderEffects(playerPassiveLevels, damageType);
+  // Venom der Entity
+  const appliedEffects: StatusEffect[] = resolveOnHitStatusEffects(attacker.effects);
 
-  // Schadenspipeline
-  const rawDmg = baseDmg;
-  const dmg = calcFinalDamage({
-    baseDmg,
-    damageType,
-    attackerMult: attackerEffects.damageMult,
-    attackerPenetration: attackerEffects.penetration,
-    defenderFlatBlock: defenderEffects.flatBlock,
-    defenderPercentReduce: defenderEffects.percentReduce,
-    defenderWeaknessMult: defenderEffects.weaknessMult,
-    defenderImmune: defenderEffects.immune,
-  });
-
-  const absorbedDamage = Math.max(0, Math.round(rawDmg * attackerEffects.damageMult) - dmg);
-
-  // Spieler-Hemolymph: Rückschlag-Schaden an die Entity
-  const reflectDamage = defenderEffects.reflectDamage > 0
-    ? defenderEffects.reflectDamage
-    : 0;
-
-  // Venom der Entity (kommt aus entitySkillLevels)
-  const appliedEffects: StatusEffect[] = resolveOnHitStatusEffects(entitySkillLevels);
-
-  const baseDmgDisplay = Math.round(rawDmg / 1000);
-  const dmgDisplay     = Math.round(dmg / 1000);
-  const msg = dmg !== rawDmg
-    ? `${def.icon} ${def.name} trifft! ${baseDmgDisplay}→${dmgDisplay} (Rüstung).`
-    : `${def.icon} ${def.name} trifft für ${dmgDisplay} Schaden!`;
+  const armor = outcome.absorbed > 0 ? `, ${hp(outcome.absorbed)} abgewehrt` : "";
+  const msg = `${def.icon} ${def.name}: ${HIT_GRADE_DE[outcome.grade]} — ${hp(outcome.dmg)} Schaden${armor}` +
+    (appliedEffects.length > 0 ? " + vergiftet!" : ".");
 
   return {
     hit: true,
-    damageDealt: dmg,
-    absorbedDamage,
-    reflectDamage,
+    hitGrade: outcome.grade,
+    damageDealt: outcome.dmg,
+    absorbedDamage: outcome.absorbed,
+    reflectDamage: outcome.reflect,  // Hemolymph des Spielers trifft die Entity
     statusApplied: appliedEffects,
     message: msg,
+  };
+}
+
+// -----------------------------------------------------------
+// ENTITY-FERNKAMPF AUF DEN SPIELER (z.B. Drachen-Feueratem)
+// Kein Rückschlag (kein Körperkontakt), keine On-Hit-Effekte.
+// -----------------------------------------------------------
+export function entityRangedAttack(def: EntityDefinition, player: PlayerState): AttackResult {
+  const skillId = def.rangedAttackSkillId;
+  const skillDef = skillId ? ALL_SKILLS.get(skillId) : undefined;
+  if (!skillId || !skillDef) return missResult("Kein Fernkampf.");
+
+  const outcome = resolveHit(
+    getEntityRangedDamage(def),
+    skillDef.damageType ?? "blunt",
+    skillDef.hitProfile ?? DEFAULT_HIT_PROFILE,
+    def.skillLevels?.[skillId] ?? 1,
+    entityCombatant(def, skillId),
+    playerCombatant(player)
+  );
+
+  if (outcome.grade === "miss") {
+    return {
+      hit: false, hitGrade: "miss", damageDealt: 0, statusApplied: [],
+      message: `${def.icon} ${def.name}: ${skillDef.name} verfehlt dich!`,
+    };
+  }
+  return {
+    hit: true,
+    hitGrade: outcome.grade,
+    damageDealt: outcome.dmg,
+    absorbedDamage: outcome.absorbed,
+    statusApplied: [],
+    message: `${def.icon} ${def.name}: ${skillDef.name}! ${hp(outcome.dmg)} Schaden${gradeSuffix(outcome.grade)}.`,
   };
 }
 

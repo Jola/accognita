@@ -8,18 +8,19 @@
 
 import type { SkillDefinition, SkillEffect, LinearFormula, EffectType } from "../types/Skill";
 import type { EntityDefinition } from "../types/Entity";
-import type { DamageType } from "../types/Combat";
+import type { DamageType, HitProfile } from "../types/Combat";
 import { CORE_SKILLS, BASE_SKILLS, PLANT_SKILLS, COMBO_SKILLS, ALL_SKILLS } from "../data/skills.js";
 import { ENTITY_DEFINITIONS, ENTITY_MAP } from "../data/entities.js";
 import { MATERIAL_MAP } from "../data/materials.js";
-import { ANALYZE_CHANCE_MODIFIER, MILLI } from "../data/balance.js";
+import { ANALYZE_CHANCE_MODIFIER, MILLI, DEFAULT_HIT_PROFILE, HIT_DAMAGE_MULT } from "../data/balance.js";
+import { calcHitChances, HIT_GRADES, HIT_GRADE_DE } from "../systems/HitSystem.js";
 import { BIOME_SPAWNS } from "../world/BiomeDefinitions.js";
-import { evalFormula, resolveDefenderEffects, resolveAttackerEffects } from "../systems/SkillEffectSystem.js";
+import { evalFormula, resolveDefenderEffects, resolveAttackerEffects, resolveDexterity } from "../systems/SkillEffectSystem.js";
 import { calcSkillAttackDamage, calcJumpDistance, calcPhotosynthesisHeal } from "../systems/SkillEffects.js";
 import {
   getEntityBaseDamage, getEntityRangedDamage, getScaledMaxHp, getScaledDamage, getScaledSpeed,
 } from "../systems/EntityLevelingSystem.js";
-import { getEntityAttackDamageType } from "../systems/CombatSystem.js";
+import { getEntityAttackDamageType, getEntityMeleeHitBasis, getEntityMeleeSkillId } from "../systems/CombatSystem.js";
 
 const LEVELS = [1, 2, 3, 5, 10, 20];
 const ALL_DAMAGE_TYPES: DamageType[] = ["pierce", "slash", "blunt", "acid", "fire", "poison", "magic", "psychic"];
@@ -38,6 +39,7 @@ const EFFECT_DE: Record<EffectType, string> = {
   deal_damage: "Schaden", flat_block: "Flat-Block", percent_reduce: "%-Reduktion", weakness: "Schwäche",
   heal_flat: "Heilung", heal_percent: "Heilung %", apply_status: "Status-Chance", reflect_damage: "Rückschlag",
   damage_mult: "Schadens-Multiplikator", speed_mod: "Tempo-Multiplikator", grant_penetration: "Penetration",
+  dexterity: "Geschick",
 };
 const CATEGORY_DE: Record<string, string> = { core: "Kern", basic: "Basis", combo: "Kombo" };
 const ACTIVATION_DE: Record<string, string> = { active: "aktiv", passive: "passiv" };
@@ -65,13 +67,15 @@ const PERCENT_EFFECTS: EffectType[] = ["percent_reduce", "apply_status", "heal_p
 function formatEffectValue(type: EffectType, value: number): string {
   if (ABSOLUTE_EFFECTS.includes(type)) return `${num(value)} HP`;
   if (PERCENT_EFFECTS.includes(type)) return pct(value);
+  if (type === "dexterity") return `+${num(value)}`;
   return factor(value);
 }
 
 function formatFormula(f: LinearFormula): string {
   const curve = f.curve ?? "linear";
   const step = curve === "sqrt" ? "√(L−1)" : curve === "log" ? "log₂(L)" : "(L−1)";
-  return f.perLevel === 0 ? `${num(f.base, 3)} (konstant)` : `${num(f.base, 3)} + ${num(f.perLevel, 3)}·${step}`;
+  const text = f.perLevel === 0 ? `${num(f.base, 3)} (konstant)` : `${num(f.base, 3)} + ${num(f.perLevel, 3)}·${step}`;
+  return f.max !== undefined ? `${text}, max ${num(f.max, 3)}` : text;
 }
 
 function formatCondition(e: SkillEffect): string {
@@ -112,6 +116,22 @@ const section = (title: string, html: string) => (html ? `<h4 class="idx-h">${ti
 
 function titleBlock(icon: string, name: string, sub: string): string {
   return `<div class="idx-title"><span>${icon}</span><div><h3>${name}</h3><small>${sub}</small></div></div>`;
+}
+
+/** Treffer-Stufen pro Level (Geschick beider Seiten 0) */
+function hitTable(profile: HitProfile): string {
+  return dataTable(
+    ["Stufe", "Schaden", ...LEVELS.map((l) => `Lv${l}`)],
+    HIT_GRADES.map((g) => [
+      HIT_GRADE_DE[g], factor(HIT_DAMAGE_MULT[g]),
+      ...LEVELS.map((l) => pct(calcHitChances(profile, l, 0, 0)[g])),
+    ])
+  );
+}
+
+/** Eine Zeile: "Verfehlt 3 % · Leichter Treffer 17 % · …" */
+function hitLine(chances: HitProfile): string {
+  return HIT_GRADES.map((g) => `${HIT_GRADE_DE[g]} ${pct(chances[g])}`).join(" · ");
 }
 
 // ── Gemeinsame Ableitungen ─────────────────────────────────
@@ -236,6 +256,9 @@ function skillDetail(s: SkillDefinition): string {
     params(p),
     section("Effekte", effects),
     section("Werte nach Level", derived.length ? levelTable(derived) : ""),
+    section("Treffer-Stufen (ohne Geschick)", s.baseDamage
+      ? `${hitTable(s.hitProfile ?? DEFAULT_HIT_PROFILE)}<p class="idx-reason">Geschick des Angreifers verschiebt die Verteilung zu besseren Stufen, Geschick des Ziels zu schlechteren.</p>`
+      : ""),
     section("Entdeckbar bei", sources.length ? dataTable(["Einheit", "Level", "Absorb", "Analyze"], sources) : ""),
     section("Von Einheiten genutzt", users ? `<div>${users}</div>` : ""),
   ].join("");
@@ -270,6 +293,8 @@ function entityDetail(e: EntityDefinition): string {
   if (e.venomDamagePerTick !== undefined) p.push(["venomDamagePerTick (Altfeld)", `${hp(e.venomDamagePerTick)} HP`]);
 
   const skillLevels = e.skillLevels ?? {};
+  const dex = resolveDexterity(skillLevels);
+  if (dex) p.push(["Geschick", num(dex)]);
   const skillIds = Object.keys(skillLevels);
   const skills = skillIds.map((id) => {
     const s = ALL_SKILLS.get(id);
@@ -283,7 +308,10 @@ function entityDetail(e: EntityDefinition): string {
     const cd = e.attackCooldownMs ?? 1500;
     combat.push(`<b>Nahkampf:</b> ${hp(dmg)} HP ${DAMAGE_TYPE_DE[getEntityAttackDamageType(e)]}` +
       (atk.damageMult !== 1 ? ` ${factor(atk.damageMult)}` : "") +
-      ` alle ${seconds(cd)} ≈ ${num((dmg * atk.damageMult) / MILLI / (cd / 1000))} HP/s (vor Rüstung)`);
+      ` alle ${seconds(cd)} ≈ ${num((dmg * atk.damageMult) / MILLI / (cd / 1000))} HP/s (normaler Treffer, vor Rüstung)`);
+    const { profile, skillLevel } = getEntityMeleeHitBasis(e);
+    const attackDex = resolveDexterity(skillLevels, getEntityMeleeSkillId(e));
+    combat.push(`<b>Treffer-Stufen</b> gegen Geschick 0: ${hitLine(calcHitChances(profile, skillLevel, attackDex, 0))}`);
   }
   for (const id of skillIds) {
     const s = ALL_SKILLS.get(id);

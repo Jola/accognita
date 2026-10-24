@@ -116,8 +116,8 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 45,
     interactRadius: 40,
     aggroRadius: 15,   // 2.5 × worldSize
-    // bite Lv2 → 7 × 1.1 ≈ 8 Schaden; chitin_armor Lv3 → 20% DR
-    skillLevels: { bite: 2, chitin_armor: 3 },
+    // bite Lv2 → 7 × 1.1 ≈ 8 Schaden; chitin_armor Lv3; jump Lv2 → Geschick ≈2 (weicht aus, trifft präziser)
+    skillLevels: { bite: 2, chitin_armor: 3, jump: 2 },
     worldSize: 6,    // Springspinne — deutlich größer als Ameisen
   },
   {

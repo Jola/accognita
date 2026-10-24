@@ -171,13 +171,15 @@ export const BASE_SKILLS: SkillDefinition[] = [
     xpThresholdMultiplier: 1.5,
     description:
       "Passiv: Jeder Nahkampftreffer des Blobs hat eine Chance, dem Ziel Gift zu injizieren. " +
-      "Lv1: 30% Chance, 2 Schaden/s für 4s. +5% Chance und +0.5 Schaden/s pro Level.",
+      "Lv1: 30% Chance, 2 Schaden/s für 4s. Chance steigt mit dem Level immer langsamer (Lv5: 50%, Lv10: 60%), höchstens 100%. +0.5 Schaden/s pro Level.",
     effects: [
       {
         trigger: "on_hit_enemy",
         effectType: "apply_status",
-        formula: { base: 0.30, perLevel: 0.05 },
-        reasoning: "Giftdrüsen injizieren Gift bei Treffer. Chance: 30% + 5%×(level-1).",
+        formula: { base: 0.30, perLevel: 0.10, curve: "sqrt", max: 1.0 },
+        reasoning:
+          "Giftdrüsen injizieren Gift bei Treffer. Sqrt-Kurve: Chance steigt anfangs schnell, " +
+          "dann immer langsamer (Lv5 50%, Lv10 60%, Lv20 74%); bei 100% gedeckelt (ab Lv50).",
         statusConfig: {
           type: "dot",
           durationMs: 4000,
@@ -206,6 +208,8 @@ export const BASE_SKILLS: SkillDefinition[] = [
     attackType: "melee",
     baseDamage: 7_000,
     damageType: "pierce",
+    // Gezielt und präzise: etwas mehr kritische Treffer als ein Körperstoß
+    hitProfile: { miss: 0.03, light: 0.17, normal: 0.52, heavy: 0.24, crit: 0.04 },
   },
   {
     id: "jump",
@@ -219,10 +223,21 @@ export const BASE_SKILLS: SkillDefinition[] = [
     xpThresholdMultiplier: 1.5,
     description:
       "Aktiv: Springt 160px in Bewegungsrichtung — überwindet Hindernisse und erzeugt Distanz. " +
-      "Höheres Level = größere Sprungweite. MP-Kosten: 4.",
+      "Höheres Level = größere Sprungweite. MP-Kosten: 4. " +
+      "Passiv: Sprungkraft macht den Blob geschickter — bessere Treffer, Gegner treffen seltener gut.",
     mpCost: 4_000,
     cooldownMs: 1800,
     attackType: "dash",
+    effects: [
+      {
+        trigger: "passive",
+        effectType: "dexterity",
+        formula: { base: 1, perLevel: 1, curve: "sqrt" },
+        reasoning:
+          "Springspinnen sind extrem reaktionsschnell. Wer springen kann, kontrolliert seinen Körper " +
+          "präziser: Geschick 1 bei Lv1, 3 bei Lv5, ~5,4 bei Lv20 (sqrt-Kurve flacht ab).",
+      },
+    ],
   },
   {
     id: "claw",
@@ -242,6 +257,8 @@ export const BASE_SKILLS: SkillDefinition[] = [
     attackType: "melee",
     baseDamage: 8_000,
     damageType: "slash",
+    // Weit ausholender Hieb: öfter schwer, aber auch öfter daneben
+    hitProfile: { miss: 0.05, light: 0.15, normal: 0.45, heavy: 0.32, crit: 0.03 },
   },
   {
     id: "fire_breath",
@@ -261,6 +278,8 @@ export const BASE_SKILLS: SkillDefinition[] = [
     attackType: "ranged_projectile",
     baseDamage: 10_000,
     damageType: "fire",
+    // Flammenstrom trifft fast immer, aber selten eine Schwachstelle
+    hitProfile: { miss: 0.02, light: 0.25, normal: 0.55, heavy: 0.16, crit: 0.02 },
   },
   {
     id: "hemolymph",

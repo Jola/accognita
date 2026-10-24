@@ -32,6 +32,7 @@ Current state: **v0.3** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/systems/EntitySystem.ts` | Absorb/Analyze/Respawn logic |
 | `src/systems/StatusEffectSystem.ts` | DoT/HoT/Aura processing, passive skill sync |
 | `src/systems/CombatSystem.ts` | Damage calculation, skill dispatch, checkpoint logic |
+| `src/systems/HitSystem.ts` | Hit grades (miss/light/normal/heavy/crit): chances from skill profile, level and dexterity; dice roll |
 | `src/systems/AiSystem.ts` | Aggro, chase, attack-trigger (pure logic, no Phaser) |
 | `src/systems/MaterialSystem.ts` | Loot drop resolution and material inventory logic |
 | `src/systems/SaveSystem.ts` | Save/load game state via localStorage (3 slots) |
@@ -92,6 +93,18 @@ types/   ←  data/  ←  systems/  ←  scenes/
 1. Never delete content — mark outdated entries as `[VERWORFEN]` instead.
 2. Update the timestamp at the bottom of any changed file.
 3. Keep GDD-00 in sync: if a new file is added, list it there.
+
+### Rationale is mandatory (Begründungspflicht)
+Every rule, formula, constant and balancing decision is documented together with **why** it was chosen, so it can be understood and deliberately changed later.
+1. Write it right next to the rule in the GDD as `**Begründung:** …` (skill effects: the `reasoning` field in `src/data/skills.ts`).
+2. Keep *what* was decided apart from *why*, and state where the reason comes from:
+   - decision by Jörn (the "what", with or without a reason) → `**Vorgabe (Entwickler):**`
+   - reason explicitly given by Jörn → `**Begründung (Entwickler):**` — only his own words/meaning, nothing added
+   - Claude's proposal accepted by Jörn → `**Begründung (Vorschlag Claude, übernommen):**`
+   - reconstructed from code/comments, not yet confirmed → `**Begründung (rekonstruiert, bitte bestätigen):**`
+3. Never invent a reason or attribute one to Jörn. If the reason is unknown, write `> Begründung offen` and ask him.
+4. When a decision changes, keep the old reason under `[VERWORFEN]` and add the new reason plus why it changed.
+5. When asking Jörn to decide something, also ask for (or propose) the reason, and record it with the decision.
 
 ### Build Workflow
 1. Jörn describes what to change (in German, on mobile).
