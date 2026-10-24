@@ -51,6 +51,9 @@ Current state: **v0.3** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `docs/GDD-02-Skillsystem.md` | Skill discovery, leveling, combinations. |
 | `docs/GDD-03-Kampfsystem.md` | Combat design — v0.3 implemented. |
 | `docs/GDD-04-LookAndFeel.md` | Colors, typography, UI layout, mobile/desktop, tech stack. |
+| `docs/GDD-05-Kampfmathematik.md` | Damage pipeline, damage types, declarative skill effects. |
+| `docs/GDD-06-Referenz.md` | **Generated** by `scripts/gen-reference.ts` on every `node build.js` — all skills and entities with all parameters. Never edit by hand; commit it together with data changes. |
+| `scripts/gen-reference.ts` | Generator for GDD-06 (bundled and run by build.js). |
 
 ---
 
