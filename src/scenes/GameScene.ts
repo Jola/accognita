@@ -301,10 +301,7 @@ export class GameScene extends Phaser.Scene {
     };
 
     const onChange = () => {
-      const isFs = !!(
-        document.fullscreenElement ||
-        (document as any).webkitFullscreenElement
-      );
+      const isFs = isFullscreen();
       updateBtn(isFs);
       if (!isFs) {
         this.pauseGame();
@@ -318,13 +315,16 @@ export class GameScene extends Phaser.Scene {
 
     btn?.addEventListener("click", (e) => {
       e.stopPropagation();
-      const isFs = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
-      if (isFs) {
+      if (isFullscreen()) {
         this.exitFullscreen();
       } else {
         this.enterFullscreen();
       }
     });
+
+    // Gespielt wird nur im Vollbild. Ohne Fullscreen-API (iPhone-Safari) läuft
+    // das Spiel trotzdem, sonst wäre es dort gar nicht spielbar.
+    if (fullscreenSupported() && !isFullscreen()) this.pauseGame();
   }
 
   private enterFullscreen() {
@@ -477,8 +477,7 @@ export class GameScene extends Phaser.Scene {
     (window as any).doGrow       = () => this.doGrow();
     (window as any).togglePassiveSkill = (skillId: string) => this.togglePassiveSkill(skillId);
     (window as any).resumeFromPause = () => {
-      const el = document.documentElement as any;
-      if (el.requestFullscreen || el.webkitRequestFullscreen) {
+      if (fullscreenSupported()) {
         this.enterFullscreen();
         // resumeGame() wird vom fullscreenchange-Event ausgelöst
       } else {
@@ -1388,6 +1387,15 @@ function showCombineResult(result: any) {
 // -----------------------------------------------------------
 // DOM-HELFER
 // -----------------------------------------------------------
+function isFullscreen(): boolean {
+  return !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
+}
+
+function fullscreenSupported(): boolean {
+  const el = document.documentElement as any;
+  return !!(el.requestFullscreen || el.webkitRequestFullscreen);
+}
+
 function setEl(id: string, text: string) {
   const el = document.getElementById(id);
   if (el) el.textContent = text;
