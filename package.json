@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "node build.js",
+    "dev": "node scripts/dev.js",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

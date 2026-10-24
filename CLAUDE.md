@@ -49,6 +49,8 @@ Current state: **v0.3** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/world/TilesetGenerator.ts` | Procedural pixel art tileset (24 tiles, Canvas 2D) |
 | `src/world/ChunkManager.ts` | Chunk load/unload, entity lifecycle, active-radius AI filtering |
 | `tsconfig.json` | TypeScript compiler configuration |
+| `.devcontainer/devcontainer.json` | Dev container (Node 20 like CI) for local development in VS Code / Codespaces |
+| `scripts/dev.js` | `npm run dev`: dependency-free dev server on port 8080 — rebuilds on changes in `src/` and the template, reloads the browser |
 | `docs/GDD-00-Index.md` | Meta-document. Explains all GDD files and conventions. |
 | `docs/GDD-01-Hauptbeschreibung.md` | Vision, core loop, setting, progression. |
 | `docs/GDD-02-Skillsystem.md` | Skill discovery, leveling, combinations. |
@@ -113,6 +115,7 @@ Every rule, formula, constant and balancing decision is documented together with
 4. Jörn öffnet das Spiel über die GitHub Pages URL — kein Terminal nötig.
 
 **Lokaler Build (nur wenn nötig):** `node build.js` → erzeugt `accognita.html` im Projektordner.
+**Lokale Entwicklung (optional, für Jörn):** Dev-Container öffnen, dann `npm run dev` → Spiel unter http://localhost:8080, baut und lädt bei jeder Änderung neu. Keep `scripts/dev.js` dependency-free.
 **Build-Artefakte:** `dist/`, `accognita.html`, `_site/` sind gitignored — nur `src/` wird committet.
 **CI-Pipeline:** `.github/workflows/deploy.yml` — wird bei jedem Push auf `main` ausgelöst.
 

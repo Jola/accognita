@@ -269,6 +269,18 @@ src/
 
 Kein lokales Node.js, npm oder Terminal auf Jörns Seite nötig.
 
+#### Lokale Entwicklung im Dev-Container (optional, v0.4)
+
+- [`.devcontainer/devcontainer.json`](../.devcontainer/devcontainer.json): Node 20 (wie die CI), installiert die Abhängigkeiten (`npm ci`) und leitet Port 8080 weiter. Öffnen mit VS Code („Dev Containers: Reopen in Container“) oder GitHub Codespaces.
+- `npm run dev` ([scripts/dev.js](../scripts/dev.js)): baut das Spiel und liefert es unter http://localhost:8080 aus. Jede Änderung in `src/` oder `accognita.template.html` löst einen neuen Build aus; der Browser lädt danach selbst neu. Schlägt der Build fehl, bleibt die letzte funktionierende Version aktiv.
+- Weitere Befehle: `npm run build` (einmal bauen), `npm run typecheck` (nur Typprüfung).
+
+**Vorgabe (Entwickler):** Ein Dev-Container-Setup, mit dem das Projekt lokal entwickelt und getestet werden kann.
+> Begründung offen
+**Begründung Node 20 (Vorschlag Claude):** Dieselbe Version wie die CI, damit lokal und beim Deploy gleich gebaut wird.
+**Begründung Dev-Server ohne Abhängigkeiten (Vorschlag Claude):** Nur Node-Bordmittel — kein zusätzliches Paket, das gepflegt oder aktualisiert werden muss.
+**Begründung automatisches Neuladen (Vorschlag Claude):** Ändern und Ausprobieren ohne manuelles Bauen. Nebenwirkung: Nach dem Neuladen ist der Vollbildmodus beendet, das Spiel startet pausiert (siehe Pause-Regel).
+
 ### Stack-Tabelle
 
 | Bereich | Aktuell (v0.3) | Geplant |
@@ -308,4 +320,4 @@ Kein lokales Node.js, npm oder Terminal auf Jörns Seite nötig.
 
 ---
 
-*Letzte Aktualisierung: v0.4 — Begründungen für Spielmenü, Vollbild-Regel, Version und Spielstand-Migration ergänzt; Spielmenü als pausierendes Vollbild-Overlay mit INDEX-Tab (Oktober 2026)*
+*Letzte Aktualisierung: v0.4 — Dev-Container und `npm run dev` für lokale Entwicklung; Begründungen für Spielmenü, Vollbild-Regel, Version und Spielstand-Migration ergänzt; Spielmenü als pausierendes Vollbild-Overlay mit INDEX-Tab (Oktober 2026)*
