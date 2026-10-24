@@ -109,8 +109,10 @@ Passive Skills werden als permanente Effekte (`durationMs: -1`) geführt.
 Schaden/Tick = 2 + 0.5 × (level - 1)
 Dauer        = 4 Sekunden
 Tick-Intervall = 1 Sekunde
-Chance (poison_spider) = 40 %
-Chance (Venom-Skill)   = 30 % + 5 % × level
+Chance (poison_spider) = 40 %                          [VERWORFEN — Gegner nutzen dieselbe Formel wie der Spieler]
+Chance (Venom-Skill)   = 30 % + 5 % × level           [VERWORFEN — überschritt ab Lv15 100 %]
+Chance (Venom-Skill)   = min(100 %, 30 % + 10 % × √(level − 1))
+                         Lv1 30 % · Lv5 50 % · Lv10 60 % · Lv20 74 % · ab Lv50 100 %
 ```
 
 ### Schadensreduktion (Stacking)
@@ -151,7 +153,7 @@ finalDmg  = baseDmg × (1 - reduction)
 Ziel = lastNearbyId (Entity in ≤ 100 px)
 baseDmg = 3 + absorb.level × 1.5
 effDmg  = baseDmg × damageMult
-Venom-Chance: 30 % + 5 % × venom.level
+Venom-Chance: 30 % + 5 % × venom.level   [VERWORFEN — neue Formel siehe Abschnitt 5, Venom]
 ```
 
 ### Dash-Skill (Jump)
@@ -316,4 +318,4 @@ scenes/GameScene.ts                ← verdrahtet alle Systeme, Phaser-Rendering
 
 ---
 
-*Letzte Aktualisierung: 2026-10-24 — GDD-06 verworfen, Verweis auf INDEX-Tab im Spiel*
+*Letzte Aktualisierung: 2026-10-24 — Venom-Chance auf √-Kurve mit 100-%-Deckel umgestellt; GDD-06 verworfen, Verweis auf INDEX-Tab*

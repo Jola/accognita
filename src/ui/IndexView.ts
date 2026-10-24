@@ -71,7 +71,8 @@ function formatEffectValue(type: EffectType, value: number): string {
 function formatFormula(f: LinearFormula): string {
   const curve = f.curve ?? "linear";
   const step = curve === "sqrt" ? "√(L−1)" : curve === "log" ? "log₂(L)" : "(L−1)";
-  return f.perLevel === 0 ? `${num(f.base, 3)} (konstant)` : `${num(f.base, 3)} + ${num(f.perLevel, 3)}·${step}`;
+  const text = f.perLevel === 0 ? `${num(f.base, 3)} (konstant)` : `${num(f.base, 3)} + ${num(f.perLevel, 3)}·${step}`;
+  return f.max !== undefined ? `${text}, max ${num(f.max, 3)}` : text;
 }
 
 function formatCondition(e: SkillEffect): string {

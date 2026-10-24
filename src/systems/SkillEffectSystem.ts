@@ -24,11 +24,13 @@ import { makeStatusEffect } from "../types/Combat";
 // -----------------------------------------------------------
 export function evalFormula(formula: LinearFormula, level: number): number {
   const l = level - 1;
+  let value: number;
   switch (formula.curve ?? "linear") {
-    case "sqrt": return formula.base + formula.perLevel * Math.sqrt(l);
-    case "log":  return formula.base + formula.perLevel * (l > 0 ? Math.log2(l + 1) : 0);
-    default:     return formula.base + formula.perLevel * l;
+    case "sqrt": value = formula.base + formula.perLevel * Math.sqrt(l); break;
+    case "log":  value = formula.base + formula.perLevel * (l > 0 ? Math.log2(l + 1) : 0); break;
+    default:     value = formula.base + formula.perLevel * l;
   }
+  return formula.max !== undefined ? Math.min(formula.max, value) : value;
 }
 
 // -----------------------------------------------------------

@@ -200,6 +200,11 @@ interface LinearFormula {
   // linear (Standard): base + perLevel * (L-1)
   // sqrt:  base + perLevel * sqrt(L-1)    → stark zu Beginn, flacht ab
   // log:   base + perLevel * log2(L)      → sehr stark zu Beginn
+
+  // Optional: Obergrenze des Ergebnisses (implementiert)
+  max?: number;
+  // Wert = min(max, Kurvenwert). Pflicht für Chancen (max: 1.0), weil Skills
+  // mit maxLevel 0 unbegrenzt steigen und jede Kurve sonst irgendwann 100 % überschreitet.
 }
 ```
 
@@ -520,4 +525,4 @@ src/
 
 ---
 
-*Letzte Aktualisierung: v0.4 implementiert — DamageSystem (8-stufige Pipeline), SkillEffectSystem (deklarative Effekte), DamageType-System, Skill-Effekt-Deklaration für chitin_armor/superstrength/hemolymph/venom (Oktober 2026)*
+*Letzte Aktualisierung: v0.4 implementiert — DamageSystem (8-stufige Pipeline), SkillEffectSystem (deklarative Effekte), DamageType-System, Skill-Effekt-Deklaration für chitin_armor/superstrength/hemolymph/venom (Oktober 2026); LinearFormula.max (Obergrenze) ergänzt*

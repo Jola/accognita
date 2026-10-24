@@ -171,13 +171,15 @@ export const BASE_SKILLS: SkillDefinition[] = [
     xpThresholdMultiplier: 1.5,
     description:
       "Passiv: Jeder Nahkampftreffer des Blobs hat eine Chance, dem Ziel Gift zu injizieren. " +
-      "Lv1: 30% Chance, 2 Schaden/s für 4s. +5% Chance und +0.5 Schaden/s pro Level.",
+      "Lv1: 30% Chance, 2 Schaden/s für 4s. Chance steigt mit dem Level immer langsamer (Lv5: 50%, Lv10: 60%), höchstens 100%. +0.5 Schaden/s pro Level.",
     effects: [
       {
         trigger: "on_hit_enemy",
         effectType: "apply_status",
-        formula: { base: 0.30, perLevel: 0.05 },
-        reasoning: "Giftdrüsen injizieren Gift bei Treffer. Chance: 30% + 5%×(level-1).",
+        formula: { base: 0.30, perLevel: 0.10, curve: "sqrt", max: 1.0 },
+        reasoning:
+          "Giftdrüsen injizieren Gift bei Treffer. Sqrt-Kurve: Chance steigt anfangs schnell, " +
+          "dann immer langsamer (Lv5 50%, Lv10 60%, Lv20 74%); bei 100% gedeckelt (ab Lv50).",
         statusConfig: {
           type: "dot",
           durationMs: 4000,

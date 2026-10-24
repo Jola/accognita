@@ -73,6 +73,7 @@ export interface LinearFormula {
   base: number;
   perLevel: number;
   curve?: "linear" | "sqrt" | "log";
+  max?: number;   // Obergrenze des Ergebnisses (z.B. 1.0 für Chancen)
 }
 
 /** Optionale Bedingung für einen SkillEffect */
