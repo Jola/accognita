@@ -70,6 +70,9 @@ Jeder Angriff durchläuft exakt diese Stufen in dieser Reihenfolge:
 ```
 [1] Basis-Schaden         (aus Skill/Angriff)
       ↓
+[1b] Treffer-Stufe        (implementiert: verfehlt ×0 → Abbruch, leicht ×0,6, normal ×1,
+                           schwer ×1,3, kritisch ×2,5 — Details: GDD-03 Abschnitt 6, Treffer-Stufen)
+      ↓
 [2] Angreifer-Multiplikator   (Stärke-Buffs, Superstrength etc.)
       ↓
 [3] Penetrations-Bonus    (Angreifer ignoriert X Punkte Rüstung)
@@ -228,6 +231,7 @@ interface LinearFormula {
 | `damage_mult` | Multipliziert ausgehenden Schaden | Faktor |
 | `speed_mod` | Verändert Bewegungsgeschwindigkeit | Faktor |
 | `grant_penetration` | Ignoriert X Punkte Flat-Block beim Angriff | Punkte |
+| `dexterity` | Geschick (Trigger `passive`): verschiebt Treffer-Stufen beim Angriff nach oben, beim Verteidigen nach unten. Zählt auch bei aktiven Skills, solange sie bekannt sind (z.B. Jump) | Punkte |
 
 ---
 
@@ -525,4 +529,4 @@ src/
 
 ---
 
-*Letzte Aktualisierung: v0.4 implementiert — DamageSystem (8-stufige Pipeline), SkillEffectSystem (deklarative Effekte), DamageType-System, Skill-Effekt-Deklaration für chitin_armor/superstrength/hemolymph/venom (Oktober 2026); LinearFormula.max (Obergrenze) ergänzt*
+*Letzte Aktualisierung: v0.4 implementiert — DamageSystem (8-stufige Pipeline), SkillEffectSystem (deklarative Effekte), DamageType-System, Skill-Effekt-Deklaration für chitin_armor/superstrength/hemolymph/venom (Oktober 2026); LinearFormula.max (Obergrenze), Treffer-Stufe als Pipeline-Schritt 1b, Effekt-Typ dexterity*

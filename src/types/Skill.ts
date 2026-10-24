@@ -5,7 +5,7 @@
 // ============================================================
 
 import type { MaterialStack } from "./Material";
-import type { AttackType, DamageType, StatusEffectType } from "./Combat";
+import type { AttackType, DamageType, HitProfile, StatusEffectType } from "./Combat";
 
 // Element-Typen — erweiterbar durch neue Einträge hier
 export type ElementType =
@@ -57,7 +57,8 @@ export type EffectType =
   | "reflect_damage"     // Gibt Schaden zurück (formula: HP)
   | "damage_mult"        // Multiplikativer Schadensbonus (formula: Faktor)
   | "speed_mod"          // Geschwindigkeits-Modifikator (formula: Faktor)
-  | "grant_penetration"; // Ignoriert X HP Flat-Block beim Angriff (formula: HP)
+  | "grant_penetration"  // Ignoriert X HP Flat-Block beim Angriff (formula: HP)
+  | "dexterity";         // Geschick-Punkte: bessere Treffer-Stufen, Ausweichen (formula: Punkte)
 
 /**
  * Lineare Formel: Wert bei Level L = base + perLevel × f(L-1)
@@ -126,6 +127,7 @@ export interface SkillDefinition {
   // Für aktive Skills (Kampf)
   baseDamage?: number;
   damageType?: DamageType;       // Schadenstyp des Angriffs (pierce, slash, fire, …)
+  hitProfile?: HitProfile;       // Treffer-Stufen bei Lv1 ohne Geschick (Standard: DEFAULT_HIT_PROFILE)
   mpCost?: number;
   cooldownMs?: number;
   attackType?: AttackType;       // Wie der Angriff ausgeführt wird

@@ -161,6 +161,42 @@ Venom-Chance: 30 % + 5 % × venom.level   [VERWORFEN — neue Formel siehe Absch
 Distanz = 160 + 20 × (jump.level - 1) px
 Richtung = Joystick-Vektor (falls inaktiv: kein Bewegungseffekt)
 ```
+Passiv gibt Jump außerdem **Geschick**: 1 + √(Level − 1) Punkte.
+
+### Treffer-Stufen (implementiert)
+
+Jeder Angriff — Spieler und Gegner, Nah- und Fernkampf — würfelt eine von fünf Stufen ([src/systems/HitSystem.ts](../src/systems/HitSystem.ts)):
+
+| Stufe | Schaden | Sonst |
+|-------|---------|-------|
+| Verfehlt | ×0 | kein Gift, kein Rückschlag, keine XP; das Ziel wird trotzdem aggressiv |
+| Leichter Treffer | ×0,6 | |
+| Treffer | ×1 | |
+| Schwerer Treffer | ×1,3 | |
+| Kritischer Treffer | ×2,5 | |
+
+Der Multiplikator greift vor der Rüstung (Pipeline-Schritt 1b in [GDD-05](GDD-05-Kampfmathematik.md)): Kritische Treffer schlagen durch Flat-Block, leichte Treffer bleiben eher daran hängen.
+
+**Grundverteilung pro Skill** (Lv1, Geschick 0) — `hitProfile` in [skills.ts](../src/data/skills.ts):
+
+| Angriff | Verfehlt | Leicht | Normal | Schwer | Kritisch | Charakter |
+|---------|---------|--------|--------|--------|----------|-----------|
+| Unbewaffnet (Standard) | 4 % | 24 % | 50 % | 19 % | 3 % | Körperstoß |
+| Biss | 3 % | 17 % | 52 % | 24 % | 4 % | präzise |
+| Klauenhieb | 5 % | 15 % | 45 % | 32 % | 3 % | wuchtig, öfter daneben |
+| Feueratem | 2 % | 25 % | 55 % | 16 % | 2 % | trifft fast immer, selten Schwachstelle |
+
+**Skalierung mit Skill-Level und Geschick** ([balance.ts](../src/data/balance.ts)):
+```
+x     = 0,05 · (Skill-Level − 1) + 0,1 · (Geschick Angreifer − Geschick Verteidiger)
+kipp  = 0,4 · tanh(x)
+p_i  ∝ grund_i · e^(kipp · stufe_i)      stufe = −2 (verfehlt) … +2 (kritisch)
+```
+Die tanh-Begrenzung hält Ränder klein: kritisch höchstens ≈ 2,2× Grundwert, verfehlt mindestens ≈ 0,45× — in der Praxis Krit ≤ ~8 %, Verfehlen ≤ ~11 %.
+Skill-Level: beim unbewaffneten Angriff zählt das Absorb-Level; bei Gegnern das Level ihres Angriffsskills (bite/claw/fire_breath), ohne Angriffsskill ihr Entity-Level.
+Geschick kommt aus `dexterity`-Effekten aller bekannten Skills (derzeit Jump; Springspinne hat Jump Lv2).
+
+**Anzeige:** Schadenszahl nach Stufe — leicht klein, schwer mit „!", kritisch groß, golden mit „!!", verfehlt als graues „verfehlt". Der INDEX im Spielmenü zeigt die Verteilung pro Skill und Level sowie für jeden Gegner.
 
 ---
 
@@ -318,4 +354,4 @@ scenes/GameScene.ts                ← verdrahtet alle Systeme, Phaser-Rendering
 
 ---
 
-*Letzte Aktualisierung: 2026-10-24 — Venom-Chance auf √-Kurve mit 100-%-Deckel umgestellt; GDD-06 verworfen, Verweis auf INDEX-Tab*
+*Letzte Aktualisierung: 2026-10-24 — Treffer-Stufen (verfehlt bis kritisch) und Geschick; Venom-Chance auf √-Kurve mit 100-%-Deckel; GDD-06 verworfen*

@@ -49,6 +49,7 @@ Diese Datei ist der **Einstiegspunkt für Menschen und KI-Systeme**, die mit den
 | **[src/systems/SkillSystem.ts](../src/systems/SkillSystem.ts)** | Reine Skill-Logik (kein Phaser) | Bei Skill-Logik-Fragen |
 | **[src/systems/EntitySystem.ts](../src/systems/EntitySystem.ts)** | Absorb/Analyze/Respawn-Logik (kein Phaser) | Bei Interaktions-Logik-Fragen |
 | **[src/systems/CombatSystem.ts](../src/systems/CombatSystem.ts)** | Schadensberechnung, Skill-Dispatch, Checkpoint-Logik | Bei Kampfsystem-Fragen |
+| **[src/systems/HitSystem.ts](../src/systems/HitSystem.ts)** | Treffer-Stufen (verfehlt bis kritisch): Wahrscheinlichkeiten aus Skill-Profil, Level und Geschick; Würfeln | Bei Fragen zu Treffer-Chancen |
 | **[src/systems/AiSystem.ts](../src/systems/AiSystem.ts)** | Aggro, Verfolgung, Angriffs-Trigger (kein Phaser) | Bei KI-Fragen |
 | **[src/systems/StatusEffectSystem.ts](../src/systems/StatusEffectSystem.ts)** | DoT/HoT/Aura, passive Skills | Bei Status-Effekt-Fragen |
 | **[src/systems/MaterialSystem.ts](../src/systems/MaterialSystem.ts)** | Loot-Drop-Auflösung, Material-Inventar | Beim Erweitern des Loot-Systems |
@@ -181,4 +182,4 @@ Wenn du als KI-Assistent an diesem Projekt arbeitest, gelten folgende Regeln:
 
 ---
 
-*Letzte Aktualisierung: v0.4 — GDD-06 verworfen (Referenz jetzt als INDEX-Tab im Spiel), SaveSystem-Migration vermerkt (Oktober 2026)*
+*Letzte Aktualisierung: v0.4 — HitSystem (Treffer-Stufen) ergänzt; GDD-06 verworfen (Referenz jetzt als INDEX-Tab im Spiel), SaveSystem-Migration vermerkt (Oktober 2026)*

@@ -38,6 +38,7 @@ import {
   getMaterialList,
 } from "../systems/MaterialSystem.js";
 import type { EntityInstance } from "../types/Entity.js";
+import type { HitGrade } from "../types/Combat.js";
 import { createJoystick, type JoystickState } from "../ui/Joystick.js";
 import { createSkillBar, type SkillBarState } from "../ui/SkillBar.js";
 import { createSkillMenu } from "../ui/SkillMenu.js";
@@ -58,7 +59,6 @@ import {
   getScaledDamage,
   getScaledSpeed,
   getEntityBaseDamage,
-  getEntityRangedDamage,
   findLevelingPrey,
   processEntityVictory,
   canFight,
@@ -66,6 +66,7 @@ import {
 import {
   playerAttack,
   entityAttack,
+  entityRangedAttack,
   canActivateSkill,
   consumeSkill,
   executeJump,
@@ -78,11 +79,6 @@ import {
   removeExpiredEffects,
   syncPassiveEffects,
 } from "../systems/StatusEffectSystem.js";
-import {
-  getPlayerPassiveSkillLevels,
-  resolveDefenderEffects,
-} from "../systems/SkillEffectSystem.js";
-import { calcFinalDamage } from "../systems/DamageSystem.js";
 import {
   PLAYER_WORLD_RADIUS_MIN,
   PLAYER_WORLD_RADIUS_MAX,
@@ -626,25 +622,11 @@ export class GameScene extends Phaser.Scene {
       // Entity setzt Fernkampf ein (z.B. Drachen-Feueratem)
       if (frame.wantToRangedAttack && def.rangedAttackSkillId) {
         setRangedCooldown(instance, def);
-        const rangedSkillDef = ALL_SKILLS.get(def.rangedAttackSkillId);
-        const rangedDamageType = rangedSkillDef?.damageType;
-        const rangedBaseDmg = getEntityRangedDamage(def);
-        const playerPassiveLevels = getPlayerPassiveSkillLevels(this.gameState.player);
-        const rangedDefenderEffects = resolveDefenderEffects(playerPassiveLevels, rangedDamageType);
-        const finalDmg = calcFinalDamage({
-          baseDmg: rangedBaseDmg,
-          damageType: rangedDamageType,
-          attackerMult: 1.0,
-          attackerPenetration: 0,
-          defenderFlatBlock: rangedDefenderEffects.flatBlock,
-          defenderPercentReduce: rangedDefenderEffects.percentReduce,
-          defenderWeaknessMult: rangedDefenderEffects.weaknessMult,
-          defenderImmune: rangedDefenderEffects.immune,
-        });
-        this.gameState.player.hp = Math.max(0, this.gameState.player.hp - finalDmg);
+        const ranged = entityRangedAttack(def, this.gameState.player);
+        this.gameState.player.hp = Math.max(0, this.gameState.player.hp - ranged.damageDealt);
         this.showFireBreath(instance.x, instance.y, px, py);
-        this.showDamageNumber(px, py, finalDmg, "#ff6600");
-        addLog(`${def.icon} ${def.name} Feueratem! ${Math.round(finalDmg / 1000)} Schaden!`, "aggro");
+        this.showDamageNumber(px, py, ranged.damageDealt, "#ff6600", ranged.hitGrade);
+        addLog(ranged.message, "aggro");
         updateUI(this.gameState);
       }
 
@@ -678,8 +660,11 @@ export class GameScene extends Phaser.Scene {
           }
 
           addLog(result.message, "aggro");
-          this.showDamageNumber(px, py, result.damageDealt, "#ff4444");
+          this.showDamageNumber(px, py, result.damageDealt, "#ff4444", result.hitGrade);
           updateUI(this.gameState);
+        } else if (result.hitGrade === "miss") {
+          addLog(result.message, "aggro");
+          this.showDamageNumber(px, py, 0, "#ff4444", "miss");
         }
       }
     }
@@ -872,16 +857,27 @@ export class GameScene extends Phaser.Scene {
   // dann per setScale(1/zoom) auf Weltgröße runterskaliert.
   // Der Kamera-Zoom hebt das wieder auf → exakt 14px auf dem Bildschirm, nie unscharf.
   // Offset und Rise ebenfalls in Bildschirm-Pixeln, dann durch Zoom geteilt.
-  private showDamageNumber(x: number, y: number, dmg: number, color: string) {
+  private showDamageNumber(x: number, y: number, dmg: number, color: string, grade?: HitGrade) {
     const zoom   = this.cameras.main.zoom;
     const scale  = 1 / zoom;
     const offset = 10 / zoom;   // 10 Bildschirmpixel nach oben
     const rise   = 18 / zoom;   // 18 Bildschirmpixel Aufstieg
 
+    // Treffer-Stufe sichtbar machen: Größe, Farbe, Text
+    const n = `${Math.round(dmg / 1000)}`;
+    const style: Record<HitGrade, { text: string; size: number; color: string }> = {
+      miss:   { text: "verfehlt", size: 12, color: "#aaaaaa" },
+      light:  { text: n,          size: 11, color },
+      normal: { text: n,          size: 14, color },
+      heavy:  { text: `${n}!`,    size: 17, color },
+      crit:   { text: `${n}!!`,   size: 21, color: "#ffd23f" },
+    };
+    const s = style[grade ?? "normal"];
+
     const txt = this.add
-      .text(x, y - offset, `${Math.round(dmg / 1000)}`, {
-        fontSize: "14px",
-        color,
+      .text(x, y - offset, s.text, {
+        fontSize: `${s.size}px`,
+        color: s.color,
         fontStyle: "bold",
         stroke: "#000000",
         strokeThickness: 3,
@@ -980,7 +976,7 @@ export class GameScene extends Phaser.Scene {
       for (const effect of result.statusApplied) {
         applyEffect(target, effect);
       }
-      this.showDamageNumber(target.x, target.y, result.damageDealt, "#ffffff");
+      this.showDamageNumber(target.x, target.y, result.damageDealt, "#ffffff", result.hitGrade);
 
       const def = ENTITY_MAP.get(target.definitionId);
 
@@ -1012,6 +1008,11 @@ export class GameScene extends Phaser.Scene {
       // Superstrength: 1 XP pro Treffer, skaliert nach Entity-Level
       this.skillLevelUp(gainSkillXp(this.gameState.player, "superstrength", 1, def?.level), "superstrength");
       // Venom: XP kommt von den DoT-Ticks in processCombatEffects
+    } else if (result.hitGrade === "miss") {
+      // Verfehlt: kein Schaden, keine XP — das Ziel bemerkt den Angriff trotzdem
+      target.isAggro = true;
+      this.showDamageNumber(target.x, target.y, 0, "#ffffff", "miss");
+      addLog(result.message, "absorb");
     } else {
       showToast(result.message, "system");
     }

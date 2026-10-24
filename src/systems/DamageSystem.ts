@@ -22,6 +22,7 @@ import {
 export interface DamageInput {
   baseDmg: number;               // milli-HP (Basisschaden vor Attacker-Mult)
   damageType?: DamageType;       // Schadenstyp (undefined = untypisiert/blunt)
+  hitMult: number;               // Treffer-Stufe (HIT_DAMAGE_MULT): 0 = verfehlt, 1 = normal
 
   // Angreifer-Effekte
   attackerMult: number;          // Multiplikator (1.0 = neutral, >1.0 = stärker)
@@ -39,6 +40,8 @@ export interface DamageInput {
 //
 // Schritte (aus GDD-05 Abschnitt 3.2):
 //   [1] Basis-Schaden (Input)
+//   [1b] × Treffer-Stufe (verfehlt → 0, kritisch ×2,5 — vor Rüstung, damit
+//        Krits durch Flat-Block durchschlagen und leichte Treffer daran hängen bleiben)
 //   [2] × Angreifer-Multiplikator
 //   [3+4] Penetration bricht Flat-Block auf
 //   [5] Prozentuale Reduktion (gecappt)
@@ -47,10 +50,10 @@ export interface DamageInput {
 //   [8] Final-Schaden (Integer)
 // -----------------------------------------------------------
 export function calcFinalDamage(input: DamageInput): number {
-  if (input.defenderImmune) return 0;
+  if (input.defenderImmune || input.hitMult <= 0) return 0;
 
-  // [2] Angreifer-Multiplikator
-  const afterMult = input.baseDmg * Math.max(0, input.attackerMult);
+  // [1b+2] Treffer-Stufe und Angreifer-Multiplikator
+  const afterMult = input.baseDmg * input.hitMult * Math.max(0, input.attackerMult);
 
   // [3+4] Penetration + Flat-Block
   // Penetration "bricht" einen Teil des Flat-Blocks auf

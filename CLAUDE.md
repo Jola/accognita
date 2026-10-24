@@ -32,6 +32,7 @@ Current state: **v0.3** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/systems/EntitySystem.ts` | Absorb/Analyze/Respawn logic |
 | `src/systems/StatusEffectSystem.ts` | DoT/HoT/Aura processing, passive skill sync |
 | `src/systems/CombatSystem.ts` | Damage calculation, skill dispatch, checkpoint logic |
+| `src/systems/HitSystem.ts` | Hit grades (miss/light/normal/heavy/crit): chances from skill profile, level and dexterity; dice roll |
 | `src/systems/AiSystem.ts` | Aggro, chase, attack-trigger (pure logic, no Phaser) |
 | `src/systems/MaterialSystem.ts` | Loot drop resolution and material inventory logic |
 | `src/systems/SaveSystem.ts` | Save/load game state via localStorage (3 slots) |

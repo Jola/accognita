@@ -153,6 +153,24 @@ export function resolveAttackerEffects(
 }
 
 // -----------------------------------------------------------
+// resolveDexterity
+//
+// Summe aller passiven Geschick-Effekte. Geschick verbessert die
+// Treffer-Stufen beim Angriff und lässt Gegner öfter schlecht treffen.
+// -----------------------------------------------------------
+export function resolveDexterity(skillLevels: Record<string, number>): number {
+  let dex = 0;
+  for (const [skillId, level] of Object.entries(skillLevels)) {
+    for (const effect of ALL_SKILLS.get(skillId)?.effects ?? []) {
+      if (effect.trigger === "passive" && effect.effectType === "dexterity") {
+        dex += evalFormula(effect.formula, level);
+      }
+    }
+  }
+  return dex;
+}
+
+// -----------------------------------------------------------
 // resolveOnHitStatusEffects
 //
 // Gibt StatusEffect-Instanzen zurück die bei einem Treffer

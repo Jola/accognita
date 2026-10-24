@@ -21,6 +21,13 @@ export type DamageType =
   | "psychic";  // Psychisch (nur gegen Wesen mit Nervensystem)
 
 // -----------------------------------------------------------
+// HitGrade: Treffer-Stufe eines Angriffs (von schlecht nach gut)
+// HitProfile: Gewicht bzw. Wahrscheinlichkeit je Stufe
+// -----------------------------------------------------------
+export type HitGrade = "miss" | "light" | "normal" | "heavy" | "crit";
+export type HitProfile = Record<HitGrade, number>;
+
+// -----------------------------------------------------------
 // AttackType: Wie ein Angriff / Skill ausgeführt wird
 // -----------------------------------------------------------
 export type AttackType =
@@ -111,7 +118,8 @@ export interface ProjectileData {
 // Wird von CombatSystem zurückgegeben — reine Daten, kein Rendering.
 // -----------------------------------------------------------
 export interface AttackResult {
-  hit: boolean;
+  hit: boolean;                        // false bei Verfehlen (hitGrade "miss") und bei ungültigem Angriff
+  hitGrade?: HitGrade;                 // nur gesetzt, wenn gewürfelt wurde
   damageDealt: number;
   statusApplied: StatusEffect[];       // Neu applizierte Effekte auf dem Ziel
   projectile?: ProjectileData;         // Nur bei ranged_projectile / magic

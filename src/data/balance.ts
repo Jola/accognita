@@ -12,6 +12,8 @@
 // Alle anderen Module IMPORTIEREN von hier, definieren nichts selbst.
 // ============================================================
 
+import type { HitProfile } from "../types/Combat";
+
 // -----------------------------------------------------------
 // MILLI-EINHEITEN
 //
@@ -197,6 +199,31 @@ export const SKILL_DAMAGE_BASE_MULTIPLIER = 1.0;
 
 /** Globaler Verteidigungs-Multiplikator (Balancing-Hebel) */
 export const SKILL_DEFENSE_BASE_MULTIPLIER = 1.0;
+
+// -----------------------------------------------------------
+// TREFFER-STUFEN (verfehlt / leicht / normal / schwer / kritisch)
+//
+// Jeder Angriffsskill hat eine Grundverteilung (hitProfile, Lv1, Geschick 0).
+// Skill-Level und Geschick-Differenz kippen die Verteilung Richtung bessere Stufen:
+//   x    = HIT_TILT_PER_SKILL_LEVEL·(Level−1) + HIT_TILT_PER_DEX·(Geschick Angreifer − Verteidiger)
+//   kipp = HIT_TILT_MAX · tanh(x)                       (weich begrenzt auf ±HIT_TILT_MAX)
+//   p_i  ∝ grund_i · e^(kipp · stufe_i),  stufe = −2 … +2 (verfehlt … kritisch)
+// Bei HIT_TILT_MAX 0.4 steigt Krit höchstens auf ≈2,2× und Verfehlen fällt auf ≈0,45× —
+// beide bleiben selten.
+// -----------------------------------------------------------
+
+/** Grundverteilung für Angriffe ohne eigenes hitProfile (z.B. unbewaffneter Blob) */
+export const DEFAULT_HIT_PROFILE: HitProfile = { miss: 0.04, light: 0.24, normal: 0.50, heavy: 0.19, crit: 0.03 };
+
+/** Schadens-Multiplikator je Treffer-Stufe — für alle Skills gleich */
+export const HIT_DAMAGE_MULT: HitProfile = { miss: 0, light: 0.6, normal: 1.0, heavy: 1.3, crit: 2.5 };
+
+/** Maximales Kippen der Verteilung (in beide Richtungen) */
+export const HIT_TILT_MAX = 0.4;
+/** Beitrag pro Skill-Level über 1 */
+export const HIT_TILT_PER_SKILL_LEVEL = 0.05;
+/** Beitrag pro Geschick-Punkt Vorsprung des Angreifers */
+export const HIT_TILT_PER_DEX = 0.1;
 
 // -----------------------------------------------------------
 // ANALYZE-MODIFIKATOR
