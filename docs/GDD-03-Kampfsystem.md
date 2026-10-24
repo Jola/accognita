@@ -308,6 +308,7 @@ scenes/GameScene.ts                ← verdrahtet alle Systeme, Phaser-Rendering
 | [GDD-01 Abschnitt 10](GDD-01-Hauptbeschreibung.md#10-blob-teilung--respawn-system) | Blob-Teilungs-Respawn — biologische Grundlage und Spielmechanik |
 | [GDD-02](GDD-02-Skillsystem.md) | Skill-Definitionen und Entdeckungsmechaniken |
 | [GDD-05](GDD-05-Kampfmathematik.md) | Mathematisches Modell für Schadensberechnung und Skill-Effekte (v0.4) |
+| [GDD-06](GDD-06-Referenz.md) | Generierte Referenz: alle Skills und Einheiten mit aktuellen Kampfwerten |
 | [src/systems/CombatSystem.ts](../src/systems/CombatSystem.ts) | Aktuelle Kampfimplementierung |
 | [src/systems/AiSystem.ts](../src/systems/AiSystem.ts) | KI-Logik: Aggro, Verfolgung, Angriffe |
 | [src/systems/StatusEffectSystem.ts](../src/systems/StatusEffectSystem.ts) | DoT/HoT/Aura-Verarbeitung |
@@ -315,4 +316,4 @@ scenes/GameScene.ts                ← verdrahtet alle Systeme, Phaser-Rendering
 
 ---
 
-*Letzte Aktualisierung: 2026-10-23 — GDD-05-Verweis und Querverlinkungen ergänzt*
+*Letzte Aktualisierung: 2026-10-24 — Verweis auf GDD-06 (Referenz) ergänzt*

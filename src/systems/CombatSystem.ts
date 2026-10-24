@@ -43,7 +43,7 @@ const UNARMED_DAMAGE_TYPE: DamageType = "blunt";  // Körpermasse = Wucht
 // Priorität: bite → pierce, claw → slash, fire_breath → fire,
 //            kein Skill → blunt
 // -----------------------------------------------------------
-function getEntityAttackDamageType(def: EntityDefinition): DamageType {
+export function getEntityAttackDamageType(def: EntityDefinition): DamageType {
   if (def.skillLevels?.["bite"] !== undefined)  return "pierce";
   if (def.skillLevels?.["claw"] !== undefined)  return "slash";
   if (def.rangedAttackSkillId === "fire_breath") return "fire";

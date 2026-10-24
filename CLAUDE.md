@@ -27,6 +27,7 @@ Current state: **v0.3** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/data/entities.ts` | All entity definitions |
 | `src/data/materials.ts` | All material/loot definitions |
 | `src/data/balance.ts` | Central balancing constants (XP curves, damage, etc.) |
+| `src/data/version.ts` | `GAME_VERSION` — must match `package.json` (build.js aborts otherwise). Shown in save dialog and stored in each save. |
 | `src/systems/SkillSystem.ts` | Pure skill logic — no Phaser, no DOM, fully testable |
 | `src/systems/EntitySystem.ts` | Absorb/Analyze/Respawn logic |
 | `src/systems/StatusEffectSystem.ts` | DoT/HoT/Aura processing, passive skill sync |
@@ -50,6 +51,9 @@ Current state: **v0.3** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `docs/GDD-02-Skillsystem.md` | Skill discovery, leveling, combinations. |
 | `docs/GDD-03-Kampfsystem.md` | Combat design — v0.3 implemented. |
 | `docs/GDD-04-LookAndFeel.md` | Colors, typography, UI layout, mobile/desktop, tech stack. |
+| `docs/GDD-05-Kampfmathematik.md` | Damage pipeline, damage types, declarative skill effects. |
+| `docs/GDD-06-Referenz.md` | **Generated** by `scripts/gen-reference.ts` on every `node build.js` — all skills and entities with all parameters. Never edit by hand; commit it together with data changes. |
+| `scripts/gen-reference.ts` | Generator for GDD-06 (bundled and run by build.js). |
 
 ---
 

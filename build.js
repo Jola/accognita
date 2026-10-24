@@ -13,9 +13,25 @@ const args = process.argv.slice(2);
 const outIdx = args.indexOf("--out");
 const outDir = outIdx !== -1 ? args[outIdx + 1] : ".";
 
+// 0. Versionsnummern abgleichen (package.json ↔ src/data/version.ts)
+const pkgVersion = require("./package.json").version;
+const srcVersion = (fs.readFileSync("src/data/version.ts", "utf8").match(/GAME_VERSION\s*=\s*"([^"]+)"/) || [])[1];
+if (pkgVersion !== srcVersion) {
+  console.error(`Versions-Konflikt: package.json=${pkgVersion}, src/data/version.ts=${srcVersion}`);
+  process.exit(1);
+}
+
 // 1. TypeScript kompilieren
 console.log("tsc...");
 execFileSync("node_modules/.bin/tsc", [], { stdio: "inherit" });
+
+// 1b. Referenz-Doku (docs/GDD-06-Referenz.md) aus den Spieldaten erzeugen
+console.log("gen-reference...");
+execFileSync("node_modules/.bin/esbuild", [
+  "scripts/gen-reference.ts", "--bundle", "--platform=node",
+  "--outfile=dist/gen-reference.cjs", "--log-level=warning",
+], { stdio: "inherit" });
+execFileSync("node", ["dist/gen-reference.cjs"], { stdio: "inherit" });
 
 // 2. Bundle mit esbuild
 console.log("esbuild...");

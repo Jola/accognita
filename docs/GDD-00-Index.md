@@ -34,6 +34,7 @@ Diese Datei ist der **Einstiegspunkt für Menschen und KI-Systeme**, die mit den
 | **[GDD-03-Kampfsystem.md](GDD-03-Kampfsystem.md)** | Kampfablauf, Gegnertypen, Schadenformeln, Status-Effekte, Tod-Mechanik | Bei Fragen zu Kämpfen, Gegnern, Balance, Spieler-Werten |
 | **[GDD-04-LookAndFeel.md](GDD-04-LookAndFeel.md)** | Farbpalette, Typografie, UI-Layout (Mobile + Desktop), Touch-Controls, Animationen, Audio, Tech-Stack | Bei Fragen zu Design, UI, Grafik, Sound, Technologie, Plattform |
 | **[GDD-05-Kampfmathematik.md](GDD-05-Kampfmathematik.md)** | Schadenstypen-Taxonomie, 8-stufige Damage-Pipeline, Verteidigungsmodell, SkillEffect-Deklarationssystem, LinearFormula, Beispiel-Konfigurationen, Migrations-Strategie v0.3→v0.4 | Bei Fragen zur Kampfmathematik, Skill-Balancing, Schadensformeln, neuen Skills/Entities konfigurieren |
+| **[GDD-06-Referenz.md](GDD-06-Referenz.md)** | **Automatisch generiert** (`scripts/gen-reference.ts`, läuft bei jedem Build). Alle Skills und Einheiten mit allen Parametern: Effekte mit Werten pro Level, Drops, Vorkommen, Verteidigung je Schadenstyp, Bonus-Level-Skalierung | Beim Balancing — aktuelle Ist-Werte nachschlagen. Nie von Hand bearbeiten |
 | **slime-rpg.html** | [VERWORFEN] Ursprünglicher Vanilla-JS-Prototype v0.1 — nicht mehr aktiv gepflegt | Nur als historische Referenz |
 | **accognita.html** | Aktuelles Spiel v0.3 — Single-File-Build, per Doppelklick öffenbar oder via GitHub Pages | Als Referenz für implementierte Mechaniken |
 | **[src/types/Skill.ts](../src/types/Skill.ts)** | TypeScript-Interfaces: SkillDefinition, SkillInstance, DiscoveryResult | Beim Erweitern des Skill-Systems |
@@ -51,7 +52,7 @@ Diese Datei ist der **Einstiegspunkt für Menschen und KI-Systeme**, die mit den
 | **[src/systems/AiSystem.ts](../src/systems/AiSystem.ts)** | Aggro, Verfolgung, Angriffs-Trigger (kein Phaser) | Bei KI-Fragen |
 | **[src/systems/StatusEffectSystem.ts](../src/systems/StatusEffectSystem.ts)** | DoT/HoT/Aura, passive Skills | Bei Status-Effekt-Fragen |
 | **[src/systems/MaterialSystem.ts](../src/systems/MaterialSystem.ts)** | Loot-Drop-Auflösung, Material-Inventar | Beim Erweitern des Loot-Systems |
-| **[src/systems/SaveSystem.ts](../src/systems/SaveSystem.ts)** | Speichern/Laden via localStorage (3 Slots) | Bei Speicher-Fragen |
+| **[src/systems/SaveSystem.ts](../src/systems/SaveSystem.ts)** | Speichern/Laden via localStorage (3 Slots), Migration alter Spielstände (`SAVE_VERSION` + `MIGRATIONS`) | Bei Speicher-Fragen |
 | **[src/ui/Joystick.ts](../src/ui/Joystick.ts)** | Virtueller Joystick (DOM, kein Phaser) | Bei Touch-Input-Fragen |
 | **[src/ui/SkillBar.ts](../src/ui/SkillBar.ts)** | Touch-Skill-Slots mit Cooldown-Anzeige | Bei UI-Fragen |
 | **[src/ui/SkillMenu.ts](../src/ui/SkillMenu.ts)** | Vollbild-Skill-Management-Overlay | Bei UI-Fragen |
@@ -83,9 +84,12 @@ GDD-00 (Index)
     ├── GDD-04 (Look & Feel)
     │       └── beschreibt wie GDD-01 bis 03 visuell umgesetzt werden
     │
-    └── GDD-05 (Kampfmathematik)
-            ├── setzt GDD-02 (Skill-Konzepte) und GDD-03 (Kampfablauf) voraus
-            └── definiert Zielformat für src/data/skills.ts und src/data/entities.ts
+    ├── GDD-05 (Kampfmathematik)
+    │       ├── setzt GDD-02 (Skill-Konzepte) und GDD-03 (Kampfablauf) voraus
+    │       └── definiert Zielformat für src/data/skills.ts und src/data/entities.ts
+    │
+    └── GDD-06 (Referenz) — automatisch generiert
+            └── alle Skills und Einheiten mit allen Parametern, aus src/data/ erzeugt
 ```
 
 **Abhängigkeitsregel**: Änderungen an GDD-01 können alle anderen Dokumente betreffen. Änderungen an GDD-02 betreffen GDD-03 und GDD-05. GDD-04 ist weitgehend unabhängig. GDD-05 ist die mathematische Grundlage für alle Kampf-Implementierungen.
@@ -178,4 +182,4 @@ Wenn du als KI-Assistent an diesem Projekt arbeitest, gelten folgende Regeln:
 
 ---
 
-*Letzte Aktualisierung: v0.3 — GDD-05 ergänzt, alle Dateireferenzen als Markdown-Links, Dependency-Diagramm und Backlog aktualisiert (Oktober 2026)*
+*Letzte Aktualisierung: v0.4 — GDD-06 (generierte Referenz aller Skills und Einheiten) ergänzt, SaveSystem-Migration vermerkt (Oktober 2026)*

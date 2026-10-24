@@ -12,17 +12,20 @@
 
 import type { PlayerState } from "../types/GameState";
 import type { SkillInstance } from "../types/Skill";
+import { GAME_VERSION } from "../data/version";
+import { calcMaxHp, calcMaxMp } from "./SkillSystem";
 
 export const NUM_SAVE_SLOTS = 3;
 const SAVE_PREFIX    = "accognita_save_";
-const SAVE_VERSION   = 1;
+const SAVE_VERSION   = 2;
 
 // -----------------------------------------------------------
 // SAVE-METADATEN — Vorschau ohne komplettes Deserialize
 // -----------------------------------------------------------
 export interface SaveMeta {
   slot: number;
-  version: number;
+  version: number;          // Format-Version des Spielstands
+  gameVersion?: string;     // Spielversion beim Speichern (fehlt bei alten Spielständen)
   savedAt: number;          // Date.now()
   playerLevel: number;
   hp: number;
@@ -121,10 +124,63 @@ function deserializePlayer(data: SerializedPlayer): PlayerState {
 }
 
 // -----------------------------------------------------------
+// MIGRATIONEN
+// Schlüssel = Format-Version VON der migriert wird. Jede Migration
+// hebt den Spielstand genau eine Version an. Beim Formatwechsel:
+// SAVE_VERSION erhöhen und hier eine Migration ergänzen.
+// -----------------------------------------------------------
+const MIGRATIONS: Record<number, (data: SaveData) => void> = {
+  // v1 → v2: HP/MP in Milli-Einheiten (1 HP = 1000 mHP).
+  // Auch v1-Stände nach der Umstellung existieren (bereits milli), deshalb
+  // anteilig umrechnen statt ×1000: Füllstand bleibt, Maximum aus dem Level.
+  1: (data) => {
+    const p = data.player;
+    const rescale = (value: number, oldMax: number, newMax: number) =>
+      Math.max(0, Math.min(newMax, Math.round((value / (oldMax || 1)) * newMax)));
+
+    const maxHp = calcMaxHp(p.level);
+    const maxMp = calcMaxMp(p.level);
+    p.hp    = rescale(p.hp, p.maxHp, maxHp);
+    p.mp    = rescale(p.mp, p.maxMp, maxMp);
+    p.maxHp = maxHp;
+    p.maxMp = maxMp;
+    data.meta.hp    = p.hp;
+    data.meta.maxHp = p.maxHp;
+  },
+};
+
+/** Bringt einen Spielstand auf SAVE_VERSION. null wenn keine Migration existiert. */
+function migrate(data: SaveData): SaveData | null {
+  let version = data.meta.version ?? 1;
+  while (version < SAVE_VERSION) {
+    const step = MIGRATIONS[version];
+    if (!step) return null;
+    step(data);
+    version++;
+    data.meta.version = version;
+  }
+  return data;
+}
+
+// -----------------------------------------------------------
 // SLOT-SCHLÜSSEL
 // -----------------------------------------------------------
 function slotKey(slot: number): string {
   return `${SAVE_PREFIX}${slot}`;
+}
+
+/** Slot lesen, parsen und migrieren. null bei leerem, kaputtem oder nicht migrierbarem Slot. */
+function readSlot(slot: number): SaveData | null {
+  if (slot < 0 || slot >= NUM_SAVE_SLOTS) return null;
+  const raw = localStorage.getItem(slotKey(slot));
+  if (!raw) return null;
+  try {
+    const data: SaveData = JSON.parse(raw);
+    if (!data.meta || !data.player) return null;
+    return migrate(data);
+  } catch {
+    return null;
+  }
 }
 
 // -----------------------------------------------------------
@@ -142,6 +198,7 @@ export function saveToSlot(
   const meta: SaveMeta = {
     slot,
     version: SAVE_VERSION,
+    gameVersion: GAME_VERSION,
     savedAt: Date.now(),
     playerLevel: player.level,
     hp: player.hp,
@@ -168,35 +225,16 @@ export function loadFromSlot(slot: number): {
   player: PlayerState;
   meta: SaveMeta;
 } | null {
-  if (slot < 0 || slot >= NUM_SAVE_SLOTS) return null;
-
-  const raw = localStorage.getItem(slotKey(slot));
-  if (!raw) return null;
-
-  try {
-    const data: SaveData = JSON.parse(raw);
-    if (!data.meta || !data.player) return null;
-
-    const player = deserializePlayer(data.player);
-    return { player, meta: data.meta };
-  } catch {
-    return null;
-  }
+  const data = readSlot(slot);
+  if (!data) return null;
+  return { player: deserializePlayer(data.player), meta: data.meta };
 }
 
 // -----------------------------------------------------------
 // SLOT-METADATEN LESEN (ohne vollständiges Deserialisieren)
 // -----------------------------------------------------------
 export function getSlotMeta(slot: number): SaveMeta | null {
-  if (slot < 0 || slot >= NUM_SAVE_SLOTS) return null;
-  const raw = localStorage.getItem(slotKey(slot));
-  if (!raw) return null;
-  try {
-    const data: SaveData = JSON.parse(raw);
-    return data.meta ?? null;
-  } catch {
-    return null;
-  }
+  return readSlot(slot)?.meta ?? null;
 }
 
 // -----------------------------------------------------------

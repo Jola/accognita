@@ -120,6 +120,7 @@ Das Spiel ist primär für Mobilgeräte entwickelt. Desktop wird vollständig un
 ### Responsive Breakpoint
 - `≤ 700px`: Mobile Layout (Side Panel ausgeblendet, Touch Controls aktiv, Bottom Sheet aktiv)
 - `> 700px`: Desktop Layout (Side Panel sichtbar, Footer sichtbar, Touch Controls ausgeblendet)
+- `> 700px` **im Vollbild** (z.B. Handy im Querformat): Side Panel wird zur einklappbaren Schublade. Beim Betreten des Vollbilds ist sie zugeklappt, das Spielfeld nutzt die volle Breite. Der 📋 Panel-Button (oben rechts) fährt sie von rechts über das Spielfeld herein; Panel-Button, Skill-Bar und Absorb/Analyze-Buttons rücken dabei links neben die Schublade. Außerhalb des Vollbilds bleibt das Side Panel fest aufgeklappt.
 
 ### Touch Controls (Mobile)
 - **Virtueller Joystick** (links unten): Kreis mit beweglichem Thumb, max. Radius 44px. Bewegung wird als Vektor (dx/dy) an den Spieler übergeben und mit Keyboard-Input addiert.
@@ -271,4 +272,4 @@ Kein lokales Node.js, npm oder Terminal auf Jörns Seite nötig.
 
 ---
 
-*Letzte Aktualisierung: v0.3 — Biom-Farbpaletten, Pixel-Art-Tiles, Chunk-System und aktueller Tech-Stack eingetragen (März 2026)*
+*Letzte Aktualisierung: v0.4 — Einklappbares Side Panel im Vollbild-Querformat (Oktober 2026)*
