@@ -93,6 +93,21 @@ Aktuelle Werte aller Einheiten: im Spiel unter 📋 → INDEX (live aus [entitie
 - Aggro-Verlust erst bei 2,5 × Aggro-Radius — **Begründung (rekonstruiert, bitte bestätigen):** Abstand zwischen „wird aggro" und „verliert Aggro" verhindert, dass ein Gegner am Rand des Radius ständig hin- und herschaltet; man muss sich wirklich absetzen.
 - 100 ms Takt, 500 px Grenze — **Begründung (rekonstruiert, bitte bestätigen):** Performance auf Mobilgeräten bei großer Welt mit vielen Einheiten.
 
+### Größen- und levelabhängiges Aggro
+
+> Status: Konzept — noch nicht implementiert
+
+**Vorgabe (Entwickler):** Ob ein Gegner aggressiv auf den Blob reagiert, hängt auch vom Größen- bzw. Levelunterschied ab:
+- **Viel größere Gegner** interessieren sich zunächst nicht für einen sehr kleinen Blob. Sie reagieren nicht aggressiv, selbst wenn sie normalerweise aggressiv sind.
+- **Viel kleinere Gegner**, die keine Chance haben, greifen den Blob nicht mehr an, wenn er zu groß oder zu stark geworden ist. Das gilt auch dann, wenn sie normalerweise aggressiv sind.
+
+**Begründung (Entwickler):** Über die Größe soll Spieldynamik entstehen. Auch in Gebieten, für die der Blob eigentlich noch zu klein ist, darf es sehr starke Gegner geben. Man kann sie erst einmal einfach ignorieren, weil sie den Blob ebenfalls ignorieren. Bezug: [GDD-07 Abschnitt 1](GDD-07-Bestiarium.md#1-rahmen).
+
+Noch zu klären:
+- Ab welchem Unterschied gilt „viel größer“ bzw. „viel kleiner“? Und zählt die Größe, das Level oder beides?
+- Was passiert, wenn der Blob einen Gegner angreift, der ihn ignoriert? (Vorschlag: Der Gegner wehrt sich dann wie bei `defensive`.)
+- Fliehen viel kleinere Gegner vor dem Blob, oder bleiben sie nur friedlich?
+
 ---
 
 ## 5. Status-Effekte (StatusEffectSystem — implementiert)
@@ -394,4 +409,4 @@ scenes/GameScene.ts                ← verdrahtet alle Systeme, Phaser-Rendering
 
 ---
 
-*Letzte Aktualisierung: 2026-10-24 — Geschick ohne Beitrag des eingesetzten Skills; Begründungen ergänzt bzw. als offen markiert, veraltete Werte (Spieler-Wachstum, Entity-Tabelle, Passiv-Effekte) als VERWORFEN gekennzeichnet; Treffer-Stufen und Geschick; Venom-Chance mit 100-%-Deckel*
+*Letzte Aktualisierung: 2026-10-25 — Größen- und levelabhängiges Aggro als Konzept (Abschnitt 4); 2026-10-24 — Geschick ohne Beitrag des eingesetzten Skills; Begründungen ergänzt bzw. als offen markiert, veraltete Werte (Spieler-Wachstum, Entity-Tabelle, Passiv-Effekte) als VERWORFEN gekennzeichnet; Treffer-Stufen und Geschick; Venom-Chance mit 100-%-Deckel*

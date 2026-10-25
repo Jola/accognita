@@ -50,6 +50,22 @@ Ist das Entitäts-Level höher als das Fähigkeits-Level, steigt die Fehlschlags
 **Implementiert (vorläufig):** `Erfolg = min(1, Fähigkeits-Level / Entitäts-Level)` ([balance.ts](../src/data/balance.ts) `calcSuccessChance`) — gleiches oder höheres Level = sicherer Erfolg, darunter proportional weniger.
 > Begründung offen — die Formel ist als Platzhalter umgesetzt; die Entscheidung linear vs. Kurve steht noch aus (GDD-00 Backlog).
 
+### 1.4 Größe beim Absorbieren und Analysieren
+
+> **Status: Konzept (vorläufig)** — Die Regeln für Absorbieren und Analysieren werden noch überarbeitet; beides kann sich ändern.
+
+**Vorgabe (Entwickler):** Das Größenverhältnis wird über `worldSize` gemessen (Größe der Entität ÷ Größe des Blobs).
+
+**Absorbieren:**
+**Vorgabe (Entwickler):** Absorbieren ist nur möglich, wenn die Entität höchstens 20 % größer ist als der Blob (`worldSize` der Entität ≤ 1,2 × `worldSize` des Blobs).
+> Begründung offen
+
+**Analysieren:**
+**Vorgabe (Entwickler):** Für Analysieren gilt die 20-%-Grenze nicht, auch größere Gegner können analysiert werden. Bei zu großen und zu starken Gegnern ist die Erfolgswahrscheinlichkeit aber deutlich geringer.
+**Begründung (Entwickler):** Man soll nicht einfach zu den stärksten Gegnern laufen, sie analysieren und dadurch einen übermäßig schnellen Spielfortschritt bekommen.
+
+Die heutige Formel `min(1, Fähigkeits-Level / Entitäts-Level)` senkt die Chance schon bei höherem Entitäts-Level. Die Größe fließt bisher nicht ein. Noch offen: wie stark die Größe die Analyse-Chance senkt und ob sie mit dem Level-Verhältnis verrechnet wird (z. B. multipliziert).
+
 ---
 
 ## 2. Material-System
@@ -211,4 +227,4 @@ Aktuell gibt es keine kombinierbaren Skills. Rezepte werden einzeln und gezielt 
 
 ---
 
-*Letzte Aktualisierung: v0.4 — XP-Skalierung (Absorb/Analyze und Kampf-XP nach Gegner-Level) mit Begründungen dokumentiert, Erfolgsformel als vorläufig vermerkt, Superstrength-Beschreibung korrigiert (Oktober 2026)*
+*Letzte Aktualisierung: v0.4 — Größe beim Absorbieren/Analysieren als Konzept (Abschnitt 1.4); XP-Skalierung (Absorb/Analyze und Kampf-XP nach Gegner-Level) mit Begründungen dokumentiert, Erfolgsformel als vorläufig vermerkt, Superstrength-Beschreibung korrigiert (Oktober 2026)*

@@ -57,6 +57,7 @@ Current state: **v0.3** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `docs/GDD-03-Kampfsystem.md` | Combat design — v0.3 implemented. |
 | `docs/GDD-04-LookAndFeel.md` | Colors, typography, UI layout, mobile/desktop, tech stack. |
 | `docs/GDD-05-Kampfmathematik.md` | Damage pipeline, damage types, declarative skill effects. |
+| `docs/GDD-07-Bestiarium.md` | Draft: ~100 units from forest to city, size classes, skill ideas (Status: Diskussion). |
 
 ---
 
