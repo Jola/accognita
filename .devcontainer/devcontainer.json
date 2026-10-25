@@ -5,14 +5,27 @@
   "name": "Absorb & Evolve",
   // Node 20 — dieselbe Version wie die CI (.github/workflows/deploy.yml)
   "image": "mcr.microsoft.com/devcontainers/javascript-node:1-20-bookworm",
-
-  "postCreateCommand": "npm ci",
-
-  "forwardPorts": [8080],
-  "portsAttributes": {
-    "8080": { "label": "Spiel (npm run dev)", "onAutoForward": "openBrowser" }
+  "features": {
+    // GitHub-CLI (gh) — für Pull Requests direkt aus dem Container
+    "ghcr.io/devcontainers/features/github-cli:1": {}
   },
-
+  "postCreateCommand": {
+    "deps": "npm ci",
+    "claude": "curl -fsSL https://claude.ai/install.sh | bash"
+  },
+  // Damit `claude` in jedem Terminal gefunden wird
+  "remoteEnv": {
+    "PATH": "${containerEnv:PATH}:/home/node/.local/bin"
+  },
+  "forwardPorts": [
+    8080
+  ],
+  "portsAttributes": {
+    "8080": {
+      "label": "Spiel (npm run dev)",
+      "onAutoForward": "openBrowser"
+    }
+  },
   "customizations": {
     "vscode": {
       "settings": {
