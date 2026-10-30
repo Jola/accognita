@@ -1,15 +1,17 @@
 # ABSORB & EVOLVE — Game Design Document
-## Datei 08: Progressionsmathematik (Skill- und Charakter-Leveling)
+## Datei 08: Progressionsmathematik (Leveling, Wirkungskurven, Wahrscheinlichkeiten, Wechselwirkungen)
 
 > **Status: Diskussion** — Analyse der Ansätze und Vorschlag. Im Spiel gilt weiterhin der Stand aus [GDD-02 Abschnitt 4](GDD-02-Skillsystem.md#4-skill-leveling) und [balance.ts](../src/data/balance.ts). Nichts davon ist entschieden.
 
-Diese Datei beschreibt mathematisch, wie Erfahrung (XP) und Level zusammenhängen. Sie vergleicht die Vorschläge des Entwicklers mit gängigen Modellen aus anderen Spielen und nennt Vor- und Nachteile.
+Diese Datei beschreibt mathematisch, wie Erfahrung (XP) und Level zusammenhängen (Teil 1) und was ein Level bewirkt: Wirkungskurven, Wahrscheinlichkeiten und Wechselwirkungen zwischen Skills (Teil 2, ab Abschnitt 11). Sie vergleicht die Vorschläge des Entwicklers mit gängigen Modellen aus anderen Spielen und nennt Vor- und Nachteile.
 
 **Vorgabe (Entwickler):** Das Modell soll einfach zu verstehen sein und zu einer angenehmen, spannenden Spielerfahrung führen: Es soll schwerer werden, weiterzukommen, aber man soll weiterhin Erfolge haben.
 
 ---
 
-## 0. Kurzfassung
+# Teil 1 — Erfahrung und Level
+
+## 0. Kurzfassung (Teil 1; Teil 2 siehe Abschnitt 14)
 
 1. **Was der Spieler spürt, ist nicht die XP-Zahl, sondern „Wie viele Aktionen brauche ich für das nächste Level?“** Diese Größe heißt hier `N(L)`. Zwei Systeme mit gleichem `N(L)` fühlen sich gleich an, egal wie groß die XP-Zahlen sind.
 2. **Proportionale Erfahrung (Vorschlag Entwickler, Abschnitt 4):** Der Kurventyp hat keinen Einfluss darauf, wie schnell man das Level der Quelle erreicht — immer genau `k` Analysen. Er bestimmt aber, wie viel Grinding über dieses Level hinaus bringt. Mit einer Exponentialkurve ist der Abstand begrenzt (`+log_r(n/k)` Level), mit einer Potenzkurve wächst er mit dem Level mit. **Die Vermutung stimmt also im Kern.** Aber: Mit diesem Modell wird Leveln **nie schwerer**. Bei Exponentialkurven bleibt der Aufwand pro Level gleich, bei Potenzkurven wird er sogar kleiner.
@@ -302,6 +304,293 @@ Grinding-Schutz mit dem heutigen Multiplikator (`(s/L)^1,5`, Deckel 0,05 … 4) 
 
 ---
 
+# Teil 2 — Wirkung, Wahrscheinlichkeiten, Wechselwirkungen
+
+Teil 1 beantwortet, *wie schnell* ein Skill aufsteigt. Teil 2 beantwortet, *was ein Level bringt*: wie viel stärker ein Skill wird, wie Zufall (Trefferstufen, Gift, Skill-Fund) wirkt und wie Skills sich gegenseitig beeinflussen. Alle Zahlen sind mit den Formeln aus dem Code nachgerechnet (Stand v0.4).
+
+---
+
+## 11. Wirkungskurven: Wie viel stärker wird ein Skill pro Level?
+
+### 11.1 Die eigentliche Frage: Wirkung über Spielzeit
+
+Der Spieler spürt zwei Dinge: **wie lange** ein Level-Up dauert (Teil 1) und **wie viel** er bringt (relative Verbesserung). Zusammen ergibt das die gefühlte Progression „Wirkung über Spielzeit“.
+
+| Level-Kosten (kumuliert) | Wirkung pro Level | Wirkung über Aktionen `n` | Gefühl |
+|--------------------------|-------------------|---------------------------|--------|
+| exponentiell `r^L` | linear | `∝ log(n)` | wird sehr schnell zäh (Ist-Stand) |
+| exponentiell `r^L` | exponentiell `w^L` | `∝ n^(ln w / ln r)` | gleichmäßig, aber große Zahlen auf beiden Seiten |
+| Potenz `L^(p−q+1)` (Zwei-Exponenten-Modell) | linear | `∝ n^(1/(p−q+1))`, bei p=2, q=1: `∝ √n` | stetig, langsamer werdend, ohne Wand |
+
+**Begründung (Vorschlag Claude):** Kurven für Kosten und Wirkung dürfen nicht unabhängig gewählt werden. Exponentielle Kosten mit linearer Wirkung bremsen doppelt: Jedes Level dauert länger **und** bringt relativ weniger.
+
+### 11.2 Ist-Stand: Wirkungskurven im Code
+
+| Skill / Wert | Formel | Lv 1 | Lv 5 | Lv 10 | Lv 20 | Lv 50 | +% von 10→11 | +% von 20→21 |
+|--------------|--------|-----:|-----:|------:|------:|------:|----:|----:|
+| Angriffsskills (Effektivität) | `1 + 0,1·(L−1) + 0,15 ab L≥3` | ×1,00 | ×1,55 | ×2,05 | ×3,05 | ×6,05 | +4,9 | +3,3 |
+| Biss (7 HP Basis) | 7 × Effektivität | 7,0 | 10,9 | 14,4 | 21,4 | 42,4 | +4,9 | +3,3 |
+| Unbewaffnet (Absorb-Level, max 20) | `3 + 1,5·L` | 4,5 | 10,5 | 18,0 | 33,0 | — | +8,3 | — |
+| Superstrength | `×(1,30 + 0,05·(L−1))` | ×1,30 | ×1,50 | ×1,75 | ×2,25 | ×3,75 | +2,9 | +2,2 |
+| Venom-Chance | `min(1; 0,30 + 0,10·√(L−1))` | 30 % | 50 % | 60 % | 74 % | 100 % | — | — |
+| Venom-Schaden | `2 + 0,5·(L−1)` HP/s, 4 s | 2,0 | 4,0 | 6,5 | 11,5 | 26,5 | +7,7 | +4,3 |
+| Chitin gegen Stich | `3 + 3·√(L−1)` HP Block | 3,0 | 9,0 | 12,0 | 16,1 | 24,0 | +4,1 | +2,1 |
+| Chitin gegen Wucht | `3 % + 3 %·(L−1)`, Deckel 85 % | 3 % | 15 % | 30 % | 60 % | 85 % | EHP +4,5 | EHP +8,1 |
+| Hemolymph | `2·L` HP Rückschlag | 2 | 10 | 20 | 40 | 100 | +10 | +5 |
+| Jump-Weite | `160 + 20·(L−1)` px | 160 | 240 | 340 | 540 | 1.140 | +5,9 | +3,7 |
+| Jump-Geschick | `1 + √(L−1)` | 1,0 | 3,0 | 4,0 | 5,4 | 8,0 | — | — |
+| Photosynthesis | `0,5·L` HP/s | 0,5 | 2,5 | 5,0 | 10,0 | 25,0 | +10 | +5 |
+| Spieler-HP | `80 + 15·(L−1)` | 80 | 140 | 215 | 365 | 815 | +7,0 | +4,1 |
+| Gegner-Bonuslevel (max. 3) | `×1,25^bonus` | — | — | — | — | — | +25 je Stufe | |
+
+Auffälligkeiten:
+- **Sprung bei Level 3:** Die Effektivität steigt von Level 2 auf 3 um 22,7 %, sonst um 5–10 %. Level 3 wirkt dadurch wie ein Meilenstein.
+  > Begründung offen — Ist der Bonus `+0,15 ab Level 3` gewollt (Meilenstein) oder ein Überbleibsel?
+- **Fast alles ist linear.** Die relative Verbesserung pro Level fällt deshalb stetig: bei Level 2 +10 %, bei Level 20 +3 %, bei Level 50 +1,7 %. Zusammen mit den steigenden Level-Kosten wird jedes Level-Up doppelt unspektakulärer.
+- **Chitin gegen Wucht ist die Ausnahme:** Lineare Prozente werden pro Level immer *wertvoller* (Abschnitt 11.4).
+- **Nicht mehr genutzte Formeln:** [SkillEffects.ts](../src/systems/SkillEffects.ts) enthält noch alte Formeln (`calcChitinDr`, `calcVenomChance`, `calcSuperstrengthMult`, `calcHemolymphReflect` u. a.), die nirgends mehr aufgerufen werden und teils andere Werte liefern. Sie sind in [TODO.md](../TODO.md) vermerkt.
+
+### 11.3 Kurventypen für Wirkungen
+
+| Kurve | Formel | Relative Verbesserung pro Level | Geeignet für | Risiko |
+|-------|--------|---------------------------------|--------------|--------|
+| **linear** | `a + b·(L−1)` | fällt (≈ 1/L) | absolute Werte bei kurzen Levelbereichen | spät kaum spürbar |
+| **multiplikativ / exponentiell** | `a · w^(L−1)` | konstant (z. B. +5 %) | absolute Werte bei langen Levelbereichen (Schaden, HP, Heilung) | Gegner müssen genauso wachsen, sonst kippt das Gleichgewicht |
+| **Wurzel / Log** | `a + b·√(L−1)` | fällt schnell | Werte, die früh zählen und nicht ausufern sollen (Geschick, Block) | spät fast wertlos |
+| **linear + harter Deckel** | `min(max, …)` | konstant bis zum Deckel, dann 0 | — | Level über dem Deckel bringen nichts (Venom ab Lv 50) |
+| **asymptotisch (hyperbolisch)** | `max · x/(x+K)` | fällt sanft, erreicht den Deckel nie | **Prozente und Chancen** | — |
+| **tanh** | `max · tanh(x)` | fällt, erreicht den Deckel praktisch | Kippen von Verteilungen (Trefferstufen, schon genutzt) | sättigt recht abrupt |
+
+**Begründung (Vorschlag Claude):**
+- **Prozente und Chancen sollten asymptotisch sein**, nicht linear mit hartem Deckel. Dann bringt jedes Level etwas, und 100 % bzw. der Deckel werden nie erreicht.
+- **Absolute Werte** (Schaden, Heilung, HP) dürfen linear bleiben, wenn die Level-Kosten polynomiell werden (Teil 1, Abschnitt 8). Sollen Level bis 100+ spürbar bleiben, passt ein milder Faktor (z. B. +4 % pro Level) besser, dann aber für Spieler **und** Gegner.
+
+### 11.4 Sonderfall Prozent-Reduktion: effektive HP
+
+Bei einer Reduktion `r` hält man `1/(1−r)` mal so viel Schaden aus (**effektive HP**, EHP). Lineare Prozente machen jedes weitere Level immer wertvoller:
+
+| Chitin-Level | Wucht-Reduktion | EHP-Faktor | Zuwachs durch das nächste Level |
+|-------------:|----------------:|-----------:|------------------:|
+| 1 | 3 % | ×1,03 | +3 % |
+| 10 | 30 % | ×1,43 | +4,5 % |
+| 20 | 60 % | ×2,50 | +8,1 % |
+| 28 | 84 % | ×6,25 | +6,7 % (Deckel) |
+| ab 29 | 85 % | ×6,67 | 0 |
+
+Kurz vor dem Deckel bringt ein Level fast +19 % EHP (27→28), danach plötzlich nichts mehr.
+
+**Gängige Alternative** (League of Legends, ähnlich WoW): Reduktion `= x/(x+K)`, also Schadensfaktor `K/(K+x)`. Dann wachsen die **EHP linear** (`1 + x/K`), jedes Level bringt gleich viel Überleben, und 100 % werden nie erreicht. Ein Deckel ist dann überflüssig.
+
+> Begründung offen — Lineare %-Reduktion mit 85-%-Deckel beibehalten oder auf `x/(x+K)` umstellen?
+
+### 11.5 Spieler gegen Welt: Level und Stärke der Gegner
+
+Erfolgschance, XP-Multiplikator und künftig das Aggro richten sich nach dem **Entity-Level**. Die tatsächliche Stärke kommt aber aus den einzeln gesetzten `hp` und `skillLevels`:
+
+| Gegner | Level | HP | Biss-/Klauen-Schaden |
+|--------|------:|---:|---------------------:|
+| Ameise | 1 | 8 | 7,0 |
+| Giftspinne | 2 | 15 | 7,0 |
+| Kleiner Skorpion | 3 | 30 | 11,5 |
+| **Großer Skorpion** | **4** | 55 | **19,9** (Biss Lv 18) |
+| **Schlange** | **10** | 120 | **17,9** (Biss Lv 15) |
+| Drache | 20 | 500 | 24,4 |
+
+Der Große Skorpion (Lv 4) beißt härter als die Schlange (Lv 10), gibt aber viel weniger XP und ist leichter zu analysieren.
+
+**Vorschlag (Claude):** Eine **Referenz-Machtkurve** festlegen, z. B. „ein Wesen auf Level L hat ungefähr `HP(L)` und `Schaden(L)`“. Dabei hilft das Powerlevel-Konzept aus [GDD-05 Abschnitt 9.1](GDD-05-Kampfmathematik.md#91-das-powerlevel-konzept). Die Entity-Level im Bestiarium werden dann daraus abgeleitet oder geprüft. Der INDEX-Tab könnte Abweichungen anzeigen.
+
+> Begründung offen — Soll das Entity-Level aus der Stärke abgeleitet werden, oder bleibt es frei gesetzt?
+
+---
+
+## 12. Wahrscheinlichkeiten
+
+### 12.1 Trefferstufen
+
+Modell (implementiert, [GDD-03](GDD-03-Kampfsystem.md)): Jede Stufe hat eine Grundchance. Skill-Level und Geschick-Vorsprung „kippen“ die Verteilung über `kipp = 0,4·tanh(0,05·(L−1) + 0,1·ΔGeschick)` Richtung bessere Treffer.
+
+**Biss, gleiches Geschick:**
+
+| Skill-Level | verfehlt | leicht | normal | schwer | kritisch | Ø Schadensfaktor | × Effektivität |
+|------------:|------:|------:|------:|------:|------:|------:|------:|
+| 1 | 3,0 % | 17,0 % | 52,0 % | 24,0 % | 4,0 % | 1,034 | 1,03 |
+| 5 | 2,5 % | 15,6 % | 51,5 % | 25,7 % | 4,6 % | 1,059 | 1,64 |
+| 10 | 2,1 % | 14,0 % | 50,7 % | 27,7 % | 5,5 % | 1,088 | 2,23 |
+| 20 | 1,6 % | 12,0 % | 49,1 % | 30,5 % | 6,8 % | 1,130 | 3,45 |
+| 50 | 1,2 % | 10,5 % | 47,6 % | 32,6 % | 8,1 % | 1,164 | 7,04 |
+| 100 | 1,2 % | 10,4 % | 47,5 % | 32,7 % | 8,1 % | 1,166 | 12,89 |
+
+**Biss Lv 1, Geschick-Unterschied:**
+
+| ΔGeschick | −5 | −2 | 0 | +1 | +2 | +3 | +5 | +10 |
+|-----------|---:|---:|--:|---:|---:|---:|---:|----:|
+| verfehlt | 4,4 % | 3,5 % | 3,0 % | 2,8 % | 2,5 % | 2,3 % | 2,0 % | 1,5 % |
+| kritisch | 2,8 % | 3,4 % | 4,0 % | 4,3 % | 4,6 % | 5,0 % | 5,6 % | 6,9 % |
+| Ø Faktor | 0,976 | 1,009 | 1,034 | 1,047 | 1,059 | 1,071 | 1,094 | 1,133 |
+
+**Bewertung (Vorschlag Claude):**
+- Das Modell ist solide: Die Wahrscheinlichkeiten ergeben immer 100 %, und Krit/Verfehlen bleiben wie vorgegeben selten (Krit ≤ 8,1 %, Verfehlen ≥ 1,2 %).
+- Die Trefferstufen sind eine **zweite, versteckte Wachstumskurve** des Skill-Levels. Bis Level 50 kommen etwa **+13 %** Durchschnittsschaden dazu, danach nichts mehr (tanh gesättigt). Das Level zählt also zweimal: über die Effektivität und über die Kippung.
+  > Begründung offen — Soll das Skill-Level zusätzlich zur Effektivität die Trefferstufen verbessern? (Beim Geschick wurde die Doppelzählung bewusst ausgeschlossen, siehe GDD-03.)
+- **Erfolgsmomente:** Bei 4–8 % Krit-Chance kommt etwa jeder 12. bis 25. Angriff kritisch. Das ist selten genug, um besonders zu wirken, und häufig genug, um in jedem längeren Kampf vorzukommen.
+
+### 12.2 Effekt-Chancen am Beispiel Venom
+
+Venom würfelt bei jedem Treffer (nicht bei „verfehlt“). Ein neuer Treffer **frischt** das Gift auf (4 s), er stapelt es nicht. Wichtiger als die Chance pro Treffer ist deshalb der **Anteil der Zeit, in der das Ziel vergiftet ist** (Uptime): `1 − (1 − p_Treffer · p_Gift)^(4 s / Angriffsabstand)`.
+
+| Angriffsabstand | Venom Lv 1 (30 %) | Lv 5 (50 %) | Lv 20 (74 %) |
+|----------------:|------:|------:|------:|
+| 0,8 s | 82 % | 96 % | 99,8 % |
+| 1,2 s (Biss) | 68 % | 89 % | 98,5 % |
+| 1,6 s | 58 % | 81 % | 96 % |
+| 2,4 s | 44 % | 67 % | 88 % |
+
+**Folgerungen:**
+- Ab etwa 60 % Chance bringt mehr Chance kaum noch etwas, weil das Ziel ohnehin fast immer vergiftet ist. Der Wert der Chance hängt also stark von der **Angriffsgeschwindigkeit** ab.
+- Gift-Schaden umgeht die Schadenspipeline (`processTicks` zieht `damagePerTick` direkt ab): **kein Panzer, keine Schwäche, keine Trefferstufe.** Gegen gepanzerte Gegner ist Gift deshalb besonders stark.
+  > Begründung offen — Soll Gift Rüstung ignorieren? (Biologisch plausibel: Gift wirkt von innen.)
+
+**Vorschlag (Claude):** Chancen asymptotisch wachsen lassen (Abschnitt 11.3). Zusätzlich sollte ein Level oberhalb der Sättigung etwas anderes verbessern, z. B. die Dauer oder den Schaden pro Sekunde.
+
+### 12.3 Befund: Auffrischen setzt den Gift-Takt zurück
+
+Beim Auffrischen setzt [StatusEffectSystem.ts](../src/systems/StatusEffectSystem.ts) (`applyEffect`) auch `lastTickAt` neu. Kommt der nächste Treffer früher als nach 1 s (Takt des Gifts), tickt das Gift nie. Simuliert (Gift-Ticks pro Sekunde):
+
+| Angriffsabstand | Chance | heute | ohne Takt-Reset |
+|----------------:|-------:|------:|----------------:|
+| 0,6 s | 30 % | 0,62 | 0,87 |
+| 0,6 s | 60 % | 0,48 | 1,00 |
+| 0,6 s | 100 % | **0,00** | 1,00 |
+| 0,8 s | 60 % | 0,48 | 0,98 |
+| 1,2 s | 100 % | 0,83 | 1,00 |
+
+Bei schnellen Angriffen macht **höheres Venom-Level weniger Gift-Schaden.** Das passiert, wenn der Blob Biss und Klauenhieb abwechselt oder mehrere Giftspinnen den Blob angreifen. Außerdem überschreibt ein schwächeres Gift ein stärkeres (die Werte werden ersetzt, nicht das Maximum genommen). Beides steht als `[BUG]` in [TODO.md](../TODO.md) und ist nicht behoben.
+
+### 12.4 Erfolgschance und Skill-Fund: Glück und Pech
+
+Ein Skill-Fund ist ein Münzwurf mit Chance `p` pro Versuch. Die Zahl der Versuche bis zum Fund ist **geometrisch verteilt**: im Mittel `1/p`, aber mit langen Pechsträhnen.
+
+| Skill (Quelle) | Methode | p | Ø Versuche | 50 % haben ihn nach | 90 % nach | 1 % warten länger als |
+|----------------|---------|--:|-----------:|----:|----:|----:|
+| Photosynthesis (Gras) | Absorb | 12 % | 8,3 | 6 | 19 | 37 |
+| | Analyze (×0,7) | 8,4 % | 11,9 | 8 | 27 | 53 |
+| Superstrength (Ameise) | Absorb | 10 % | 10 | 7 | 22 | 44 |
+| | Analyze | 7 % | 14,3 | 10 | 32 | 64 |
+| Jump / Venom (Spinnen) | Absorb | 20 % | 5 | 4 | 11 | 21 |
+| | Analyze | 14 % | 7,1 | 5 | 16 | 31 |
+
+Dazu kommt die Erfolgschance `min(1, Fähigkeits-Level / Entity-Level)`. Bei 50 % verdoppeln sich alle Zahlen.
+
+**Gängige Gegenmittel gegen Pechsträhnen:**
+- **Pseudo-Zufall (PRD, Dota 2 / Warcraft III):** Die Chance beginnt niedriger und steigt mit jedem Fehlschlag, bis es klappt. Der Mittelwert bleibt gleich, die Streuung sinkt stark.
+- **Pity / Bad-Luck-Protection:** Nach `n` Fehlschlägen ist der Erfolg garantiert, oder jeder Fehlschlag erhöht die Chance um einen festen Betrag.
+- **Fortschrittsbalken statt Würfel:** Jede Analyse füllt einen sichtbaren Balken („Verständnis 40 %“). Das wäre deterministisch und passt thematisch zu *Analysieren*.
+
+**Vorschlag (Claude):** Für Skill-Funde eine Pity-Regel pro Skill und Quelle verwenden (z. B. +50 % der Grundchance je Fehlschlag). Lange Pechsträhnen fallen dann praktisch weg, der Mittelwert sinkt nur leicht. Das zahlt direkt auf „man soll Erfolge haben“ ein.
+
+> Begründung offen — Echter Zufall, Pseudo-Zufall, Pity oder sichtbarer Fortschritt beim Skill-Fund?
+
+---
+
+## 13. Wechselwirkungen zwischen Skills
+
+### 13.1 Wo ein Level mehrfach wirkt
+
+| Größe | wirkt auf |
+|-------|-----------|
+| **Absorb-Level** | Erfolgschance Absorb · unbewaffneter Schaden (`3 + 1,5·L`) · Trefferstufen-Kippung beim unbewaffneten Angriff · Nenner des XP-Multiplikators |
+| **Skill-Level eines Angriffs** | Effektivität (Schaden) · Trefferstufen-Kippung · XP-Multiplikator |
+| **Jump-Level** | Sprungweite · **Geschick** → Trefferstufen **aller anderen** Angriffe und Verteidigung gegen alle Gegner |
+| **Spieler-Level** | HP, MP · Größe des Blobs → Geschwindigkeit, Kamera, Absorb-Grenze (GDD-02 1.4) |
+| **Superstrength-Level** | Multiplikator auf **jeden** Treffer (auch Biss und Klaue) |
+
+Mehrfachwirkung ist nicht schlecht. Sie macht Level-Ups spürbarer. Sie sollte aber **bewusst** sein, weil sich die Effekte multiplizieren.
+
+### 13.2 Geschick
+
+- **Quelle heute:** nur Jump (`1 + √(L−1)`). Weitere Quellen addieren sich (`resolveDexterity`).
+- **Symmetrisch:** Es zählt der Vorsprung `Geschick Angreifer − Geschick Verteidiger`. Dasselbe Geschick verbessert also eigene Treffer **und** verschlechtert die des Gegners.
+- **Gemeinsamer Deckel mit dem Skill-Level:** Beide stehen im selben `tanh`. Je höher der Angriffsskill, desto weniger bringt Geschick:
+
+| Skill-Level des Angriffs | Ø Schadensfaktor durch +1 Geschick |
+|-------------------------:|-----------------------------------:|
+| 1 | +1,27 % |
+| 10 | +1,03 % |
+| 20 | +0,57 % |
+| 40 | +0,10 % |
+
+**Bewertung (Vorschlag Claude):** Der Spieler „verliert“ den Wert seines Geschicks, wenn er seine Angriffe hochlevelt. Das ist wahrscheinlich nicht beabsichtigt. Zwei Alternativen:
+1. **Getrennte Deckel:** `kipp = 0,2·tanh(Level-Anteil) + 0,2·tanh(Geschick-Anteil)`. Beide Quellen behalten ihren eigenen Spielraum.
+2. **Geschick als eigene Achse:** Geschick wirkt nicht auf die Trefferstufen, sondern z. B. auf Ausweichen (im Typ schon als Idee erwähnt: „Ausweichen“).
+
+> Begründung offen — Sollen Skill-Level und Geschick sich einen gemeinsamen Deckel teilen?
+
+### 13.3 Stapelregeln (mehrere Skills mit demselben Effekt)
+
+Heute ([GDD-05 Abschnitt 8.2](GDD-05-Kampfmathematik.md#82-konflikte)): Schadens-Multiplikatoren **multiplizieren** sich, %-Reduktionen **addieren** sich (Deckel 85 %), Flat-Block **addiert** sich, Schwächen **multiplizieren** sich (Deckel ×0,1 … ×3).
+
+**Risiko:** Multiplikative Ketten wachsen exponentiell mit der Zahl der Skills. Fünf Skills mit je ×1,3 ergeben ×3,7, zehn ergeben ×13,8. Bei einem Spiel, dessen Kern das Sammeln vieler Skills ist, ist das der wahrscheinlichste Weg zu „kaputter“ Balance.
+
+**Gängige Praxis (Path of Exile „increased“ vs. „more“):** Innerhalb einer Kategorie wird **addiert** (`1 + 0,3 + 0,3 = 1,6`), zwischen Kategorien **multipliziert**. Nur wenige, bewusst seltene Effekte multiplizieren.
+
+**Vorschlag (Claude):** Für `damage_mult` künftig: alle Boni einer Kategorie (z. B. „Nahkampfschaden“) addieren, Kategorien untereinander multiplizieren. Mit nur einem Multiplikator-Skill (Superstrength) ändert sich heute nichts. Die Regel sollte aber stehen, bevor weitere Skills dazukommen.
+
+> Begründung offen — Stapelregel für Schadens-Multiplikatoren.
+
+### 13.4 Schwellen: Flat-Block gegen Trefferstufen
+
+Flat-Block zieht einen festen Betrag ab. Der Schaden wird nach der Trefferstufe berechnet, aber vor dem Block. Leichte Treffer bleiben deshalb hängen, kritische schlagen durch ([GDD-05 Abschnitt 9.3](GDD-05-Kampfmathematik.md#93-globale-balance-konstanten-balancets)). Erwarteter Schaden pro Biss (HP) gegen Chitin (Stich-Block):
+
+| Chitin des Ziels | Biss Lv 1 | Lv 3 | Lv 5 | Lv 10 | Lv 20 |
+|------------------|----------:|-----:|-----:|------:|------:|
+| keins | 7,2 | 9,9 | 11,5 | 15,6 | 24,1 |
+| Lv 3 (Giftspinne) | **0,9** (69 % geblockt) | 3,1 | 4,5 | 8,5 | 17,0 |
+| Lv 5 (Kl. Skorpion) | 0,4 | 1,7 | 3,1 | 6,9 | 15,3 |
+| Lv 8 (Gr. Skorpion) | 0,3 (93 % geblockt) | 0,9 | 1,6 | 5,2 | 13,4 |
+
+**Folgerungen:**
+- Biss Lv 1 gegen eine Giftspinne (15 HP) braucht im Schnitt ~17 Bisse. Von Biss Lv 2 auf Lv 3 steigt der Schaden von 1,4 auf 3,1 HP, also auf mehr als das Doppelte: Der Effektivitäts-Sprung (+22,7 %) hebt normale Treffer deutlich über die Schwelle.
+- Schwellen sind **gut für Erfolgsmomente** („plötzlich komme ich durch“), aber hart am Anfang. Sie belohnen den Wechsel des Schadenstyps (unbewaffnet = Wucht → nur 9 % Reduktion statt 7,24 HP Block). Das entspricht der Idee von GDD-05.
+- Gift umgeht Chitin vollständig (Abschnitt 12.2). Venom und Biss ergänzen sich daher gegen gepanzerte Gegner, ohne dass das als Synergie dokumentiert ist.
+
+### 13.5 Weitere Wechselwirkungen
+
+| Kombination | Wirkung | Bewertung |
+|-------------|---------|-----------|
+| Venom × Angriffsgeschwindigkeit | Gift-Uptime steigt mit der Trefferrate, über ~60 % Chance kaum Mehrwert | siehe 12.2, Takt-Fehler 12.3 |
+| Hemolymph × Zahl der Angreifer | Rückschlag pro erlittenem Treffer, wächst mit Gegnerzahl und deren Tempo | gewollt (Abwehr gegen Gruppen), unbegrenzt linear |
+| Superstrength × Trefferstufe × Chitin | Multiplikator wirkt **vor** dem Block → hebt leichte Treffer über die Schwelle | starke, undokumentierte Synergie gegen Panzer |
+| Geschick (Jump) × alle Angriffe | ein Skill verbessert alle anderen | siehe 13.2 |
+| Gegner-Bonuslevel (Kämpfe untereinander) | HP, Schaden, Tempo ×1,25 je Stufe, max. ×1,95 | XP-Multiplikator und Erfolgschance nutzen nur das Grund-Level (`def.level`): Ein Gegner mit Bonuslevel 3 ist fast doppelt so stark, gibt aber nicht mehr XP |
+
+---
+
+## 14. Zusammenfassung Teil 2
+
+1. **Wirkung und Kosten gemeinsam denken:** Heute wachsen Kosten exponentiell und Wirkung linear. Die gefühlte Stärke steigt nur logarithmisch mit der Spielzeit (11.1).
+2. **Prozente und Chancen asymptotisch** statt linear mit Deckel (11.3, 11.4). Chitin-Wucht zeigt, wie lineare Prozente kurz vor dem Deckel kippen.
+3. **Referenz-Machtkurve** für Entity-Level, damit Level, Gefahr und Belohnung zusammenpassen (11.5).
+4. **Trefferstufen** sind solide und bringen eine verdeckte zweite Level-Kurve (+13 %) mit (12.1).
+5. **Gift:** Chance sättigt mit der Angriffsgeschwindigkeit, umgeht Rüstung, und hat einen **Fehler** beim Auffrischen (12.2, 12.3).
+6. **Skill-Fund:** Pechsträhnen von 40–60 Versuchen sind möglich. Pity oder sichtbarer Fortschritt würden helfen (12.4).
+7. **Geschick verliert an Wert**, wenn Angriffsskills steigen (gemeinsamer tanh-Deckel, 13.2).
+8. **Stapelregel** für Multiplikatoren festlegen, bevor viele Skills dazukommen (13.3).
+
+## 15. Offene Entscheidungen (Teil 2)
+
+- [ ] Effektivitäts-Bonus `+0,15 ab Level 3`: gewollter Meilenstein? (11.2)
+- [ ] Absolute Wirkungen: linear lassen oder milder Faktor pro Level für Spieler und Gegner? (11.3)
+- [ ] %-Reduktion: linear mit Deckel oder `x/(x+K)`? (11.4)
+- [ ] Entity-Level aus der Stärke ableiten (Referenz-Machtkurve)? (11.5)
+- [ ] Skill-Level zusätzlich in der Trefferstufen-Kippung? (12.1)
+- [ ] Gift ignoriert Rüstung, gewollt? Was bringt Venom oberhalb der Sättigung? (12.2)
+- [ ] Skill-Fund: echter Zufall, PRD, Pity oder Fortschrittsbalken? (12.4)
+- [ ] Geschick und Skill-Level: gemeinsamer oder getrennter Deckel? (13.2)
+- [ ] Stapelregel für Schadens-Multiplikatoren (additiv in Kategorie, multiplikativ zwischen Kategorien)? (13.3)
+
+---
+
 ## Quellen
 
 - Kurvenformen allgemein: [davideaversa.it — Gamedesign Math: RPG Level-based Progression](https://davideaversa.it/blog/gamedesign-math-rpg-level-based-progression/), [Unity-Forum: Linear curve for RPG leveling](https://discussions.unity.com/t/linear-curve-for-rpg-leveing/699748), [Unity-Forum: Graphing and Game Design](https://discussions.unity.com/t/graphing-and-game-design/602886), [west-games.com — Exponential XP Curve Calculator](https://west-games.com/exponential-xp-curve-calculator/)
@@ -310,8 +599,11 @@ Grinding-Schutz mit dem heutigen Multiplikator (`(s/L)^1,5`, Deckel 0,05 … 4) 
 - Skyrim: [UESP — Skyrim:Leveling](https://pt.uesp.net/wiki/Skyrim:Leveling), [UESP — Skyrim:Adept](https://content2.uesp.net/wiki/Skyrim:Adept)
 - World of Warcraft: [Warcraft Wiki — Mob experience](https://warcraft.wiki.gg/wiki/Mob_experience), [AzerothCore XP-Namespace](https://azerothcore.org/doxygen/d8/d91/namespaceAcore_1_1XP.html)
 - Path of Exile: [PoE Wiki — Experience](https://www.poewiki.net/wiki/Exp), [PoE-Forum: How does experience work with level gaps?](https://www.pathofexile.com/forum/view-thread/76122)
-- Zahlenwerte in den Abschnitten 2, 4, 6 und 8 wurden von Claude nachgerechnet (Node.js, Formeln wie im Text).
+- Rüstungsformel `x/(x+K)` und effektive HP: [League of Legends Wiki — Armor](https://wiki.leagueoflegends.com/en-us/Armor), [loltheory.gg — Armor](https://blog.loltheory.gg/what-is-armor-league-of-legends/)
+- Additive vs. multiplikative Modifikatoren: [Path of Exile Wiki — Modifiers](https://pathofexile.fandom.com/wiki/Modifiers?oldid=4899), [PoE-Forum: Additive and Multiplicative modifiers](https://www.pathofexile.com/forum/view-thread/892570)
+- Pseudo-Zufall: [Liquipedia — Random Distribution](https://liquipedia.net/dota2/Random_Distribution), [Dota 2 Wiki — Pseudo-random distribution](https://dota2.fandom.com/wiki/Pseudo-random_distribution)
+- Zahlenwerte in den Abschnitten 2, 4, 6, 8 und 11–13 wurden von Claude nachgerechnet (Node.js, Formeln wie im Text bzw. wie im Code). Die Gift-Takt-Werte in 12.3 stammen aus einer Simulation über 20.000 s.
 
 ---
 
-*Letzte Aktualisierung: v0.4 — Datei neu angelegt: Analyse der Leveling-Modelle (proportionale Erfahrung, Level-Differenz-Multiplikator, Kurvenfamilien, Integer-Grenzen, Vergleich mit anderen Spielen), Vorschlag Zwei-Exponenten-Modell (Oktober 2026)*
+*Letzte Aktualisierung: v0.4 — Teil 2 ergänzt (Wirkungskurven, Trefferstufen, Gift-Chance und Gift-Takt-Fehler, Skill-Fund-Wahrscheinlichkeiten, Geschick, Stapelregeln, Schwellen); davor: Datei neu angelegt: Analyse der Leveling-Modelle (proportionale Erfahrung, Level-Differenz-Multiplikator, Kurvenfamilien, Integer-Grenzen, Vergleich mit anderen Spielen), Vorschlag Zwei-Exponenten-Modell (Oktober 2026)*

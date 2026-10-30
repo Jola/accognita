@@ -11,13 +11,15 @@ Format:
 
 ## Bugs
 
-*(leer)*
+- `[BUG]` **Gift-Auffrischen setzt den Tick-Takt zurück** — `applyEffect` (StatusEffectSystem.ts) setzt beim Refresh auch `lastTickAt`. Kommen Treffer schneller als der Tick-Takt (1 s), tickt das Gift seltener oder nie; höheres Venom-Level (mehr Refreshes) macht dann *weniger* Schaden. Tritt auf beim Abwechseln von Biss/Klaue oder bei mehreren Giftspinnen. Details und Simulation: GDD-08 Abschnitt 12.3.
+
+- `[BUG]` **Schwächeres Gift überschreibt stärkeres** — beim Refresh werden `damagePerTick`/`healPerTick` ersetzt statt das Maximum zu nehmen (z. B. Giftspinne Venom Lv3 überschreibt Schlange Venom Lv15). GDD-08 Abschnitt 12.3.
 
 ---
 
 ## Features & Ideen
 
-*(leer)*
+- `[POLISH]` **Ungenutzte Alt-Formeln in SkillEffects.ts** — `calcChitinDr`, `calcVenomChance`, `calcVenomDmgPerTick`, `calcHemolymphReflect`, `calcSuperstrengthMult`, `calcFireBreathDamage` werden nirgends mehr aufgerufen und liefern teils andere Werte als die Effekt-Deklarationen in skills.ts. Entfernen, damit niemand sie versehentlich nutzt (GDD-05 Migrationsschritt 5). GDD-08 Abschnitt 11.2.
 
 ---
 
