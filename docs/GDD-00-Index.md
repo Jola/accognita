@@ -36,6 +36,7 @@ Diese Datei ist der **Einstiegspunkt für Menschen und KI-Systeme**, die mit den
 | **[GDD-05-Kampfmathematik.md](GDD-05-Kampfmathematik.md)** | Schadenstypen-Taxonomie, 8-stufige Damage-Pipeline, Verteidigungsmodell, SkillEffect-Deklarationssystem, LinearFormula, Beispiel-Konfigurationen, Migrations-Strategie v0.3→v0.4 | Bei Fragen zur Kampfmathematik, Skill-Balancing, Schadensformeln, neuen Skills/Entities konfigurieren |
 | ~~GDD-06-Referenz.md~~ **[VERWORFEN]** | War eine generierte Markdown-Referenz aller Skills und Einheiten. Ersetzt durch den **INDEX-Tab im Spielmenü** ([src/ui/IndexView.ts](../src/ui/IndexView.ts), beschrieben in [GDD-04](GDD-04-LookAndFeel.md)) | Ist-Werte im Spiel unter 📋 → INDEX nachschlagen |
 | **[GDD-07-Bestiarium.md](GDD-07-Bestiarium.md)** | Entwurf: ca. 100 Einheiten auf dem Weg vom Wald in die Stadt, Größenklassen G1–G8, Skill-Ideen (Status: Diskussion) | Beim Entwerfen neuer Einheiten und Skills |
+| **[GDD-08-Progressionsmathematik.md](GDD-08-Progressionsmathematik.md)** | Mathematik des Skill- und Charakter-Levelings: Kurvenfamilien, proportionale Erfahrung vs. Level-Differenz-Multiplikator, Integer-Grenzen, Vergleich mit anderen Spielen, Vorschlag Zwei-Exponenten-Modell (Status: Diskussion) | Bei Fragen zu XP-Kurven, Level-Tempo und XP-Balancing |
 | **slime-rpg.html** | [VERWORFEN] Ursprünglicher Vanilla-JS-Prototype v0.1 — nicht mehr aktiv gepflegt | Nur als historische Referenz |
 | **accognita.html** | Aktuelles Spiel v0.3 — Single-File-Build, per Doppelklick öffenbar oder via GitHub Pages | Als Referenz für implementierte Mechaniken |
 | **[src/types/Skill.ts](../src/types/Skill.ts)** | TypeScript-Interfaces: SkillDefinition, SkillInstance, DiscoveryResult | Beim Erweitern des Skill-Systems |
@@ -92,7 +93,9 @@ GDD-00 (Index)
     │
     ├── GDD-06 (Referenz) — [VERWORFEN], ersetzt durch INDEX-Tab im Spielmenü
     │
-    └── GDD-07 (Bestiarium) — Entwurf neuer Einheiten, nutzt GDD-02 (Skills) und GDD-03 (Gegner)
+    ├── GDD-07 (Bestiarium) — Entwurf neuer Einheiten, nutzt GDD-02 (Skills) und GDD-03 (Gegner)
+    │
+    └── GDD-08 (Progressionsmathematik) — XP-Kurven und Level-Tempo, vertieft GDD-02 Abschnitt 4
 ```
 
 **Abhängigkeitsregel**: Änderungen an GDD-01 können alle anderen Dokumente betreffen. Änderungen an GDD-02 betreffen GDD-03 und GDD-05. GDD-04 ist weitgehend unabhängig. GDD-05 ist die mathematische Grundlage für alle Kampf-Implementierungen.
@@ -192,6 +195,7 @@ Wenn du als KI-Assistent an diesem Projekt arbeitest, gelten folgende Regeln:
 - [ ] Mobile Interact: Soll Tap auf Entity direkt Absorb/Analyze auslösen, oder erst ein Kontextmenü zeigen? → [GDD-04](GDD-04-LookAndFeel.md)
 - [ ] Material-UI: Gesammelte Materialien in-game sichtbar machen? ([src/systems/MaterialSystem.ts](../src/systems/MaterialSystem.ts) existiert, UI fehlt)
 - [ ] Balancing: XP-Kurve, Spawn-Dichte und Respawn-Zeiten sind implementiert aber noch nicht abgestimmt → [src/data/balance.ts](../src/data/balance.ts)
+- [ ] Progressionsmodell: Zwei-Exponenten-Modell, proportionale Erfahrung oder Ist-Stand? Level-Differenz als Verhältnis oder Differenz? Spieler-Level aus Summe XP oder Summe der Skill-Level? → [GDD-08 Abschnitt 10](GDD-08-Progressionsmathematik.md#10-offene-entscheidungen)
 - [ ] Fehlschlag-Formel: Linear oder kurvenbasiert? → [GDD-02 Abschnitt 1.2](GDD-02-Skillsystem.md#12-erfolgswahrscheinlichkeit)
 - [ ] Photosynthesis: Was tut diese Fähigkeit konkret? → [GDD-02 Abschnitt 3.2](GDD-02-Skillsystem.md#32-skill-beschreibungen)
 - [ ] Grow-Kosten: Welche Materialien und welche Mengen benötigt Grow? → [GDD-02 Abschnitt 3.2](GDD-02-Skillsystem.md#32-skill-beschreibungen)
@@ -200,4 +204,4 @@ Wenn du als KI-Assistent an diesem Projekt arbeitest, gelten folgende Regeln:
 
 ---
 
-*Letzte Aktualisierung: v0.4 — GDD-07 (Bestiarium-Entwurf) ergänzt; Begründungspflicht (Abschnitt 5 und 7) eingeführt; HitSystem (Treffer-Stufen) ergänzt; GDD-06 verworfen (Referenz jetzt als INDEX-Tab im Spiel), SaveSystem-Migration vermerkt (Oktober 2026)*
+*Letzte Aktualisierung: v0.4 — GDD-08 (Progressionsmathematik) ergänzt; GDD-07 (Bestiarium-Entwurf) ergänzt; Begründungspflicht (Abschnitt 5 und 7) eingeführt; HitSystem (Treffer-Stufen) ergänzt; GDD-06 verworfen (Referenz jetzt als INDEX-Tab im Spiel), SaveSystem-Migration vermerkt (Oktober 2026)*

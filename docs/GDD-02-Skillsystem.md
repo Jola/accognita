@@ -142,6 +142,8 @@ Alle Basis-Skills haben `maxLevel: 0` (unlimitiert). XP-Skalierung via Option D 
 
 > **Status: Implementiert (v0.2) — Kern-Mechanik gilt auch für Analyze & Absorb ab v0.3**
 
+Mathematische Analyse der Kurven und Alternativen (Status: Diskussion): [GDD-08 Progressionsmathematik](GDD-08-Progressionsmathematik.md).
+
 ### Levelaufstieg durch Entdeckung (Wiederholung)
 - Bekannter Skill wird durch Absorb/Analyze erneut entdeckt → Skill-XP.
 - Absorb: +3 XP, Analyze: +1 XP.
@@ -227,4 +229,4 @@ Aktuell gibt es keine kombinierbaren Skills. Rezepte werden einzeln und gezielt 
 
 ---
 
-*Letzte Aktualisierung: v0.4 — Größe beim Absorbieren/Analysieren als Konzept (Abschnitt 1.4); XP-Skalierung (Absorb/Analyze und Kampf-XP nach Gegner-Level) mit Begründungen dokumentiert, Erfolgsformel als vorläufig vermerkt, Superstrength-Beschreibung korrigiert (Oktober 2026)*
+*Letzte Aktualisierung: v0.4 — Verweis auf GDD-08 (Progressionsmathematik) in Abschnitt 4; Größe beim Absorbieren/Analysieren als Konzept (Abschnitt 1.4); XP-Skalierung (Absorb/Analyze und Kampf-XP nach Gegner-Level) mit Begründungen dokumentiert, Erfolgsformel als vorläufig vermerkt, Superstrength-Beschreibung korrigiert (Oktober 2026)*
