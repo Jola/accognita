@@ -14,6 +14,7 @@
 
 import type { EntityDefinition, EntityInstance } from "../types/Entity";
 import { calcBiteDamage, calcClawDamage, calcSkillAttackDamage } from "./SkillEffects";
+import { getEntitySkillPractice } from "./ProgressionSystem";
 
 // -----------------------------------------------------------
 // Konstanten
@@ -27,16 +28,15 @@ const STAT_SCALE         = 1.25; // Kampfwert-Faktor pro bonusLevel
 // Kampffähigkeit prüfen
 //
 // Eine Entity kann kämpfen wenn sie entweder einen eigenständigen
-// damage-Wert hat ODER den bite-Skill in skillLevels trägt.
+// damage-Wert hat ODER bite/claw in skillXp trägt.
 // Wird an mehreren Stellen genutzt (AiSystem, GameScene, findLevelingPrey).
 // -----------------------------------------------------------
 export function canFight(def: EntityDefinition): boolean {
   return !!(
     def.damage ??
-    def.skillLevels?.["bite"] ??
-    def.skillLevels?.["claw"] ??
     def.rangedAttackSkillId  // z.B. fire_breath-only Entity
-  );
+  ) || def.skillXp?.["bite"] !== undefined || def.skillXp?.["claw"] !== undefined;
+  // !== undefined statt ??: Erfahrung 0 (Ameise) heißt „kann beißen“, nicht „kein Biss“
 }
 
 // -----------------------------------------------------------
@@ -58,19 +58,17 @@ export function getScaledMaxHp(def: EntityDefinition, bonusLevel: number): numbe
 
 /** Nahkampf-Basisschaden einer Entity — Priorität: bite > claw > standalone damage. */
 export function getEntityBaseDamage(def: EntityDefinition): number {
-  const biteLevel = def.skillLevels?.["bite"];
-  if (biteLevel !== undefined) return calcBiteDamage(biteLevel);
-  const clawLevel = def.skillLevels?.["claw"];
-  if (clawLevel !== undefined) return calcClawDamage(clawLevel);
+  const practice = getEntitySkillPractice(def);
+  if (practice["bite"] !== undefined) return calcBiteDamage(practice["bite"]);
+  if (practice["claw"] !== undefined) return calcClawDamage(practice["claw"]);
   return def.damage ?? 1;
 }
 
-/** Fernkampf-Schaden einer Entity — liest rangedAttackSkillId + level aus skillLevels. */
+/** Fernkampf-Schaden einer Entity — rangedAttackSkillId mit dem Übungsgrad aus skillXp. */
 export function getEntityRangedDamage(def: EntityDefinition): number {
   const skillId = def.rangedAttackSkillId;
   if (!skillId) return 0;
-  const level = def.skillLevels?.[skillId] ?? 1;
-  return calcSkillAttackDamage(skillId, level);
+  return calcSkillAttackDamage(skillId, getEntitySkillPractice(def)[skillId] ?? 1);
 }
 
 export function getScaledDamage(def: EntityDefinition, bonusLevel: number): number {

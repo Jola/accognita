@@ -11,11 +11,11 @@
 // ============================================================
 
 import type { PlayerState, WorldState } from "../types/GameState";
-import { CORE_BASE_XP, CORE_XP_MULTIPLIER, CORE_MAX_LEVEL } from "../types/GameState";
 import type { EntityInstance, EntityDisposition } from "../types/Entity";
 import type { MaterialStack } from "../types/Material";
 import { ENTITY_MAP } from "../data/entities";
 import { discoverSkill, gainCoreAbilityXp } from "./SkillSystem";
+import { getCorePractice } from "./ProgressionSystem";
 import { addMaterial } from "./MaterialSystem";
 import type { SkillDiscoveryResult, DiscoveryMethod } from "../types/Skill";
 import { calcSuccessChance, ANALYZE_CHANCE_MODIFIER } from "../data/balance";
@@ -69,8 +69,7 @@ export function absorbEntity(
   }
 
   // Erfolgs-Check
-  const absorbLevel = player.coreAbilities.absorb.level;
-  const chance = calcSuccessChance(absorbLevel, def.level);
+  const chance = calcSuccessChance(getCorePractice(player, "absorb"), def.level);
 
   if (Math.random() > chance) {
     // FEHLSCHLAG
@@ -91,7 +90,7 @@ export function absorbEntity(
   instance.respawnAt = Date.now() + def.respawnTime * 1000;
   player.totalAbsorbs += 1;
 
-  // Kern-Fähigkeit leveln (entityLevel für Skalierung)
+  // Kern-Fähigkeit üben (entityLevel für Skalierung)
   gainCoreAbilityXp(player, "absorb", def.level);
 
   // Skill-Drops verarbeiten (mit Chance-Roll + entityLevel-Skalierung)
@@ -147,8 +146,7 @@ export function analyzeEntity(
   }
 
   // Erfolgs-Check
-  const analyzeLevel = player.coreAbilities.analyze.level;
-  const chance = calcSuccessChance(analyzeLevel, def.level);
+  const chance = calcSuccessChance(getCorePractice(player, "analyze"), def.level);
 
   if (Math.random() > chance) {
     // FEHLSCHLAG
@@ -166,7 +164,7 @@ export function analyzeEntity(
   // ERFOLG — Entity bleibt
   player.totalAnalyzes += 1;
 
-  // Kern-Fähigkeit leveln (entityLevel für Skalierung)
+  // Kern-Fähigkeit üben (entityLevel für Skalierung)
   gainCoreAbilityXp(player, "analyze", def.level);
 
   // Skill-Drops mit reduzierter Chance + entityLevel-Skalierung
@@ -262,4 +260,3 @@ function failResult(
 }
 
 // Re-Export damit GameScene.ts importieren kann
-export { CORE_BASE_XP, CORE_XP_MULTIPLIER, CORE_MAX_LEVEL };

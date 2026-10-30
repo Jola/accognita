@@ -17,7 +17,7 @@ import { calcMaxHp, calcMaxMp } from "./SkillSystem";
 
 export const NUM_SAVE_SLOTS = 3;
 const SAVE_PREFIX    = "accognita_save_";
-const SAVE_VERSION   = 2;
+const SAVE_VERSION   = 3;
 
 // -----------------------------------------------------------
 // SAVE-METADATEN — Vorschau ohne komplettes Deserialize
@@ -27,7 +27,7 @@ export interface SaveMeta {
   version: number;          // Format-Version des Spielstands
   gameVersion?: string;     // Spielversion beim Speichern (fehlt bei alten Spielständen)
   savedAt: number;          // Date.now()
-  playerLevel: number;
+  playerLevel?: number;     // [VERWORFEN] nur in Spielständen vor v3 (Charakter-Level)
   hp: number;
   maxHp: number;
   skillCount: number;
@@ -43,7 +43,8 @@ interface SerializedPlayer {
   x: number; y: number;
   hp: number; maxHp: number;
   mp: number; maxMp: number;
-  level: number; totalExp: number;
+  lifetimeXp: number;
+  level?: number; totalExp?: number;   // [VERWORFEN] nur vor v3, Migration 2 → 3
   spawnX: number; spawnY: number;
   coreAbilities: PlayerState["coreAbilities"];
   discoveredSkills: [string, SkillInstance][];
@@ -74,8 +75,7 @@ function serializePlayer(player: PlayerState, skillBarSlots?: (string | null)[])
     maxHp: player.maxHp,
     mp: player.mp,
     maxMp: player.maxMp,
-    level: player.level,
-    totalExp: player.totalExp,
+    lifetimeXp: player.lifetimeXp,
     spawnX: player.spawnX,
     spawnY: player.spawnY,
     coreAbilities: player.coreAbilities,
@@ -101,8 +101,7 @@ function deserializePlayer(data: SerializedPlayer): PlayerState {
     maxHp: data.maxHp,
     mp: data.mp,
     maxMp: data.maxMp,
-    level: data.level,
-    totalExp: data.totalExp,
+    lifetimeXp: data.lifetimeXp ?? 0,
     spawnX: data.spawnX ?? 400,
     spawnY: data.spawnY ?? 300,
     coreAbilities: data.coreAbilities,
@@ -138,14 +137,48 @@ const MIGRATIONS: Record<number, (data: SaveData) => void> = {
     const rescale = (value: number, oldMax: number, newMax: number) =>
       Math.max(0, Math.min(newMax, Math.round((value / (oldMax || 1)) * newMax)));
 
-    const maxHp = calcMaxHp(p.level);
-    const maxMp = calcMaxMp(p.level);
+    // Damals galt noch das Charakter-Level: Wachstum = Level − 1
+    const maxHp = calcMaxHp((p.level ?? 1) - 1);
+    const maxMp = calcMaxMp((p.level ?? 1) - 1);
     p.hp    = rescale(p.hp, p.maxHp, maxHp);
     p.mp    = rescale(p.mp, p.maxMp, maxMp);
     p.maxHp = maxHp;
     p.maxMp = maxMp;
     data.meta.hp    = p.hp;
     data.meta.maxHp = p.maxHp;
+  },
+
+  // v2 → v3: Erfahrung statt Level (src/data/progression.ts).
+  // Jeder Skill behält die Erfahrung, die er je gesammelt hat (totalXpEarned),
+  // als aktuelle Erfahrung und als Höchststand. Liegt die Summe über der neuen
+  // Kapazität, verlernt settleAfterLoad() den Überhang beim Laden — zuerst
+  // die am frühesten entdeckten Skills, weil die Übungszeit unbekannt ist.
+  2: (data) => {
+    const p = data.player as any;
+    const now = data.meta.savedAt ?? Date.now();
+    const playtime = p.playtimeSeconds ?? 0;
+    const convert = (old: any) => {
+      const xp = old?.totalXpEarned ?? 0;
+      return {
+        xp, peakXp: xp, pendingXp: 0, fatigue: 0,
+        fatigueUpdatedAt: now, lastTrainedRealMs: 0,
+        lastPracticedAt: playtime, totalXpEarned: xp,
+      };
+    };
+    p.coreAbilities = {
+      absorb: convert(p.coreAbilities?.absorb),
+      analyze: convert(p.coreAbilities?.analyze),
+    };
+    p.discoveredSkills = (p.discoveredSkills ?? []).map(([id, inst]: [string, any]) => [id, {
+      ...convert(inst),
+      definitionId: inst.definitionId ?? id,
+      discoveredAt: inst.discoveredAt ?? 0,
+      isEnabled: inst.isEnabled ?? true,
+    }]);
+    p.lifetimeXp = p.totalExp ?? 0;
+    delete p.level;
+    delete p.totalExp;
+    delete data.meta.playerLevel;
   },
 };
 
@@ -200,7 +233,6 @@ export function saveToSlot(
     version: SAVE_VERSION,
     gameVersion: GAME_VERSION,
     savedAt: Date.now(),
-    playerLevel: player.level,
     hp: player.hp,
     maxHp: player.maxHp,
     skillCount: player.discoveredSkills.size,

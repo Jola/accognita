@@ -47,47 +47,35 @@ export const BASE_XP_ANALYZE = 1;
 export const BASE_XP_CORE = 1;
 
 // -----------------------------------------------------------
-// LEVEL-UP SCHWELLEN
-// xpNeeded(level) = floor(baseXpThreshold * XP_LEVEL_MULTIPLIER^(level-1))
-// Höheres Level → exponentiell mehr XP nötig
+// [VERWORFEN] LEVEL-UP SCHWELLEN und SPIELER-HAUPTLEVEL
+// Früher: XP_LEVEL_MULTIPLIER 1.5 (Skill-Level), PLAYER_LEVEL_BASE_XP 200
+// × PLAYER_LEVEL_XP_MULTIPLIER 2.0 (Charakter-Level).
+// Ersetzt durch Erfahrung ohne Level: src/data/progression.ts.
+// Begründung (Entwickler): Level wirken wie eine unnatürliche Einheit.
 // -----------------------------------------------------------
-
-/** Skalierungsfaktor für XP-Schwellen pro Level-Up */
-export const XP_LEVEL_MULTIPLIER = 1.5;
-
-// -----------------------------------------------------------
-// SPIELER-HAUPTLEVEL
-// Wird aus der Summe aller totalXpEarned aller Skills +
-// Kern-Fähigkeiten berechnet.
-// xpNeeded(n→n+1) = floor(PLAYER_LEVEL_BASE_XP * PLAYER_LEVEL_XP_MULTIPLIER^(n-1))
-// Skaliert deutlich langsamer als Skill-Level.
-// -----------------------------------------------------------
-
-/** XP für den ersten Level-Up (Lv1 → Lv2) */
-export const PLAYER_LEVEL_BASE_XP = 200;
-
-/** Faktor mit dem die XP-Schwelle pro Level steigt (Basis 2 → verdoppelt sich) */
-export const PLAYER_LEVEL_XP_MULTIPLIER = 2.0;
 
 // -----------------------------------------------------------
 // SPIELER-VITALWERTE-SKALIERUNG
-// maxHp(level) = BASE_HP + (level - 1) * HP_PER_LEVEL
-// maxMp(level) = BASE_MP + (level - 1) * MP_PER_LEVEL
+// maxHp(growth) = BASE_HP + growth * HP_PER_GROWTH
+// maxMp(growth) = BASE_MP + growth * MP_PER_GROWTH
+// growth = stetiges Wachstum des Blobs (ProgressionSystem.calcGrowth);
+// growth 1 entspricht genau einem alten Charakter-Level.
 // -----------------------------------------------------------
 
-/** Basis-HP bei Lv 1 (milli-HP) */
+/** Basis-HP eines frischen Blobs (milli-HP) */
 export const BASE_HP = 80_000;
-/** HP-Zuwachs pro Level-Up (milli-HP) */
-export const HP_PER_LEVEL = 15_000;
-/** Basis-MP bei Lv 1 (milli-MP) */
+/** HP-Zuwachs pro Einheit Wachstum (milli-HP) */
+export const HP_PER_GROWTH = 15_000;
+/** Basis-MP eines frischen Blobs (milli-MP) */
 export const BASE_MP = 40_000;
-/** MP-Zuwachs pro Level-Up (milli-MP) */
-export const MP_PER_LEVEL = 8_000;
+/** MP-Zuwachs pro Einheit Wachstum (milli-MP) */
+export const MP_PER_GROWTH = 8_000;
 
 // -----------------------------------------------------------
-// XP-SKALIERUNG: ENTITY-LEVEL vs. SKILL-LEVEL
+// XP-SKALIERUNG: ENTITY-LEVEL vs. ÜBUNGSGRAD DES SKILLS
 //
-// Option D: clamp( (entityLevel / skillLevel)^EXPONENT, MIN, MAX )
+// Option D: clamp( (entityLevel / übungsgrad)^EXPONENT, MIN, MAX )
+// „Skill Lv“ in den Beispielen = Übungsgrad u (stetig, progression.ts).
 //
 // Beispiele bei EXPONENT=1.5:
 //   Entity Lv 1, Skill Lv 10  → ×0.05  (fast 0 — zu leicht)
@@ -132,7 +120,7 @@ export function scaleXp(baseXp: number, entityLevel: number, skillLevel: number)
 // -----------------------------------------------------------
 // ERFOLGSWAHRSCHEINLICHKEIT für Analyze & Absorb
 //
-// Formel: min(1, abilityLevel / entityLevel)
+// Formel: min(1, übungsgrad / entityLevel)  (Übungsgrad von Analyze/Absorb)
 //   abilityLevel >= entityLevel → 100% Erfolg
 //   abilityLevel < entityLevel  → proportional weniger
 //
@@ -215,9 +203,9 @@ export const SKILL_DEFENSE_BASE_MULTIPLIER = 1.0;
 // -----------------------------------------------------------
 // TREFFER-STUFEN (verfehlt / leicht / normal / schwer / kritisch)
 //
-// Jeder Angriffsskill hat eine Grundverteilung (hitProfile, Lv1, Geschick 0).
-// Skill-Level und Geschick-Differenz kippen die Verteilung Richtung bessere Stufen:
-//   x    = HIT_TILT_PER_SKILL_LEVEL·(Level−1) + HIT_TILT_PER_DEX·(Geschick Angreifer − Verteidiger)
+// Jeder Angriffsskill hat eine Grundverteilung (hitProfile, ohne Erfahrung, Geschick 0).
+// Übungsgrad und Geschick-Differenz kippen die Verteilung Richtung bessere Stufen:
+//   x    = HIT_TILT_PER_SKILL_LEVEL·(u−1) + HIT_TILT_PER_DEX·(Geschick Angreifer − Verteidiger)
 //   kipp = HIT_TILT_MAX · tanh(x)                       (weich begrenzt auf ±HIT_TILT_MAX)
 //   p_i  ∝ grund_i · e^(kipp · stufe_i),  stufe = −2 … +2 (verfehlt … kritisch)
 // Bei HIT_TILT_MAX 0.4 steigt Krit höchstens auf ≈2,2× und Verfehlen fällt auf ≈0,45× —
@@ -232,7 +220,7 @@ export const HIT_DAMAGE_MULT: HitProfile = { miss: 0, light: 0.6, normal: 1.0, h
 
 /** Maximales Kippen der Verteilung (in beide Richtungen) */
 export const HIT_TILT_MAX = 0.4;
-/** Beitrag pro Skill-Level über 1 */
+/** Beitrag pro Einheit Übungsgrad über 1 */
 export const HIT_TILT_PER_SKILL_LEVEL = 0.05;
 /** Beitrag pro Geschick-Punkt Vorsprung des Angreifers */
 export const HIT_TILT_PER_DEX = 0.1;
@@ -249,8 +237,9 @@ export const ANALYZE_CHANCE_MODIFIER = 0.7;
 // -----------------------------------------------------------
 // SPIELER-WACHSTUM / KAMERA-ZOOM
 //
-// Der Blob wächst mit dem Level. Seine Weltgröße skaliert von
-// PLAYER_WORLD_RADIUS_MIN (Level 1) bis PLAYER_WORLD_RADIUS_MAX (Level PLAYER_SIZE_LEVEL_MAX+).
+// Der Blob wächst stetig (Wachstum, ProgressionSystem.calcGrowth). Seine Weltgröße
+// skaliert von PLAYER_WORLD_RADIUS_MIN (Wachstum 0) bis PLAYER_WORLD_RADIUS_MAX
+// (Wachstum PLAYER_SIZE_GROWTH_MAX+). Wachstum 0 / 19 ≙ früher Level 1 / 20.
 // Der Kamera-Zoom wird so angepasst, dass der Blob auf dem Bildschirm
 // immer PLAYER_SCREEN_RADIUS Pixel groß bleibt.
 // Effekt: die Welt schrumpft optisch, während der Blob wächst.
@@ -260,14 +249,14 @@ export const ANALYZE_CHANCE_MODIFIER = 0.7;
 //   Level 20: Radius 8  ≈ 1/2  Tile-Durchmesser (fuchsgroßes Lebewesen)
 // -----------------------------------------------------------
 
-/** Welt-Radius des Blobs bei Level 1 (in World-Pixeln, TILE_SIZE=32) */
+/** Welt-Radius eines frischen Blobs (in World-Pixeln, TILE_SIZE=32) */
 export const PLAYER_WORLD_RADIUS_MIN = 2;
 
-/** Welt-Radius des Blobs ab Level PLAYER_SIZE_LEVEL_MAX */
+/** Welt-Radius des Blobs ab Wachstum PLAYER_SIZE_GROWTH_MAX */
 export const PLAYER_WORLD_RADIUS_MAX = 8;
 
-/** Level ab dem die maximale Größe erreicht wird */
-export const PLAYER_SIZE_LEVEL_MAX = 20;
+/** Wachstum, ab dem die maximale Größe erreicht wird (≙ früher Level 20) */
+export const PLAYER_SIZE_GROWTH_MAX = 19;
 
 /** Konstante Bildschirm-Radius des Blobs in Pixeln (ändert sich nie) */
 export const PLAYER_SCREEN_RADIUS = 16;

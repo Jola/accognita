@@ -18,14 +18,23 @@ import {
   discoverSkill,
   combineSkills,
   getDiscoveredSkillsSorted,
-  getXpProgress,
-  isMaxLevel,
   gainSkillXp,
-  updatePlayerLevel,
-  calcPlayerLevel,
+  updatePlayerGrowth,
   calcMaxHp,
   calcMaxMp,
 } from "../systems/SkillSystem.js";
+import {
+  tickProgression,
+  settleAfterLoad,
+  getRankInfo,
+  getCapacityInfo,
+  calcGrowth,
+  getLearningEffort,
+  getCorePractice,
+  getEntitySkillPractice,
+  rankNameForPractice,
+} from "../systems/ProgressionSystem.js";
+import type { GainResult, ProgressionEvent, RankInfo } from "../systems/ProgressionSystem.js";
 import {
   absorbEntity,
   analyzeEntity,
@@ -78,11 +87,12 @@ import {
   applyEffect,
   removeExpiredEffects,
   syncPassiveEffects,
+  refreshPassiveEffectValues,
 } from "../systems/StatusEffectSystem.js";
 import {
   PLAYER_WORLD_RADIUS_MIN,
   PLAYER_WORLD_RADIUS_MAX,
-  PLAYER_SIZE_LEVEL_MAX,
+  PLAYER_SIZE_GROWTH_MAX,
   PLAYER_SCREEN_RADIUS,
   PLAYER_SPEED_PER_WORLD_RADIUS,
   toDisplayHp,
@@ -154,7 +164,7 @@ export class GameScene extends Phaser.Scene {
     this.setupGameMenu();
 
     this.cameras.main.startFollow(this.blobGraphic, true, 1.0, 1.0);
-    this.updateCameraZoom(); // Zoom basierend auf Level 1
+    this.updateCameraZoom(); // Zoom passend zur Startgröße
 
     updateUI(this.gameState);
     addLog("Du erwachst als Blob…", "system");
@@ -256,23 +266,24 @@ export class GameScene extends Phaser.Scene {
     // Wobble wird in update() per Math.sin berechnet (kein Tween — kein Konflikt mit Skalierung)
   }
 
-  // Berechnet den Welt-Radius des Blobs für ein gegebenes Level.
+  // Berechnet den Welt-Radius des Blobs aus seinem stetigen Wachstum.
   // Wächst linear von PLAYER_WORLD_RADIUS_MIN bis PLAYER_WORLD_RADIUS_MAX.
-  private calcPlayerWorldRadius(level: number): number {
-    const t = Math.min((level - 1) / (PLAYER_SIZE_LEVEL_MAX - 1), 1.0);
+  private calcPlayerWorldRadius(): number {
+    const growth = calcGrowth(this.gameState.player.lifetimeXp);
+    const t = Math.min(growth / PLAYER_SIZE_GROWTH_MAX, 1.0);
     return PLAYER_WORLD_RADIUS_MIN + t * (PLAYER_WORLD_RADIUS_MAX - PLAYER_WORLD_RADIUS_MIN);
   }
 
   // Nahkampf-Angriffsreichweite des Blobs in Weltpixeln.
   // = Rand des Charakters + nochmal eine Charaktergröße = 2 × worldRadius.
   private getPlayerAttackRange(): number {
-    return this.calcPlayerWorldRadius(this.gameState.player.level) * 2;
+    return this.calcPlayerWorldRadius() * 2;
   }
 
-  // Passt Kamera-Zoom an das aktuelle Level an.
+  // Passt Kamera-Zoom an die aktuelle Größe des Blobs an.
   // Blob erscheint immer PLAYER_SCREEN_RADIUS px groß.
   private updateCameraZoom(): void {
-    const worldRadius = this.calcPlayerWorldRadius(this.gameState.player.level);
+    const worldRadius = this.calcPlayerWorldRadius();
     this.cameras.main.setZoom(PLAYER_SCREEN_RADIUS / worldRadius);
   }
 
@@ -426,13 +437,18 @@ export class GameScene extends Phaser.Scene {
     // Spieler-Sprite an gespeicherte Position
     this.blobGraphic.setPosition(saved.player.x, saved.player.y);
 
-    // maxHp/maxMp aus Level neu berechnen (migriert alte Saves)
-    this.gameState.player.maxHp = calcMaxHp(saved.player.level);
-    this.gameState.player.maxMp = calcMaxMp(saved.player.level);
+    // Ruhe seit dem Speichern verbuchen (Übertraining klingt auch offline ab)
+    // und die Kapazitätsgrenze herstellen (alte Spielstände können darüber liegen)
+    this.logProgressionEvents(settleAfterLoad(this.gameState.player, Date.now()));
+
+    // maxHp/maxMp aus dem Wachstum neu berechnen (migriert alte Saves)
+    const growth = calcGrowth(this.gameState.player.lifetimeXp);
+    this.gameState.player.maxHp = calcMaxHp(growth);
+    this.gameState.player.maxMp = calcMaxMp(growth);
     this.gameState.player.hp = Math.min(this.gameState.player.hp, this.gameState.player.maxHp);
     this.gameState.player.mp = Math.min(this.gameState.player.mp, this.gameState.player.maxMp);
 
-    // Kamera-Zoom ans gespeicherte Level anpassen
+    // Kamera-Zoom an die gespeicherte Größe anpassen
     this.updateCameraZoom();
 
     // Passive Effekte neu aufbauen
@@ -456,7 +472,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     updateUI(this.gameState);
-    addLog(`▶ Slot ${slot + 1} geladen — Lv.${saved.player.level}, ${saved.player.discoveredSkills.size} Skills.`, "system");
+    addLog(`▶ Slot ${slot + 1} geladen — ${saved.player.discoveredSkills.size} Skills.`, "system");
   }
 
   /** Alles zurücksetzen und Seite neu laden */
@@ -492,8 +508,10 @@ export class GameScene extends Phaser.Scene {
     // Spielzeit akkumulieren
     this.playtimeAccumulator += delta;
     if (this.playtimeAccumulator >= 1000) {
-      this.gameState.player.playtimeSeconds += Math.floor(this.playtimeAccumulator / 1000);
+      const seconds = Math.floor(this.playtimeAccumulator / 1000);
+      this.gameState.player.playtimeSeconds += seconds;
       this.playtimeAccumulator %= 1000;
+      this.tickProgression(seconds);
     }
     this.handleMovement();
     this.syncPlayerPosition();
@@ -508,17 +526,30 @@ export class GameScene extends Phaser.Scene {
     processRespawns(this.gameState.world);
   }
 
-  // Setzt Blob-Skalierung (Level-basiert) + organisches Wobble
+  // Einmal pro Spielsekunde: Ruhe nach Übertraining (Echtzeit) und
+  // Abschmelzen der Überdehnung (Spielzeit) — Regeln in ProgressionSystem.ts
+  private tickProgression(playSeconds: number): void {
+    const player = this.gameState.player;
+    const { changed, events } = tickProgression(player, Date.now(), playSeconds);
+    this.logProgressionEvents(events);
+    if (!changed) return;
+    refreshPassiveEffectValues(player);
+    updatePlayerGrowth(player);
+    this.updateCameraZoom();
+    updateUI(this.gameState);
+  }
+
+  // Setzt Blob-Skalierung (wachstumsbasiert) + organisches Wobble
   private updateBlobWobble(time: number): void {
-    const worldRadius = this.calcPlayerWorldRadius(this.gameState.player.level);
+    const worldRadius = this.calcPlayerWorldRadius();
     const baseScale = worldRadius / 20; // Textur ist 40×40, Mittelpunkt-Radius = 20
     const wobble = Math.sin(time * 0.00628) * 0.04;
     this.blobGraphic.setScale(baseScale * (1 + wobble), baseScale * (1 - wobble));
   }
 
   private handleMovement() {
-    // Geschwindigkeit skaliert mit Weltgröße → Bildschirm-Speed bleibt über alle Level konstant
-    const worldRadius = this.calcPlayerWorldRadius(this.gameState.player.level);
+    // Geschwindigkeit skaliert mit Weltgröße → Bildschirm-Speed bleibt über alle Größen konstant
+    const worldRadius = this.calcPlayerWorldRadius();
     const speed = worldRadius * PLAYER_SPEED_PER_WORLD_RADIUS;
     const body = this.blobGraphic.body;
 
@@ -643,7 +674,7 @@ export class GameScene extends Phaser.Scene {
 
           // Chitin Armor: XP = durch Verteidigung absorbierter Schaden
           if ((result.absorbedDamage ?? 0) > 0) {
-            this.skillLevelUp(gainSkillXp(this.gameState.player, "chitin_armor", Math.round(result.absorbedDamage! / 1000), def.level), "chitin_armor");
+            this.afterXpGain(gainSkillXp(this.gameState.player, "chitin_armor", Math.round(result.absorbedDamage! / 1000), def.level));
           }
 
           // Hemolymph: Rückschlag-Schaden an die angreifende Entity
@@ -651,7 +682,7 @@ export class GameScene extends Phaser.Scene {
           if (reflectDmg > 0) {
             instance.currentHp = Math.max(0, instance.currentHp - reflectDmg);
             this.showDamageNumber(instance.x, instance.y, reflectDmg, "#ff8800");
-            this.skillLevelUp(gainSkillXp(this.gameState.player, "hemolymph", Math.round(reflectDmg / 1000), def.level), "hemolymph");
+            this.afterXpGain(gainSkillXp(this.gameState.player, "hemolymph", Math.round(reflectDmg / 1000), def.level));
             if (instance.currentHp <= 0) {
               instance.isAlive  = false;
               instance.respawnAt = Date.now() + (def?.respawnTime ?? 60) * 1000;
@@ -751,7 +782,7 @@ export class GameScene extends Phaser.Scene {
         );
       } else if (playerHpDelta > 0) {
         // Photosynthesis: XP = regenerierte HP (÷1000: milli-HP → XP, kein Entity-Level)
-        this.skillLevelUp(gainSkillXp(this.gameState.player, "photosynthesis", Math.round(playerHpDelta / 1000)), "photosynthesis");
+        this.afterXpGain(gainSkillXp(this.gameState.player, "photosynthesis", Math.round(playerHpDelta / 1000)));
       }
       updateUI(this.gameState);
     }
@@ -790,7 +821,7 @@ export class GameScene extends Phaser.Scene {
       }
       // Venom: XP = Schaden der getickten Venom-DoTs (÷1000: milli-HP → XP)
       if (venomXp > 0) {
-        this.skillLevelUp(gainSkillXp(this.gameState.player, "venom", Math.round(venomXp / 1000), def?.level), "venom");
+        this.afterXpGain(gainSkillXp(this.gameState.player, "venom", Math.round(venomXp / 1000), def?.level));
       }
       removeExpiredEffects(instance, now);
 
@@ -824,30 +855,32 @@ export class GameScene extends Phaser.Scene {
     updateUI(this.gameState);
   }
 
-  /** Level-Up nach gainSkillXp() verarbeiten: Log + syncPassiveEffects */
-  private skillLevelUp(
-    result: { leveledUp: boolean; newLevel?: number },
-    skillId: string
-  ) {
-    if (result.leveledUp) {
-      const def = ALL_SKILLS.get(skillId);
-      const icon = def?.icon ?? "⚡";
-      addLog(`⬆️ ${icon} ${def?.name ?? skillId} → Lv.${result.newLevel}!`, "system");
-      if (def?.activation === "passive") {
-        syncPassiveEffects(this.gameState.player);
-      }
-    }
-    this.checkPlayerLevelUp();
+  /** Nach jeder Erfahrung: Rangwechsel loggen, Werte und Wachstum nachführen */
+  private afterXpGain(result: GainResult) {
+    this.logProgressionEvents(result.events);
+    this.afterProgressChange();
+  }
+
+  /** Werte folgen der Erfahrung fließend: passive Effekte, HP/MP, Größe */
+  private afterProgressChange() {
+    refreshPassiveEffectValues(this.gameState.player);
+    updatePlayerGrowth(this.gameState.player);
+    this.updateCameraZoom(); // Welt schrumpft optisch, während der Blob wächst
     updateUI(this.gameState);
   }
 
-  /** Hauptlevel neu berechnen und bei Level-Up loggen */
-  private checkPlayerLevelUp() {
-    const r = updatePlayerLevel(this.gameState.player);
-    if (r.leveledUp) {
-      const p = this.gameState.player;
-      addLog(`🌟 Charakter → Lv.${r.newLevel}! (HP: ${toDisplayHp(p.maxHp)} / MP: ${Math.floor(p.maxMp / 1000)})`, "levelup");
-      this.updateCameraZoom(); // Welt schrumpft optisch mit dem Level-Up
+  /** Absorb/Analyze: Aufstiege zeigt showInteractionResult, hier nur das Verlernen anderer Skills */
+  private logForgetting(results: { events: ProgressionEvent[] }[]) {
+    this.logProgressionEvents(results.flatMap((r) => r.events.filter((e) => e.kind === "rank_down")));
+  }
+
+  /** Rangwechsel ins Log — aufgestiegen oder durch Verlernen abgestiegen */
+  private logProgressionEvents(events: ProgressionEvent[]) {
+    for (const e of events) {
+      const def = ALL_SKILLS.get(e.skillId);
+      const label = `${def?.icon ?? "⚡"} ${def?.name ?? e.skillId}`;
+      if (e.kind === "rank_up") addLog(`⬆️ ${label} → ${e.rankName}!`, "levelup");
+      else addLog(`💭 ${label} verlernt → ${e.rankName}`, "system");
     }
   }
 
@@ -956,7 +989,7 @@ export class GameScene extends Phaser.Scene {
         showToast(`🦘 Sprung! (${Math.round(dist)}px)`, "system");
       }
       // Jump: XP pro Benutzung
-      this.skillLevelUp(gainSkillXp(this.gameState.player, skillId, 1), skillId);
+      this.afterXpGain(gainSkillXp(this.gameState.player, skillId, 1));
       updateUI(this.gameState);
       return;
     }
@@ -1005,9 +1038,9 @@ export class GameScene extends Phaser.Scene {
       addLog(result.message, "absorb");
 
       // XP = angerichteter Schaden (÷1000: milli-HP → XP, Entity-Level für Skalierung)
-      this.skillLevelUp(gainSkillXp(this.gameState.player, skillId, Math.round(result.damageDealt / 1000), def?.level), skillId);
+      this.afterXpGain(gainSkillXp(this.gameState.player, skillId, Math.round(result.damageDealt / 1000), def?.level));
       // Superstrength: 1 XP pro Treffer, skaliert nach Entity-Level
-      this.skillLevelUp(gainSkillXp(this.gameState.player, "superstrength", 1, def?.level), "superstrength");
+      this.afterXpGain(gainSkillXp(this.gameState.player, "superstrength", 1, def?.level));
       // Venom: XP kommt von den DoT-Ticks in processCombatEffects
     } else if (result.hitGrade === "miss") {
       // Verfehlt: kein Schaden, keine XP — das Ziel bemerkt den Angriff trotzdem
@@ -1048,13 +1081,13 @@ export class GameScene extends Phaser.Scene {
       this.lastNearbyId
     );
     showInteractionResult(result, this.gameState);
+    this.logForgetting(result.skillResults);
     if (result.success) {
       syncPassiveEffects(this.gameState.player);
       this.lastNearbyId = null;
       updateNearbyPanel(undefined, undefined, this.gameState);
     }
-    this.checkPlayerLevelUp();
-    updateUI(this.gameState);
+    this.afterProgressChange();
   }
 
   doAnalyze() {
@@ -1068,9 +1101,9 @@ export class GameScene extends Phaser.Scene {
       this.lastNearbyId
     );
     showInteractionResult(result, this.gameState);
+    this.logForgetting(result.skillResults);
     if (result.success) syncPassiveEffects(this.gameState.player);
-    this.checkPlayerLevelUp();
-    updateUI(this.gameState);
+    this.afterProgressChange();
   }
 
   doGrow() {
@@ -1092,7 +1125,7 @@ export class GameScene extends Phaser.Scene {
   doCombine(skillIdA: string, skillIdB: string) {
     const result = combineSkills(this.gameState.player, skillIdA, skillIdB);
     showCombineResult(result);
-    this.checkPlayerLevelUp();
+    this.afterProgressChange();
     updateUI(this.gameState);
     return result;
   }
@@ -1122,25 +1155,26 @@ export class GameScene extends Phaser.Scene {
 function updateUI(state: GameState) {
   const p = state.player;
 
-  // HUD
-  setEl("ui-level", `Lv.${p.level}`);
+  // HUD — statt Charakter-Level: belegte Skill-Kapazität (progression.ts Abschnitt 3/4)
+  const cap = getCapacityInfo(p);
+  const capPct = Math.round((cap.used / cap.capacity) * 100);
+  setEl("ui-level", `Kap. ${capPct}%${cap.overstretch > 0 ? " ↑" : ""}`);
   setEl("ui-hp", `${toDisplayHp(p.hp)}/${toDisplayHp(p.maxHp)}`);
   // MP abrunden: sonst stünde z.B. „3 MP vorhanden“, obwohl ein 3-MP-Skill nicht geht
   setEl("ui-mp", `${Math.floor(p.mp / 1000)}/${Math.floor(p.maxMp / 1000)}`);
   setStyle("hp-bar-fill", "width", `${(p.hp / p.maxHp) * 100}%`);
   setStyle("mp-bar-fill", "width", `${(p.mp / p.maxMp) * 100}%`);
-  const { xpIntoLevel, xpToNext } = calcPlayerLevel(p.totalExp);
-  setStyle("xp-bar-fill", "width", `${(xpIntoLevel / xpToNext) * 100}%`);
+  setStyle("xp-bar-fill", "width", `${Math.min(100, capPct)}%`);
+  // Überdehnt: Balken in Gold — Grenze zeitweise überschritten
+  setStyle("xp-bar-fill", "background", cap.overstretch > 0 ? "var(--gold)" : "");
 
   // Kern-Fähigkeiten
-  setEl(
-    "ui-analyze-level",
-    `🔍 Lv.${p.coreAbilities.analyze.level} (${p.coreAbilities.analyze.currentXp}/${p.coreAbilities.analyze.xpToNextLevel} XP)`
-  );
-  setEl(
-    "ui-absorb-level",
-    `💥 Lv.${p.coreAbilities.absorb.level} (${p.coreAbilities.absorb.currentXp}/${p.coreAbilities.absorb.xpToNextLevel} XP)`
-  );
+  const coreText = (ability: "absorb" | "analyze") => {
+    const info = getRankInfo(p.coreAbilities[ability], getLearningEffort(ability));
+    return `${info.rankName} (${formatRankProgress(info)})`;
+  };
+  setEl("ui-analyze-level", `🔍 ${coreText("analyze")}`);
+  setEl("ui-absorb-level", `💥 ${coreText("absorb")}`);
 
   renderSkillList(state);
   renderCombinePanel(state);
@@ -1162,10 +1196,9 @@ function renderSkillList(state: GameState) {
     .map((inst) => {
       const def = ALL_SKILLS.get(inst.definitionId);
       if (!def) return "";
-      const progress = getXpProgress(inst);
-      const maxed = isMaxLevel(inst);
+      const info = getRankInfo(inst, getLearningEffort(def.id));
       const isPassive = def.activation === "passive";
-      const hasGrow = def.id === "grow" && !maxed;
+      const hasGrow = def.id === "grow";
 
       const enabled = inst.isEnabled !== false;
       return `
@@ -1175,15 +1208,11 @@ function renderSkillList(state: GameState) {
             <span class="skill-name">${def.name}</span>
             ${def.category === "combo" ? '<span class="combo-badge">COMBO</span>' : ""}
             ${isPassive ? '<span class="combo-badge" style="background:#4af0c8;color:#000">PASSIV</span>' : ""}
-            <span class="skill-level">Lv.${inst.level}${maxed ? " MAX" : ""}</span>
+            <span class="skill-level">${info.rankName}</span>
             ${isPassive ? `<button class="btn-passive-toggle" onclick="window.togglePassiveSkill('${def.id}')">${enabled ? "AN" : "AUS"}</button>` : ""}
           </div>
-          <div class="xp-bar-wrap">
-            <div class="xp-bar-fill" style="width:${progress * 100}%"></div>
-          </div>
-          <div class="skill-xp-text">
-            ${maxed ? "Maximales Level" : `${inst.currentXp} / ${inst.xpToNextLevel} XP`}
-          </div>
+          ${renderRankBar(info)}
+          <div class="skill-xp-text">${formatRankProgress(info)}</div>
           <div class="skill-desc">${def.description}</div>
           ${hasGrow ? `<button class="btn-grow" onclick="window.doGrow()">🌱 Grow anwenden (−5 Pflanzenfaser)</button>` : ""}
         </div>
@@ -1191,6 +1220,27 @@ function renderSkillList(state: GameState) {
     })
     .filter(Boolean)
     .join("");
+}
+
+/**
+ * Erfahrungsbalken im aktuellen Rang. Der goldene Abschnitt vor der Füllung
+ * zeigt die ausstehende Erfahrung aus Übertraining — so weit wird der Balken
+ * nach der Ruhe stehen (progression.ts Abschnitt 6).
+ */
+function renderRankBar(info: RankInfo): string {
+  return `
+    <div class="xp-bar-wrap">
+      <div class="xp-bar-pending" style="width:${info.pendingFraction * 100}%"></div>
+      <div class="xp-bar-fill" style="width:${info.fraction * 100}%"></div>
+    </div>`;
+}
+
+/** „24 / 74 XP · +12 in Ruhe“ — XP bis zum nächsten Rang, ausstehende Erfahrung */
+function formatRankProgress(info: RankInfo): string {
+  const pending = info.pendingXp >= 1 ? ` · +${Math.floor(info.pendingXp)} in Ruhe` : "";
+  if (!info.nextRankName) return `${Math.floor(info.xp)} XP · höchster Rang${pending}`;
+  const target = Math.ceil(info.xp + info.xpToNextRank);
+  return `${Math.floor(info.xp)} / ${target} XP → ${info.nextRankName}${pending}`;
 }
 
 function renderCombinePanel(state: GameState) {
@@ -1205,7 +1255,7 @@ function renderCombinePanel(state: GameState) {
       if (!def || def.category !== "basic") continue; // Nur basic-Skills kombinierbar
       const opt = document.createElement("option");
       opt.value = id;
-      opt.textContent = `${def.icon} ${def.name} (Lv.${inst.level})`;
+      opt.textContent = `${def.icon} ${def.name} (${getRankInfo(inst, getLearningEffort(id)).rankName})`;
       sel.appendChild(opt);
     }
     if (current) sel.value = current;
@@ -1249,12 +1299,10 @@ function updateNearbyPanel(
     return;
   }
 
-  const absorbLevel  = state.player.coreAbilities.absorb.level;
-  const analyzeLevel = state.player.coreAbilities.analyze.level;
   const bonusLv      = instance?.bonusLevel ?? 0;
   const effectiveLv  = entityDef.level + bonusLv;
-  const absorbChance = Math.round(calcSuccessChance(absorbLevel,  effectiveLv) * 100);
-  const analyzeChance= Math.round(calcSuccessChance(analyzeLevel, effectiveLv) * 100);
+  const absorbChance = Math.round(calcSuccessChance(getCorePractice(state.player, "absorb"),  effectiveLv) * 100);
+  const analyzeChance= Math.round(calcSuccessChance(getCorePractice(state.player, "analyze"), effectiveLv) * 100);
 
   // HP-Leiste (intern milli-HP, Anzeige in HP)
   const scaledMaxHp    = getScaledMaxHp(entityDef, bonusLv);
@@ -1267,20 +1315,18 @@ function updateNearbyPanel(
   // Bonus-Level Sterne
   const bonusStars = bonusLv > 0 ? ` ${"★".repeat(bonusLv)}` : "";
 
-  // Aktive Skills der Entity (aus skillLevels)
+  // Skills der Entity (aus skillXp) — mit Rang wie beim Blob
   const skillLines: string[] = [];
-  if (entityDef.skillLevels) {
-    for (const [skillId, level] of Object.entries(entityDef.skillLevels)) {
-      const s = ALL_SKILLS.get(skillId);
-      if (s) skillLines.push(`${s.icon} ${s.name} Lv.${level}`);
-    }
+  for (const [skillId, practice] of Object.entries(getEntitySkillPractice(entityDef))) {
+    const s = ALL_SKILLS.get(skillId);
+    if (s) skillLines.push(`${s.icon} ${s.name} (${rankNameForPractice(practice)})`);
   }
 
-  // Effektiver Schaden (aus bite-Level oder standalone)
+  // Effektiver Schaden (aus Biss-Erfahrung oder standalone)
   const effectiveDmg = getEntityBaseDamage(entityDef);
 
-  // Mögliche Skill-Drops (nur was noch nicht in skillLevels ist)
-  const ownSkillIds = new Set(Object.keys(entityDef.skillLevels ?? {}));
+  // Mögliche Skill-Drops (nur was noch nicht in skillXp ist)
+  const ownSkillIds = new Set(Object.keys(entityDef.skillXp ?? {}));
   const dropLines = entityDef.skillDrops
     .filter((d) => !ownSkillIds.has(d.skillId))
     .map((drop) => {
@@ -1336,7 +1382,8 @@ function showInteractionResult(result: any, state: GameState) {
       const def = ALL_SKILLS.get(r.skillId);
       if (!def) return "";
       if (r.wasNewDiscovery) return `✨ ${def.name} entdeckt!`;
-      if (r.leveledUp)       return `⬆️ ${def.name} → Lv.${r.newLevel}`;
+      const up = r.events?.find((e: ProgressionEvent) => e.skillId === r.skillId && e.kind === "rank_up");
+      if (up)                return `⬆️ ${def.name} → ${up.rankName}`;
       return `+${r.xpGained} XP für ${def.name}`;
     })
     .filter(Boolean);

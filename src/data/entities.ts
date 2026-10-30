@@ -8,6 +8,10 @@
 //   - skillDrops: Array von { skillId, chance } — chance 0.0–1.0
 //   - materialDrops: Array von { materialId, amountMin, amountMax, chance }
 //   - level: bestimmt Schwierigkeit von Absorb/Analyze
+//   - skillXp: Erfahrung der Art in ihren Skills { skillId → XP }. Gleiche
+//     Skills, gleiche Regeln wie beim Blob: dieselbe Erfahrung ergibt dieselbe
+//     Wirkung (Vorgabe Entwickler, GDD-02 Abschnitt 8.6). In den Kommentaren
+//     steht der Übungsgrad u, der daraus folgt (progression.ts Abschnitt 1).
 //   - disposition: "neutral" | "hostile" — für Fehlschlag-Reaktion
 // ============================================================
 
@@ -65,7 +69,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 30,
     interactRadius: 35,
     aggroRadius: 8,    // 2.5 × worldSize
-    skillLevels: { bite: 1, chitin_armor: 1 },   // bite Lv1 → 7 Schaden; chitin → 10% DR
+    skillXp: { bite: 0, chitin_armor: 0 },   // bite u=1 → 7 Schaden; chitin → 10% DR
     worldSize: 3,    // Ameise — winziges Insekt, ähnlich groß wie Level-1-Blob
   },
   {
@@ -87,8 +91,8 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     interactRadius: 35,
     aggroRadius: 10,   // 2.5 × worldSize
     // Kein bite — Marienkäfer greifen nicht aktiv an.
-    // Hemolymph Lv1: 2 Rückschlag-Schaden wenn der Blob ihn trifft.
-    skillLevels: { hemolymph: 1 },
+    // Hemolymph u=1: 2 Rückschlag-Schaden wenn der Blob ihn trifft.
+    skillXp: { hemolymph: 0 },
     worldSize: 4,    // Marienkäfer — etwas größer als Ameise
   },
 
@@ -116,8 +120,8 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 45,
     interactRadius: 40,
     aggroRadius: 15,   // 2.5 × worldSize
-    // bite Lv2 → 7 × 1.1 ≈ 8 Schaden; chitin_armor Lv3; jump Lv2 → Geschick ≈2 (weicht aus, trifft präziser)
-    skillLevels: { bite: 2, chitin_armor: 3, jump: 2 },
+    // bite u=2 → 7 × 1.1 ≈ 8 Schaden; chitin_armor u=3; jump u=2 → Geschick ≈2 (weicht aus, trifft präziser)
+    skillXp: { bite: 6, chitin_armor: 24, jump: 6 },
     worldSize: 6,    // Springspinne — deutlich größer als Ameisen
   },
   {
@@ -140,8 +144,8 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 50,
     interactRadius: 40,
     aggroRadius: 15,   // 2.5 × worldSize
-    // bite Lv1 → 7 Schaden; venom Lv3 → 40% Chance, 3/Tick; chitin_armor Lv3 → 20% DR
-    skillLevels: { bite: 1, venom: 3, chitin_armor: 3 },
+    // bite u=1 → 7 Schaden; venom u=3 → 40% Chance, 3/Tick; chitin_armor u=3 → 20% DR
+    skillXp: { bite: 0, venom: 30, chitin_armor: 24 },
     worldSize: 6,    // Giftspinne — ähnlich groß wie Springspinne
   },
 
@@ -169,8 +173,8 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 60,
     interactRadius: 45,
     aggroRadius: 18,            // 2.5 × worldSize
-    // bite Lv6 → 7×1.65 ≈ 12 Schaden; chitin Lv5 → 30% DR; venom Lv5 → 50%/4Tick
-    skillLevels: { bite: 6, chitin_armor: 5, venom: 5 },
+    // bite u=6 → 7×1.65 ≈ 12 Schaden; chitin u=5 → 30% DR; venom u=5 → 50%/4Tick
+    skillXp: { bite: 150, chitin_armor: 96, venom: 120 },
     worldSize: 7,
   },
   {
@@ -193,8 +197,8 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 120,
     interactRadius: 55,
     aggroRadius: 25,            // 2.5 × worldSize
-    // bite Lv18 → 7×2.85 ≈ 20 Schaden; chitin Lv8 → 45% DR; venom Lv8 → 65%/5Tick
-    skillLevels: { bite: 18, chitin_armor: 8, venom: 8 },
+    // bite u=18 → 7×2.85 ≈ 20 Schaden; chitin u=8 → 45% DR; venom u=8 → 65%/5Tick
+    skillXp: { bite: 1734, chitin_armor: 294, venom: 367.5 },
     worldSize: 10,
   },
   // ==========================================================
@@ -225,9 +229,9 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 600,                // 10 Minuten — sehr seltener Spawn
     interactRadius: 80,
     aggroRadius: 50,                 // 2.5 × worldSize
-    // claw Lv20 → 8×3.05 ≈ 24 Nahkampf-Schaden
-    // fire_breath Lv20 → 10×3.05 ≈ 31 Fernkampf-Schaden
-    skillLevels: { claw: 20, fire_breath: 20 },
+    // claw u=20 → 8×3.05 ≈ 24 Nahkampf-Schaden
+    // fire_breath u=20 → 10×3.05 ≈ 31 Fernkampf-Schaden
+    skillXp: { claw: 2707.5, fire_breath: 4512.5 },
     worldSize: 20,                   // Deutlich größer als alle anderen Gegner
   },
 
@@ -254,8 +258,8 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 180,               // 3 Minuten — seltener Gegner
     interactRadius: 60,
     aggroRadius: 30,                // 2.5 × worldSize
-    // bite Lv15 → 7×2.55 ≈ 18 Schaden; venom Lv15 → 100% Chance, 9/Tick
-    skillLevels: { bite: 15, venom: 15 },
+    // bite u=15 → 7×2.55 ≈ 18 Schaden; venom u=15 → 100% Chance, 9/Tick
+    skillXp: { bite: 1176, venom: 1470 },
     worldSize: 12,
   },
 ];

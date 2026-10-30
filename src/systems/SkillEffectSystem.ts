@@ -14,6 +14,7 @@ import type { LinearFormula, SkillEffect } from "../types/Skill";
 import { ALL_SKILLS } from "../data/skills";
 import { MILLI, SKILL_DEFENSE_BASE_MULTIPLIER } from "../data/balance";
 import { makeStatusEffect } from "../types/Combat";
+import { getSkillPractice } from "./ProgressionSystem";
 
 // -----------------------------------------------------------
 // Formelauswertung
@@ -22,8 +23,11 @@ import { makeStatusEffect } from "../types/Combat";
 // heal_flat, grant_penetration): Wert in Display-HP, × MILLI → milli-HP.
 // Für Faktoren (percent_reduce, weakness, damage_mult): Wert direkt.
 // -----------------------------------------------------------
-export function evalFormula(formula: LinearFormula, level: number): number {
-  const l = level - 1;
+//
+// practice = Übungsgrad u (stetig, aus Erfahrung — ProgressionSystem).
+// Gleiche Formel für Blob und Gegner: gleiche Erfahrung, gleicher Wert.
+export function evalFormula(formula: LinearFormula, practice: number): number {
+  const l = practice - 1;
   let value: number;
   switch (formula.curve ?? "linear") {
     case "sqrt": value = formula.base + formula.perLevel * Math.sqrt(l); break;
@@ -63,16 +67,16 @@ function emptyDefender(): DefenderEffects {
 // resolveDefenderEffects
 //
 // Wertet alle on_receive_damage-Effekte der gegebenen Skills aus.
-// skillLevels: { skillId → level } (Spieler oder Entity)
+// skillPractice: { skillId → Übungsgrad } (Spieler oder Entity)
 // damageType:  Typ des eingehenden Schadens (undefined = untypisiert)
 // -----------------------------------------------------------
 export function resolveDefenderEffects(
-  skillLevels: Record<string, number>,
+  skillPractice: Record<string, number>,
   damageType?: DamageType
 ): DefenderEffects {
   const result = emptyDefender();
 
-  for (const [skillId, level] of Object.entries(skillLevels)) {
+  for (const [skillId, practice] of Object.entries(skillPractice)) {
     const def = ALL_SKILLS.get(skillId);
     if (!def?.effects) continue;
 
@@ -80,7 +84,7 @@ export function resolveDefenderEffects(
       if (effect.trigger !== "on_receive_damage") continue;
       if (!matchesDamageType(effect, damageType)) continue;
 
-      const value = evalFormula(effect.formula, level) * SKILL_DEFENSE_BASE_MULTIPLIER;
+      const value = evalFormula(effect.formula, practice) * SKILL_DEFENSE_BASE_MULTIPLIER;
 
       switch (effect.effectType) {
         case "flat_block":
@@ -125,18 +129,18 @@ function emptyAttacker(): AttackerEffects {
 // Wertet alle on_hit_enemy-Effekte der gegebenen Skills aus.
 // -----------------------------------------------------------
 export function resolveAttackerEffects(
-  skillLevels: Record<string, number>
+  skillPractice: Record<string, number>
 ): AttackerEffects {
   const result = emptyAttacker();
 
-  for (const [skillId, level] of Object.entries(skillLevels)) {
+  for (const [skillId, practice] of Object.entries(skillPractice)) {
     const def = ALL_SKILLS.get(skillId);
     if (!def?.effects) continue;
 
     for (const effect of def.effects) {
       if (effect.trigger !== "on_hit_enemy" && effect.trigger !== "passive") continue;
 
-      const value = evalFormula(effect.formula, level);
+      const value = evalFormula(effect.formula, practice);
 
       switch (effect.effectType) {
         case "damage_mult":
@@ -160,13 +164,13 @@ export function resolveAttackerEffects(
 // excludeSkillId: der angreifende Skill — sein eigener Geschick-Beitrag zählt
 // nicht, weil sein Level schon direkt in die Treffer-Stufen eingeht.
 // -----------------------------------------------------------
-export function resolveDexterity(skillLevels: Record<string, number>, excludeSkillId?: string): number {
+export function resolveDexterity(skillPractice: Record<string, number>, excludeSkillId?: string): number {
   let dex = 0;
-  for (const [skillId, level] of Object.entries(skillLevels)) {
+  for (const [skillId, practice] of Object.entries(skillPractice)) {
     if (skillId === excludeSkillId) continue;
     for (const effect of ALL_SKILLS.get(skillId)?.effects ?? []) {
       if (effect.trigger === "passive" && effect.effectType === "dexterity") {
-        dex += evalFormula(effect.formula, level);
+        dex += evalFormula(effect.formula, practice);
       }
     }
   }
@@ -180,12 +184,12 @@ export function resolveDexterity(skillLevels: Record<string, number>, excludeSki
 // auf das Ziel angewendet werden sollen (z.B. Venom-DoT).
 // -----------------------------------------------------------
 export function resolveOnHitStatusEffects(
-  skillLevels: Record<string, number>
+  skillPractice: Record<string, number>
 ): StatusEffect[] {
   const result: StatusEffect[] = [];
   const now = Date.now();
 
-  for (const [skillId, level] of Object.entries(skillLevels)) {
+  for (const [skillId, practice] of Object.entries(skillPractice)) {
     const def = ALL_SKILLS.get(skillId);
     if (!def?.effects) continue;
 
@@ -194,7 +198,7 @@ export function resolveOnHitStatusEffects(
       if (effect.effectType !== "apply_status") continue;
       if (!effect.statusConfig) continue;
 
-      const chance = evalFormula(effect.formula, level);
+      const chance = evalFormula(effect.formula, practice);
       if (Math.random() >= chance) continue;
 
       const cfg = effect.statusConfig;
@@ -209,10 +213,10 @@ export function resolveOnHitStatusEffects(
         tickIntervalMs: cfg.tickIntervalMs ?? 0,
         lastTickAt: now,
         damagePerTick: cfg.damageFormula
-          ? Math.round(evalFormula(cfg.damageFormula, level) * MILLI)
+          ? Math.round(evalFormula(cfg.damageFormula, practice) * MILLI)
           : 0,
         healPerTick: cfg.healFormula
-          ? Math.round(evalFormula(cfg.healFormula, level) * MILLI)
+          ? Math.round(evalFormula(cfg.healFormula, practice) * MILLI)
           : 0,
       });
       result.push(statusEffect);
@@ -223,26 +227,27 @@ export function resolveOnHitStatusEffects(
 }
 
 // -----------------------------------------------------------
-// Hilfsfunktionen: Skill-Levels aus Spieler oder Entity extrahieren
+// Hilfsfunktionen: Übungsgrade aus dem Spieler extrahieren
+// (Gegner: ProgressionSystem.getEntitySkillPractice)
 // -----------------------------------------------------------
 
-/** Alle aktiven passiven Skills des Spielers als { id → level }. */
-export function getPlayerPassiveSkillLevels(player: PlayerState): Record<string, number> {
+/** Alle aktiven passiven Skills des Spielers als { id → Übungsgrad }. */
+export function getPlayerPassiveSkillPractice(player: PlayerState): Record<string, number> {
   const result: Record<string, number> = {};
   for (const [id, instance] of player.discoveredSkills) {
     const def = ALL_SKILLS.get(id);
     if (def?.activation === "passive" && instance.isEnabled !== false) {
-      result[id] = instance.level;
+      result[id] = getSkillPractice(player, id);
     }
   }
   return result;
 }
 
-/** Alle Skill-Levels des Spielers (passiv und aktiv) als { id → level }. */
-export function getPlayerAllSkillLevels(player: PlayerState): Record<string, number> {
+/** Alle Skills des Spielers (passiv und aktiv) als { id → Übungsgrad }. */
+export function getPlayerAllSkillPractice(player: PlayerState): Record<string, number> {
   const result: Record<string, number> = {};
-  for (const [id, instance] of player.discoveredSkills) {
-    result[id] = instance.level;
+  for (const id of player.discoveredSkills.keys()) {
+    result[id] = getSkillPractice(player, id);
   }
   return result;
 }

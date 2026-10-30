@@ -3,22 +3,19 @@
 // Absorb & Evolve — Zentraler Spielzustand
 // ============================================================
 
-import type { SkillInstance } from "./Skill";
+import type { SkillInstance, SkillProgress } from "./Skill";
+import { createSkillProgress } from "./Skill";
 import type { EntityInstance } from "./Entity";
 import type { StatusEffect } from "./Combat";
 import { GAME_VERSION } from "../data/version";
 
 // -----------------------------------------------------------
 // CoreAbilityState: Zustand einer Kern-Fähigkeit (Analyze/Absorb)
-// Kern-Fähigkeiten sind immer vorhanden und werden nie "verloren".
-// Ihr Level bestimmt die Erfolgswahrscheinlichkeit gegen Entitäten.
+// Kern-Fähigkeiten sind immer vorhanden und werden nie verlernt — sie
+// belegen keine Kapazität (progression.ts Abschnitt 3).
+// Ihre Erfahrung bestimmt die Erfolgswahrscheinlichkeit gegen Entitäten.
 // -----------------------------------------------------------
-export interface CoreAbilityState {
-  level: number;
-  currentXp: number;
-  xpToNextLevel: number;
-  totalXpEarned: number;
-}
+export type CoreAbilityState = SkillProgress;
 
 // -----------------------------------------------------------
 // PlayerState: Alles was den Blob beschreibt
@@ -34,12 +31,13 @@ export interface PlayerState {
   mp: number;
   maxMp: number;
 
-  // Progression
-  level: number;
-  totalExp: number;
+  // Progression — kein Charakter-Level (progression.ts)
+  // Lebenserfahrung: alle je gutgeschriebene Erfahrung, auch später verlernte.
+  // Bestimmt das Wachstum des Blobs (Größe, HP, MP, Kapazität).
+  lifetimeXp: number;
 
-  // Kern-Fähigkeiten — immer vorhanden, levelbar durch Nutzung
-  // Level bestimmt Erfolgswahrscheinlichkeit bei Analyze/Absorb
+  // Kern-Fähigkeiten — immer vorhanden, werden durch Nutzung besser
+  // Erfahrung bestimmt Erfolgswahrscheinlichkeit bei Analyze/Absorb
   coreAbilities: {
     analyze: CoreAbilityState;
     absorb: CoreAbilityState;
@@ -63,7 +61,7 @@ export interface PlayerState {
   totalAbsorbFailures: number;
   totalAnalyzes: number;
   totalAnalyzeFailures: number;
-  playtimeSeconds: number;
+  playtimeSeconds: number;            // Spielzeit — Uhr für Verlernen und Überdehnung
 }
 
 // -----------------------------------------------------------
@@ -87,24 +85,6 @@ export interface GameState {
 }
 
 // -----------------------------------------------------------
-// Startwerte für Kern-Fähigkeiten
-// -----------------------------------------------------------
-const CORE_BASE_XP = 10;
-const CORE_XP_MULTIPLIER = 1.5;
-const CORE_MAX_LEVEL = 20;
-
-function createCoreAbility(): CoreAbilityState {
-  return {
-    level: 1,
-    currentXp: 0,
-    xpToNextLevel: CORE_BASE_XP,
-    totalXpEarned: 0,
-  };
-}
-
-export { CORE_BASE_XP, CORE_XP_MULTIPLIER, CORE_MAX_LEVEL };
-
-// -----------------------------------------------------------
 // Hilfsfunktion: Neuen leeren GameState erstellen
 // -----------------------------------------------------------
 export function createInitialGameState(): GameState {
@@ -117,11 +97,10 @@ export function createInitialGameState(): GameState {
       maxHp: 80_000,
       mp: 40_000,
       maxMp: 40_000,
-      level: 1,
-      totalExp: 0,
+      lifetimeXp: 0,
       coreAbilities: {
-        analyze: createCoreAbility(),
-        absorb: createCoreAbility(),
+        analyze: createSkillProgress(Date.now(), 0),
+        absorb: createSkillProgress(Date.now(), 0),
       },
       discoveredSkills: new Map(),
       activeSkillSlots: [null, null, null, null, null],

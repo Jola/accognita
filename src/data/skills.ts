@@ -10,8 +10,11 @@
 //   - Kern-Fähigkeiten: in CORE_SKILLS (nur Analyze + Absorb)
 //
 // BALANCING:
-//   baseXpThreshold = XP für ersten Level-Up (1→2)
-//   xpThresholdMultiplier = 1.5 (jedes Level 50% mehr XP)
+//   learningEffort = Lernaufwand. Skills haben keine Level, nur Erfahrung;
+//   daraus folgt fließend der Übungsgrad u, mit dem alle Formeln hier
+//   ausgewertet werden (src/data/progression.ts Abschnitt 1).
+//   Dieselbe Definition gilt für Blob und Gegner — gleiche Erfahrung,
+//   gleiche Wirkung (Vorgabe Entwickler, GDD-02 Abschnitt 8.6).
 // ============================================================
 
 import type { SkillDefinition } from "../types/Skill";
@@ -19,7 +22,7 @@ import type { SkillDefinition } from "../types/Skill";
 // -----------------------------------------------------------
 // KERN-FÄHIGKEITEN
 // Analyse & Absorb sind angeboren — immer vorhanden, nie verlierbar.
-// Ihr Level bestimmt die Erfolgswahrscheinlichkeit.
+// Ihre Erfahrung bestimmt die Erfolgswahrscheinlichkeit.
 // category: "core" — tauchen in discoveredSkills nicht auf (nur Referenz).
 // -----------------------------------------------------------
 export const CORE_SKILLS: SkillDefinition[] = [
@@ -30,9 +33,7 @@ export const CORE_SKILLS: SkillDefinition[] = [
     icon: "♾️",
     category: "core",
     activation: "passive",
-    maxLevel: 1,             // Immer auf Level 1 — keine Steigerung
-    baseXpThreshold: 999999, // Nie steigerbar
-    xpThresholdMultiplier: 1.0,
+    learningEffort: 1,       // Wird nie trainiert — keine Steigerung
     description:
       "Der Blob-Körper ist ein dimensionales Lager ohne Kapazitätsgrenze. " +
       "Alle gesammelten Materialien werden unbegrenzt gespeichert. " +
@@ -45,9 +46,7 @@ export const CORE_SKILLS: SkillDefinition[] = [
     icon: "🔍",
     category: "core",
     activation: "active",
-    maxLevel: 20,
-    baseXpThreshold: 10,
-    xpThresholdMultiplier: 1.5,
+    learningEffort: 10,
     description:
       "Analysiert eine Entität. Entität bleibt erhalten. +1 XP pro entdecktem Skill. " +
       "Fehlschlag: neutrale Wesen bleiben friedlich, feindliche greifen an.",
@@ -59,9 +58,7 @@ export const CORE_SKILLS: SkillDefinition[] = [
     icon: "💥",
     category: "core",
     activation: "active",
-    maxLevel: 20,
-    baseXpThreshold: 10,
-    xpThresholdMultiplier: 1.5,
+    learningEffort: 10,
     description:
       "Absorbiert eine Entität. Entität verschwindet (respawnt). +3 XP pro entdecktem Skill. " +
       "Liefert auch Materialien. Fehlschlag: neutrale und feindliche Wesen greifen an.",
@@ -83,9 +80,7 @@ export const BASE_SKILLS: SkillDefinition[] = [
     icon: "🛡️",
     category: "basic",
     activation: "passive",
-    maxLevel: 0,
-    baseXpThreshold: 12,
-    xpThresholdMultiplier: 1.5,
+    learningEffort: 12,
     description:
       "Passiv: Zieht eine harte Chitinschicht über die Außenhaut. " +
       "Schützt gegen Stiche und Schnitte (Flat-Block), dämpft Wucht (%-Reduktion), " +
@@ -142,9 +137,7 @@ export const BASE_SKILLS: SkillDefinition[] = [
     icon: "💪",
     category: "basic",
     activation: "passive",
-    maxLevel: 0,
-    baseXpThreshold: 15,
-    xpThresholdMultiplier: 1.5,
+    learningEffort: 15,
     description:
       "Passiv: Ameisen tragen das 50-fache ihres Körpergewichts — der Blob übernimmt diese Stärke. " +
       "Verstärkt den Nahkampf-Angriff des Blobs. Lv1: +30%, +5% pro Level.",
@@ -166,9 +159,7 @@ export const BASE_SKILLS: SkillDefinition[] = [
     icon: "🕷️",
     category: "basic",
     activation: "passive",
-    maxLevel: 0,
-    baseXpThreshold: 15,
-    xpThresholdMultiplier: 1.5,
+    learningEffort: 15,
     description:
       "Passiv: Jeder Nahkampftreffer des Blobs hat eine Chance, dem Ziel Gift zu injizieren. " +
       "Lv1: 30% Chance, 2 Schaden/s für 4s. Chance steigt mit dem Level immer langsamer (Lv5: 50%, Lv10: 60%), höchstens 100%. +0.5 Schaden/s pro Level.",
@@ -196,9 +187,7 @@ export const BASE_SKILLS: SkillDefinition[] = [
     icon: "🦷",
     category: "basic",
     activation: "active",
-    maxLevel: 0,
-    baseXpThreshold: 12,
-    xpThresholdMultiplier: 1.5,
+    learningEffort: 12,
     description:
       "Aktiv: Gezielter Biss — verursacht direkten Stich-Schaden (7 HP Basis). " +
       "Ist Venom bekannt, hat jeder Biss zusätzliche Chance das Ziel zu vergiften. " +
@@ -218,9 +207,7 @@ export const BASE_SKILLS: SkillDefinition[] = [
     icon: "🦘",
     category: "basic",
     activation: "active",
-    maxLevel: 0,
-    baseXpThreshold: 12,
-    xpThresholdMultiplier: 1.5,
+    learningEffort: 12,
     description:
       "Aktiv: Springt 160px in Bewegungsrichtung — überwindet Hindernisse und erzeugt Distanz. " +
       "Höheres Level = größere Sprungweite. MP-Kosten: 4. " +
@@ -246,9 +233,7 @@ export const BASE_SKILLS: SkillDefinition[] = [
     icon: "🦅",
     category: "basic",
     activation: "active",
-    maxLevel: 0,
-    baseXpThreshold: 15,
-    xpThresholdMultiplier: 1.5,
+    learningEffort: 15,
     description:
       "Aktiv: Ein mächtiger Nahkampfhieb mit scharfen Klauen (8 HP Basis-Schaden, Schnitt). " +
       "Höheres Level = stärkerer Hieb. MP-Kosten: 5.",
@@ -267,9 +252,7 @@ export const BASE_SKILLS: SkillDefinition[] = [
     icon: "🔥",
     category: "basic",
     activation: "active",
-    maxLevel: 0,
-    baseXpThreshold: 25,
-    xpThresholdMultiplier: 1.5,
+    learningEffort: 25,
     description:
       "Aktiv: Fernkampf-Angriff — ein Strom lodernder Flammen über 8× Körpergröße Distanz. " +
       "Verursacht Feuer-Schaden (10 HP Basis) — schmilzt Chitin-Panzer. MP-Kosten: 8.",
@@ -288,9 +271,7 @@ export const BASE_SKILLS: SkillDefinition[] = [
     icon: "🐞",
     category: "basic",
     activation: "passive",
-    maxLevel: 0,
-    baseXpThreshold: 12,
-    xpThresholdMultiplier: 1.5,
+    learningEffort: 12,
     description:
       "Passiv: Wird der Blob getroffen, gibt er bitteres Hämolymph ab — " +
       "der Angreifer erleidet Sofortschaden (2 HP pro Level). Höheres Level = stärkerer Rückschlag.",
@@ -320,9 +301,7 @@ export const PLANT_SKILLS: SkillDefinition[] = [
     icon: "☀️",
     category: "basic",
     activation: "passive", // Wirkt automatisch, kein manueller Einsatz
-    maxLevel: 0,
-    baseXpThreshold: 15,
-    xpThresholdMultiplier: 1.5,
+    learningEffort: 15,
     description:
       "Passiv: Regeneriert langsam HP, solange der Blob sich nicht kämpfend fortbewegt. " +
       "Wirkt automatisch nach Entdeckung. Höheres Level = stärkere Regeneration.",

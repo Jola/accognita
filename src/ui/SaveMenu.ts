@@ -166,7 +166,7 @@ export function createSaveMenu(): { open(): void; close(): void } {
           <div class="smv-slot-header">
             <span class="smv-slot-num">Slot ${i + 1}</span>
             <div class="smv-slot-info">
-              <div class="smv-slot-title">Lv.${meta.playerLevel} · ${meta.skillCount} Skills · HP ${hpPct}%</div>
+              <div class="smv-slot-title">${meta.skillCount} Skills · HP ${hpPct}%</div>
               <div class="smv-slot-detail">${date} · ${time} gespielt · <span class="smv-slot-version${outdated ? " outdated" : ""}">${verText}</span></div>
             </div>
           </div>

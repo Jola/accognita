@@ -20,6 +20,7 @@ import { ALL_SKILLS } from "../data/skills";
 import {
   calcPhotosynthesisHeal,
 } from "./SkillEffects";
+import { getSkillPractice } from "./ProgressionSystem";
 
 // Maximale gleichzeitig aktive Effekte pro Ziel (Performance-Grenze)
 const MAX_EFFECTS = 8;
@@ -143,7 +144,9 @@ export function clearAllEffects(
 // -----------------------------------------------------------
 // Passiv-Sync — Passiv-Skills → permanente Effekte aktuell halten
 //
-// Wird nach jeder Skill-Entdeckung oder Level-Up aufgerufen.
+// Wird nach Skill-Entdeckung, An/Aus und Laden aufgerufen. Die Werte
+// wachsen fließend mit der Erfahrung — die laufende Anpassung macht
+// refreshPassiveEffectValues (ohne den Tick-Takt zurückzusetzen).
 // Permanente Effekte (durationMs: -1) werden gesetzt oder aktualisiert.
 // Nicht mehr vorhandene Passiv-Skills werden entfernt.
 // -----------------------------------------------------------
@@ -166,7 +169,7 @@ export function syncPassiveEffects(player: PlayerState): void {
           type: "hot",
           sourceSkillId: skillId,
           tickIntervalMs: 1000,
-          healPerTick: calcPhotosynthesisHeal(instance.level),
+          healPerTick: calcPhotosynthesisHeal(getSkillPractice(player, skillId)),
           lastTickAt: now,
         }));
         break;
@@ -185,6 +188,22 @@ export function syncPassiveEffects(player: PlayerState): void {
       && def?.activation === "passive"
       && inst?.isEnabled !== false;
   });
+}
+
+// -----------------------------------------------------------
+// Passive Werte nachführen — einmal pro Sekunde
+//
+// Skills verbessern sich fließend, deshalb müssen permanente Effekte
+// laufend den aktuellen Wert tragen. Nur der Wert wird ersetzt, der
+// Tick-Takt (lastTickAt) bleibt — ein erneutes applyEffect würde ihn
+// zurücksetzen und die Heilung ausbremsen (vgl. TODO Gift-Auffrischen).
+// -----------------------------------------------------------
+export function refreshPassiveEffectValues(player: PlayerState): void {
+  for (const effect of player.statusEffects) {
+    if (effect.id === "passive_photosynthesis") {
+      effect.healPerTick = calcPhotosynthesisHeal(getSkillPractice(player, "photosynthesis"));
+    }
+  }
 }
 
 // -----------------------------------------------------------

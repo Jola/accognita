@@ -7,6 +7,7 @@
 // ============================================================
 
 import type { SkillBarState } from "./SkillBar.js";
+import { getRankInfo, getLearningEffort } from "../systems/ProgressionSystem.js";
 
 function injectStyles() {
   if (document.getElementById("skillmenu-styles")) return;
@@ -127,7 +128,7 @@ export function createSkillMenu(skillBar: SkillBarState): {
                 <div class="smenu-card-top">
                   <span class="smenu-card-icon">${def.icon}</span>
                   <span class="smenu-card-name">${def.name}</span>
-                  <span class="smenu-card-lv">Lv.${inst.level}</span>
+                  <span class="smenu-card-lv">${getRankInfo(inst, getLearningEffort(id)).rankName}</span>
                   ${isPassive ? '<span class="smenu-passive-badge">PASSIV</span>' : ""}
                 </div>
                 <div class="smenu-card-desc">${def.description ?? ""}</div>

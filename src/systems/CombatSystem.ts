@@ -20,6 +20,7 @@ import { ALL_SKILLS } from "../data/skills";
 import { ENTITY_MAP } from "../data/entities";
 import { DEFAULT_HIT_PROFILE, HIT_DAMAGE_MULT, MIN_SKILL_DAMAGE, toDisplayHp } from "../data/balance";
 import { getSkillEffectiveness } from "./SkillSystem";
+import { getCorePractice, getSkillPractice, getEntitySkillPractice } from "./ProgressionSystem";
 import { getScaledDamage, getEntityRangedDamage } from "./EntityLevelingSystem";
 import { calcFinalDamage } from "./DamageSystem";
 import { calcHitChances, rollHitGrade, HIT_GRADE_DE } from "./HitSystem";
@@ -28,14 +29,14 @@ import {
   resolveAttackerEffects,
   resolveOnHitStatusEffects,
   resolveDexterity,
-  getPlayerPassiveSkillLevels,
-  getPlayerAllSkillLevels,
+  getPlayerPassiveSkillPractice,
+  getPlayerAllSkillPractice,
 } from "./SkillEffectSystem";
 import { calcJumpDistance } from "./SkillEffects";
 
 // Konstanten — Basis-Nahkampf des unausgerüsteten Blobs (milli-HP)
 const BASE_MELEE_DAMAGE  = 3_000;   // 3 HP Basisschaden ohne Skills
-const MELEE_ABSORB_SCALE = 1_500;   // 1.5 HP Bonus pro Absorb-Level
+const MELEE_ABSORB_SCALE = 1_500;   // 1.5 HP Bonus pro Einheit Übungsgrad von Absorb
 const UNARMED_DAMAGE_TYPE: DamageType = "blunt";  // Körpermasse = Wucht
 
 // -----------------------------------------------------------
@@ -43,8 +44,8 @@ const UNARMED_DAMAGE_TYPE: DamageType = "blunt";  // Körpermasse = Wucht
 // Priorität: bite → pierce, claw → slash, fire_breath → fire, sonst blunt
 // -----------------------------------------------------------
 export function getEntityMeleeSkillId(def: EntityDefinition): string | undefined {
-  if (def.skillLevels?.["bite"] !== undefined) return "bite";
-  if (def.skillLevels?.["claw"] !== undefined) return "claw";
+  if (def.skillXp?.["bite"] !== undefined) return "bite";
+  if (def.skillXp?.["claw"] !== undefined) return "claw";
   return undefined;
 }
 
@@ -55,13 +56,13 @@ export function getEntityAttackDamageType(def: EntityDefinition): DamageType {
   return "blunt";
 }
 
-/** Treffer-Profil und Skill-Level, mit denen eine Entity im Nahkampf würfelt */
-export function getEntityMeleeHitBasis(def: EntityDefinition): { profile: HitProfile; skillLevel: number } {
+/** Treffer-Profil und Übungsgrad, mit denen eine Entity im Nahkampf würfelt */
+export function getEntityMeleeHitBasis(def: EntityDefinition): { profile: HitProfile; practice: number } {
   const skillId = getEntityMeleeSkillId(def);
-  if (!skillId) return { profile: DEFAULT_HIT_PROFILE, skillLevel: def.level };
+  if (!skillId) return { profile: DEFAULT_HIT_PROFILE, practice: def.level };
   return {
     profile: ALL_SKILLS.get(skillId)?.hitProfile ?? DEFAULT_HIT_PROFILE,
-    skillLevel: def.skillLevels![skillId],
+    practice: getEntitySkillPractice(def)[skillId],
   };
 }
 
@@ -84,11 +85,11 @@ function resolveHit(
   baseDmg: number,
   damageType: DamageType,
   profile: HitProfile,
-  skillLevel: number,
+  practice: number,
   attacker: Combatant,
   defender: Combatant
 ): HitOutcome {
-  const grade = rollHitGrade(calcHitChances(profile, skillLevel, attacker.dex, defender.dex));
+  const grade = rollHitGrade(calcHitChances(profile, practice, attacker.dex, defender.dex));
   if (grade === "miss") return { grade, dmg: 0, absorbed: 0, reflect: 0 };
 
   const atk = resolveAttackerEffects(attacker.effects);
@@ -114,14 +115,14 @@ function resolveHit(
 // Skills wird abgezogen (siehe resolveDexterity). Verteidiger: volles Geschick.
 function playerCombatant(player: PlayerState, attackSkillId?: string): Combatant {
   return {
-    effects: getPlayerPassiveSkillLevels(player),
-    dex: resolveDexterity(getPlayerAllSkillLevels(player), attackSkillId),
+    effects: getPlayerPassiveSkillPractice(player),
+    dex: resolveDexterity(getPlayerAllSkillPractice(player), attackSkillId),
   };
 }
 
 function entityCombatant(def: EntityDefinition, attackSkillId?: string): Combatant {
-  const levels = def.skillLevels ?? {};
-  return { effects: levels, dex: resolveDexterity(levels, attackSkillId) };
+  const practice = getEntitySkillPractice(def);
+  return { effects: practice, dex: resolveDexterity(practice, attackSkillId) };
 }
 
 /** "(Schwerer Treffer)" usw.; bei normalem Treffer leer */
@@ -160,26 +161,26 @@ export function playerAttack(
   let baseDmg: number;
   let damageType: DamageType;
   let profile: HitProfile = DEFAULT_HIT_PROFILE;
-  let skillLevel: number;
+  let practice: number;
 
   if (!skillId) {
-    // Unbewaffnet: Absorb-Level bestimmt Schaden und Treffer-Güte
-    skillLevel = player.coreAbilities.absorb.level;
-    baseDmg = BASE_MELEE_DAMAGE + skillLevel * MELEE_ABSORB_SCALE;
+    // Unbewaffnet: Übungsgrad von Absorb bestimmt Schaden und Treffer-Güte
+    practice = getCorePractice(player, "absorb");
+    baseDmg = BASE_MELEE_DAMAGE + practice * MELEE_ABSORB_SCALE;
     damageType = UNARMED_DAMAGE_TYPE;
   } else {
     const skillDef = ALL_SKILLS.get(skillId);
     if (!skillDef || !skillDef.baseDamage) {
       return missResult(`Skill ${skillId} hat keinen Schadenswert.`);
     }
-    skillLevel = player.discoveredSkills.get(skillId)?.level ?? 1;
-    baseDmg = skillDef.baseDamage * getSkillEffectiveness(skillLevel);
+    practice = getSkillPractice(player, skillId);
+    baseDmg = skillDef.baseDamage * getSkillEffectiveness(practice);
     damageType = skillDef.damageType ?? "blunt";
     profile = skillDef.hitProfile ?? DEFAULT_HIT_PROFILE;
   }
 
   const attacker = playerCombatant(player, skillId);
-  const outcome = resolveHit(baseDmg, damageType, profile, skillLevel, attacker, entityCombatant(def));
+  const outcome = resolveHit(baseDmg, damageType, profile, practice, attacker, entityCombatant(def));
 
   if (outcome.grade === "miss") {
     return {
@@ -218,10 +219,10 @@ export function entityAttack(
   }
 
   const baseDmg = getScaledDamage(def, instance.bonusLevel ?? 0);
-  const { profile, skillLevel } = getEntityMeleeHitBasis(def);
+  const { profile, practice } = getEntityMeleeHitBasis(def);
   const attacker = entityCombatant(def, getEntityMeleeSkillId(def));
   const outcome = resolveHit(
-    baseDmg, getEntityAttackDamageType(def), profile, skillLevel, attacker, playerCombatant(player)
+    baseDmg, getEntityAttackDamageType(def), profile, practice, attacker, playerCombatant(player)
   );
 
   if (outcome.grade === "miss") {
@@ -262,7 +263,7 @@ export function entityRangedAttack(def: EntityDefinition, player: PlayerState): 
     getEntityRangedDamage(def),
     skillDef.damageType ?? "blunt",
     skillDef.hitProfile ?? DEFAULT_HIT_PROFILE,
-    def.skillLevels?.[skillId] ?? 1,
+    getEntitySkillPractice(def)[skillId] ?? 1,
     entityCombatant(def, skillId),
     playerCombatant(player)
   );
@@ -336,8 +337,7 @@ export function consumeSkill(player: PlayerState, skillId: string): number {
 // DASH-REICHWEITE berechnen (für Jump-Skill)
 // -----------------------------------------------------------
 export function calcDashDistance(player: PlayerState, skillId: string): number {
-  const inst = player.discoveredSkills.get(skillId);
-  return calcJumpDistance(inst?.level ?? 1);
+  return calcJumpDistance(getSkillPractice(player, skillId));
 }
 
 // -----------------------------------------------------------

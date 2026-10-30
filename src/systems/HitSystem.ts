@@ -28,8 +28,8 @@ export const HIT_GRADE_DE: Record<HitGrade, string> = {
 };
 
 /** Kipp-Wert in [−HIT_TILT_MAX, +HIT_TILT_MAX]; positiv = bessere Treffer */
-export function calcHitTilt(skillLevel: number, attackerDex: number, defenderDex: number): number {
-  const x = HIT_TILT_PER_SKILL_LEVEL * (Math.max(1, skillLevel) - 1)
+export function calcHitTilt(practice: number, attackerDex: number, defenderDex: number): number {
+  const x = HIT_TILT_PER_SKILL_LEVEL * (Math.max(1, practice) - 1)
           + HIT_TILT_PER_DEX * (attackerDex - defenderDex);
   return HIT_TILT_MAX * Math.tanh(x);
 }
@@ -37,11 +37,11 @@ export function calcHitTilt(skillLevel: number, attackerDex: number, defenderDex
 /** Wahrscheinlichkeiten je Stufe (Summe 1) */
 export function calcHitChances(
   profile: HitProfile,
-  skillLevel: number,
+  practice: number,
   attackerDex: number,
   defenderDex: number
 ): HitProfile {
-  const tilt = calcHitTilt(skillLevel, attackerDex, defenderDex);
+  const tilt = calcHitTilt(practice, attackerDex, defenderDex);
   const weights = HIT_GRADES.map((g, i) => Math.max(0, profile[g]) * Math.exp(tilt * (i - 2)));
   const total = weights.reduce((sum, w) => sum + w, 0) || 1;
   const result = {} as HitProfile;

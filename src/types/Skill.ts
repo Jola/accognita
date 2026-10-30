@@ -61,7 +61,9 @@ export type EffectType =
   | "dexterity";         // Geschick-Punkte: bessere Treffer-Stufen, Ausweichen (formula: Punkte)
 
 /**
- * Lineare Formel: Wert bei Level L = base + perLevel × f(L-1)
+ * Formel: Wert bei Übungsgrad u = base + perLevel × f(u−1)
+ * u ist stetig und folgt aus der Erfahrung (ProgressionSystem.practiceFromXp).
+ * „perLevel“ = Zuwachs je ganzer Einheit Übungsgrad; dazwischen fließend.
  * curve "linear" (Standard): f(n) = n
  * curve "sqrt":  f(n) = sqrt(n)   → stark zu Beginn, flacht ab
  * curve "log":   f(n) = log2(n+1) → sehr stark zu Beginn
@@ -119,9 +121,12 @@ export interface SkillDefinition {
   icon: string;
   category: SkillCategory;
   activation: SkillActivation;
-  maxLevel: number;
-  baseXpThreshold: number;          // XP für Level 1 → 2
-  xpThresholdMultiplier: number;    // Faktor pro Level (GDD: 1.5)
+  /**
+   * Lernaufwand: wie viel Erfahrung der Skill für einen Fortschritt braucht.
+   * Doppelter Aufwand = doppelt so viel XP für dieselbe Wirkung und doppelt so
+   * viel Kapazität (progression.ts Abschnitt 1).
+   */
+  learningEffort: number;
   description: string;
 
   // Für aktive Skills (Kampf)
@@ -143,16 +148,43 @@ export interface SkillDefinition {
 }
 
 // -----------------------------------------------------------
+// SkillProgress: Erfahrungsstand eines Skills oder einer Kern-Fähigkeit
+// Regeln dazu: src/data/progression.ts + src/systems/ProgressionSystem.ts
+// -----------------------------------------------------------
+export interface SkillProgress {
+  xp: number;                // aktuelle Erfahrung — bestimmt die Wirkung, belegt Kapazität
+  peakXp: number;            // höchste je erreichte Erfahrung — bis dahin doppelt schnell wiedererlernen
+  pendingXp: number;         // durch Übertraining zurückgehalten — kommt in der Ruhe nach
+  fatigue: number;           // Übertrainings-Ermüdung (in XP)
+  fatigueUpdatedAt: number;  // Echtzeit (ms) der letzten Ruhe-Verbuchung
+  lastTrainedRealMs: number; // Echtzeit (ms) der letzten Übung — Ruhe beginnt danach
+  lastPracticedAt: number;   // Spielzeit (s) der letzten Übung — am längsten Ungeübtes wird zuerst verlernt
+  totalXpEarned: number;     // je gutgeschriebene Erfahrung (Statistik, sinkt nie)
+}
+
+/** Rangwechsel eines Skills — für Log und Anzeige. */
+export interface ProgressionEvent {
+  skillId: string;
+  kind: "rank_up" | "rank_down";
+  rankName: string;
+}
+
+/** Frischer Fortschritt ohne Erfahrung. */
+export function createSkillProgress(nowMs: number, playtimeSeconds: number): SkillProgress {
+  return {
+    xp: 0, peakXp: 0, pendingXp: 0, fatigue: 0,
+    fatigueUpdatedAt: nowMs, lastTrainedRealMs: 0,
+    lastPracticedAt: playtimeSeconds, totalXpEarned: 0,
+  };
+}
+
+// -----------------------------------------------------------
 // SkillInstance: Der Zustand eines Skills beim Spieler
 // (lebt im GameState, verändert sich während des Spiels)
 // -----------------------------------------------------------
-export interface SkillInstance {
+export interface SkillInstance extends SkillProgress {
   definitionId: string;
-  level: number;
-  currentXp: number;
-  xpToNextLevel: number;
   discoveredAt: number;             // Timestamp der Entdeckung (0 für core)
-  totalXpEarned: number;
   isEnabled: boolean;               // false = passiver Skill manuell deaktiviert
 }
 
@@ -166,8 +198,7 @@ export interface SkillDiscoveryResult {
   method: DiscoveryMethod;
   xpGained: number;
   wasNewDiscovery: boolean;
-  leveledUp: boolean;
-  newLevel?: number;
+  events: ProgressionEvent[];       // Rangwechsel (auch verlernte Skills)
 }
 
 // -----------------------------------------------------------

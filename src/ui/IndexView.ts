@@ -15,6 +15,8 @@ import { MATERIAL_MAP } from "../data/materials.js";
 import { ANALYZE_CHANCE_MODIFIER, MILLI, DEFAULT_HIT_PROFILE, HIT_DAMAGE_MULT } from "../data/balance.js";
 import { calcHitChances, HIT_GRADES, HIT_GRADE_DE } from "../systems/HitSystem.js";
 import { BIOME_SPAWNS } from "../world/BiomeDefinitions.js";
+import { SKILL_RANKS } from "../data/progression.js";
+import { xpForPractice, getEntitySkillPractice, rankNameForPractice } from "../systems/ProgressionSystem.js";
 import { evalFormula, resolveDefenderEffects, resolveAttackerEffects, resolveDexterity } from "../systems/SkillEffectSystem.js";
 import { calcSkillAttackDamage, calcJumpDistance, calcPhotosynthesisHeal } from "../systems/SkillEffects.js";
 import {
@@ -22,7 +24,8 @@ import {
 } from "../systems/EntityLevelingSystem.js";
 import { getEntityAttackDamageType, getEntityMeleeHitBasis, getEntityMeleeSkillId } from "../systems/CombatSystem.js";
 
-const LEVELS = [1, 2, 3, 5, 10, 20];
+// Werte-Tabellen: Übungsgrad zu Beginn jedes Rangs (Werte dazwischen fließend)
+const LEVELS = SKILL_RANKS.map((r) => r.fromPractice);
 const ALL_DAMAGE_TYPES: DamageType[] = ["pierce", "slash", "blunt", "acid", "fire", "poison", "magic", "psychic"];
 const ALL_SKILL_LIST = [...CORE_SKILLS, ...BASE_SKILLS, ...PLANT_SKILLS, ...COMBO_SKILLS];
 
@@ -110,7 +113,7 @@ function dataTable(head: string[], rows: string[][]): string {
 }
 
 const levelTable = (rows: [string, string[]][]) =>
-  dataTable(["", ...LEVELS.map((l) => `Lv${l}`)], rows.map(([label, vals]) => [label, ...vals]));
+  dataTable(["", ...SKILL_RANKS.map((r) => r.name)], rows.map(([label, vals]) => [label, ...vals]));
 
 const section = (title: string, html: string) => (html ? `<h4 class="idx-h">${title}</h4>${html}` : "");
 
@@ -121,7 +124,7 @@ function titleBlock(icon: string, name: string, sub: string): string {
 /** Treffer-Stufen pro Level (Geschick beider Seiten 0) */
 function hitTable(profile: HitProfile): string {
   return dataTable(
-    ["Stufe", "Schaden", ...LEVELS.map((l) => `Lv${l}`)],
+    ["Stufe", "Schaden", ...SKILL_RANKS.map((r) => r.name)],
     HIT_GRADES.map((g) => [
       HIT_GRADE_DE[g], factor(HIT_DAMAGE_MULT[g]),
       ...LEVELS.map((l) => pct(calcHitChances(profile, l, 0, 0)[g])),
@@ -135,9 +138,14 @@ function hitLine(chances: HitProfile): string {
 }
 
 // ── Gemeinsame Ableitungen ─────────────────────────────────
+/** „Geübt · 24 XP“ — Rang und Erfahrung einer Einheit in einem Skill */
+function skillXpLabel(e: EntityDefinition, skillId: string): string {
+  return `${rankNameForPractice(getEntitySkillPractice(e)[skillId])} · ${num(e.skillXp![skillId])} XP`;
+}
+
 function canMelee(e: EntityDefinition): boolean {
   return e.category === "creature" &&
-    (e.skillLevels?.bite !== undefined || e.skillLevels?.claw !== undefined || e.damage !== undefined);
+    (e.skillXp?.bite !== undefined || e.skillXp?.claw !== undefined || e.damage !== undefined);
 }
 
 function biomeShares(id: string): { name: string; share: number }[] {
@@ -203,8 +211,8 @@ function skillDetail(s: SkillDefinition): string {
     ["ID", `<code>${s.id}</code>`],
     ["Kategorie", `${CATEGORY_DE[s.category]} · ${ACTIVATION_DE[s.activation]}`],
     ["Element", s.element],
-    ["Max-Level", s.maxLevel === 0 ? "unbegrenzt" : String(s.maxLevel)],
-    ["XP-Schwelle", `${s.baseXpThreshold} XP für Lv1→2, dann ${factor(s.xpThresholdMultiplier)} pro Level`],
+    ["Lernaufwand", String(s.learningEffort)],
+    ["XP ab Rang", SKILL_RANKS.map((r) => `${r.name} ${Math.round(xpForPractice(r.fromPractice, s.learningEffort))}`).join(" · ")],
   ];
   if (s.mpCost !== undefined) p.push(["MP-Kosten", `${hp(s.mpCost)} MP`]);
   if (s.cooldownMs !== undefined) p.push(["Cooldown", seconds(s.cooldownMs)]);
@@ -247,15 +255,15 @@ function skillDetail(s: SkillDefinition): string {
     e.skillDrops.filter((d) => d.skillId === s.id).map((d) =>
       [entityChip(e), `Lv${e.level}`, pct(d.chance), pct(d.chance * ANALYZE_CHANCE_MODIFIER)]));
 
-  const users = ENTITY_DEFINITIONS.filter((e) => e.skillLevels?.[s.id] !== undefined)
-    .map((e) => entityChip(e, ` Lv${e.skillLevels![s.id]}`)).join("");
+  const users = ENTITY_DEFINITIONS.filter((e) => e.skillXp?.[s.id] !== undefined)
+    .map((e) => entityChip(e, ` ${skillXpLabel(e, s.id)}`)).join("");
 
   return [
     titleBlock(s.icon, s.name, `${CATEGORY_DE[s.category]}-Skill · ${ACTIVATION_DE[s.activation]}`),
     `<p class="idx-desc">${s.description}</p>`,
     params(p),
     section("Effekte", effects),
-    section("Werte nach Level", derived.length ? levelTable(derived) : ""),
+    section("Werte zu Rangbeginn (dazwischen fließend)", derived.length ? levelTable(derived) : ""),
     section("Treffer-Stufen (ohne Geschick)", s.baseDamage
       ? `${hitTable(s.hitProfile ?? DEFAULT_HIT_PROFILE)}<p class="idx-reason">Geschick des Angreifers verschiebt die Verteilung zu besseren Stufen, Geschick des Ziels zu schlechteren.</p>`
       : ""),
@@ -292,13 +300,13 @@ function entityDetail(e: EntityDefinition): string {
   if (e.venomChance !== undefined) p.push(["venomChance (Altfeld)", pct(e.venomChance)]);
   if (e.venomDamagePerTick !== undefined) p.push(["venomDamagePerTick (Altfeld)", `${hp(e.venomDamagePerTick)} HP`]);
 
-  const skillLevels = e.skillLevels ?? {};
+  const skillLevels = getEntitySkillPractice(e); // Übungsgrade aus skillXp
   const dex = resolveDexterity(skillLevels);
   if (dex) p.push(["Geschick", num(dex)]);
   const skillIds = Object.keys(skillLevels);
   const skills = skillIds.map((id) => {
     const s = ALL_SKILLS.get(id);
-    return s ? skillChip(s, ` Lv${skillLevels[id]}`) : `${id} Lv${skillLevels[id]}`;
+    return s ? skillChip(s, ` ${skillXpLabel(e, id)}`) : `${id} ${skillXpLabel(e, id)}`;
   }).join("");
 
   const combat: string[] = [];
@@ -309,9 +317,9 @@ function entityDetail(e: EntityDefinition): string {
     combat.push(`<b>Nahkampf:</b> ${hp(dmg)} HP ${DAMAGE_TYPE_DE[getEntityAttackDamageType(e)]}` +
       (atk.damageMult !== 1 ? ` ${factor(atk.damageMult)}` : "") +
       ` alle ${seconds(cd)} ≈ ${num((dmg * atk.damageMult) / MILLI / (cd / 1000))} HP/s (normaler Treffer, vor Rüstung)`);
-    const { profile, skillLevel } = getEntityMeleeHitBasis(e);
+    const { profile, practice } = getEntityMeleeHitBasis(e);
     const attackDex = resolveDexterity(skillLevels, getEntityMeleeSkillId(e));
-    combat.push(`<b>Treffer-Stufen</b> gegen Geschick 0: ${hitLine(calcHitChances(profile, skillLevel, attackDex, 0))}`);
+    combat.push(`<b>Treffer-Stufen</b> gegen Geschick 0: ${hitLine(calcHitChances(profile, practice, attackDex, 0))}`);
   }
   for (const id of skillIds) {
     const s = ALL_SKILLS.get(id);

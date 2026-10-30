@@ -8,6 +8,7 @@ import type { PlayerState } from "../types/GameState";
 import type { MaterialStack } from "../types/Material";
 import { MATERIAL_MAP } from "../data/materials";
 import { ALL_SKILLS } from "../data/skills";
+import { getSkillPractice } from "./ProgressionSystem";
 
 // -----------------------------------------------------------
 // ZAHLENFORMATIERUNG
@@ -100,8 +101,8 @@ export function getMaterialList(
 // Verbraucht Materialien, erhöht MaxHP dauerhaft
 // -----------------------------------------------------------
 
-const GROW_HP_BASE = 5;         // HP-Gewinn bei Level 1
-const GROW_HP_PER_LEVEL = 2;    // Zusatz-HP pro Skill-Level
+const GROW_HP_BASE = 5;         // HP-Gewinn ohne Erfahrung
+const GROW_HP_PER_PRACTICE = 2; // Zusatz-HP pro Einheit Übungsgrad
 
 export interface GrowResult {
   success: boolean;
@@ -146,7 +147,7 @@ export function useGrow(player: PlayerState): GrowResult {
   deductMaterials(player, growDef.materialCost);
 
   // HP erhöhen
-  const hpGained = GROW_HP_BASE + (skill.level - 1) * GROW_HP_PER_LEVEL;
+  const hpGained = Math.round(GROW_HP_BASE + (getSkillPractice(player, "grow") - 1) * GROW_HP_PER_PRACTICE);
   player.maxHp += hpGained;
   player.hp += hpGained;
 

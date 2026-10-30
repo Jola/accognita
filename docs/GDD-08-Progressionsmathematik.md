@@ -1,9 +1,10 @@
 # ABSORB & EVOLVE — Game Design Document
 ## Datei 08: Progressionsmathematik (Leveling, Wirkungskurven, Wahrscheinlichkeiten, Wechselwirkungen)
 
-> **Status: Diskussion** — Analyse der Ansätze und Vorschlag. Im Spiel gilt weiterhin der Stand aus [GDD-02 Abschnitt 4](GDD-02-Skillsystem.md#4-skill-leveling) und [balance.ts](../src/data/balance.ts). Nichts davon ist entschieden.
+> **Status: Diskussion** — Analyse der Ansätze und Vorschlag. ~~Im Spiel gilt weiterhin der Stand aus GDD-02 Abschnitt 4 und balance.ts. Nichts davon ist entschieden.~~ [VERWORFEN, Oktober 2026]
+> **Entschieden und umgesetzt:** Erfahrung statt Level, Ränge, Kapazität mit Verlernen, Überdehnung, Wiedererlernen, Übertraining — siehe [Teil 6](#teil-6--erfahrung-statt-level-umsetzung) und [GDD-02 Abschnitt 8](GDD-02-Skillsystem.md#8-erfahrung-statt-level). Teile 1–5 bleiben als Herleitung stehen; Level-bezogene Vorschläge darin sind durch Teil 6 überholt.
 
-Diese Datei beschreibt mathematisch, wie Erfahrung (XP) und Level zusammenhängen (Teil 1) und was ein Level bewirkt: Wirkungskurven, Wahrscheinlichkeiten und Wechselwirkungen zwischen Skills (Teil 2, ab Abschnitt 11). Teil 3 (Abschnitt 16) prüft unendliches Leveln mit linearer Skala und %-Anzeige, Teil 4 (Abschnitt 17) feste Level-Grenzen und den Verzicht auf Level, Teil 5 (Abschnitte 18–20) Skill-Kapazität, Gruppen schwacher Gegner und Weltstufen. Sie vergleicht die Vorschläge des Entwicklers mit gängigen Modellen aus anderen Spielen und nennt Vor- und Nachteile.
+Diese Datei beschreibt mathematisch, wie Erfahrung (XP) und Level zusammenhängen (Teil 1) und was ein Level bewirkt: Wirkungskurven, Wahrscheinlichkeiten und Wechselwirkungen zwischen Skills (Teil 2, ab Abschnitt 11). Teil 3 (Abschnitt 16) prüft unendliches Leveln mit linearer Skala und %-Anzeige, Teil 4 (Abschnitt 17) feste Level-Grenzen und den Verzicht auf Level, Teil 5 (Abschnitte 18–20) Skill-Kapazität, Gruppen schwacher Gegner und Weltstufen, Teil 6 (Abschnitte 21–24) die umgesetzte Lösung ohne Level. Sie vergleicht die Vorschläge des Entwicklers mit gängigen Modellen aus anderen Spielen und nennt Vor- und Nachteile.
 
 **Vorgabe (Entwickler):** Das Modell soll einfach zu verstehen sein und zu einer angenehmen, spannenden Spielerfahrung führen: Es soll schwerer werden, weiterzukommen, aber man soll weiterhin Erfolge haben.
 
@@ -921,6 +922,80 @@ Zum Vergleich mit Rüstung nach der Formel `x/(x+K)` (Abschnitt 11.4, K = 7): Ch
 
 > Begründung offen — Weltstufen ja/nein, und woran gekoppelt?
 
+# Teil 6 — Erfahrung statt Level (Umsetzung)
+
+> **Status: Implementiert (Oktober 2026), Zahlen VORLÄUFIG.** Die Regeln mit Herkunft der Entscheidungen stehen in [GDD-02 Abschnitt 8](GDD-02-Skillsystem.md#8-erfahrung-statt-level). Im Code stehen sie in [`progression.ts`](../src/data/progression.ts) und [`ProgressionSystem.ts`](../src/systems/ProgressionSystem.ts). Hier steht nur die Mathematik dazu.
+
+## 21. Was aus den offenen Fragen geworden ist
+
+| Frage | Entscheidung |
+|---|---|
+| Level ja/nein (17.4) | **Vorgabe (Entwickler):** keine Level, nur Erfahrung. Ränge nur als Beschriftung. Kommt V3 aus Abschnitt 17.4 nahe |
+| Unendliches Leveln, lineare Skala, %-Anzeige (16) | Erfahrung ist unbegrenzt, die Wirkung wächst konkav. Den Deckel liefert die Kapazität statt einer Asymptote |
+| Charakter-Level (9) | **Vorgabe (Entwickler):** keins. Stattdessen Kapazität |
+| Kapazität (18.2) | Summe der Skill-XP. Verlernt wird das am längsten nicht Geübte (**Vorgabe Entwickler**). Kern-Fähigkeiten sind ausgenommen (Vorschlag Claude, offen) |
+| Real- oder Spielzeit (18.3) | Überdehnung: nur Spielzeit (**Vorschlag Claude, übernommen**). Übertraining: Echtzeit inkl. offline (**Vorgabe Entwickler**) |
+| Gleiche Formeln für Gegner | **Vorgabe (Entwickler):** gleiche Erfahrung, gleiche Wirkung (GDD-02 8.6) |
+
+## 22. Kurve Erfahrung → Übungsgrad
+
+`u = 1 + √(xp / (0,5·A))` mit A = Lernaufwand. Das ist das Zwei-Exponenten-Modell aus Abschnitt 8 mit p = 1 und q = 0. Die Kosten je Einheit u steigen linear (`Δxp ≈ A·(u−1)`), die kumulierten quadratisch.
+
+- **Früh** fast wie bisher: Biss erreicht u = 3 nach 24 XP (alt: Lv3 nach 30 XP).
+- **Spät** viel milder als ×1,5 je Level. Biss u = 10 kostet 486 XP; alt kostete Lv10 rund 880 XP, Lv20 rund 79.000.
+- **Zahlenbereich:** Integer-Grenzen (Abschnitt 6) spielen keine Rolle mehr. Selbst 10⁹ XP ergäben u ≈ 12.900, und die Kapazität verhindert solche Summen ohnehin.
+
+**Breite statt Tiefe**, gerechnet mit 600 XP Kapazität und A = 12:
+
+| Verteilung | Wirkungszuwachs (Summe von u − 1) |
+|---|---:|
+| 1 Skill × 600 XP | 10,0 |
+| 3 Skills × 200 XP | 17,3 |
+| 6 Skills × 100 XP | 24,5 |
+
+Mehr Skills bringen in Summe mehr. Spezialisierung lohnt sich trotzdem, weil Effekte unterschiedlich viel wert sind und Schwellen existieren (Flat-Block, Abschnitt 13.4).
+
+## 23. Kapazität und Verlernen
+
+```
+belegt  B = Σ xp (alle entdeckten Skills, ohne Analyze/Absorb)
+Kapazität K = 200 + 150 · log2(1 + Lebenserfahrung / 200)     (Platzhalter)
+harte Grenze = 1,2 · K
+```
+
+- **Über der harten Grenze:** Jede neue Erfahrung wird sofort beim am längsten nicht geübten Skill abgezogen, danach beim nächsten.
+- **Zwischen K und 1,2·K:** Der Überhang schmilzt in Spielzeit mit `Ü(t) = Ü₀ · 0,5^(t / 2 h)`.
+- **Wiedererlernen:** Unter dem Höchststand zählt jede XP doppelt. Nach dem Verlernen braucht der Weg zurück also die halbe Zeit, wie von Jörn vorgegeben.
+
+Ein Nebeneffekt des Platzhalters: Die Kapazität wächst mit dem Training selbst. Wer viel trainiert, erhöht die Lebenserfahrung und damit K. Jede Verdopplung der Lebenserfahrung bringt +150 XP Kapazität. Das ist gewollt mild (logarithmisch), muss aber zur endgültigen Wachstumsregel passen.
+
+## 24. Übertraining
+
+Sofortanteil `s(F) = min(1, T / F)` mit Ermüdung F und Schwelle T = 30·A. Ohne Erholung während einer Sitzung gilt nach R Roh-XP am Stück (R > T):
+
+```
+sofort  = T · (1 + ln(R / T))
+später  = R − sofort
+```
+
+| Training am Stück | sofort | in Ruhe nachgeliefert |
+|---|---:|---:|
+| R = T | 100 % | 0 % |
+| R = 2T | 85 % | 15 % |
+| R = 3T | 70 % | 30 % |
+| R = 10T | 33 % | 67 % |
+
+Die Ruhe halbiert Ermüdung und ausstehende Erfahrung alle 3 h Echtzeit:
+- nach 3 h sind 50 % nachgeliefert
+- nach 8 h (eine Nacht) 84 %
+- nach 24 h 99,6 %
+
+Sie beginnt erst 2 Minuten nach der letzten Übung des Skills.
+
+**Je Skill statt gesamt** (Vorschlag Claude, offen): Wer mehrere Skills abwechselnd trainiert, ermüdet langsamer. Das belohnt Abwechslung und Breite, passend zu Abschnitt 22. Eine zusätzliche Gesamt-Ermüdung würde das „zu viel Spielen“ direkter bremsen, wäre aber stärker spürbar.
+
+> Begründung offen — Höhe der Schwelle und Halbwertszeit. Die Werte sind so gewählt, dass etwa 50 Treffer am Stück noch voll zählen und eine Nachtpause den Skill fast vollständig erholt.
+
 ---
 
 ## Quellen
@@ -942,8 +1017,8 @@ Zum Vergleich mit Rüstung nach der Formel `x/(x+K)` (Abschnitt 11.4, K = 7): Ch
 - Schleimpilz-Gedächtnis: [Boisseau, Vogel & Dussutour 2016 — Habituation in Physarum (PMC)](https://pmc.ncbi.nlm.nih.gov/articles/PMC4855389/), [CNRS — Slime mould absorbs substances to memorise them](https://www.cnrs.fr/en/slime-mould-absorbs-substances-memorise-them), [Live Science — Brainless slime mold learns and teaches](https://livescience.com/57360-brainless-slime-mold-learns-and-teaches.html)
 - Wiedererlernen: [Wikipedia — Forgetting curve](https://en.wikipedia.org/wiki/Forgetting_curve), [Murre & Dros 2015 — Replication of Ebbinghaus' forgetting curve](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4492928/)
 - Diablo-4-Weltstufen und Schwierigkeitsgrade: [PC Gamer — World Tiers explained](https://pcgamer.com/diablo-4-world-tiers-explained/), [GamesRadar — World Tiers](https://www.gamesradar.com/diablo-4-world-tiers), [GGRecon — Standard & Torment difficulties](https://ggrecon.com/guides/diablo-4-difficulties-standard-torment)
-- Zahlenwerte in den Abschnitten 2, 4, 6, 8, 11–13, 17 und 19 wurden von Claude nachgerechnet (Node.js, Formeln wie im Text bzw. wie im Code). Die Gift-Takt-Werte in 12.3 stammen aus einer Simulation über 20.000 s.
+- Zahlenwerte in den Abschnitten 2, 4, 6, 8, 11–13, 17, 19 und 22–24 wurden von Claude nachgerechnet (Node.js, Formeln wie im Text bzw. wie im Code). Die Gift-Takt-Werte in 12.3 stammen aus einer Simulation über 20.000 s.
 
 ---
 
-*Letzte Aktualisierung: v0.4 — Teil 5 ergänzt (Skill-Kapazität und Verlernen nach Überlegung des Entwicklers, Gruppen schwacher Gegner, Weltstufen); davor Teil 4 ergänzt (Überlegung Entwickler: nur Verhältnisse zählen; feste Level-Grenze vs. Max-Level-Erhöhung; Level abschaffen; Synthese unbegrenzte Übung / begrenzte Stärke); davor Teil 3 ergänzt (Vorschlag Entwickler: unendliches Leveln, lineare Skala, Anzeige in %); davor Teil 2 ergänzt (Wirkungskurven, Trefferstufen, Gift-Chance und Gift-Takt-Fehler, Skill-Fund-Wahrscheinlichkeiten, Geschick, Stapelregeln, Schwellen); davor: Datei neu angelegt: Analyse der Leveling-Modelle (proportionale Erfahrung, Level-Differenz-Multiplikator, Kurvenfamilien, Integer-Grenzen, Vergleich mit anderen Spielen), Vorschlag Zwei-Exponenten-Modell (Oktober 2026)*
+*Letzte Aktualisierung: v0.4 — Teil 6 ergänzt (Erfahrung statt Level umgesetzt: Kurve, Kapazität, Übertraining; Status-Hinweis oben aktualisiert, 30. Oktober 2026); davor Teil 5 ergänzt (Skill-Kapazität und Verlernen nach Überlegung des Entwicklers, Gruppen schwacher Gegner, Weltstufen); davor Teil 4 ergänzt (Überlegung Entwickler: nur Verhältnisse zählen; feste Level-Grenze vs. Max-Level-Erhöhung; Level abschaffen; Synthese unbegrenzte Übung / begrenzte Stärke); davor Teil 3 ergänzt (Vorschlag Entwickler: unendliches Leveln, lineare Skala, Anzeige in %); davor Teil 2 ergänzt (Wirkungskurven, Trefferstufen, Gift-Chance und Gift-Takt-Fehler, Skill-Fund-Wahrscheinlichkeiten, Geschick, Stapelregeln, Schwellen); davor: Datei neu angelegt: Analyse der Leveling-Modelle (proportionale Erfahrung, Level-Differenz-Multiplikator, Kurvenfamilien, Integer-Grenzen, Vergleich mit anderen Spielen), Vorschlag Zwei-Exponenten-Modell (Oktober 2026)*

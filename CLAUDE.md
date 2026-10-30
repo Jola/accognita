@@ -26,9 +26,11 @@ Current state: **v0.3** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/data/skills.ts` | All skill definitions and balancing values |
 | `src/data/entities.ts` | All entity definitions |
 | `src/data/materials.ts` | All material/loot definitions |
-| `src/data/balance.ts` | Central balancing constants (XP curves, damage, etc.) |
+| `src/data/balance.ts` | Central balancing constants (XP gains, damage, etc.) |
+| `src/data/progression.ts` | All progression knobs with rationale: experience → practice curve, ranks, capacity, overstretch, relearning, overtraining (no levels) |
 | `src/data/version.ts` | `GAME_VERSION` — must match `package.json` (build.js aborts otherwise). Shown in save dialog and stored in each save. |
-| `src/systems/SkillSystem.ts` | Pure skill logic — no Phaser, no DOM, fully testable |
+| `src/systems/SkillSystem.ts` | Pure skill logic — what earns how much XP, discovery, combining, blob growth (HP/MP) |
+| `src/systems/ProgressionSystem.ts` | How experience is booked: relearn bonus, overtraining/rest, capacity and forgetting, ranks; same practice conversion for player and entities |
 | `src/systems/EntitySystem.ts` | Absorb/Analyze/Respawn logic |
 | `src/systems/StatusEffectSystem.ts` | DoT/HoT/Aura processing, passive skill sync |
 | `src/systems/CombatSystem.ts` | Damage calculation, skill dispatch, checkpoint logic |
@@ -57,8 +59,8 @@ Current state: **v0.3** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `docs/GDD-03-Kampfsystem.md` | Combat design — v0.3 implemented. |
 | `docs/GDD-04-LookAndFeel.md` | Colors, typography, UI layout, mobile/desktop, tech stack. |
 | `docs/GDD-05-Kampfmathematik.md` | Damage pipeline, damage types, declarative skill effects. |
-| `docs/GDD-07-Bestiarium.md` | Draft: ~100 units from forest to city, size classes, skill ideas (Status: Diskussion). |
-| `docs/GDD-08-Progressionsmathematik.md` | Math of leveling (curve families, XP models, integer limits, other games) and of effects (power per level, hit/effect probabilities, skill interactions) (Status: Diskussion). |
+| `docs/GDD-07-Bestiarium.md` | Draft: ~100 units from forest to city, size classes, skill ideas (Status: Diskussion; Teil 6 = implemented XP model). |
+| `docs/GDD-08-Progressionsmathematik.md` | Math of leveling (curve families, XP models, integer limits, other games) and of effects (power per level, hit/effect probabilities, skill interactions) (Status: Diskussion; Teil 6 = implemented XP model). |
 
 ---
 
@@ -153,7 +155,7 @@ Bugs, Feature-Ideen und kleine Verbesserungen werden in **`TODO.md`** im Projekt
 ## Open Decisions (ask developer before implementing)
 
 - Tod-Mechanik: Soft Death vs. Checkpoint vs. Rogue-like?
-- Skill-Limit: Obergrenze für aktive Skills?
+- ~~Skill-Limit: Obergrenze für aktive Skills?~~ → decided: skill capacity (sum of experience), see GDD-02 section 8. Still open: how capacity grows, all numbers, rank names
 - Kombinations-Rezepte: Sollen sie versteckt werden?
 - Mobile Tap: Direkt Absorb/Analyze, oder erst Kontextmenü?
 - PWA: Ja oder Nein?
