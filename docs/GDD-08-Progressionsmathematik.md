@@ -3,7 +3,7 @@
 
 > **Status: Diskussion** — Analyse der Ansätze und Vorschlag. Im Spiel gilt weiterhin der Stand aus [GDD-02 Abschnitt 4](GDD-02-Skillsystem.md#4-skill-leveling) und [balance.ts](../src/data/balance.ts). Nichts davon ist entschieden.
 
-Diese Datei beschreibt mathematisch, wie Erfahrung (XP) und Level zusammenhängen (Teil 1) und was ein Level bewirkt: Wirkungskurven, Wahrscheinlichkeiten und Wechselwirkungen zwischen Skills (Teil 2, ab Abschnitt 11). Sie vergleicht die Vorschläge des Entwicklers mit gängigen Modellen aus anderen Spielen und nennt Vor- und Nachteile.
+Diese Datei beschreibt mathematisch, wie Erfahrung (XP) und Level zusammenhängen (Teil 1) und was ein Level bewirkt: Wirkungskurven, Wahrscheinlichkeiten und Wechselwirkungen zwischen Skills (Teil 2, ab Abschnitt 11). Teil 3 (Abschnitt 16) prüft unendliches Leveln mit linearer Skala und %-Anzeige. Sie vergleicht die Vorschläge des Entwicklers mit gängigen Modellen aus anderen Spielen und nennt Vor- und Nachteile.
 
 **Vorgabe (Entwickler):** Das Modell soll einfach zu verstehen sein und zu einer angenehmen, spannenden Spielerfahrung führen: Es soll schwerer werden, weiterzukommen, aber man soll weiterhin Erfolge haben.
 
@@ -591,6 +591,92 @@ Flat-Block zieht einen festen Betrag ab. Der Schaden wird nach der Trefferstufe 
 
 ---
 
+# Teil 3 — Unendliches Leveln
+
+## 16. Vorschlag C (Entwickler): Unendliches Leveln, lineare Skala, Anzeige in %
+
+> Status: Diskussion
+
+**Vorschlag (Entwickler):** Skills leveln unendlich. Weil die absoluten XP-Zahlen dabei bedeutungslos werden, reicht eine Anzeige des Fortschritts in % bis zum nächsten Level. Dann kann direkt mit einer **linearen XP-Skala** gerechnet werden (jedes Level kostet gleich viel). Boost- und Hemmungseffekte werden entsprechend auf den Ertrag angewendet.
+**Begründung (Entwickler):** Bei unendlichem Leveln werden die Zahlen bedeutungslos; eine %-Anzeige reicht.
+
+### 16.1 Prüfung: Geht das ohne Verlust?
+
+**Ja.** Jedes Modell aus Teil 1 lässt sich in „Level-Einheiten“ umrechnen. Man teilt den Ertrag durch den Bedarf des aktuellen Levels:
+
+```
+Fortschritt pro Aktion (in Level, 1 = 100 %) = g(s, L) / need(L)
+```
+
+Danach kostet jedes Level genau „1“, die Skala ist also linear. Die Kurve ist nicht weg, sie steckt jetzt **im Ertrag** statt in der Schwelle. Für den Spieler ist das nicht zu unterscheiden (gleiches `N(L)`, Teil 1 Abschnitt 1). Das Zwei-Exponenten-Modell (Abschnitt 8) lautet in dieser Form:
+
+```
+Fortschritt pro Aktion = m(s, L) / N(L)        N(L) = Aktionen pro Level bei gleichstufiger Quelle
+```
+
+Die beiden „Stellschrauben“ sind damit sehr anschaulich:
+- `N(L)`: Wie viele gleichstufige Aktionen kostet ein Level? Das ist der eingebaute Anstieg.
+- `m(s, L)`: Boost bzw. Hemmung je nach Level-Unterschied.
+
+**Begründung (Vorschlag Claude):** Diese Form ist einfacher zu verstehen und zu balancieren als absolute XP. Beide Hebel sind direkt in Aktionen ablesbar, und es gibt keine großen Zahlen.
+
+### 16.2 Was dabei beachtet werden muss
+
+**a) Soll Leveln bei gleichstufigen Gegnern schwerer werden?** Wenn `N` konstant ist, wird es nur über die Welt schwerer (man muss stärkere Quellen finden). Das ist genau das Verhalten des proportionalen Modells (Abschnitt 4). Soll es zusätzlich mit dem Level schwerer werden, muss `N(L)` steigen, z. B. `N(L) = 3·L`.
+
+**b) Die Hemmung bestimmt, was jenseits der Welt passiert.** Unendliche Level heißt: Irgendwann ist man stärker als das stärkste Wesen der Welt (heute der Drache, Lv 20). Ab dann entscheidet allein die Form der Hemmung. Kumulierte Aktionen, wenn immer an der stärksten Quelle (Lv 20) gelevelt wird:
+
+| Variante | bis Lv 20 | Lv 30 | Lv 40 | Lv 60 | Lv 100 | Lv 200 |
+|----------|------:|------:|------:|------:|------:|------:|
+| `N = 5`, Differenz `1,5^(s−L)`, Boden 0,05 | 95 | 541 | 1.541 | 3.541 | 7.541 | 17.541 |
+| `N = 5`, Verhältnis `(s/L)^1,5`, Boden 0,05 | 95 | 163 | 277 | 668 | 2.266 | 11.166 |
+| `N = 3·L`, Verhältnis `(s/L)^1,5`, Boden 0,05 | 570 | 1.592 | 3.968 | 15.826 | 94.418 | 915.061 |
+| `N = 3·L`, ohne Hemmung | 570 | 1.305 | 2.340 | 5.310 | 14.850 | 59.700 |
+
+- **Differenz-Hemmung** greift schnell: Ab etwa 7 Leveln über der Quelle ist der Boden (0,05) erreicht. Danach kostet jedes Level gleich viel (hier 100 Aktionen), es geht also **linear unendlich** weiter.
+- **Ohne Boden** würde die Differenz-Hemmung einen weichen Deckel bilden: Jedes weitere Level kostet ×1,5, das Level wächst nur noch logarithmisch.
+- **Verhältnis-Hemmung** bremst sanfter, erreicht den Boden aber erst bei etwa dem 7-Fachen des Quell-Levels.
+- **Der Boden (`XP_CURVE_MIN`) ist bei unendlichem Leveln der wichtigste Wert für das Spätspiel.** Er legt fest, ob es jenseits der Welt linear weitergeht oder ob man praktisch stehen bleibt.
+
+> Begründung offen — Wie soll sich Leveln jenseits des stärksten Wesens anfühlen: weiter linear, weicher Deckel, oder soll die Welt immer stärkere Wesen nachliefern?
+
+**c) Absolute XP-Quellen müssen umgerechnet werden.** Kampf-XP ist heute „Schaden in HP“, Photosynthesis „geheilte HP“. Bei linearer Skala würde ein stärkerer Skill (mehr Schaden pro Treffer) **schneller** leveln, je höher er ist. Das ist das Gegenteil von „schwerer werden“. Die Lösung ist, den Wert auf die eigene Stärke zu beziehen:
+
+```
+Fortschritt pro Treffer = (Schaden / erwarteter Schaden des Skills auf Level L) · m(s, L) / N(L)
+```
+
+Ein „durchschnittlicher“ Treffer zählt dann als eine Aktion, ein kritischer etwas mehr. Dasselbe gilt für Block (Chitin), Rückschlag (Hemolymph), Gift und Heilung.
+
+**d) Wirkungskurven werden Pflicht.** Mit unendlichen Leveln erreicht jede lineare Prozent- oder Chancen-Formel irgendwann ihren Deckel. Danach sind alle weiteren Level wertlos (Venom ab Lv 50, Chitin-Wucht ab Lv 29). Die Empfehlung aus Abschnitt 11.3 (asymptotische Kurven für Prozente und Chancen) wird damit zur Voraussetzung.
+
+**e) Spieler-Level wird einfach.** In Level-Einheiten ist die Summe aller Skill-XP genau die **Summe aller Skill-Level** (mit Bruchteilen). Das ist die Skyrim-artige Variante aus Abschnitt 9, ohne Zusatzaufwand.
+
+**f) Speichern und Zahlbereich.** Gespeichert wird `level` (ganze Zahl) plus `progress` (Anteil 0 … 1). Der kleinste Fortschritt pro Aktion liegt in den Beispielen bei etwa 0,00008 Level (`N = 3·L`, Lv 200, Boden 0,05). Passend zur Milli-Konvention des Projekts reicht eine ganze Zahl in **Millionstel Level** (`progressMicro`, 0 … 999.999), oder einfach ein Gleitkomma-Wert. Integer-Grenzen spielen keine Rolle mehr (Level 2⁵³ ist unerreichbar). Alte Spielstände lassen sich umrechnen: `progress = currentXp / xpToNextLevel`.
+
+**g) Anzeige.** „Biss Lv 12 · 37 %“ statt „Biss Lv 12 · 384 / 1.037 XP“. Die Höhe eines einzelnen Gewinns lässt sich als „+2 %“ anzeigen. So sieht der Spieler direkt, ob sich ein Gegner lohnt.
+
+### 16.3 Bewertung (Vorschlag Claude)
+
+Der Vorschlag ist mathematisch sauber und vereinfacht das System deutlich. Die eigentlichen Designentscheidungen werden dadurch **sichtbarer**, sie verschwinden aber nicht:
+1. `N(L)` — konstant oder steigend? (16.2 a)
+2. Hemmung — Differenz oder Verhältnis, und welcher Boden? (16.2 b)
+3. Normierung absoluter XP-Quellen auf die eigene Stärke (16.2 c)
+4. Asymptotische Wirkungskurven für alle Prozente und Chancen (16.2 d)
+
+Ein möglicher Startpunkt: `N(L) = 3 + L` (Lv 1: 4 Aktionen, Lv 10: 13, Lv 50: 53), Verhältnis-Hemmung wie heute (`(s/L)^1,5`, 0,05 … 4), Spieler-Level = Summe der Skill-Level.
+
+> Begründung offen — Werte sind ein Startvorschlag und nicht getestet.
+
+### 16.4 Offene Entscheidungen (Teil 3)
+
+- [ ] Vorschlag C übernehmen (unendliche Level, lineare Skala, Anzeige in %)?
+- [ ] `N(L)`: konstant oder steigend, und wie stark?
+- [ ] Verhalten jenseits des stärksten Wesens: linear (Boden), weicher Deckel (kein Boden) oder immer stärkere Wesen?
+- [ ] Gilt das auch für die Kern-Fähigkeiten Analyze/Absorb (heute max. Level 20)?
+
+---
+
 ## Quellen
 
 - Kurvenformen allgemein: [davideaversa.it — Gamedesign Math: RPG Level-based Progression](https://davideaversa.it/blog/gamedesign-math-rpg-level-based-progression/), [Unity-Forum: Linear curve for RPG leveling](https://discussions.unity.com/t/linear-curve-for-rpg-leveing/699748), [Unity-Forum: Graphing and Game Design](https://discussions.unity.com/t/graphing-and-game-design/602886), [west-games.com — Exponential XP Curve Calculator](https://west-games.com/exponential-xp-curve-calculator/)
@@ -606,4 +692,4 @@ Flat-Block zieht einen festen Betrag ab. Der Schaden wird nach der Trefferstufe 
 
 ---
 
-*Letzte Aktualisierung: v0.4 — Teil 2 ergänzt (Wirkungskurven, Trefferstufen, Gift-Chance und Gift-Takt-Fehler, Skill-Fund-Wahrscheinlichkeiten, Geschick, Stapelregeln, Schwellen); davor: Datei neu angelegt: Analyse der Leveling-Modelle (proportionale Erfahrung, Level-Differenz-Multiplikator, Kurvenfamilien, Integer-Grenzen, Vergleich mit anderen Spielen), Vorschlag Zwei-Exponenten-Modell (Oktober 2026)*
+*Letzte Aktualisierung: v0.4 — Teil 3 ergänzt (Vorschlag Entwickler: unendliches Leveln, lineare Skala, Anzeige in %); davor Teil 2 ergänzt (Wirkungskurven, Trefferstufen, Gift-Chance und Gift-Takt-Fehler, Skill-Fund-Wahrscheinlichkeiten, Geschick, Stapelregeln, Schwellen); davor: Datei neu angelegt: Analyse der Leveling-Modelle (proportionale Erfahrung, Level-Differenz-Multiplikator, Kurvenfamilien, Integer-Grenzen, Vergleich mit anderen Spielen), Vorschlag Zwei-Exponenten-Modell (Oktober 2026)*
