@@ -227,6 +227,21 @@ Aktuell gibt es keine kombinierbaren Skills. Rezepte werden einzeln und gezielt 
 - **Leveling durch Kampf**: Skill-XP durch aktiven Einsatz im Kampf (v0.3).
 - **Material-Crafting**: Materialien für mehr als nur `grow` verwenden (v0.3+).
 
+### 7.1 Skill-Kapazität und Verlernen
+
+> Status: Diskussion — konkretisiert die Vergessen-Mechanik oben. Mathematik und Optionen: [GDD-08 Abschnitt 18](GDD-08-Progressionsmathematik.md#18-skill-kapazität-und-verlernen).
+
+**Überlegung (Entwickler):**
+- Der Blob hat nur eine begrenzte Kapazität für Fähigkeiten. Lernt er Neues, verlernt er dafür Altes.
+- Durch kontinuierliches Spielen kann die Kapazität leicht erweitert oder überschritten werden. In Spielpausen sinkt sie wieder auf das Normalmaß.
+- Verlerntes wird schneller wieder erlernt, z. B. doppelt so schnell.
+
+**Begründung (Entwickler):** Es ist plausibel, dass ein Wesen nur eine begrenzte Kapazität hat, Fähigkeiten anzuhäufen.
+
+Biologisch passend: *Physarum* verliert eine erlernte Gewöhnung, wenn der Reiz etwa zwei Tage fehlt (GDD-08 Abschnitt 18.1).
+
+Offen: Was belegt Kapazität, welcher Skill wird verlernt, ob Überdehnung und Pausen in echter Zeit oder in Spielzeit gemessen werden, und was beim Absinken der Kapazität passiert.
+
 ---
 
-*Letzte Aktualisierung: v0.4 — Verweis auf GDD-08 (Progressionsmathematik) in Abschnitt 4; Größe beim Absorbieren/Analysieren als Konzept (Abschnitt 1.4); XP-Skalierung (Absorb/Analyze und Kampf-XP nach Gegner-Level) mit Begründungen dokumentiert, Erfolgsformel als vorläufig vermerkt, Superstrength-Beschreibung korrigiert (Oktober 2026)*
+*Letzte Aktualisierung: v0.4 — Skill-Kapazität und Verlernen als Überlegung des Entwicklers (Abschnitt 7.1); Verweis auf GDD-08 (Progressionsmathematik) in Abschnitt 4; Größe beim Absorbieren/Analysieren als Konzept (Abschnitt 1.4); XP-Skalierung (Absorb/Analyze und Kampf-XP nach Gegner-Level) mit Begründungen dokumentiert, Erfolgsformel als vorläufig vermerkt, Superstrength-Beschreibung korrigiert (Oktober 2026)*

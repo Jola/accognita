@@ -3,7 +3,7 @@
 
 > **Status: Diskussion** — Analyse der Ansätze und Vorschlag. Im Spiel gilt weiterhin der Stand aus [GDD-02 Abschnitt 4](GDD-02-Skillsystem.md#4-skill-leveling) und [balance.ts](../src/data/balance.ts). Nichts davon ist entschieden.
 
-Diese Datei beschreibt mathematisch, wie Erfahrung (XP) und Level zusammenhängen (Teil 1) und was ein Level bewirkt: Wirkungskurven, Wahrscheinlichkeiten und Wechselwirkungen zwischen Skills (Teil 2, ab Abschnitt 11). Teil 3 (Abschnitt 16) prüft unendliches Leveln mit linearer Skala und %-Anzeige, Teil 4 (Abschnitt 17) feste Level-Grenzen und den Verzicht auf Level. Sie vergleicht die Vorschläge des Entwicklers mit gängigen Modellen aus anderen Spielen und nennt Vor- und Nachteile.
+Diese Datei beschreibt mathematisch, wie Erfahrung (XP) und Level zusammenhängen (Teil 1) und was ein Level bewirkt: Wirkungskurven, Wahrscheinlichkeiten und Wechselwirkungen zwischen Skills (Teil 2, ab Abschnitt 11). Teil 3 (Abschnitt 16) prüft unendliches Leveln mit linearer Skala und %-Anzeige, Teil 4 (Abschnitt 17) feste Level-Grenzen und den Verzicht auf Level, Teil 5 (Abschnitte 18–20) Skill-Kapazität, Gruppen schwacher Gegner und Weltstufen. Sie vergleicht die Vorschläge des Entwicklers mit gängigen Modellen aus anderen Spielen und nennt Vor- und Nachteile.
 
 **Vorgabe (Entwickler):** Das Modell soll einfach zu verstehen sein und zu einer angenehmen, spannenden Spielerfahrung führen: Es soll schwerer werden, weiterzukommen, aber man soll weiterhin Erfolge haben.
 
@@ -775,6 +775,154 @@ Bei H = 10 erreicht ein Skill auf Level 11 die Hälfte der Spanne, auf Level 21 
 
 ---
 
+# Teil 5 — Kapazität, Gruppen, Weltstufen
+
+## 18. Skill-Kapazität und Verlernen
+
+> Status: Diskussion — Überlegung des Entwicklers, nicht entschieden. Spielbeschreibung in [GDD-02 Abschnitt 7.1](GDD-02-Skillsystem.md#71-skill-kapazität-und-verlernen).
+
+**Überlegung (Entwickler):**
+- Ein Wesen hat nur eine begrenzte Kapazität, Fähigkeiten anzuhäufen. Lernt es Neues, wird stattdessen Altes verlernt.
+- Durch kontinuierliches Spielen kann die maximale Kapazität leicht erweitert oder überschritten werden. In Spielpausen sinkt sie wieder auf das Normalmaß.
+- Verlerntes kann schneller wieder erlernt werden, z. B. doppelt so schnell.
+
+**Begründung (Entwickler):** Es ist plausibel, dass ein Wesen nur eine begrenzte Kapazität hat, Fähigkeiten anzuhäufen.
+
+### 18.1 Biologischer Hintergrund
+
+- *Physarum polycephalum* lernt nachweislich durch **Habituation** (Gewöhnung an Chinin, Koffein oder Salz; Boisseau, Vogel & Dussutour 2016).
+- In neutraler Umgebung scheidet der Schleimpilz das aufgenommene Salz binnen etwa **zwei Tagen** wieder aus und verliert damit die Gewöhnung. Die Forscher sprechen von einem „zirkulierenden Gedächtnis“: Der Schleimpilz merkt sich eine Substanz, indem er sie aufnimmt (Boussard et al. 2019, CNRS).
+- Gelerntes kann durch **Verschmelzung** an andere Schleimpilze weitergegeben werden (Vogel & Dussutour 2016). Das passt zum Wiederbeleben und Verschmelzen in GDD-01 Abschnitt 10.
+- **Wiedererlernen geht schneller** als Erstlernen. Ebbinghaus nannte das „Ersparnis“: nach 20 Minuten 58 %, nach einem Tag 34 %, nach 31 Tagen 21 % weniger Lernzeit.
+
+Der Vorschlag des Entwicklers ist damit biologisch gut gedeckt. Besonders das Absinken der Kapazität in Pausen hat ein reales Vorbild.
+
+### 18.2 Mathematisches Modell (Vorschlag Claude zur Diskussion)
+
+In Level-Einheiten (Teil 3) lässt sich das einfach beschreiben:
+
+```
+Belegung  B = Σ über alle Skills (Level − 1 + Fortschritt)
+Kapazität K = K_Basis + Überdehnung Ü           (0 ≤ Ü ≤ Ü_max)
+
+Lernen, solange B < K:   normal
+Lernen, wenn B ≥ K:      der Gewinn wird anderen Skills abgezogen (Verlernen)
+Wiedererlernen:          Gewinn × 2, solange Level < Höchststand des Skills
+```
+
+| Baustein | Frage | Optionen |
+|----------|-------|----------|
+| **Was belegt Kapazität?** | Zählt schon das Kennen eines Skills (Level 1)? | nur Level über 1 (Anzahl der Skills unbegrenzt) · jeder Skill mindestens 1 (begrenzt auch die Anzahl) |
+| **Wer verlernt?** | Wem wird abgezogen? | am längsten ungenutzter Skill zuerst (wie Habituation ohne Reiz) · gleichmäßig alle · vom Spieler markierte Skills (Ultima Online: Pfeile ↑ ↓ 🔒 pro Skill) |
+| **Wiedererlernen** | Wie lange gilt der Bonus? | dauerhaft ×2 bis zum Höchststand · Bonus sinkt mit der Zeit wie bei Ebbinghaus (z. B. ×2 nach kurzer Zeit, ×1,3 nach langer) |
+| **Überdehnung wächst durch …** | Was zählt als „kontinuierlich spielen“? | Spielzeit (echte Zeit) · **Aktivität**: Absorbieren und Analysieren füllen einen Speicher („zirkulierendes Gedächtnis“) |
+| **Überdehnung sinkt durch …** | Was ist eine „Pause“? | echte Zeit ohne Spielen · **Spielzeit** ohne Aufnahme (Ausscheiden wie beim Salz) · Ruhe beim Hauptblob |
+| **Wenn K unter B fällt** | Was passiert mit dem Überschuss? | sofort verlernen · langsam verlernen · nichts verlernen, aber erst wieder lernen, wenn B < K (am sanftesten) |
+
+**Wichtige Folgen:**
+
+1. **Messung in echter Zeit ist heikel.**
+   - Eine Strafe für Pausen erzeugt Druck („ich muss spielen, sonst verliere ich etwas“). Viele Spiele machen es bewusst umgekehrt und *belohnen* Pausen, z. B. WoW mit „Rested XP“.
+   - Auf dem Handy wird in kurzen Etappen gespielt.
+   - Die Geräte-Uhr lässt sich verstellen.
+
+   **Vorschlag (Claude):** Die Überdehnung an **Aktivität im Spiel** koppeln. Absorbieren füllt den Speicher, mit der Zeit im Spiel wird er wieder „ausgeschieden“. Das entspricht genau dem Salz-Experiment und kommt ohne echte Uhr aus.
+   > Begründung offen — echte Zeit oder Spielzeit?
+
+2. **Das Spieler-Level als Summe der Skill-Level funktioniert dann nicht mehr.** Die Summe ist durch K gedeckelt. Fortschritt zeigt sich stattdessen in der Breite: wie viele Skills je entdeckt wurden (INDEX), Höchststände, Größe und Kapazität.
+
+3. **Zusammenspiel mit asymptotischer Wirkung (17.5).** Wenn die Wirkung pro Skill gegen einen Grenzwert läuft, lohnt sich Breite mehr als Spezialisierung. Beispiel mit Halbwerts-Level 10 bei 40 Kapazitätspunkten:
+   - ein Skill auf Level 41: 94 % seiner Spanne
+   - vier Skills auf Level 11: je 50 %, zusammen 200 %
+
+   Das stärkt das Entdecken (Kern des Spiels). Über das Halbwerts-Level lässt sich einstellen, wie stark Spezialisierung bestraft wird.
+
+4. **Wiedererlernen ×2** macht das Verlernen weniger schmerzhaft. Ein Skill kann für eine Situation gezielt „aufgefrischt“ werden. Damit wird die Kapazität ein taktisches Werkzeug statt einer Strafe.
+
+> Begründung offen — Alle Bausteine aus der Tabelle sind offen.
+
+---
+
+## 19. Warum schwache Gegner in Gruppen gefährlich bleiben
+
+### 19.1 In D&D 5e (Bounded Accuracy)
+
+Ein Angriff trifft, wenn `W20 + Angriffsbonus ≥ Rüstungsklasse`. In der 5. Edition steigen diese Werte über alle 20 Stufen nur wenig: Der Übungsbonus wächst von +2 auf +6, magische Gegenstände bringen höchstens +3. Was stark wächst, sind die **Lebenspunkte**.
+
+Beispiel: Ein Goblin (+4) gegen einen Kämpfer der Stufe 20 mit RK 20 trifft bei 16+ auf dem W20, also in 25 % der Fälle.
+
+```
+erwarteter Schaden pro Runde = Anzahl Angreifer × Trefferchance × Schaden
+```
+
+- Ein Goblin macht im Schnitt ~1,25 Schaden pro Runde und ist harmlos.
+- Zwanzig Goblins machen ~25 pro Runde. Das ist spürbar, auch für eine hohe Stufe.
+
+In älteren Editionen stiegen Angriffsbonus und RK etwa um 1 pro Stufe. Schwache Monster trafen dann nur noch mit einer natürlichen 20 (5 %). Die Zahl der Angreifer spielte praktisch keine Rolle mehr. 4e hat dafür sogar eine eigene Monsterart („Minions“) erfunden.
+
+**Kern:** Solange die Trefferchance **nach unten begrenzt** bleibt, wächst die Gefahr linear mit der Zahl der Gegner. Gibt es eine Schwelle, unter der ein Angriff nichts mehr bewirkt, ist die Zahl egal.
+
+### 19.2 Im eigenen Spiel (Stand v0.4)
+
+- **Trefferchance:** schon heute „bounded“. Selbst mit maximalem Geschick-Nachteil steigt Verfehlen nur auf ~8–11 % (tanh-Deckel), fast jeder Angriff trifft.
+- **Rüstung:** Hier liegt die Schwelle. **Flat-Block** (Chitin gegen Stich/Schnitt) zieht einen festen Betrag ab. Liegt er über dem Schaden eines Gegners, kommen nur noch schwere und kritische Treffer durch.
+
+Ameisen (Biss 7 HP Stich, alle 1,8 s) gegen den Blob:
+
+| Blob | Schaden je Ameise | 10 Ameisen | Blob Lv 5 (140 HP) hält … |
+|------|------------------:|-----------:|------------------------:|
+| ohne Chitin, Geschick 0 | 4,0 HP/s | 40 HP/s | 3,5 s |
+| Chitin 1, Geschick 1 | 2,4 HP/s | 24 HP/s | 6 s |
+| Chitin 3, Geschick 2 | 0,43 HP/s | 4,3 HP/s | 33 s |
+| Chitin 5, Geschick 3 | 0,16 HP/s | 1,6 HP/s | 88 s |
+| Chitin 8, Geschick 4 | 0,11 HP/s | 1,1 HP/s | 127 s |
+
+Zum Vergleich mit Rüstung nach der Formel `x/(x+K)` (Abschnitt 11.4, K = 7): Chitin 3 ergibt 51 % Reduktion, also ~20 HP/s bei 10 Ameisen. Chitin 8 ergibt 61 %, also ~16 HP/s. Die Gruppe bliebe gefährlich.
+
+**Weitere Einflüsse:**
+- **Hemolymph** wirkt bei jedem erlittenen Treffer, auch wenn er geblockt wird. Ab Level 4 (8 HP Rückschlag) stirbt eine Ameise (8 HP) an ihrem ersten Treffer. Das ist ein starkes Mittel gegen Schwärme.
+- **Gift aus Gruppen stapelt nicht.** Alle Venom-Effekte haben dieselbe Quelle (`venom`) und frischen sich nur gegenseitig auf. Zehn Giftspinnen vergiften nicht stärker als eine. Durch den Takt-Fehler (12.3) vergiften sie sogar schwächer.
+- **Aggro nach Größe** (Konzept, GDD-03): Große Wesen ignorieren den kleinen Blob, kleine greifen an. Schwärme kleiner Wesen sind also die typische Bedrohung.
+
+**Folgerung:** Heute sind Gruppen schwacher Gegner nur gefährlich, solange der Flat-Block unter ihrem Schaden liegt. Ein paar Chitin-Level machen ganze Schwärme fast harmlos. Wenn der Effekt gewollt ist, gibt es drei Möglichkeiten:
+1. Flat-Block auf einen Anteil des Treffers begrenzen (z. B. höchstens 70 %).
+2. Rüstung nach `x/(x+K)` statt als fester Abzug.
+3. Gruppen-Effekte gezielt einbauen: Gift stapelt sich pro Angreifer, oder Schwarm-Skills.
+
+> Begründung offen — Sollen Schwärme schwacher Gegner dauerhaft gefährlich bleiben? Wenn ja, welcher der drei Wege?
+
+---
+
+## 20. Weltstufen (Beispiel Diablo)
+
+**Diablo 4, ursprüngliches System (2023):** vier Weltstufen.
+
+| Stufe | Name | Zugang | Wirkung |
+|-------|------|--------|---------|
+| 1 | Abenteurer | ab Start | Grundschwierigkeit |
+| 2 | Veteran | ab Start | stärkere Monster, mehr XP und Gold |
+| 3 | Albtraum | nach der Kampagne und einem „Capstone“-Dungeon | Monster deutlich stärker, neue Gegenstandsqualität („Sacred“), Albtraum-Dungeons |
+| 4 | Qual | nach dem nächsten Capstone-Dungeon | Monster am stärksten, beste Qualität („Ancestral“) |
+
+- Die Stufe ist eine **Eigenschaft der Welt**, nicht des Helden. Der Spieler wählt sie selbst, Monster-Level und Belohnungen richten sich danach.
+- **Seit „Vessel of Hatred“ (2024)** sind die Weltstufen durch Schwierigkeitsgrade ersetzt: Normal, Schwer, Experte, Büßer und danach Qual 1–4.
+  - Die Qual-Stufen schaltet man über einen Endspiel-Dungeon frei („The Pit“).
+  - Jede Qual-Stufe senkt per „Fluch“ die eigene Rüstung und die Widerstände.
+  - Dafür werden die besten Gegenstände häufiger.
+- Ähnlich bei Genshin Impact: Die „Weltstufe“ steigt mit dem Abenteuerrang und hebt die Gegnerlevel und die Belohnungen. Man kann sie um eine Stufe zurücksetzen.
+
+**Prinzip:** Statt den Helden immer stärker zu machen, wird **die Welt eine Stufe härter, und dafür gibt es Besseres**. Innerhalb einer Stufe bleibt die Skala gleich. Neue Inhalte kommen als neue Stufe, nicht als höheres Max-Level.
+
+**Übertragung auf Absorb & Evolve (Vorschlag Claude zur Diskussion):**
+- Die Etappen vom Wald zur Stadt (GDD-07) sind schon eine Art Weltstufe im Raum.
+- Eine echte Weltstufe könnte nach einem Meilenstein (z. B. dem Stadttor) **alle** Gebiete eine Stufe anheben: Wesen stärker, seltenere Skills und Materialien.
+- Das wäre auch eine Antwort auf „was tun, wenn der Blob stärker ist als alles in der Welt“ (16.2 b).
+- Die Kapazität (Abschnitt 18) passt dazu: Höhere Stufen brauchen andere Skill-Kombinationen, man lernt und verlernt gezielt.
+
+> Begründung offen — Weltstufen ja/nein, und woran gekoppelt?
+
+---
+
 ## Quellen
 
 - Kurvenformen allgemein: [davideaversa.it — Gamedesign Math: RPG Level-based Progression](https://davideaversa.it/blog/gamedesign-math-rpg-level-based-progression/), [Unity-Forum: Linear curve for RPG leveling](https://discussions.unity.com/t/linear-curve-for-rpg-leveing/699748), [Unity-Forum: Graphing and Game Design](https://discussions.unity.com/t/graphing-and-game-design/602886), [west-games.com — Exponential XP Curve Calculator](https://west-games.com/exponential-xp-curve-calculator/)
@@ -791,8 +939,11 @@ Bei H = 10 erreicht ein Skill auf Level 11 die Hälfte der Spanne, auf Level 21 
 - Level-Skalierung der Welt: [mein-mmo — ESO One Tamriel](https://mein-mmo.de/en/the-elder-scrolls-online-one-tamriel,86731), [PushSquare — ESO One Tamriel](https://www.pushsquare.com/news/2016/06/e3_2016_one_huge_change_is_coming_to_the_elder_scrolls_online_this_year)
 - Bounded Accuracy: [D&D Lore Wiki — Bounded accuracy](https://dungeonsdragons.fandom.com/wiki/Bounded_accuracy)
 - Skill-Budget: [Giant Bomb — Ultima Online](https://www.giantbomb.com/games/3030-5767/), [uo.com — Scrolls of Power](https://uo.com/?p=4706)
-- Zahlenwerte in den Abschnitten 2, 4, 6, 8, 11–13 und 17 wurden von Claude nachgerechnet (Node.js, Formeln wie im Text bzw. wie im Code). Die Gift-Takt-Werte in 12.3 stammen aus einer Simulation über 20.000 s.
+- Schleimpilz-Gedächtnis: [Boisseau, Vogel & Dussutour 2016 — Habituation in Physarum (PMC)](https://pmc.ncbi.nlm.nih.gov/articles/PMC4855389/), [CNRS — Slime mould absorbs substances to memorise them](https://www.cnrs.fr/en/slime-mould-absorbs-substances-memorise-them), [Live Science — Brainless slime mold learns and teaches](https://livescience.com/57360-brainless-slime-mold-learns-and-teaches.html)
+- Wiedererlernen: [Wikipedia — Forgetting curve](https://en.wikipedia.org/wiki/Forgetting_curve), [Murre & Dros 2015 — Replication of Ebbinghaus' forgetting curve](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4492928/)
+- Diablo-4-Weltstufen und Schwierigkeitsgrade: [PC Gamer — World Tiers explained](https://pcgamer.com/diablo-4-world-tiers-explained/), [GamesRadar — World Tiers](https://www.gamesradar.com/diablo-4-world-tiers), [GGRecon — Standard & Torment difficulties](https://ggrecon.com/guides/diablo-4-difficulties-standard-torment)
+- Zahlenwerte in den Abschnitten 2, 4, 6, 8, 11–13, 17 und 19 wurden von Claude nachgerechnet (Node.js, Formeln wie im Text bzw. wie im Code). Die Gift-Takt-Werte in 12.3 stammen aus einer Simulation über 20.000 s.
 
 ---
 
-*Letzte Aktualisierung: v0.4 — Teil 4 ergänzt (Überlegung Entwickler: nur Verhältnisse zählen; feste Level-Grenze vs. Max-Level-Erhöhung; Level abschaffen; Synthese unbegrenzte Übung / begrenzte Stärke); davor Teil 3 ergänzt (Vorschlag Entwickler: unendliches Leveln, lineare Skala, Anzeige in %); davor Teil 2 ergänzt (Wirkungskurven, Trefferstufen, Gift-Chance und Gift-Takt-Fehler, Skill-Fund-Wahrscheinlichkeiten, Geschick, Stapelregeln, Schwellen); davor: Datei neu angelegt: Analyse der Leveling-Modelle (proportionale Erfahrung, Level-Differenz-Multiplikator, Kurvenfamilien, Integer-Grenzen, Vergleich mit anderen Spielen), Vorschlag Zwei-Exponenten-Modell (Oktober 2026)*
+*Letzte Aktualisierung: v0.4 — Teil 5 ergänzt (Skill-Kapazität und Verlernen nach Überlegung des Entwicklers, Gruppen schwacher Gegner, Weltstufen); davor Teil 4 ergänzt (Überlegung Entwickler: nur Verhältnisse zählen; feste Level-Grenze vs. Max-Level-Erhöhung; Level abschaffen; Synthese unbegrenzte Übung / begrenzte Stärke); davor Teil 3 ergänzt (Vorschlag Entwickler: unendliches Leveln, lineare Skala, Anzeige in %); davor Teil 2 ergänzt (Wirkungskurven, Trefferstufen, Gift-Chance und Gift-Takt-Fehler, Skill-Fund-Wahrscheinlichkeiten, Geschick, Stapelregeln, Schwellen); davor: Datei neu angelegt: Analyse der Leveling-Modelle (proportionale Erfahrung, Level-Differenz-Multiplikator, Kurvenfamilien, Integer-Grenzen, Vergleich mit anderen Spielen), Vorschlag Zwei-Exponenten-Modell (Oktober 2026)*
