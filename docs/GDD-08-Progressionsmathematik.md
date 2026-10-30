@@ -3,7 +3,7 @@
 
 > **Status: Diskussion** — Analyse der Ansätze und Vorschlag. Im Spiel gilt weiterhin der Stand aus [GDD-02 Abschnitt 4](GDD-02-Skillsystem.md#4-skill-leveling) und [balance.ts](../src/data/balance.ts). Nichts davon ist entschieden.
 
-Diese Datei beschreibt mathematisch, wie Erfahrung (XP) und Level zusammenhängen (Teil 1) und was ein Level bewirkt: Wirkungskurven, Wahrscheinlichkeiten und Wechselwirkungen zwischen Skills (Teil 2, ab Abschnitt 11). Teil 3 (Abschnitt 16) prüft unendliches Leveln mit linearer Skala und %-Anzeige. Sie vergleicht die Vorschläge des Entwicklers mit gängigen Modellen aus anderen Spielen und nennt Vor- und Nachteile.
+Diese Datei beschreibt mathematisch, wie Erfahrung (XP) und Level zusammenhängen (Teil 1) und was ein Level bewirkt: Wirkungskurven, Wahrscheinlichkeiten und Wechselwirkungen zwischen Skills (Teil 2, ab Abschnitt 11). Teil 3 (Abschnitt 16) prüft unendliches Leveln mit linearer Skala und %-Anzeige, Teil 4 (Abschnitt 17) feste Level-Grenzen und den Verzicht auf Level. Sie vergleicht die Vorschläge des Entwicklers mit gängigen Modellen aus anderen Spielen und nennt Vor- und Nachteile.
 
 **Vorgabe (Entwickler):** Das Modell soll einfach zu verstehen sein und zu einer angenehmen, spannenden Spielerfahrung führen: Es soll schwerer werden, weiterzukommen, aber man soll weiterhin Erfolge haben.
 
@@ -677,6 +677,104 @@ Ein möglicher Startpunkt: `N(L) = 3 + L` (Lv 1: 4 Aktionen, Lv 10: 13, Lv 50: 5
 
 ---
 
+# Teil 4 — Braucht es Level überhaupt?
+
+## 17. Überlegung (Entwickler): Nur das Verhältnis zählt
+
+> Status: Diskussion — die Entscheidungen aus Teil 3 bleiben ausdrücklich offen.
+
+**Überlegung (Entwickler):** Für Level und Statuswerte gilt dasselbe wie für XP: Sind sie unbegrenzt, werden die konkreten Zahlen bedeutungslos. Entscheidend ist nur, wie die eigenen Werte im Verhältnis zu denen der Gegner stehen. Spiele, die weiterentwickelt werden, haben trotzdem oft Level über 100, weil mit jeder Erweiterung einfach das Max-Level erhöht werden kann. Lässt sich das auf eine gleichbleibende Level-Grenze übertragen? Oder ist es sinnvoll, Level ganz abzuschaffen?
+
+### 17.1 Prüfung: Sind die Zahlen wirklich bedeutungslos?
+
+**Im Kern ja.** Multipliziert man alle HP und alle Schadenswerte mit demselben Faktor, braucht jeder Kampf gleich viele Treffer. Der Spielablauf ändert sich nicht. Ein Level ist dann nur eine Koordinate. Bedeutung hat allein die Umrechnung „Level-Unterschied → Stärke-Verhältnis“.
+
+Wächst die Stärke um einen festen Prozentsatz pro Level (`Stärke ∝ w^L`), dann gilt:
+
+```
+Level = log_w(Stärke)          Level-Unterschied ΔL  ⇔  Stärke-Verhältnis w^ΔL
+```
+
+Das Level ist dann eine **logarithmische Stärkeskala**, vergleichbar mit Dezibel oder der Richterskala. Bei w = 1,1 bedeuten 7 Level Unterschied doppelte Stärke, 100 Level etwa ×12.500. Bei w = 1,05 bedeuten 100 Level nur ×125.
+
+**Wo das Spiel heute nicht skalenfrei ist** (absolute Zahlen haben eine eigene Bedeutung):
+- `MIN_SKILL_DAMAGE` = 1 HP und `MIN_FINAL_DAMAGE` = 1 mHP sind feste Untergrenzen.
+- Trefferstufen kippen nach dem **absoluten** Level- und Geschick-Unterschied (`0,05·(L−1)`, `0,1·ΔGeschick`).
+- Flat-Block ist ein fester Betrag, der nur zusammen mit dem Schaden skaliert.
+- Die Größe des Blobs (`worldSize`) bestimmt Tempo, Kamera und die Absorb-Grenze.
+
+Diese Stellen müsste man anpassen, wenn man die Zahlen später „stauchen“ will.
+
+**Einschränkung:** Für das Spiel sind die Zahlen bedeutungslos, für den Spieler nicht ganz. Steigende Zahlen sind ein sichtbares Belohnungssignal. Sie zeigen außerdem schnell, wie gefährlich ein Gegner ist (Level-Zahl über dem Kopf).
+
+### 17.2 Warum Spiele mit Erweiterungen das Max-Level anheben
+
+- Neue Inhalte brauchen Raum für neue Belohnungen. Ein höheres Max-Level macht alte Ausrüstung überflüssig und gibt allen wieder ein Ziel.
+- Es ist einfach zu kommunizieren („neues Max-Level 70“).
+- **Kosten:** Die Zahlen blähen sich auf, alte Inhalte werden trivial, und der Weg zum Max-Level wird immer länger. World of Warcraft hat deshalb 2020 das Max-Level von 120 auf 60 zurückgesetzt und mehrfach alle Werte gestaucht (Stat-Squish in 6.0, 8.0, 9.0 und 12.0). Ein Squish ist genau die Umrechnung aus 17.1. Er bestätigt, dass die absoluten Zahlen beliebig sind.
+
+### 17.3 Übertragbar auf eine feste Level-Grenze?
+
+| Ansatz | Beispiel | Wie neue Inhalte Platz finden | Vorteile | Nachteile |
+|--------|----------|-------------------------------|----------|-----------|
+| **A. Fester Deckel + horizontaler Fortschritt** | Guild Wars 2: Max-Level 80 seit 2012, „wird nie erhöht“; Erweiterungen bringen Masteries und Elite-Spezialisierungen | neue Fähigkeiten, Optionen, Gebiete statt mehr Stärke | Alte Inhalte bleiben relevant, Balance bleibt beherrschbar | Weniger „Zahlen wachsen“-Gefühl |
+| **B. Fester Deckel + Stauchen** | WoW-Squish | die alte Skala wird zusammengeschoben, oben entsteht neuer Platz | Zahlen bleiben klein | Spieler „verlieren“ gefühlt Level |
+| **C. Asymptotischer Deckel** | Level = `Lmax · (1 − e^(−x/K))` | Der Platz kurz unter dem Deckel ist unendlich fein | Deckel wird nie erreicht | Später Fortschritt sieht winzig aus (99,2 → 99,4) |
+| **D. Welt skaliert mit** | Elder Scrolls Online (One Tamriel), Oblivion | Gegner passen sich dem Spieler an | Ganze Welt bleibt spielbar | Fortschritt wird kaum spürbar; Level-Unterschiede für XP und Gefahr verlieren ihren Sinn |
+| **E. Weltstufen statt Spielerstufen** | Diablo 4 (Welt-Stufen), Genshin (Weltstufe) | Die Welt steigt eine Stufe, die Skala darin bleibt gleich | Ein „Neubeginn“ ohne Zahlenexplosion | Zusätzliches System |
+| **F. Begrenzte Zahlen** | D&D 5e „Bounded Accuracy“: Treffer- und Verteidigungswerte steigen kaum, Stärke wächst über HP | kaum nötig, die Spanne bleibt klein | Schwache Gegner bleiben **in Gruppen** gefährlich | Einzelne schwache Gegner wirken bei hohem Level zäh |
+
+**Ergebnis:** Ein fester Deckel und ständig wachsende **vertikale** Stärke widersprechen sich. Mit festem Deckel geht es nur, wenn neue Inhalte vor allem **horizontal** etwas bringen (A, E, F) oder die Skala regelmäßig neu normiert wird (B, C).
+
+### 17.4 Level ganz abschaffen?
+
+Was Level im Spiel heute leisten, und was sie ersetzen könnte:
+
+| Aufgabe | Heute | Möglicher Ersatz |
+|---------|-------|------------------|
+| **Belohnung / Fortschrittsgefühl** | Level-Up-Meldung, XP-Balken | neue Skills entdecken, Kombinationen, **Wachstum des Blobs**, sichtbare Veränderung (Transformation, GDD-02 Abschnitt 7) |
+| **Vergleich mit Gegnern** | Erfolgschance, XP-Multiplikator, Aggro | **Größenverhältnis** (schon Konzept: GDD-02 1.4, GDD-03 Aggro, GDD-07 Größenklassen) oder ein abgeleiteter **Stärke-Index** aus den Werten (wie Kampfkraft/Gear-Score) |
+| **Freischalten** | Größe hängt am Spieler-Level, Absorb-Grenze an der Größe | Größe direkt aus aufgenommener Masse |
+| **Wirkung skalieren** | Skill-Level in den Formeln | Übung als interne Zahl, sichtbar nur als Stufen oder Beschreibung („geübt“, „gemeistert“) |
+
+Varianten:
+
+| Variante | Beschreibung | passt zu Absorb & Evolve, weil … | Risiko |
+|----------|--------------|----------------------------------|--------|
+| **V1 Unsichtbare Level** | intern bleibt alles, angezeigt werden Balken, Stufen, Beschreibungen | ändert die Mathematik nicht, nur die Darstellung | Gefahr eines Gegners ist schwerer ablesbar |
+| **V2 Größe statt Spieler-Level** | Der Blob wächst mit aufgenommener Masse oder Erfahrung; Größe ist das sichtbare „Level“ | *Physarum* wächst wirklich; Größe ist schon heute Maßstab für Absorb und Aggro; man sieht den Vergleich direkt auf dem Bildschirm | Größe allein sagt nichts über Gift, Panzer usw. |
+| **V3 Keine Zahlen-Progression** | Fortschritt nur über neue Skills und Kombinationen (wie Metroidvanias oder Zelda) | Entdecken ist der Kern (GDD-01) | Widerspricht dem Kern-Loop „gleiches Wesen mehrfach absorbieren = höheres Level“ (GDD-01 Abschnitt 3) |
+| **V4 Skill-Budget** | Die Summe aller Skill-Level ist gedeckelt (Ultima Online: 700 Punkte, je Skill max. 100); wer mehr will, muss anderes vergessen | Die geplante **Vergessen-Mechanik** (GDD-02 Abschnitt 7) wäre damit schon beschrieben; Erweiterungen bringen neue Skills, kein höheres Budget | Spieler müssen sich entscheiden, das kann frustrieren |
+
+### 17.5 Synthese: Fortschritt unbegrenzt, Stärke begrenzt (Vorschlag Claude)
+
+Teil 3 (unendliche Level) und dieser Teil (feste Grenze) lassen sich verbinden. Man lässt die **Übung** unbegrenzt wachsen, die **Wirkung** aber gegen einen Grenzwert laufen:
+
+```
+Wirkung(L) = Grundwert + Spanne · (1 − 0,5^((L−1)/H))        H = „Halbwerts-Level“
+```
+
+Bei H = 10 erreicht ein Skill auf Level 11 die Hälfte der Spanne, auf Level 21 drei Viertel, auf Level 31 sieben Achtel. Jedes Level bringt etwas, aber die Stärke bleibt in einer festen Spanne. Damit gilt:
+
+- Die Level-Zahl darf beliebig steigen. Sie zeigt Übung, keine unbegrenzte Macht.
+- Das Verhältnis zu Gegnern bleibt beherrschbar. Schwache Wesen werden nie völlig harmlos, besonders in Gruppen (wie bei Bounded Accuracy).
+- Neue Inhalte (Biome, Wesen, Skills) brauchen kein höheres Max-Level. Sie bringen neue Skills und Kombinationen, also horizontalen Fortschritt.
+- Das passt zur Empfehlung „asymptotische Kurven“ aus Abschnitt 11.3 und zu „Erfolge haben“: Neue Skills starten bei Level 1 und wachsen anfangs schnell.
+
+**Begründung (Vorschlag Claude):** Der Kern des Spiels ist horizontal (Entdecken, Kombinieren) und organisch (Wachsen). Eine unbegrenzte vertikale Stärke würde diesen Kern auf Dauer überdecken und das Balancing gegen eine endliche Welt (Bestiarium) erschweren.
+
+> Begründung offen — Vorschlag, nicht entschieden.
+
+### 17.6 Offene Fragen (Teil 4)
+
+- [ ] Welche Aufgaben soll ein Level erfüllen: Belohnung, Vergleich mit Gegnern, Freischalten, Wirkung (17.4)?
+- [ ] Spieler-Level behalten, durch die Größe ersetzen (V2) oder abschaffen?
+- [ ] Vergleich mit Gegnern über Level, Größe oder einen abgeleiteten Stärke-Index?
+- [ ] Unbegrenzte Stärke, begrenzte Stärke bei unbegrenzter Übung (17.5) oder Skill-Budget (V4)?
+- [ ] Sollen große, wachsende Zahlen bewusst als Belohnung erhalten bleiben?
+
+---
+
 ## Quellen
 
 - Kurvenformen allgemein: [davideaversa.it — Gamedesign Math: RPG Level-based Progression](https://davideaversa.it/blog/gamedesign-math-rpg-level-based-progression/), [Unity-Forum: Linear curve for RPG leveling](https://discussions.unity.com/t/linear-curve-for-rpg-leveing/699748), [Unity-Forum: Graphing and Game Design](https://discussions.unity.com/t/graphing-and-game-design/602886), [west-games.com — Exponential XP Curve Calculator](https://west-games.com/exponential-xp-curve-calculator/)
@@ -688,8 +786,13 @@ Ein möglicher Startpunkt: `N(L) = 3 + L` (Lv 1: 4 Aktionen, Lv 10: 13, Lv 50: 5
 - Rüstungsformel `x/(x+K)` und effektive HP: [League of Legends Wiki — Armor](https://wiki.leagueoflegends.com/en-us/Armor), [loltheory.gg — Armor](https://blog.loltheory.gg/what-is-armor-league-of-legends/)
 - Additive vs. multiplikative Modifikatoren: [Path of Exile Wiki — Modifiers](https://pathofexile.fandom.com/wiki/Modifiers?oldid=4899), [PoE-Forum: Additive and Multiplicative modifiers](https://www.pathofexile.com/forum/view-thread/892570)
 - Pseudo-Zufall: [Liquipedia — Random Distribution](https://liquipedia.net/dota2/Random_Distribution), [Dota 2 Wiki — Pseudo-random distribution](https://dota2.fandom.com/wiki/Pseudo-random_distribution)
-- Zahlenwerte in den Abschnitten 2, 4, 6, 8 und 11–13 wurden von Claude nachgerechnet (Node.js, Formeln wie im Text bzw. wie im Code). Die Gift-Takt-Werte in 12.3 stammen aus einer Simulation über 20.000 s.
+- Max-Level und Stauchen: [Warcraft Wiki — Level squish](https://warcraft.wiki.gg/wiki/Level_squish), [Warcraft Wiki — Stat squish](https://warcraft.wiki.gg/wiki/Stat_squish), [PC Gamer — WoW level cap reduced to 60](https://www.pcgamer.com/uk/world-of-warcrafts-level-cap-is-being-reduced-to-60/)
+- Fester Deckel, horizontaler Fortschritt: [mein-mmo — Guild Wars 2: Forever 80](https://mein-mmo.de/en/guild-wars-2-niemals-neue-level-gear-stufen-080,28879), [Guild Wars 2 Wiki — Mastery](https://wiki.guildwars2.com/wiki/Mastery)
+- Level-Skalierung der Welt: [mein-mmo — ESO One Tamriel](https://mein-mmo.de/en/the-elder-scrolls-online-one-tamriel,86731), [PushSquare — ESO One Tamriel](https://www.pushsquare.com/news/2016/06/e3_2016_one_huge_change_is_coming_to_the_elder_scrolls_online_this_year)
+- Bounded Accuracy: [D&D Lore Wiki — Bounded accuracy](https://dungeonsdragons.fandom.com/wiki/Bounded_accuracy)
+- Skill-Budget: [Giant Bomb — Ultima Online](https://www.giantbomb.com/games/3030-5767/), [uo.com — Scrolls of Power](https://uo.com/?p=4706)
+- Zahlenwerte in den Abschnitten 2, 4, 6, 8, 11–13 und 17 wurden von Claude nachgerechnet (Node.js, Formeln wie im Text bzw. wie im Code). Die Gift-Takt-Werte in 12.3 stammen aus einer Simulation über 20.000 s.
 
 ---
 
-*Letzte Aktualisierung: v0.4 — Teil 3 ergänzt (Vorschlag Entwickler: unendliches Leveln, lineare Skala, Anzeige in %); davor Teil 2 ergänzt (Wirkungskurven, Trefferstufen, Gift-Chance und Gift-Takt-Fehler, Skill-Fund-Wahrscheinlichkeiten, Geschick, Stapelregeln, Schwellen); davor: Datei neu angelegt: Analyse der Leveling-Modelle (proportionale Erfahrung, Level-Differenz-Multiplikator, Kurvenfamilien, Integer-Grenzen, Vergleich mit anderen Spielen), Vorschlag Zwei-Exponenten-Modell (Oktober 2026)*
+*Letzte Aktualisierung: v0.4 — Teil 4 ergänzt (Überlegung Entwickler: nur Verhältnisse zählen; feste Level-Grenze vs. Max-Level-Erhöhung; Level abschaffen; Synthese unbegrenzte Übung / begrenzte Stärke); davor Teil 3 ergänzt (Vorschlag Entwickler: unendliches Leveln, lineare Skala, Anzeige in %); davor Teil 2 ergänzt (Wirkungskurven, Trefferstufen, Gift-Chance und Gift-Takt-Fehler, Skill-Fund-Wahrscheinlichkeiten, Geschick, Stapelregeln, Schwellen); davor: Datei neu angelegt: Analyse der Leveling-Modelle (proportionale Erfahrung, Level-Differenz-Multiplikator, Kurvenfamilien, Integer-Grenzen, Vergleich mit anderen Spielen), Vorschlag Zwei-Exponenten-Modell (Oktober 2026)*
