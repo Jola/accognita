@@ -110,11 +110,21 @@ export function calcXpMultiplier(
 }
 
 /**
- * Wendet den Multiplikator auf einen Basis-XP-Wert an.
- * Gibt einen ganzzahligen Wert zurück (abgerundet, minimum 0).
+ * Wendet den Multiplikator auf einen Basis-XP-Wert an (minimum 0).
+ *
+ * [VERWORFEN] Abrunden auf ganze XP. Mit Leveln blieb der Multiplikator auf
+ * Level 1 bei ×1, abgerundet ging nichts verloren. Mit dem stetigen
+ * Übungsgrad liegt u schon nach dem ersten Punkt über 1 (Absorb: u≈1,45),
+ * der Multiplikator gegen Stufe-1-Wesen unter 1 (×0,57) — abgerundet 0.
+ * Absorb/Analyze und Skill-Funde bei Ameise, Marienkäfer, Gras blieben
+ * dadurch für immer bei 1 XP stehen.
+ * Jetzt: Bruchteile zählen. Begründung: Vorgabe (Entwickler) „Werte
+ * verbessern sich fließend in sehr kleinen Schritten“ (progression.ts
+ * Abschnitt 1); die Untergrenze XP_CURVE_MIN soll laut Kommentar oben nie
+ * ganz 0 ergeben — das Abrunden hat genau das unterlaufen.
  */
 export function scaleXp(baseXp: number, entityLevel: number, skillLevel: number): number {
-  return Math.max(0, Math.floor(baseXp * calcXpMultiplier(entityLevel, skillLevel)));
+  return Math.max(0, baseXp * calcXpMultiplier(entityLevel, skillLevel));
 }
 
 // -----------------------------------------------------------

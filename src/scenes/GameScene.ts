@@ -1302,6 +1302,11 @@ function renderRankBar(info: RankInfo): string {
 }
 
 /** „24 / 74 XP · +12 in Ruhe“ — XP bis zum nächsten Rang, ausstehende Erfahrung */
+/** XP-Beträge können Bruchteile sein (fließende Erfahrung) — eine Nachkommastelle */
+function formatXp(xp: number): string {
+  return xp.toLocaleString("de-DE", { maximumFractionDigits: 1 });
+}
+
 function formatRankProgress(info: RankInfo): string {
   const pending = info.pendingXp >= 1 ? ` · +${Math.floor(info.pendingXp)} in Ruhe` : "";
   if (!info.nextRankName) return `${Math.floor(info.xp)} XP · höchster Rang${pending}`;
@@ -1452,7 +1457,7 @@ function showInteractionResult(result: any, state: GameState) {
       if (r.wasNewDiscovery) return `✨ ${def.name} entdeckt!`;
       const up = r.events?.find((e: ProgressionEvent) => e.skillId === r.skillId && e.kind === "rank_up");
       if (up)                return `⬆️ ${def.name} → ${up.rankName}`;
-      return `+${r.xpGained} XP für ${def.name}`;
+      return `+${formatXp(r.xpGained)} XP für ${def.name}`;
     })
     .filter(Boolean);
 
