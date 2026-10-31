@@ -138,7 +138,7 @@ function hitLine(chances: HitProfile): string {
 }
 
 // ── Gemeinsame Ableitungen ─────────────────────────────────
-/** „Geübt · 24 XP“ — Rang und Erfahrung einer Einheit in einem Skill */
+/** „Übung · 24 XP“ — Rang und Erfahrung einer Einheit in einem Skill */
 function skillXpLabel(e: EntityDefinition, skillId: string): string {
   return `${rankNameForPractice(getEntitySkillPractice(e)[skillId])} · ${num(e.skillXp![skillId])} XP`;
 }

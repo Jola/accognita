@@ -82,14 +82,24 @@ export const PRACTICE_XP_FACTOR = 0.5;
 // folgt die nötige Erfahrung je Skill automatisch (xp(u), Abschnitt 1).
 //
 // Beispiel Biss (learningEffort 12) — XP ab Rangbeginn:
-//   Neuling 0 · Anfänger 6 · Geübt 24 · Könner 74 · Profi 150 ·
-//   Experte 294 · Meister 486
+//   0 · 6 · 24 · 74 · 150 · 294 · 486
 // Jeder Rang dauert länger als der vorige (6, 18, 50, 76, 144, 192 XP),
 // bleibt aber erreichbar.
-//
-// Namen: Vorgabe (Entwickler), vorläufig. Gegenvorschlag Claude in
-// GDD-02 Abschnitt 8.2 (offen).
 // Grenzen: Vorschlag Claude (offen), VORLÄUFIG.
+//
+// Namen — Vorgabe (Entwickler): Beide Namensreihen aus dem Gegenvorschlag
+//   von Claude stehen im Code. Aktiv ist vorerst die Biologie-Reihe, damit
+//   Jörn sie im Spiel sehen kann; die Handwerk-Reihe steht daneben.
+// Begründung (Vorschlag Claude, übernommen):
+//   - Biologie: passt zum Schleimpilz, der durch Gewöhnung lernt — der Skill
+//     wird vom ersten Versuch zur Gewohnheit, zum Instinkt und schließlich
+//     zur „zweiten Natur“. Abwägung: thematisch stark, aber weniger sofort
+//     verständlich als die Handwerk-Reihe.
+//   - Handwerk: passt zum mittelalterlichen Setting; Lehrling → Geselle →
+//     Meister ist als Reihenfolge allgemein bekannt.
+//   - Die ursprüngliche Reihe (Neuling · Anfänger · Geübt · Könner · Profi ·
+//     Experte · Meister) mischte Adjektiv und Nomen, und Könner/Profi/Experte
+//     ließen sich schwer ordnen. [VERWORFEN, Oktober 2026]
 // -----------------------------------------------------------
 
 export interface SkillRank {
@@ -99,13 +109,14 @@ export interface SkillRank {
 }
 
 export const SKILL_RANKS: readonly SkillRank[] = [
-  { name: "Neuling",  fromPractice: 1 },
-  { name: "Anfänger", fromPractice: 2 },
-  { name: "Geübt",    fromPractice: 3 },
-  { name: "Könner",   fromPractice: 4.5 },
-  { name: "Profi",    fromPractice: 6 },
-  { name: "Experte",  fromPractice: 8 },
-  { name: "Meister",  fromPractice: 10 },
+  // Biologie (aktiv)                       // Handwerk (Alternative)
+  { name: "Regung",     fromPractice: 1 },    // { name: "Neuling",  fromPractice: 1 },
+  { name: "Versuch",    fromPractice: 2 },    // { name: "Anfänger", fromPractice: 2 },
+  { name: "Übung",      fromPractice: 3 },    // { name: "Lehrling", fromPractice: 3 },
+  { name: "Gewohnheit", fromPractice: 4.5 },  // { name: "Geselle",  fromPractice: 4.5 },
+  { name: "Routine",    fromPractice: 6 },    // { name: "Könner",   fromPractice: 6 },
+  { name: "Instinkt",   fromPractice: 8 },    // { name: "Experte",  fromPractice: 8 },
+  { name: "Natur",      fromPractice: 10 },   // { name: "Meister",  fromPractice: 10 },
 ];
 
 // -----------------------------------------------------------
@@ -243,6 +254,8 @@ export const RECOVERY_HALF_LIFE_MS = 3 * 3600 * 1000;
 export const REST_DELAY_MS = 2 * 60 * 1000;
 
 // ------------------------------------------------------------
-// Zuletzt geändert: 2026-10-30 — Erstfassung: Erfahrung statt Level,
-// Ränge, Kapazität, Überdehnung, Wiedererlernen, Übertraining
+// Zuletzt geändert: 2026-10-31 — Rangnamen: Biologie-Reihe aktiv,
+// Handwerk-Reihe als Alternative daneben
+// Davor: 2026-10-30 — Erstfassung: Erfahrung statt Level, Ränge,
+// Kapazität, Überdehnung, Wiedererlernen, Übertraining
 // ------------------------------------------------------------

@@ -109,7 +109,7 @@ export function getEntitySkillPractice(def: EntityDefinition): Record<string, nu
 // 2. RÄNGE (nur Anzeige)
 // -----------------------------------------------------------
 
-/** Index des Rangs für einen Übungsgrad (0 = Neuling). */
+/** Index des Rangs für einen Übungsgrad (0 = erster Rang). */
 export function rankIndexForPractice(practice: number): number {
   let index = 0;
   for (let i = 0; i < SKILL_RANKS.length; i++) {

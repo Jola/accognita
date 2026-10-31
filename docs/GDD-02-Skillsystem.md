@@ -264,24 +264,27 @@ Im Code ist das schon so: Geschick kommt aus Sprung, Stärke aus Superstrength. 
 
 ### 8.2 Ränge (nur Anzeige)
 
-**Vorgabe (Entwickler):** Die Erfahrungsskala wird in benannte Abschnitte geteilt: Neuling · Anfänger · Geübt · Könner · Profi · Experte · Meister. Namen und Anzahl dürfen noch überarbeitet werden.
+~~**Vorgabe (Entwickler):** Die Erfahrungsskala wird in benannte Abschnitte geteilt: Neuling · Anfänger · Geübt · Könner · Profi · Experte · Meister.~~ [VERWORFEN, 31. Oktober 2026 — Namen ersetzt, siehe unten]
+
+**Vorgabe (Entwickler):** Die Erfahrungsskala wird in benannte Abschnitte geteilt. Namen und Anzahl dürfen noch überarbeitet werden.
 **Begründung (Entwickler):** Das macht dem Spieler verständlicher, was die Erfahrung an einem Skill bedeutet.
 
 Ränge ändern keinen Wert, sie beschriften nur den stetigen Fortschritt (Abschnitt 8.3). Die Grenzen sind als Übungsgrad festgelegt. Die nötige Erfahrung folgt daraus je Skill über den Lernaufwand.
 
-| Rang | ab Übungsgrad | XP Biss (Aufwand 12) | XP Feuerodem (Aufwand 25) |
-|---|---:|---:|---:|
-| Neuling | 1 | 0 | 0 |
-| Anfänger | 2 | 6 | 13 |
-| Geübt | 3 | 24 | 50 |
-| Könner | 4,5 | 74 | 153 |
-| Profi | 6 | 150 | 313 |
-| Experte | 8 | 294 | 613 |
-| Meister | 10 | 486 | 1013 |
+| Rang Biologie (aktiv) | Rang Handwerk (Alternative) | ab Übungsgrad | XP Biss (Aufwand 12) | XP Feuerodem (Aufwand 25) |
+|---|---|---:|---:|---:|
+| Regung | Neuling | 1 | 0 | 0 |
+| Versuch | Anfänger | 2 | 6 | 13 |
+| Übung | Lehrling | 3 | 24 | 50 |
+| Gewohnheit | Geselle | 4,5 | 74 | 153 |
+| Routine | Könner | 6 | 150 | 313 |
+| Instinkt | Experte | 8 | 294 | 613 |
+| Natur | Meister | 10 | 486 | 1013 |
 
-**Begründung (Vorschlag Claude, offen) für die Grenzen:** Jeder Rang dauert länger als der vorige (Biss: 6, 18, 50, 76, 144, 192 XP), bleibt aber erreichbar. Meister braucht bei einem einfachen Skill etwa so viel wie die Anfangs-Kapazität mal 2,5, also deutliche Spezialisierung.
+**Begründung (Vorschlag Claude, offen) für die Grenzen:** Jeder Rang dauert länger als der vorige (Biss: 6, 18, 50, 76, 144, 192 XP), bleibt aber erreichbar. Der höchste Rang braucht bei einem einfachen Skill etwa so viel wie die Anfangs-Kapazität mal 2,5, also deutliche Spezialisierung.
 
-**Gegenvorschlag Claude (offen) zu den Namen:**
+**Vorgabe (Entwickler), 31. Oktober 2026:** Beide Namensreihen aus dem Gegenvorschlag übernehmen. Aktiv ist vorerst die Biologie-Reihe, damit Jörn sie im Spiel sieht. Die Handwerk-Reihe steht im Code auskommentiert daneben (`SKILL_RANKS` in `progression.ts`).
+**Begründung (Vorschlag Claude, übernommen):**
 - „Geübt“ ist ein Adjektiv, die anderen sind Nomen. Einheitlich wäre „Geübter“.
 - „Könner“, „Profi“ und „Experte“ lassen sich schwer ordnen. Ist ein Profi besser als ein Könner? „Profi“ meint außerdem eher „bezahlt“ als „gekonnt“.
 - **Variante Handwerk** (passt zum mittelalterlichen Setting, die Reihenfolge kennt jeder): Neuling · Anfänger · Lehrling · Geselle · Könner · Experte · Meister.
@@ -409,7 +412,7 @@ Zwischen Treffer 100 und 150 ist die Erfahrung auch durch die Kapazitätsgrenze 
 
 - **Kapazitätswachstum:** Wie wächst die Kapazität? Der Platzhalter ist die Lebenserfahrung. Denkbar sind auch die Zahl entdeckter Skills, absorbierte Masse oder die Größenklasse (GDD-07).
 - **Zahlenwerte:** Kurvenexponent, Ranggrenzen, Kapazität, +20 %, Halbwertszeiten, Übertrainings-Schwelle.
-- **Ranknamen:** Siehe Abschnitt 8.2.
+- **Ranknamen:** Biologie oder Handwerk endgültig? (Abschnitt 8.2)
 - **Gegner:** Ihre Stärke (`level`) bleibt vorerst eine Zahl für Erfolgschance und XP-Skalierung. Soll auch sie entfallen? Dazu kommt das Gegner-Aufleveln (Abschnitt 8.6).
 - **HP und MP:** Sie folgen vorerst dem Wachstum. Sollen sie nach der Vorgabe „Attribute nur aus Skills“ auch aus Skills kommen?
 - **Verlernen:** Soll es auf 0 gehen dürfen, oder bleibt ein Rest?
@@ -428,4 +431,4 @@ Bezug zum Code:
 
 ---
 
-*Letzte Aktualisierung: v0.4 — Erfahrung statt Level umgesetzt (Abschnitt 8: Ränge, fließende Wirkung, Kapazität, Überdehnung, Wiedererlernen, gleiche Skills für Blob und Gegner, Übertraining, Idee Grow); alte Level-Regeln in 1.2, 4, 6, 7.1 als [VERWORFEN] markiert (30. Oktober 2026). Davor: Skill-Kapazität und Verlernen als Überlegung des Entwicklers (Abschnitt 7.1); Verweis auf GDD-08 (Progressionsmathematik) in Abschnitt 4; Größe beim Absorbieren/Analysieren als Konzept (Abschnitt 1.4); XP-Skalierung (Absorb/Analyze und Kampf-XP nach Gegner-Level) mit Begründungen dokumentiert, Erfolgsformel als vorläufig vermerkt, Superstrength-Beschreibung korrigiert (Oktober 2026)*
+*Letzte Aktualisierung: v0.4 — Rangnamen: Biologie-Reihe aktiv, Handwerk-Reihe als Alternative (Abschnitt 8.2, 31. Oktober 2026); davor Erfahrung statt Level umgesetzt (Abschnitt 8: Ränge, fließende Wirkung, Kapazität, Überdehnung, Wiedererlernen, gleiche Skills für Blob und Gegner, Übertraining, Idee Grow); alte Level-Regeln in 1.2, 4, 6, 7.1 als [VERWORFEN] markiert (30. Oktober 2026). Davor: Skill-Kapazität und Verlernen als Überlegung des Entwicklers (Abschnitt 7.1); Verweis auf GDD-08 (Progressionsmathematik) in Abschnitt 4; Größe beim Absorbieren/Analysieren als Konzept (Abschnitt 1.4); XP-Skalierung (Absorb/Analyze und Kampf-XP nach Gegner-Level) mit Begründungen dokumentiert, Erfolgsformel als vorläufig vermerkt, Superstrength-Beschreibung korrigiert (Oktober 2026)*
