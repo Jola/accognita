@@ -146,8 +146,7 @@ function skillXpLabel(e: EntityDefinition, skillId: string): string {
 }
 
 function canMelee(e: EntityDefinition): boolean {
-  return e.category === "creature" &&
-    (e.skillXp?.bite !== undefined || e.skillXp?.claw !== undefined || e.damage !== undefined);
+  return e.category === "creature" && (getEntityMeleeSkillId(e) !== undefined || e.damage !== undefined);
 }
 
 function biomeShares(id: string): { name: string; share: number }[] {
@@ -328,6 +327,13 @@ function entityDetail(e: EntityDefinition): string {
     const { profile, practice } = getEntityMeleeHitBasis(e);
     const attackDex = resolveDexterity(skillLevels, getEntityMeleeSkillId(e));
     combat.push(`<b>Treffer-Stufen</b> gegen Geschick 0: ${hitLine(calcHitChances(profile, practice, attackDex, 0))}`);
+    const occ = e.occasionalAttack;
+    const occSkill = occ ? ALL_SKILLS.get(occ.skillId) : undefined;
+    if (occ && occSkill) {
+      combat.push(`<b>Gelegentlich (${pct(occ.chance)} der Angriffe):</b> ${skillChip(occSkill)} ` +
+        `${hp(getEntityBaseDamage(e, occ.skillId))} HP ${DAMAGE_TYPE_DE[getEntityAttackDamageType(e, occ.skillId)]} ` +
+        `statt des normalen Angriffs`);
+    }
   }
   for (const id of skillIds) {
     const s = ALL_SKILLS.get(id);
@@ -335,7 +341,8 @@ function entityDetail(e: EntityDefinition): string {
       if (x.trigger !== "on_hit_enemy") continue;
       if (x.effectType === "inject_venom" && x.venomDose) {
         const dose = evalFormula(x.venomDose, skillLevels[id]);
-        combat.push(`<b>Bei Treffer (${s!.name}):</b> ${pct(evalFormula(x.formula, skillLevels[id]))} Chance, ` +
+        const only = s!.activation === "active" ? `nur mit ${s!.name}` : "jeder Treffer";
+        combat.push(`<b>Gift (${s!.name}, ${only}):</b> ${pct(evalFormula(x.formula, skillLevels[id]))} Chance, ` +
           `${num(dose)} HP Gift (stapelt, abgebaut nach ${seconds(venomDurationMs(dose * MILLI))})`);
       }
       if (x.effectType !== "apply_status" || !x.statusConfig?.damageFormula) continue;

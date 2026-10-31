@@ -567,6 +567,10 @@ Dosis = 8 + 2 × (u − 1) HP        u=1: 8 · Giftspinne u=3: 12 · Schlange u=
 
 Deklaration in [skills.ts](../src/data/skills.ts): Effekt `inject_venom`, `formula` = Chance, `venomDose` = Dosis.
 
+**Wer Gift einspritzt:** Ein passiver Skill (Venom) bei jedem Nahkampftreffer, ein aktiver Skill (Stachelstich 💉: Chance 80 % + 5 % × √(u−1), Dosis 15 + 3 × (u−1) HP) nur, wenn genau dieser Skill getroffen hat.
+**Vorgabe (Entwickler):** Das Skorpiongift wirkt nur beim Giftstachel, nicht bei den Scheren, und ist stärker als das der Spinnen.
+**Begründung (Vorschlag Claude, übernommen):** Das Gift sitzt in der Giftblase am Stachel; der Stachel ist ein reines Giftwerkzeug, Spinnen packen mit dem Biss und geben nicht immer Gift ab.
+
 **Begründung (Vorschlag Claude, übernommen):**
 - Gift ist eine Substanz — zwei Bisse bringen doppelt so viel Gift in den Körper.
 - Die Dosis entspricht dem Gesamtschaden des früheren 4-s-Gifts (`(2 + 0,5·(u−1)) × 4`). Ein einzelner Biss kostet also so viel wie vorher.
@@ -605,7 +609,7 @@ Eine reine Halbwertszeit endet nie. Unter ≈ 2,9 HP Restlast (wo λ·L unter 1 
 
 ### 12.5 Erfahrung und Anzeige
 
-- **Vorgabe (Entwickler):** Venom-Erfahrung wird stufenlos mitgerechnet — XP = Giftschaden, den die Giftlast eines Gegners in jedem Frame tatsächlich anrichtet (kein Überschuss über den Tod hinaus; stirbt das Ziel, verfällt der Rest). Werte, Wachstum und Skill-Liste werden einmal pro Sekunde nachgeführt.
+- **Vorgabe (Entwickler):** Venom-Erfahrung wird stufenlos mitgerechnet — XP = Giftschaden, den die Giftlast eines Gegners in jedem Frame tatsächlich anrichtet, anteilig für den Skill, der das Gift eingespritzt hat (die Last merkt sich die Anteile; Venom und Stachelstich bekommen jeweils ihre eigene XP) (kein Überschuss über den Tod hinaus; stirbt das Ziel, verfällt der Rest). Werte, Wachstum und Skill-Liste werden einmal pro Sekunde nachgeführt.
 - **Vorgabe (Entwickler):** Die Schadenszahl erscheint einmal beim Einspritzen (= Dosis, violett neben der Trefferzahl), nicht pro Tick oder Sekunde.
 - **Begründung (Vorschlag Claude, übernommen):** Die HP-Leisten (HUD und Gegner) zeigen die Giftlast als violetten Abschnitt am Ende der HP — so viele HP wird das Gift noch kosten.
 - Gegner vergiften nur den Blob, Gegner untereinander nicht (Entity-Leveling ohne Gift). Tod, Respawn, Checkpoint und Laden leeren die Giftlast.
@@ -639,4 +643,4 @@ Eine reine Halbwertszeit endet nie. Unter ≈ 2,9 HP Restlast (wo λ·L unter 1 
 
 ---
 
-*Letzte Aktualisierung: v0.4 — Abschnitt 12 Gift: Giftlast, stufenloser Abbau mit Halbwertszeit, Mindestrate, Effekt-Typ `inject_venom` (31. Oktober 2026); davor Hinweis Übungsgrad statt Level in Abschnitt 5.4 (31. Oktober 2026); davor implementiert — DamageSystem (8-stufige Pipeline), SkillEffectSystem (deklarative Effekte), DamageType-System, Skill-Effekt-Deklaration für chitin_armor/superstrength/hemolymph/venom (Oktober 2026); LinearFormula.max, Treffer-Stufe 1b, dexterity; Milli-Einheiten (3.4) und Begründungen der Caps ergänzt; Mindestschaden 1 HP vor Effekten, HP-Anzeige immer aufgerundet; Begründungen für Milli-HP und Mindestschaden vom Entwickler; Geschick ohne eigenen Skill-Beitrag*
+*Letzte Aktualisierung: v0.4 — Abschnitt 12: Gift aktiver Skills nur beim eigenen Treffer (Stachelstich), XP anteilig je Gift-Skill (31. Oktober 2026); Abschnitt 12 Gift: Giftlast, stufenloser Abbau mit Halbwertszeit, Mindestrate, Effekt-Typ `inject_venom` (31. Oktober 2026); davor Hinweis Übungsgrad statt Level in Abschnitt 5.4 (31. Oktober 2026); davor implementiert — DamageSystem (8-stufige Pipeline), SkillEffectSystem (deklarative Effekte), DamageType-System, Skill-Effekt-Deklaration für chitin_armor/superstrength/hemolymph/venom (Oktober 2026); LinearFormula.max, Treffer-Stufe 1b, dexterity; Milli-Einheiten (3.4) und Begründungen der Caps ergänzt; Mindestschaden 1 HP vor Effekten, HP-Anzeige immer aufgerundet; Begründungen für Milli-HP und Mindestschaden vom Entwickler; Geschick ohne eigenen Skill-Beitrag*

@@ -102,6 +102,15 @@ export function makeStatusEffect(
 }
 
 // -----------------------------------------------------------
+// VenomDose: eingespritztes Gift eines Treffers (VenomSystem)
+// Gesamt und je Gift-Skill, damit jeder Skill seine eigene XP bekommt.
+// -----------------------------------------------------------
+export interface VenomDose {
+  total: number;                    // milli-HP; 0 = kein Gift
+  bySkill: Record<string, number>;  // skillId → milli-HP
+}
+
+// -----------------------------------------------------------
 // ProjectileData: Daten für ein Phaser-Projektil
 // Wird von CombatSystem zurückgegeben; GameScene rendert es.
 // -----------------------------------------------------------
@@ -128,7 +137,7 @@ export interface AttackResult {
   message: string;
   reflectDamage?: number;              // milli-HP: Rückschlag-Schaden an den Angreifer (z.B. Hemolymph)
   absorbedDamage?: number;             // milli-HP: Schaden der durch Verteidigung aufgefangen wurde
-  venomDose?: number;                  // milli-HP: eingespritzte Giftdosis (VenomSystem), 0/fehlt = kein Gift
+  venomDose?: VenomDose;               // eingespritztes Gift (VenomSystem): gesamt + je Gift-Skill, milli-HP
 }
 
 // -----------------------------------------------------------

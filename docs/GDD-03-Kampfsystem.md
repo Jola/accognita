@@ -84,6 +84,18 @@ Aktuelle Werte aller Einheiten: im Spiel unter 📋 → INDEX (live aus [entitie
 | Giftspinne (poison_spider) | 22 | 4+Gift | 150 px | 50 px | 1600 ms |
 | Gras (grass) | — | — | — | — | passiv |
 
+### Gelegentlicher Angriff (`occasionalAttack` — implementiert)
+
+Eine Entity kann neben ihrem Standard-Nahkampf einen zweiten Angriff haben. Bei jedem Angriff ersetzt er mit der Chance `occasionalAttack.chance` den normalen (gleicher Cooldown); Schaden, Schadenstyp, Treffer-Profil und Gift kommen dann aus diesem Skill.
+
+| Entity | Standard | Gelegentlich |
+|--------|----------|--------------|
+| Kleiner Skorpion | Zangengriff (u≈6, 12 HP Wucht) | 15 %: Stachelstich (u≈4, 7 HP Stich + 89 % Chance auf 24 HP Gift) |
+| Großer Skorpion | Zangengriff (u≈18, 20 HP Wucht) | 15 %: Stachelstich (u≈7, 9 HP Stich + 92 % Chance auf 33 HP Gift) |
+
+Standard-Nahkampf: erster vorhandener Skill aus `bite`, `claw`, `pincer` (`ENTITY_MELEE_SKILLS` in EntityLevelingSystem).
+**Vorgabe (Entwickler):** Skorpione stechen nur gelegentlich, sonst Scheren; Gift nur beim Stachel. Begründung der Zahlen: [GDD-02, Skorpione](GDD-02-Skillsystem.md).
+
 ### Gegner-Verhalten (AiSystem)
 - **Aggro**: Spieler betritt `aggroRadius` → Entity wird aggressiv (roter Tint)
 - **Chase**: Entity bewegt sich mit `speed` px/s auf Spieler zu; stoppt bei ≤ 20 px
@@ -422,4 +434,4 @@ scenes/GameScene.ts                ← verdrahtet alle Systeme, Phaser-Rendering
 
 ---
 
-*Letzte Aktualisierung: 2026-10-31 — Regeneration (Photosynthesis) stufenlos; Venom-DoT durch Giftlast ersetzt (Verweis auf GDD-05 Abschnitt 12); Hinweis „Übungsgrad statt Skill-Level“ ergänzt, HP/MP wachsen mit dem Wachstum statt pro Level; 2026-10-25 — Größen- und levelabhängiges Aggro als Konzept (Abschnitt 4); 2026-10-24 — Geschick ohne Beitrag des eingesetzten Skills; Begründungen ergänzt bzw. als offen markiert, veraltete Werte (Spieler-Wachstum, Entity-Tabelle, Passiv-Effekte) als VERWORFEN gekennzeichnet; Treffer-Stufen und Geschick; Venom-Chance mit 100-%-Deckel*
+*Letzte Aktualisierung: 2026-10-31 — Gelegentlicher Angriff (Skorpion-Stachelstich); Regeneration (Photosynthesis) stufenlos; Venom-DoT durch Giftlast ersetzt (Verweis auf GDD-05 Abschnitt 12); Hinweis „Übungsgrad statt Skill-Level“ ergänzt, HP/MP wachsen mit dem Wachstum statt pro Level; 2026-10-25 — Größen- und levelabhängiges Aggro als Konzept (Abschnitt 4); 2026-10-24 — Geschick ohne Beitrag des eingesetzten Skills; Begründungen ergänzt bzw. als offen markiert, veraltete Werte (Spieler-Wachstum, Entity-Tabelle, Passiv-Effekte) als VERWORFEN gekennzeichnet; Treffer-Stufen und Geschick; Venom-Chance mit 100-%-Deckel*

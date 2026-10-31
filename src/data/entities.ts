@@ -164,8 +164,8 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     level: 3,
     skillDrops: [
       { skillId: "chitin_armor", chance: 0.25 }, // Skorpion-Panzer
-      { skillId: "venom",        chance: 0.25 }, // Stachel-Gift
-      { skillId: "bite",         chance: 0.10 },
+      { skillId: "venom_sting",  chance: 0.25 }, // Giftstachel (vorher: Venom)
+      { skillId: "pincer",       chance: 0.10 }, // Scheren (vorher: Biss)
     ],
     materialDrops: [],
     hp: 30_000, speed: 35,         // worldSize 7 × 5 = 35
@@ -173,8 +173,15 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 60,
     interactRadius: 45,
     aggroRadius: 18,            // 2.5 × worldSize
-    // bite u=6 → 7×1.65 ≈ 12 Schaden; chitin u=5 → blockt 9 HP Stich; venom u=5 → 50% Chance, 4/Tick
-    skillXp: { bite: 150, chitin_armor: 96, venom: 120 },
+    // pincer u=6 → 7×1.65 ≈ 12 Wucht; chitin u=5 → blockt 9 HP Stich;
+    // venom_sting u=4 → 5×1.45 ≈ 7 Stich + 89% Chance auf 24 HP Gift
+    skillXp: { pincer: 150, chitin_armor: 96, venom_sting: 81 },
+    // Vorgabe (Entwickler): Der Stachel kommt nur gelegentlich zum Einsatz,
+    //   sonst greifen Skorpione mit den Scheren an.
+    // Begründung (Vorschlag Claude): Gift kostet viel Energie und braucht Tage
+    //   zum Nachbilden (Gift-Ökonomie) — Skorpione packen meist mit den Scheren
+    //   und stechen nur, wenn es sich lohnt. 15 % der Angriffe ≈ alle 9 s. VORLÄUFIG
+    occasionalAttack: { skillId: "venom_sting", chance: 0.15 },
     worldSize: 7,
   },
   {
@@ -188,8 +195,8 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     level: 4,
     skillDrops: [
       { skillId: "chitin_armor", chance: 0.30 }, // Massiver Panzer
-      { skillId: "venom",        chance: 0.30 }, // Starkes Gift
-      { skillId: "bite",         chance: 0.15 },
+      { skillId: "venom_sting",  chance: 0.30 }, // Starker Giftstachel (vorher: Venom)
+      { skillId: "pincer",       chance: 0.15 }, // Scheren (vorher: Biss)
     ],
     materialDrops: [],
     hp: 55_000, speed: 50,         // worldSize 10 × 5 = 50
@@ -197,8 +204,11 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 120,
     interactRadius: 55,
     aggroRadius: 25,            // 2.5 × worldSize
-    // bite u=18 → 7×2.85 ≈ 20 Schaden; chitin u=8 → blockt 10,9 HP Stich; venom u=8 → 56% Chance, 5,5/Tick
-    skillXp: { bite: 1734, chitin_armor: 294, venom: 367.5 },
+    // pincer u=18 → 7×2.85 ≈ 20 Wucht; chitin u=8 → blockt 10,9 HP Stich;
+    // venom_sting u=7 → 5×1.75 ≈ 9 Stich + 92% Chance auf 33 HP Gift
+    skillXp: { pincer: 1734, chitin_armor: 294, venom_sting: 324 },
+    // Stachel nur gelegentlich — Begründung beim kleinen Skorpion. VORLÄUFIG
+    occasionalAttack: { skillId: "venom_sting", chance: 0.15 },
     worldSize: 10,
   },
   // ==========================================================

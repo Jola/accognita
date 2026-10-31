@@ -244,6 +244,75 @@ export const BASE_SKILLS: SkillDefinition[] = [
     // Weit ausholender Hieb: öfter schwer, aber auch öfter daneben
     hitProfile: { miss: 0.05, light: 0.15, normal: 0.45, heavy: 0.32, crit: 0.03 },
   },
+
+  // --- SKORPION-SKILLS ---
+  // Vorgabe (Entwickler): Skorpione greifen mit den Scheren an und nur
+  //   gelegentlich mit dem Giftstachel. Das Skorpiongift ist relativ stark,
+  //   stärker als das der Spinnen, und wirkt nur beim Stachel, nicht bei den
+  //   Scheren. Namen und Symbole: Vorschlag Claude.
+  // Wie oft ein Gegner sticht: occasionalAttack in entities.ts.
+
+  {
+    id: "pincer",
+    name: "Zangengriff",
+    element: "none",
+    icon: "🦀",
+    category: "basic",
+    activation: "active",
+    learningEffort: 12,
+    description:
+      "Aktiv: Packt das Ziel mit kräftigen Scheren und quetscht zu (7 HP Basis, Wucht). " +
+      "Kein Gift — die Scheren haben keine Giftdrüsen. Mehr Übung = festerer Griff. MP-Kosten: 3.",
+    mpCost: 3_000,
+    cooldownMs: 1400,
+    attackType: "melee",
+    baseDamage: 7_000,
+    // Begründung (Vorschlag Claude): Skorpionscheren (Pedipalpen) packen und
+    // quetschen, sie schneiden nicht — deshalb Wucht. Chitin dämpft Wucht
+    // nur prozentual, blockt sie nicht fest.
+    damageType: "blunt",
+    // Begründung (Vorschlag Claude): Wer festhält, verfehlt selten, trifft
+    // aber auch selten eine verwundbare Stelle — weniger Fehlschläge und
+    // weniger kritische Treffer als ein Biss. Lernaufwand und Schaden wie
+    // beim Biss: Die Scheren ersetzen beim Skorpion den bisherigen Biss.
+    hitProfile: { miss: 0.02, light: 0.20, normal: 0.58, heavy: 0.17, crit: 0.03 },
+  },
+  {
+    id: "venom_sting",
+    name: "Stachelstich",
+    element: "poison",
+    icon: "💉",
+    category: "basic",
+    activation: "active",
+    learningEffort: 18,
+    description:
+      "Aktiv: Sticht mit dem Giftstachel zu (5 HP Basis, Stich) und spritzt fast immer eine " +
+      "starke Giftdosis ein: anfangs 15 HP, +3 HP je Übungsgrad. Das Gift stapelt wie Venom. " +
+      "MP-Kosten: 6.",
+    mpCost: 6_000,
+    cooldownMs: 2500,
+    attackType: "melee",
+    // Begründung (Vorschlag Claude): Der Stachel selbst ist dünn — die Wunde
+    // ist klein, die Wirkung kommt vom Gift.
+    baseDamage: 5_000,
+    damageType: "pierce",
+    // Gezielter Stich: wie ein Biss präzise, etwas mehr schwere Treffer
+    hitProfile: { miss: 0.04, light: 0.16, normal: 0.50, heavy: 0.26, crit: 0.04 },
+    effects: [
+      {
+        trigger: "on_hit_enemy",
+        effectType: "inject_venom",
+        formula: { base: 0.80, perLevel: 0.05, curve: "sqrt", max: 1.0 },
+        venomDose: { base: 15, perLevel: 3 },
+        reasoning:
+          "Gift wirkt nur, wenn mit dem Stachel gestochen wird (aktiver Skill: Effekt nur beim eigenen Treffer). " +
+          "Der Stachel ist ein reines Giftwerkzeug mit großer Giftblase und Muskulatur zum Einspritzen — " +
+          "anders als Spinnen, deren Biss vor allem packt und nicht immer Gift abgibt. Deshalb 80 % Chance " +
+          "statt 30 % und fast doppelte Dosis: 15 HP statt 8 bei u1, 24 statt 14 bei u4, 33 statt 20 bei u7. " +
+          "Gift ist teuer herzustellen (Gift-Ökonomie) — Skorpione stechen darum nur gelegentlich. VORLÄUFIG.",
+      },
+    ],
+  },
   {
     id: "fire_breath",
     name: "Feueratem",

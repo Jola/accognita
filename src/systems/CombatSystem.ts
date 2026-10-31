@@ -21,7 +21,7 @@ import { ENTITY_MAP } from "../data/entities";
 import { DEFAULT_HIT_PROFILE, HIT_DAMAGE_MULT, MIN_SKILL_DAMAGE, toDisplayHp } from "../data/balance";
 import { getSkillEffectiveness } from "./SkillSystem";
 import { getCorePractice, getSkillPractice, getEntitySkillPractice } from "./ProgressionSystem";
-import { getScaledDamage, getEntityRangedDamage } from "./EntityLevelingSystem";
+import { getScaledDamage, getEntityRangedDamage, getEntityMeleeSkillId } from "./EntityLevelingSystem";
 import { calcFinalDamage } from "./DamageSystem";
 import { calcHitChances, rollHitGrade, HIT_GRADE_DE } from "./HitSystem";
 import {
@@ -42,24 +42,33 @@ const UNARMED_DAMAGE_TYPE: DamageType = "blunt";  // Körpermasse = Wucht
 
 // -----------------------------------------------------------
 // Hilfsfunktionen: Angriffsskill und Schadenstyp einer Entity
-// Priorität: bite → pierce, claw → slash, fire_breath → fire, sonst blunt
+// Standard-Angriff: erster Skill aus ENTITY_MELEE_SKILLS (EntityLevelingSystem),
+// Schadenstyp aus dem Skill; ohne Skill: fire_breath → fire, sonst blunt.
+// skillId: abweichender Angriff (z.B. gelegentlicher Stachelstich).
 // -----------------------------------------------------------
-export function getEntityMeleeSkillId(def: EntityDefinition): string | undefined {
-  if (def.skillXp?.["bite"] !== undefined) return "bite";
-  if (def.skillXp?.["claw"] !== undefined) return "claw";
-  return undefined;
+export { getEntityMeleeSkillId };
+
+/**
+ * Welcher Nahkampf-Skill diesmal eingesetzt wird: mit der Chance aus
+ * occasionalAttack der gelegentliche Angriff, sonst der Standard-Angriff.
+ */
+export function pickEntityMeleeSkill(def: EntityDefinition): string | undefined {
+  const occ = def.occasionalAttack;
+  if (occ && def.skillXp?.[occ.skillId] !== undefined && Math.random() < occ.chance) return occ.skillId;
+  return getEntityMeleeSkillId(def);
 }
 
-export function getEntityAttackDamageType(def: EntityDefinition): DamageType {
-  const skillId = getEntityMeleeSkillId(def);
+export function getEntityAttackDamageType(def: EntityDefinition, skillId = getEntityMeleeSkillId(def)): DamageType {
   if (skillId) return ALL_SKILLS.get(skillId)?.damageType ?? "blunt";
   if (def.rangedAttackSkillId === "fire_breath") return "fire";
   return "blunt";
 }
 
 /** Treffer-Profil und Übungsgrad, mit denen eine Entity im Nahkampf würfelt */
-export function getEntityMeleeHitBasis(def: EntityDefinition): { profile: HitProfile; practice: number } {
-  const skillId = getEntityMeleeSkillId(def);
+export function getEntityMeleeHitBasis(
+  def: EntityDefinition,
+  skillId = getEntityMeleeSkillId(def)
+): { profile: HitProfile; practice: number } {
   if (!skillId) return { profile: DEFAULT_HIT_PROFILE, practice: def.level };
   return {
     profile: ALL_SKILLS.get(skillId)?.hitProfile ?? DEFAULT_HIT_PROFILE,
@@ -192,10 +201,10 @@ export function playerAttack(
 
   // Angreifer-seitige On-Hit-Effekte: Status-Effekte und Gift (VenomSystem)
   const appliedEffects: StatusEffect[] = resolveOnHitStatusEffects(attacker.effects);
-  const venomDose = rollVenomDose(attacker.effects);
+  const venomDose = rollVenomDose(attacker.effects, skillId ? { skillId, practice } : undefined);
 
   const msg = `${def.icon} ${def.name}: ${hp(outcome.dmg)} Schaden${gradeSuffix(outcome.grade)}` +
-    (venomDose > 0 ? ` + ${hp(venomDose)} Gift!` : ".");
+    (venomDose.total > 0 ? ` + ${hp(venomDose.total)} Gift!` : ".");
 
   return {
     hit: true,
@@ -221,27 +230,34 @@ export function entityAttack(
     return missResult("Entity greift nicht an.");
   }
 
-  const baseDmg = getScaledDamage(def, instance.bonusLevel ?? 0);
-  const { profile, practice } = getEntityMeleeHitBasis(def);
-  const attacker = entityCombatant(def, getEntityMeleeSkillId(def));
+  // Meist der Standard-Angriff, gelegentlich ein anderer (z.B. Stachelstich)
+  const skillId = pickEntityMeleeSkill(def);
+  const occasional = skillId !== getEntityMeleeSkillId(def);
+  const skillDef = skillId ? ALL_SKILLS.get(skillId) : undefined;
+  const label = occasional && skillDef ? ` — ${skillDef.icon} ${skillDef.name}` : "";
+
+  const baseDmg = getScaledDamage(def, instance.bonusLevel ?? 0, skillId);
+  const { profile, practice } = getEntityMeleeHitBasis(def, skillId);
+  const attacker = entityCombatant(def, skillId);
   const outcome = resolveHit(
-    baseDmg, getEntityAttackDamageType(def), profile, practice, attacker, playerCombatant(player)
+    baseDmg, getEntityAttackDamageType(def, skillId), profile, practice, attacker, playerCombatant(player)
   );
 
   if (outcome.grade === "miss") {
     return {
       hit: false, hitGrade: "miss", damageDealt: 0, statusApplied: [],
-      message: `${def.icon} ${def.name} verfehlt dich!`,
+      message: `${def.icon} ${def.name}${label} verfehlt dich!`,
     };
   }
 
-  // On-Hit-Effekte der Entity: Status-Effekte und Gift (VenomSystem)
+  // On-Hit-Effekte der Entity: Status-Effekte und Gift (VenomSystem).
+  // Gift aktiver Skills wirkt nur, wenn genau dieser Skill getroffen hat.
   const appliedEffects: StatusEffect[] = resolveOnHitStatusEffects(attacker.effects);
-  const venomDose = rollVenomDose(attacker.effects);
+  const venomDose = rollVenomDose(attacker.effects, skillId ? { skillId, practice } : undefined);
 
   const armor = outcome.absorbed > 0 ? `, ${hp(outcome.absorbed)} abgewehrt` : "";
-  const msg = `${def.icon} ${def.name}: ${HIT_GRADE_DE[outcome.grade]} — ${hp(outcome.dmg)} Schaden${armor}` +
-    (venomDose > 0 ? ` + ${hp(venomDose)} Gift!` : ".");
+  const msg = `${def.icon} ${def.name}${label}: ${HIT_GRADE_DE[outcome.grade]} — ${hp(outcome.dmg)} Schaden${armor}` +
+    (venomDose.total > 0 ? ` + ${hp(venomDose.total)} Gift!` : ".");
 
   return {
     hit: true,

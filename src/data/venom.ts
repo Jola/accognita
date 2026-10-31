@@ -39,6 +39,17 @@
 //     (Schlange). Ein einzelner Biss kostet also so viel wie vorher.
 //   - Die Bisschance bleibt: Auch Giftschlangen beißen oft „trocken“,
 //     ohne Gift abzugeben.
+//
+// Wer Gift einspritzt:
+//   - Passiver Skill (Venom): bei jedem Nahkampftreffer.
+//   - Aktiver Skill (Stachelstich): nur, wenn genau dieser Skill getroffen
+//     hat. Vorgabe (Entwickler): Das Skorpiongift wirkt nur beim Stachel,
+//     nicht bei den Scheren.
+//     Begründung (Vorschlag Claude): Das Gift sitzt in der Giftblase am
+//     Stachel — die Scheren haben keine Giftdrüsen.
+//   - Vorgabe (Entwickler): Das Skorpiongift ist relativ stark, stärker als
+//     das der Spinnen. Werte und Begründung beim Skill venom_sting in
+//     skills.ts.
 //   - Die Körpergröße steckt schon in den HP: Giftigkeit hängt an der Dosis
 //     pro Körpermasse (LD50 in mg/kg). 12 HP töten eine Ameise mit 8 HP und
 //     kosten einen Drachen mit 500 HP nur 2,4 %. Keine eigene Größenregel.
@@ -116,6 +127,9 @@ export const VENOM_MIN_RATE_HP_PER_S = 1;
 // Vorgabe (Entwickler): Die Venom-Erfahrung wird stufenlos mitgerechnet.
 //   → XP = Giftschaden, den die Giftlast eines Gegners tatsächlich
 //     anrichtet (nur echte HP, kein Überschuss über den Tod hinaus).
+//     Die Last merkt sich, welcher Skill wie viel beigetragen hat; der
+//     Schaden wird anteilig aufgeteilt — Venom und Stachelstich bekommen
+//     jeweils ihre eigene XP.
 //     Gegner vergiften nur den Blob, Gegner untereinander nicht — jede
 //     Giftlast auf einem Gegner stammt also vom Blob.
 // Vorgabe (Entwickler): Die Schadenszahl erscheint einmal beim Einspritzen
@@ -125,4 +139,4 @@ export const VENOM_MIN_RATE_HP_PER_S = 1;
 //   kosten. Gleiches Prinzip wie der Abschnitt „in Ruhe“ beim Übertraining.
 // -----------------------------------------------------------
 
-// Stand: 31. Oktober 2026
+// Stand: 31. Oktober 2026 (Stachelstich ergänzt)

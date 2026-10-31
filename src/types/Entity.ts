@@ -67,6 +67,11 @@ export interface EntityDefinition {
   interactRadius: number;
   aggroRadius?: number;          // Ab dieser Distanz wird die Entity aggro (px)
 
+  // Gelegentlicher Nahkampf-Angriff — optional (z.B. Skorpion-Stachelstich).
+  // Bei jedem Angriff ersetzt er mit dieser Chance den normalen Nahkampf
+  // (gleicher Cooldown). skillId muss in skillXp stehen.
+  occasionalAttack?: { skillId: string; chance: number };
+
   // Fernkampf — optional (z.B. Drachen-Feueratem)
   rangedAttackSkillId?: string;      // Skill-ID für Fernkampf (z.B. "fire_breath")
   rangedAttackRangePx?: number;      // Reichweite in Pixeln
@@ -107,6 +112,7 @@ export interface EntityInstance {
   isAggro: boolean;         // Entity ist im Kampfmodus
   statusEffects: StatusEffect[];       // Aktive Effekte auf dieser Entity
   venomLoad?: number;                  // Giftlast in milli-HP (VenomSystem); fehlt = 0
+  venomBySkill?: Record<string, number>; // Anteil der Giftlast je Gift-Skill (für die XP)
   attackCooldownRemaining: number;     // ms bis zum nächsten Angriff
   chunkKey?: string;        // "cx,cy" — welchem Chunk diese Entity gehört
 

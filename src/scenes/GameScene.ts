@@ -699,9 +699,9 @@ export class GameScene extends Phaser.Scene {
           for (const effect of result.statusApplied) {
             applyEffect(this.gameState.player, effect);
           }
-          if (result.venomDose) {
+          if (result.venomDose && result.venomDose.total > 0) {
             addVenomDose(this.gameState.player, result.venomDose);
-            this.showVenomDose(px, py, result.venomDose);
+            this.showVenomDose(px, py, result.venomDose.total);
           }
 
           // Chitin Armor: XP = durch Verteidigung absorbierter Schaden
@@ -829,7 +829,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     // Gift auf dem Spieler: stufenlos, keine Zahl (die kam beim Biss)
-    const playerVenom = processVenom(this.gameState.player, this.gameState.player.hp, delta);
+    const playerVenom = processVenom(this.gameState.player, this.gameState.player.hp, delta).dealt;
     if (playerVenom > 0) {
       this.gameState.player.hp = Math.max(0, this.gameState.player.hp - playerVenom);
       updateVitalsUI(this.gameState.player);
@@ -845,7 +845,8 @@ export class GameScene extends Phaser.Scene {
         maxHp: def?.hp ?? 0,
       };
       // Gift (VenomSystem): stufenloser Abbau der Giftlast = Schaden
-      const venomDealt = processVenom(instance, instance.currentHp, delta);
+      const venom = processVenom(instance, instance.currentHp, delta);
+      const venomDealt = venom.dealt;
       const hpDelta = processTicks(wrapper, now) - venomDealt;
       if (hpDelta !== 0) {
         instance.currentHp = Math.max(0, instance.currentHp + hpDelta);
@@ -860,10 +861,12 @@ export class GameScene extends Phaser.Scene {
           if (def) addLog(`${def.icon} ${def.name} wurde vernichtet!`, "system");
         }
       }
-      // Venom: XP = angerichteter Giftschaden, stufenlos jeden Frame (÷1000: milli-HP → XP).
+      // Gift-XP = angerichteter Giftschaden, stufenlos jeden Frame (÷1000: milli-HP → XP),
+      // anteilig für den Skill, der das Gift eingespritzt hat (Venom, Stachelstich).
       // Gegner vergiften sich nicht gegenseitig — jede Giftlast hier stammt vom Blob.
-      if (venomDealt > 0) {
-        const gain = gainSkillXp(this.gameState.player, "venom", venomDealt / 1000, def?.level);
+      for (const [skillId, amount] of Object.entries(venom.bySkill)) {
+        if (amount <= 0) continue;
+        const gain = gainSkillXp(this.gameState.player, skillId, amount / 1000, def?.level);
         this.logProgressionEvents(gain.events);
         this.progressDirty = true;
       }
@@ -1061,9 +1064,9 @@ export class GameScene extends Phaser.Scene {
         applyEffect(target, effect);
       }
       this.showDamageNumber(target.x, target.y, result.damageDealt, "#ffffff", result.hitGrade);
-      if (result.venomDose && target.currentHp > 0) {
+      if (result.venomDose && result.venomDose.total > 0 && target.currentHp > 0) {
         addVenomDose(target, result.venomDose);
-        this.showVenomDose(target.x, target.y, result.venomDose);
+        this.showVenomDose(target.x, target.y, result.venomDose.total);
       }
 
       const def = ENTITY_MAP.get(target.definitionId);

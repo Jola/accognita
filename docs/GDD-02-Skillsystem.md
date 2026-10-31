@@ -112,6 +112,8 @@ Fähigkeiten werden **nicht garantiert** übertragen. Ob ein Skill erworben wird
 | Marienkäfer | 1 | neutral | creature | Hemolymph (15%) |
 | Springspinne | 2 | hostile | creature | Biss (15%), Jump (20%), Chitin Armor (10%) |
 | Giftspinne | 2 | hostile | creature | Biss (15%), Venom (20%), Chitin Armor (8%) |
+| Kleiner Skorpion | 3 | hostile | creature | Chitin Armor (25%), Stachelstich (25%), Zangengriff (10%) — vorher Venom und Biss |
+| Großer Skorpion | 4 | hostile | creature | Chitin Armor (30%), Stachelstich (30%), Zangengriff (15%) — vorher Venom und Biss |
 
 #### Skills
 
@@ -122,6 +124,12 @@ Fähigkeiten werden **nicht garantiert** übertragen. Ob ein Skill erworben wird
 | venom | Venom | passiv | poison | 🕷️ | Giftspinne | Treffer vergiften Ziel (~~DoT-Chance~~ [VERWORFEN] → Chance auf Giftdosis, stapelt als Giftlast, [GDD-05 Abschnitt 12](GDD-05-Kampfmathematik.md)) |
 | jump | Jump | aktiv | none | 🦘 | Springspinne | **Bewegungs-Unlock**: Ohne diesen Skill kann der Blob nicht springen. Höheres Level = größere Sprunghöhe/-weite. |
 | hemolymph | Hemolymph | passiv | poison | 🐞 | Marienkäfer | Bei eigenem Treffer: Angreifer vergiftet |
+| pincer | Zangengriff | aktiv | none | 🦀 | Skorpione | Scherenangriff: packt und quetscht (7 HP, Wucht), kein Gift |
+| venom_sting | Stachelstich | aktiv | poison | 💉 | Skorpione | Giftstachel: 5 HP Stich + 80 % Chance auf starke Giftdosis (15 HP + 3 je Übungsgrad), Gift nur bei diesem Angriff |
+
+**Skorpione (31. Oktober 2026):**
+**Vorgabe (Entwickler):** Skorpione bekommen einen zweiten Angriff, den sie nur gelegentlich einsetzen: Sie greifen mit den Scheren an und selten mit dem Giftstachel. Das Skorpiongift ist relativ stark, insbesondere stärker als das der Spinnen, und wirkt nur beim Giftstachel, nicht bei den Scheren. Namen und Symbole durfte Claude wählen.
+**Begründung (Vorschlag Claude, übernommen):** Namen „Zangengriff“ 🦀 und „Stachelstich“ 💉. Scheren packen und quetschen (Wucht), sie haben keine Giftdrüsen. Der Stachel ist ein reines Giftwerkzeug (Giftblase mit Muskulatur), daher hohe Chance und fast doppelte Dosis gegenüber Venom. Gift kostet viel Energie (Gift-Ökonomie), deshalb stechen Skorpione nur in 15 % ihrer Angriffe. Alle Zahlen VORLÄUFIG; Einzelheiten im `reasoning` der Skills und in [entities.ts](../src/data/entities.ts) (`occasionalAttack`).
 
 ~~Alle Basis-Skills haben `maxLevel: 0` (unlimitiert).~~ [VERWORFEN] → Skills haben keine Level, nur Erfahrung; je Skill gibt es einen Lernaufwand (`learningEffort`, Abschnitt 8.3). XP-Skalierung via Option D (`balance.ts`).
 
@@ -434,4 +442,4 @@ Bezug zum Code:
 
 ---
 
-*Letzte Aktualisierung: v0.4 — Venom: Giftlast statt DoT (31. Oktober 2026); davor Abgleich mit dem Code: Material-System als teilweise implementiert (Abschnitt 2), Biss in den Quellen-Skills der Insekten ergänzt und `maxLevel` als verworfen markiert (Abschnitt 3.1) (31. Oktober 2026); davor Rangnamen: Biologie-Reihe aktiv, Handwerk-Reihe als Alternative (Abschnitt 8.2, 31. Oktober 2026); davor Erfahrung statt Level umgesetzt (Abschnitt 8: Ränge, fließende Wirkung, Kapazität, Überdehnung, Wiedererlernen, gleiche Skills für Blob und Gegner, Übertraining, Idee Grow); alte Level-Regeln in 1.2, 4, 6, 7.1 als [VERWORFEN] markiert (30. Oktober 2026). Davor: Skill-Kapazität und Verlernen als Überlegung des Entwicklers (Abschnitt 7.1); Verweis auf GDD-08 (Progressionsmathematik) in Abschnitt 4; Größe beim Absorbieren/Analysieren als Konzept (Abschnitt 1.4); XP-Skalierung (Absorb/Analyze und Kampf-XP nach Gegner-Level) mit Begründungen dokumentiert, Erfolgsformel als vorläufig vermerkt, Superstrength-Beschreibung korrigiert (Oktober 2026)*
+*Letzte Aktualisierung: v0.4 — Skorpione: Zangengriff und Stachelstich (31. Oktober 2026); Venom: Giftlast statt DoT (31. Oktober 2026); davor Abgleich mit dem Code: Material-System als teilweise implementiert (Abschnitt 2), Biss in den Quellen-Skills der Insekten ergänzt und `maxLevel` als verworfen markiert (Abschnitt 3.1) (31. Oktober 2026); davor Rangnamen: Biologie-Reihe aktiv, Handwerk-Reihe als Alternative (Abschnitt 8.2, 31. Oktober 2026); davor Erfahrung statt Level umgesetzt (Abschnitt 8: Ränge, fließende Wirkung, Kapazität, Überdehnung, Wiedererlernen, gleiche Skills für Blob und Gegner, Übertraining, Idee Grow); alte Level-Regeln in 1.2, 4, 6, 7.1 als [VERWORFEN] markiert (30. Oktober 2026). Davor: Skill-Kapazität und Verlernen als Überlegung des Entwicklers (Abschnitt 7.1); Verweis auf GDD-08 (Progressionsmathematik) in Abschnitt 4; Größe beim Absorbieren/Analysieren als Konzept (Abschnitt 1.4); XP-Skalierung (Absorb/Analyze und Kampf-XP nach Gegner-Level) mit Begründungen dokumentiert, Erfolgsformel als vorläufig vermerkt, Superstrength-Beschreibung korrigiert (Oktober 2026)*

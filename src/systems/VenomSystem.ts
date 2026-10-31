@@ -8,6 +8,7 @@
 // Keine Phaser-Abhängigkeit. Kein Rendering. Vollständig testbar.
 // ============================================================
 
+import type { VenomDose } from "../types/Combat";
 import { ALL_SKILLS } from "../data/skills";
 import { MILLI } from "../data/balance";
 import { VENOM_HALF_LIFE_MS, VENOM_MIN_RATE_HP_PER_S } from "../data/venom";
@@ -15,7 +16,14 @@ import { evalFormula } from "./SkillEffectSystem";
 
 /** Alles, was vergiftet werden kann: Blob (PlayerState) und Gegner (EntityInstance). */
 export interface VenomTarget {
-  venomLoad?: number; // milli-HP; fehlt = 0
+  venomLoad?: number;                     // milli-HP; fehlt = 0
+  venomBySkill?: Record<string, number>;  // Anteil der Last je Gift-Skill (milli-HP) — für die XP
+}
+
+/** Giftschaden eines Frames: gesamt und je Gift-Skill (milli-HP). */
+export interface VenomTick {
+  dealt: number;
+  bySkill: Record<string, number>;
 }
 
 // Abbaukonstante λ = ln 2 / T (pro ms) und Mindestrate (milli-HP pro ms)
@@ -30,17 +38,30 @@ const TAIL_LOAD = MIN_RATE_PER_MS / DECAY_PER_MS;
 
 /**
  * Würfelt für jeden Skill mit "inject_venom"-Effekt die Bisschance und
- * gibt die Summe der eingespritzten Dosen zurück (milli-HP, 0 = trocken).
+ * gibt die eingespritzten Dosen zurück (milli-HP; total 0 = trocken).
  * skillPractice: { skillId → Übungsgrad } des Angreifers.
+ * attack: der Skill, mit dem gerade getroffen wurde (fehlt = unbewaffnet).
+ *
+ * Passive Skills (Venom) spritzen bei jedem Treffer. Aktive Skills
+ * (Stachelstich) nur, wenn genau sie getroffen haben — das Gift sitzt im
+ * Stachel, nicht in den Scheren.
  */
-export function rollVenomDose(skillPractice: Record<string, number>): number {
-  let dose = 0;
-  for (const [skillId, practice] of Object.entries(skillPractice)) {
-    for (const effect of ALL_SKILLS.get(skillId)?.effects ?? []) {
+export function rollVenomDose(
+  skillPractice: Record<string, number>,
+  attack?: { skillId: string; practice: number }
+): VenomDose {
+  const sources = { ...skillPractice, ...(attack ? { [attack.skillId]: attack.practice } : {}) };
+  const dose: VenomDose = { total: 0, bySkill: {} };
+  for (const [skillId, practice] of Object.entries(sources)) {
+    const def = ALL_SKILLS.get(skillId);
+    if (def?.activation === "active" && skillId !== attack?.skillId) continue;
+    for (const effect of def?.effects ?? []) {
       if (effect.trigger !== "on_hit_enemy" || effect.effectType !== "inject_venom") continue;
       if (!effect.venomDose) continue;
       if (Math.random() >= evalFormula(effect.formula, practice)) continue;
-      dose += Math.round(evalFormula(effect.venomDose, practice) * MILLI);
+      const amount = Math.round(evalFormula(effect.venomDose, practice) * MILLI);
+      dose.total += amount;
+      dose.bySkill[skillId] = (dose.bySkill[skillId] ?? 0) + amount;
     }
   }
   return dose;
@@ -50,8 +71,16 @@ export function rollVenomDose(skillPractice: Record<string, number>): number {
 // 2. GIFTLAST — Dosen addieren sich
 // -----------------------------------------------------------
 
-export function addVenomDose(target: VenomTarget, dose: number): void {
-  if (dose > 0) target.venomLoad = (target.venomLoad ?? 0) + dose;
+// Alles Gift landet in derselben Last (gleicher Abbau). Nebenbei wird
+// gemerkt, welcher Skill wie viel beigetragen hat: Der Schaden wird anteilig
+// aufgeteilt, damit Venom und Stachelstich jeweils ihre eigene XP bekommen.
+export function addVenomDose(target: VenomTarget, dose: VenomDose): void {
+  if (dose.total <= 0) return;
+  target.venomLoad = (target.venomLoad ?? 0) + dose.total;
+  const shares = (target.venomBySkill ??= {});
+  for (const [skillId, amount] of Object.entries(dose.bySkill)) {
+    shares[skillId] = (shares[skillId] ?? 0) + amount;
+  }
 }
 
 /** Restliche Giftlast = so viele milli-HP wird das Gift noch kosten. */
@@ -62,6 +91,7 @@ export function getVenomLoad(target: VenomTarget): number {
 /** Gift entfernen (Tod, Respawn, Checkpoint, Laden). */
 export function clearVenom(target: VenomTarget): void {
   target.venomLoad = 0;
+  target.venomBySkill = {};
 }
 
 // -----------------------------------------------------------
@@ -94,16 +124,27 @@ export function venomDurationMs(load: number): number {
 
 /**
  * Baut die Giftlast um deltaMs ab und gibt den Schaden zurück, den das
- * Ziel tatsächlich nimmt (milli-HP, höchstens currentHp). Stirbt das Ziel,
- * verfällt der Rest — Gift-XP gibt es nur für echten Schaden (Abschnitt 5).
+ * Ziel tatsächlich nimmt (milli-HP, höchstens currentHp) — gesamt und
+ * anteilig je Gift-Skill. Stirbt das Ziel, verfällt der Rest — Gift-XP gibt
+ * es nur für echten Schaden (Abschnitt 5).
  */
-export function processVenom(target: VenomTarget, currentHp: number, deltaMs: number): number {
+export function processVenom(target: VenomTarget, currentHp: number, deltaMs: number): VenomTick {
   const load = getVenomLoad(target);
-  if (load <= 0) return 0;
+  if (load <= 0) return { dealt: 0, bySkill: {} };
   const after = venomLoadAfter(load, deltaMs);
   const dealt = Math.min(load - after, Math.max(0, currentHp));
-  target.venomLoad = dealt >= currentHp ? 0 : after;
-  return dealt;
+
+  // Anteilig aufteilen: Jeder Skill verliert so viel, wie sein Anteil an der Last ausmacht
+  const bySkill: Record<string, number> = {};
+  const shares = target.venomBySkill ?? {};
+  for (const [skillId, share] of Object.entries(shares)) {
+    bySkill[skillId] = (dealt * share) / load;
+    shares[skillId] = (share * after) / load;
+  }
+
+  if (dealt >= currentHp || after <= 0) clearVenom(target);
+  else target.venomLoad = after;
+  return { dealt, bySkill };
 }
 
-// Stand: 31. Oktober 2026
+// Stand: 31. Oktober 2026 (Anteile je Gift-Skill für die XP)
