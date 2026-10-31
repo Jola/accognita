@@ -33,6 +33,7 @@ import {
   getPlayerAllSkillPractice,
 } from "./SkillEffectSystem";
 import { calcJumpDistance } from "./SkillEffects";
+import { rollVenomDose, clearVenom } from "./VenomSystem";
 
 // Konstanten — Basis-Nahkampf des unausgerüsteten Blobs (milli-HP)
 const BASE_MELEE_DAMAGE  = 3_000;   // 3 HP Basisschaden ohne Skills
@@ -189,11 +190,12 @@ export function playerAttack(
     };
   }
 
-  // Angreifer-seitige On-Hit-Effekte (Venom etc.)
+  // Angreifer-seitige On-Hit-Effekte: Status-Effekte und Gift (VenomSystem)
   const appliedEffects: StatusEffect[] = resolveOnHitStatusEffects(attacker.effects);
+  const venomDose = rollVenomDose(attacker.effects);
 
   const msg = `${def.icon} ${def.name}: ${hp(outcome.dmg)} Schaden${gradeSuffix(outcome.grade)}` +
-    (appliedEffects.length > 0 ? " + vergiftet!" : ".");
+    (venomDose > 0 ? ` + ${hp(venomDose)} Gift!` : ".");
 
   return {
     hit: true,
@@ -202,6 +204,7 @@ export function playerAttack(
     absorbedDamage: outcome.absorbed,
     reflectDamage: outcome.reflect,  // Hemolymph der Entity trifft den Spieler
     statusApplied: appliedEffects,
+    venomDose,
     message: msg,
   };
 }
@@ -232,12 +235,13 @@ export function entityAttack(
     };
   }
 
-  // Venom der Entity
+  // On-Hit-Effekte der Entity: Status-Effekte und Gift (VenomSystem)
   const appliedEffects: StatusEffect[] = resolveOnHitStatusEffects(attacker.effects);
+  const venomDose = rollVenomDose(attacker.effects);
 
   const armor = outcome.absorbed > 0 ? `, ${hp(outcome.absorbed)} abgewehrt` : "";
   const msg = `${def.icon} ${def.name}: ${HIT_GRADE_DE[outcome.grade]} — ${hp(outcome.dmg)} Schaden${armor}` +
-    (appliedEffects.length > 0 ? " + vergiftet!" : ".");
+    (venomDose > 0 ? ` + ${hp(venomDose)} Gift!` : ".");
 
   return {
     hit: true,
@@ -246,6 +250,7 @@ export function entityAttack(
     absorbedDamage: outcome.absorbed,
     reflectDamage: outcome.reflect,  // Hemolymph des Spielers trifft die Entity
     statusApplied: appliedEffects,
+    venomDose,
     message: msg,
   };
 }
@@ -370,6 +375,7 @@ export function executeCheckpoint(player: PlayerState): void {
   player.statusEffects = player.statusEffects.filter(
     (e) => e.expiresAt === Infinity
   );
+  clearVenom(player);
 }
 
 // -----------------------------------------------------------

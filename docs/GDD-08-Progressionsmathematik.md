@@ -466,7 +466,9 @@ Beim Auffrischen setzt [StatusEffectSystem.ts](../src/systems/StatusEffectSystem
 | 0,8 s | 60 % | 0,48 | 0,98 |
 | 1,2 s | 100 % | 0,83 | 1,00 |
 
-Bei schnellen Angriffen macht **höheres Venom-Level weniger Gift-Schaden.** Das passiert, wenn der Blob Biss und Klauenhieb abwechselt oder mehrere Giftspinnen den Blob angreifen. Außerdem überschreibt ein schwächeres Gift ein stärkeres (die Werte werden ersetzt, nicht das Maximum genommen). Beides steht als `[BUG]` in [TODO.md](../TODO.md) und ist nicht behoben.
+Bei schnellen Angriffen macht **höheres Venom-Level weniger Gift-Schaden.** Das passiert, wenn der Blob Biss und Klauenhieb abwechselt oder mehrere Giftspinnen den Blob angreifen. Außerdem überschreibt ein schwächeres Gift ein stärkeres (die Werte werden ersetzt, nicht das Maximum genommen). Beides steht als `[BUG]` in [TODO.md](../TODO.md) und ist nicht behoben. [VERWORFEN]
+
+> **Behoben (31. Oktober 2026):** Gift läuft jetzt über eine Giftlast, die stapelt und stufenlos abgebaut wird — es gibt weder Auffrischen noch Überschreiben ([GDD-05 Abschnitt 12](GDD-05-Kampfmathematik.md)).
 
 ### 12.4 Erfolgschance und Skill-Fund: Glück und Pech
 
@@ -882,7 +884,7 @@ Zum Vergleich mit Rüstung nach der Formel `x/(x+K)` (Abschnitt 11.4, K = 7): Ch
 
 **Weitere Einflüsse:**
 - **Hemolymph** wirkt bei jedem erlittenen Treffer, auch wenn er geblockt wird. Ab Level 4 (8 HP Rückschlag) stirbt eine Ameise (8 HP) an ihrem ersten Treffer. Das ist ein starkes Mittel gegen Schwärme.
-- **Gift aus Gruppen stapelt nicht.** Alle Venom-Effekte haben dieselbe Quelle (`venom`) und frischen sich nur gegenseitig auf. Zehn Giftspinnen vergiften nicht stärker als eine. Durch den Takt-Fehler (12.3) vergiften sie sogar schwächer.
+- **Gift aus Gruppen stapelt nicht.** Alle Venom-Effekte haben dieselbe Quelle (`venom`) und frischen sich nur gegenseitig auf. Zehn Giftspinnen vergiften nicht stärker als eine. Durch den Takt-Fehler (12.3) vergiften sie sogar schwächer. [VERWORFEN — seit 31. Oktober 2026 stapelt Gift als Giftlast, GDD-05 Abschnitt 12]
 - **Aggro nach Größe** (Konzept, GDD-03): Große Wesen ignorieren den kleinen Blob, kleine greifen an. Schwärme kleiner Wesen sind also die typische Bedrohung.
 
 **Folgerung:** Heute sind Gruppen schwacher Gegner nur gefährlich, solange der Flat-Block unter ihrem Schaden liegt. Ein paar Chitin-Level machen ganze Schwärme fast harmlos. Wenn der Effekt gewollt ist, gibt es drei Möglichkeiten:
@@ -1021,4 +1023,4 @@ Sie beginnt erst 2 Minuten nach der letzten Übung des Skills.
 
 ---
 
-*Letzte Aktualisierung: v0.4 — Teil 6 ergänzt (Erfahrung statt Level umgesetzt: Kurve, Kapazität, Übertraining; Status-Hinweis oben aktualisiert, 30. Oktober 2026); davor Teil 5 ergänzt (Skill-Kapazität und Verlernen nach Überlegung des Entwicklers, Gruppen schwacher Gegner, Weltstufen); davor Teil 4 ergänzt (Überlegung Entwickler: nur Verhältnisse zählen; feste Level-Grenze vs. Max-Level-Erhöhung; Level abschaffen; Synthese unbegrenzte Übung / begrenzte Stärke); davor Teil 3 ergänzt (Vorschlag Entwickler: unendliches Leveln, lineare Skala, Anzeige in %); davor Teil 2 ergänzt (Wirkungskurven, Trefferstufen, Gift-Chance und Gift-Takt-Fehler, Skill-Fund-Wahrscheinlichkeiten, Geschick, Stapelregeln, Schwellen); davor: Datei neu angelegt: Analyse der Leveling-Modelle (proportionale Erfahrung, Level-Differenz-Multiplikator, Kurvenfamilien, Integer-Grenzen, Vergleich mit anderen Spielen), Vorschlag Zwei-Exponenten-Modell (Oktober 2026)*
+*Letzte Aktualisierung: v0.4 — Gift-Befunde in 12.3 und 19.2 als behoben markiert (Giftlast, 31. Oktober 2026); davor Teil 6 ergänzt (Erfahrung statt Level umgesetzt: Kurve, Kapazität, Übertraining; Status-Hinweis oben aktualisiert, 30. Oktober 2026); davor Teil 5 ergänzt (Skill-Kapazität und Verlernen nach Überlegung des Entwicklers, Gruppen schwacher Gegner, Weltstufen); davor Teil 4 ergänzt (Überlegung Entwickler: nur Verhältnisse zählen; feste Level-Grenze vs. Max-Level-Erhöhung; Level abschaffen; Synthese unbegrenzte Übung / begrenzte Stärke); davor Teil 3 ergänzt (Vorschlag Entwickler: unendliches Leveln, lineare Skala, Anzeige in %); davor Teil 2 ergänzt (Wirkungskurven, Trefferstufen, Gift-Chance und Gift-Takt-Fehler, Skill-Fund-Wahrscheinlichkeiten, Geschick, Stapelregeln, Schwellen); davor: Datei neu angelegt: Analyse der Leveling-Modelle (proportionale Erfahrung, Level-Differenz-Multiplikator, Kurvenfamilien, Integer-Grenzen, Vergleich mit anderen Spielen), Vorschlag Zwei-Exponenten-Modell (Oktober 2026)*

@@ -97,9 +97,15 @@ import {
   PLAYER_SPEED_PER_WORLD_RADIUS,
   toDisplayHp,
 } from "../data/balance.js";
+import { addVenomDose, processVenom, getVenomLoad, clearVenom } from "../systems/VenomSystem.js";
 import { generateTileset, TILE_SIZE } from "../world/TilesetGenerator.js";
 import { ChunkManager } from "../world/ChunkManager.js";
 import { CHUNK_PX, WORLD_CHUNKS_X, WORLD_CHUNKS_Y } from "../world/Chunk.js";
+
+// Gift-Farben: Dosis-Zahl beim Biss und Giftlast-Abschnitt der HP-Leisten
+// (Spieler-HUD: #hp-bar-venom in accognita.template.html)
+const VENOM_TEXT_COLOR = "#c070ff";
+const VENOM_BAR_COLOR  = 0xaa44ff;
 
 // ============================================================
 // BOOT SCENE
@@ -131,6 +137,9 @@ export class GameScene extends Phaser.Scene {
   private hpBarGraphics!: any;
   private skillBar!: SkillBarState;
   private playtimeAccumulator = 0; // Sekunden akkumulieren für player.playtimeSeconds
+  // Stufenlose Erfahrung (Gift) kommt jeden Frame in kleinen Beträgen —
+  // Werte, Wachstum und UI werden dann nur einmal pro Sekunde nachgeführt
+  private progressDirty = false;
 
   constructor() {
     super({ key: "GameScene" });
@@ -467,6 +476,7 @@ export class GameScene extends Phaser.Scene {
       instance.currentHp = def?.hp ?? 0;
       instance.isAggro = false;
       instance.statusEffects = [];
+      clearVenom(instance);
       instance.attackCooldownRemaining = 0;
       instance.isAlive = true;
       instance.respawnAt = undefined;
@@ -518,6 +528,10 @@ export class GameScene extends Phaser.Scene {
       this.gameState.player.playtimeSeconds += seconds;
       this.playtimeAccumulator %= 1000;
       this.tickProgression(seconds);
+      if (this.progressDirty) {
+        this.progressDirty = false;
+        this.afterProgressChange();
+      }
     }
     this.handleMovement();
     this.syncPlayerPosition();
@@ -604,7 +618,8 @@ export class GameScene extends Phaser.Scene {
       // Breite/Höhe/Abstand in Screen-Pixeln, umgerechnet in Weltkoordinaten via Zoom
       const def = ENTITY_MAP.get(instance.definitionId);
       const scaledMaxHp = def ? getScaledMaxHp(def, instance.bonusLevel ?? 0) : 0;
-      if (def && def.hp && (instance.currentHp < scaledMaxHp || instance.isAggro)) {
+      const venomLoad = getVenomLoad(instance);
+      if (def && def.hp && (instance.currentHp < scaledMaxHp || instance.isAggro || venomLoad > 0)) {
         const ratio = Math.max(0, instance.currentHp / scaledMaxHp);
         const zoom = this.cameras.main.zoom;
         const worldSize = def.worldSize ?? 5;
@@ -616,7 +631,13 @@ export class GameScene extends Phaser.Scene {
         this.hpBarGraphics.fillRect(bx, by, bw, bh);
         const color = ratio > 0.5 ? 0x44cc44 : ratio > 0.25 ? 0xddaa00 : 0xcc2222;
         this.hpBarGraphics.fillStyle(color, 1);
-        this.hpBarGraphics.fillRect(bx, by, Math.round(bw * ratio), bh);
+        this.hpBarGraphics.fillRect(bx, by, bw * ratio, bh);
+        // Giftlast: violetter Abschnitt am Ende — so viele HP kostet das Gift noch
+        if (venomLoad > 0) {
+          const venomRatio = Math.min(venomLoad, instance.currentHp) / scaledMaxHp;
+          this.hpBarGraphics.fillStyle(VENOM_BAR_COLOR, 1);
+          this.hpBarGraphics.fillRect(bx + bw * (ratio - venomRatio), by, bw * venomRatio, bh);
+        }
       }
     }
   }
@@ -676,6 +697,10 @@ export class GameScene extends Phaser.Scene {
           this.gameState.player.hp = Math.max(0, this.gameState.player.hp - result.damageDealt);
           for (const effect of result.statusApplied) {
             applyEffect(this.gameState.player, effect);
+          }
+          if (result.venomDose) {
+            addVenomDose(this.gameState.player, result.venomDose);
+            this.showVenomDose(px, py, result.venomDose);
           }
 
           // Chitin Armor: XP = durch Verteidigung absorbierter Schaden
@@ -794,6 +819,13 @@ export class GameScene extends Phaser.Scene {
     }
     removeExpiredEffects(this.gameState.player, now);
 
+    // Gift auf dem Spieler: stufenlos, keine Zahl (die kam beim Biss)
+    const playerVenom = processVenom(this.gameState.player, this.gameState.player.hp, delta);
+    if (playerVenom > 0) {
+      this.gameState.player.hp = Math.max(0, this.gameState.player.hp - playerVenom);
+      updateVitalsUI(this.gameState.player);
+    }
+
     // Entity-Effekte — processTicks erwartet { hp, maxHp } → Wrapper
     for (const instance of this.gameState.world.entities.values()) {
       if (!instance.isAlive) continue;
@@ -803,20 +835,14 @@ export class GameScene extends Phaser.Scene {
         hp: instance.currentHp,
         maxHp: def?.hp ?? 0,
       };
-      // Venom-XP: Schaden fälliger Venom-Ticks zählen (vor processTicks, da lastTickAt danach aktualisiert wird)
-      let venomXp = 0;
-      for (const effect of instance.statusEffects) {
-        if (effect.sourceSkillId === "venom" && effect.type === "dot"
-            && effect.tickIntervalMs > 0 && now - effect.lastTickAt >= effect.tickIntervalMs) {
-          venomXp += effect.damagePerTick;
-        }
-      }
-
-      const hpDelta = processTicks(wrapper, now);
+      // Gift (VenomSystem): stufenloser Abbau der Giftlast = Schaden
+      const venomDealt = processVenom(instance, instance.currentHp, delta);
+      const hpDelta = processTicks(wrapper, now) - venomDealt;
       if (hpDelta !== 0) {
         instance.currentHp = Math.max(0, instance.currentHp + hpDelta);
-        if (hpDelta < 0) {
-          this.showDamageNumber(instance.x, instance.y, -hpDelta, "#44ff88");
+        // Schadenszahl nur für getickte Effekte — Gift zeigte seine beim Biss
+        if (hpDelta + venomDealt < 0) {
+          this.showDamageNumber(instance.x, instance.y, -(hpDelta + venomDealt), "#44ff88");
         }
         if (instance.currentHp <= 0) {
           instance.isAlive  = false;
@@ -825,9 +851,12 @@ export class GameScene extends Phaser.Scene {
           if (def) addLog(`${def.icon} ${def.name} wurde vernichtet!`, "system");
         }
       }
-      // Venom: XP = Schaden der getickten Venom-DoTs (÷1000: milli-HP → XP)
-      if (venomXp > 0) {
-        this.afterXpGain(gainSkillXp(this.gameState.player, "venom", Math.round(venomXp / 1000), def?.level));
+      // Venom: XP = angerichteter Giftschaden, stufenlos jeden Frame (÷1000: milli-HP → XP).
+      // Gegner vergiften sich nicht gegenseitig — jede Giftlast hier stammt vom Blob.
+      if (venomDealt > 0) {
+        const gain = gainSkillXp(this.gameState.player, "venom", venomDealt / 1000, def?.level);
+        this.logProgressionEvents(gain.events);
+        this.progressDirty = true;
       }
       removeExpiredEffects(instance, now);
 
@@ -888,6 +917,12 @@ export class GameScene extends Phaser.Scene {
       if (e.kind === "rank_up") addLog(`⬆️ ${label} → ${e.rankName}!`, "levelup");
       else addLog(`💭 ${label} verlernt → ${e.rankName}`, "system");
     }
+  }
+
+  // Giftdosis einmal beim Einspritzen zeigen (src/data/venom.ts Abschnitt 5),
+  // leicht versetzt neben der Trefferzahl
+  private showVenomDose(x: number, y: number, dose: number) {
+    this.showDamageNumber(x + 14 / this.cameras.main.zoom, y, dose, VENOM_TEXT_COLOR);
   }
 
   // Zeigt eine Schadenszahl an der Position (x, y) in Weltkoordinaten.
@@ -1017,6 +1052,10 @@ export class GameScene extends Phaser.Scene {
         applyEffect(target, effect);
       }
       this.showDamageNumber(target.x, target.y, result.damageDealt, "#ffffff", result.hitGrade);
+      if (result.venomDose && target.currentHp > 0) {
+        addVenomDose(target, result.venomDose);
+        this.showVenomDose(target.x, target.y, result.venomDose);
+      }
 
       const def = ENTITY_MAP.get(target.definitionId);
 
@@ -1047,7 +1086,7 @@ export class GameScene extends Phaser.Scene {
       this.afterXpGain(gainSkillXp(this.gameState.player, skillId, Math.round(result.damageDealt / 1000), def?.level));
       // Superstrength: 1 XP pro Treffer, skaliert nach Entity-Level
       this.afterXpGain(gainSkillXp(this.gameState.player, "superstrength", 1, def?.level));
-      // Venom: XP kommt von den DoT-Ticks in processCombatEffects
+      // Venom: XP kommt stufenlos aus dem Giftschaden in processCombatEffects
     } else if (result.hitGrade === "miss") {
       // Verfehlt: kein Schaden, keine XP — das Ziel bemerkt den Angriff trotzdem
       target.isAggro = true;
@@ -1165,10 +1204,9 @@ function updateUI(state: GameState) {
   const cap = getCapacityInfo(p);
   const capPct = Math.round((cap.used / cap.capacity) * 100);
   setEl("ui-level", `Kap. ${capPct}%${cap.overstretch > 0 ? " ↑" : ""}`);
-  setEl("ui-hp", `${toDisplayHp(p.hp)}/${toDisplayHp(p.maxHp)}`);
+  updateVitalsUI(p);
   // MP abrunden: sonst stünde z.B. „3 MP vorhanden“, obwohl ein 3-MP-Skill nicht geht
   setEl("ui-mp", `${Math.floor(p.mp / 1000)}/${Math.floor(p.maxMp / 1000)}`);
-  setStyle("hp-bar-fill", "width", `${(p.hp / p.maxHp) * 100}%`);
   setStyle("mp-bar-fill", "width", `${(p.mp / p.maxMp) * 100}%`);
   setStyle("xp-bar-fill", "width", `${Math.min(100, capPct)}%`);
   // Überdehnt: Balken in Gold — Grenze zeitweise überschritten
@@ -1185,6 +1223,16 @@ function updateUI(state: GameState) {
   renderSkillList(state);
   renderCombinePanel(state);
   renderMaterials(state);
+}
+
+/** HP-Anzeige inkl. Giftlast — leicht genug für jeden Frame (stufenloses Gift) */
+function updateVitalsUI(p: GameState["player"]) {
+  setEl("ui-hp", `${toDisplayHp(p.hp)}/${toDisplayHp(p.maxHp)}`);
+  setStyle("hp-bar-fill", "width", `${(p.hp / p.maxHp) * 100}%`);
+  // Giftlast: violetter Abschnitt am Ende der HP — so viele HP kostet das Gift noch
+  const venom = Math.min(getVenomLoad(p), p.hp);
+  setStyle("hp-bar-venom", "left", `${((p.hp - venom) / p.maxHp) * 100}%`);
+  setStyle("hp-bar-venom", "width", `${(venom / p.maxHp) * 100}%`);
 }
 
 function renderSkillList(state: GameState) {

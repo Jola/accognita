@@ -161,22 +161,21 @@ export const BASE_SKILLS: SkillDefinition[] = [
     activation: "passive",
     learningEffort: 15,
     description:
-      "Passiv: Jeder Nahkampftreffer des Blobs hat eine Chance, dem Ziel Gift zu injizieren. " +
-      "Lv1: 30% Chance, 2 Schaden/s für 4s. Chance steigt mit dem Level immer langsamer (Lv5: 50%, Lv10: 60%), höchstens 100%. +0.5 Schaden/s pro Level.",
+      "Passiv: Jeder Nahkampftreffer des Blobs hat eine Chance, dem Ziel Gift einzuspritzen. " +
+      "Gift stapelt: Jede Dosis kommt auf die Giftlast des Ziels, der Körper baut sie mit 2 s " +
+      "Halbwertszeit ab — dieser Abbau ist der Schaden. Anfangs 30% Chance und 8 HP je Dosis; " +
+      "die Chance steigt mit der Übung immer langsamer (höchstens 100%), die Dosis um 2 HP je Übungsgrad.",
     effects: [
       {
         trigger: "on_hit_enemy",
-        effectType: "apply_status",
+        effectType: "inject_venom",
         formula: { base: 0.30, perLevel: 0.10, curve: "sqrt", max: 1.0 },
+        venomDose: { base: 8, perLevel: 2 },
         reasoning:
-          "Giftdrüsen injizieren Gift bei Treffer. Sqrt-Kurve: Chance steigt anfangs schnell, " +
-          "dann immer langsamer (Lv5 50%, Lv10 60%, Lv20 74%); bei 100% gedeckelt (ab Lv50).",
-        statusConfig: {
-          type: "dot",
-          durationMs: 4000,
-          tickIntervalMs: 1000,
-          damageFormula: { base: 2, perLevel: 0.5 },
-        },
+          "Giftdrüsen spritzen bei Treffer Gift ein, aber nicht bei jedem Biss (auch Schlangen beißen " +
+          "oft trocken). Sqrt-Kurve: Chance steigt anfangs schnell, dann immer langsamer " +
+          "(u5 50%, u10 60%, u20 74%); bei 100% gedeckelt (ab u50). Dosis = Gesamtschaden des " +
+          "früheren 4-s-Gifts (2 + 0,5·(u−1) HP je Tick × 4). Gift stapelt — Regeln: src/data/venom.ts.",
       },
     ],
   },

@@ -52,6 +52,7 @@ export interface PlayerState {
 
   // Kampfzustand (v0.3)
   statusEffects: StatusEffect[];        // Aktive Effekte auf dem Spieler
+  venomLoad?: number;                   // Giftlast in milli-HP (VenomSystem); fehlt = 0
   skillCooldowns: Map<string, number>;  // skillId → expiresAt-Timestamp (ms)
   spawnX: number;                       // Respawn-Punkt X (Checkpoint)
   spawnY: number;                       // Respawn-Punkt Y (Checkpoint)

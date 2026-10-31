@@ -119,7 +119,7 @@ Passive Skills werden als permanente Effekte (`durationMs: -1`) geführt.
 
 | Effekt-Typ | Wirkung | Beispiel |
 |-----------|---------|---------|
-| `dot` (Damage over Time) | `damagePerTick` / `tickIntervalMs` | Venom-Skill |
+| `dot` (Damage over Time) | `damagePerTick` / `tickIntervalMs` | Venom-Skill [VERWORFEN — Gift läuft seit v0.4 über die Giftlast, [GDD-05 Abschnitt 12](GDD-05-Kampfmathematik.md)] |
 | `hot` (Heal over Time) | `healPerTick` / `tickIntervalMs` | Photosynthesis |
 | `stat_mod` | `speedMultiplier`, `damageBonus`, `damageMult`, `damageReduction` | Chitin Armor, Superstrength |
 | `aura` | `reflectDamage` bei jedem Treffer | Hemolymph |
@@ -137,10 +137,13 @@ Seit v0.4 wirken diese drei deklarativ über `effects[]` und die Schadenspipelin
 | Photosynthesis | `photosynthesis` | hot: `healPerTick = 0.5×level` alle 1 s |
 
 ### Venom (Giftspinne → Spieler, oder Venom-Skill → Entity)
+
+> **Seit 31. Oktober 2026:** Gift stapelt als Giftlast und wird stufenlos mit 2 s Halbwertszeit abgebaut — Dosis `8 + 2 × (u − 1)` HP je Biss, Regeln und Begründungen in [GDD-05 Abschnitt 12](GDD-05-Kampfmathematik.md) und [src/data/venom.ts](../src/data/venom.ts). Die Chance unten gilt unverändert; Schaden/Tick, Dauer und Tick-Intervall sind [VERWORFEN].
+
 ```
-Schaden/Tick = 2 + 0.5 × (level - 1)
-Dauer        = 4 Sekunden
-Tick-Intervall = 1 Sekunde
+Schaden/Tick = 2 + 0.5 × (level - 1)        [VERWORFEN — Dosis = Schaden/Tick × 4]
+Dauer        = 4 Sekunden                   [VERWORFEN]
+Tick-Intervall = 1 Sekunde                  [VERWORFEN — stufenlos]
 Chance (poison_spider) = 40 %                          [VERWORFEN — Gegner nutzen dieselbe Formel wie der Spieler]
 Chance (Venom-Skill)   = 30 % + 5 % × level           [VERWORFEN — überschritt ab Lv15 100 %]
 Chance (Venom-Skill)   = min(100 %, 30 % + 10 % × √(level − 1))
@@ -411,4 +414,4 @@ scenes/GameScene.ts                ← verdrahtet alle Systeme, Phaser-Rendering
 
 ---
 
-*Letzte Aktualisierung: 2026-10-31 — Hinweis „Übungsgrad statt Skill-Level“ ergänzt, HP/MP wachsen mit dem Wachstum statt pro Level; 2026-10-25 — Größen- und levelabhängiges Aggro als Konzept (Abschnitt 4); 2026-10-24 — Geschick ohne Beitrag des eingesetzten Skills; Begründungen ergänzt bzw. als offen markiert, veraltete Werte (Spieler-Wachstum, Entity-Tabelle, Passiv-Effekte) als VERWORFEN gekennzeichnet; Treffer-Stufen und Geschick; Venom-Chance mit 100-%-Deckel*
+*Letzte Aktualisierung: 2026-10-31 — Venom-DoT durch Giftlast ersetzt (Verweis auf GDD-05 Abschnitt 12); Hinweis „Übungsgrad statt Skill-Level“ ergänzt, HP/MP wachsen mit dem Wachstum statt pro Level; 2026-10-25 — Größen- und levelabhängiges Aggro als Konzept (Abschnitt 4); 2026-10-24 — Geschick ohne Beitrag des eingesetzten Skills; Begründungen ergänzt bzw. als offen markiert, veraltete Werte (Spieler-Wachstum, Entity-Tabelle, Passiv-Effekte) als VERWORFEN gekennzeichnet; Treffer-Stufen und Geschick; Venom-Chance mit 100-%-Deckel*

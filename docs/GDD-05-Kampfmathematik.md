@@ -251,6 +251,7 @@ interface LinearFormula {
 | `heal_flat` | Heilt X HP | HP-Punkte |
 | `heal_percent` | Heilt X% von max HP | 0.0–1.0 |
 | `apply_status` | Appliziert Status-Effekt (DoT, HoT, Stun...) | Dauer/Intensität |
+| `inject_venom` | Spritzt Gift ein: Dosis kommt auf die Giftlast des Ziels (Abschnitt 12). Feld `venomDose` = Dosis in HP | Chance 0.0–1.0 |
 | `reflect_damage` | Gibt X% des Schadens zurück an Angreifer | 0.0–1.0 |
 | `damage_mult` | Multipliziert ausgehenden Schaden | Faktor |
 | `speed_mod` | Verändert Bewegungsgeschwindigkeit | Faktor |
@@ -549,6 +550,75 @@ src/
 
 ---
 
+## 12. Gift: Giftlast und stufenloser Abbau (implementiert)
+
+Stellschrauben mit Begründungen: [src/data/venom.ts](../src/data/venom.ts), Rechenregeln: [src/systems/VenomSystem.ts](../src/systems/VenomSystem.ts) (gleiche Abschnittsnummern).
+
+**Vorgabe (Entwickler):** Gift stapelt. Die Begründung soll logisch sein und sich an der Natur orientieren.
+**Vorgabe (Entwickler):** Das gesamte Gift-Feature steckt isoliert in einem eigenen Modul.
+
+### 12.1 Dosis je Biss
+
+Jeder Treffer eines Wesens mit Venom würfelt die Bisschance (unverändert: `min(100 %, 30 % + 10 % × √(u − 1))`). Gelingt sie, wird eine **Dosis** eingespritzt:
+
+```
+Dosis = 8 + 2 × (u − 1) HP        u=1: 8 · Giftspinne u=3: 12 · Schlange u=15: 36
+```
+
+Deklaration in [skills.ts](../src/data/skills.ts): Effekt `inject_venom`, `formula` = Chance, `venomDose` = Dosis.
+
+**Begründung (Vorschlag Claude, übernommen):**
+- Gift ist eine Substanz — zwei Bisse bringen doppelt so viel Gift in den Körper.
+- Die Dosis entspricht dem Gesamtschaden des früheren 4-s-Gifts (`(2 + 0,5·(u−1)) × 4`). Ein einzelner Biss kostet also so viel wie vorher.
+- Die Bisschance bleibt: Auch Giftschlangen beißen oft „trocken“.
+- Die Körpergröße steckt schon in den HP: Giftigkeit hängt an der Dosis pro Körpermasse (LD50 in mg/kg). 12 HP töten eine Ameise (8 HP), kosten einen Drachen (500 HP) nur 2,4 %.
+
+### 12.2 Giftlast (Stapeln)
+
+Jedes Ziel hat **eine** Giftlast L (milli-HP). Jede Dosis wird addiert. Stapeln erzeugt keinen Extra-Schaden — jede Dosis richtet genau ihren Betrag an.
+
+**Begründung (Vorschlag Claude, übernommen):** Drei Giftspinnen machen dreimal so viel Giftschaden wie eine; Schwärme giftiger Gegner bleiben gefährlich (GDD-08 Abschnitt 19.2, Weg 3). Die Giftlast ersetzt das Auffrischen eines 4-s-Effekts und behebt damit beide Fehler aus [GDD-08 Abschnitt 12.3](GDD-08-Progressionsmathematik.md) (Takt-Reset, Überschreiben durch schwächeres Gift).
+
+### 12.3 Stufenloser Abbau mit Halbwertszeit
+
+```
+L(t) = L₀ · 2^(−t / T)          T = 2 s
+Schadensrate = λ · L            λ = ln 2 / T ≈ 0,347 / s
+pro Frame:  L_neu = L · 2^(−dt / T),   Schaden = L − L_neu
+```
+
+**Vorgabe (Entwickler):** Stufenlos — in jedem Frame wird der fällige Anteil abgezogen, keine Ticks. Das Tempo entspricht einer Halbwertszeit von 2 s.
+**Begründung (Vorschlag Claude, übernommen):** Ein Körper baut Fremdstoffe meist proportional zur Menge ab (feste Halbwertszeit, Standardregel der Pharmakologie); viele Toxine werden verbraucht, indem sie sich an Gewebe binden — Abbau = Schaden. Die Rechnung ist exakt und bildratenunabhängig.
+
+**Erneute Vergiftung:** Die neue Dosis wird zur Restlast addiert; danach läuft der Abbau einfach mit der Summe weiter. Der Körper „merkt“ sich nicht, welche Dosis alt ist — bei reiner Halbwertszeit ist das genau dasselbe, als würde jede Dosis für sich abgebaut. Beispiel: 20 HP Gift, nach 2 s sind 10 HP abgebaut (10 übrig); ein zweiter Biss mit 10 HP ergibt 20 HP Last, die wie eine frische 20-HP-Vergiftung weiterläuft. Gesamtschaden 30 HP, leer nach 10,5 s statt 8,5 s.
+
+### 12.4 Ende: Mindestrate
+
+```
+Rate = max(λ · L, 1 HP/s)  bis L = 0
+Dauer bis leer = T · log₂(L₀ / 2,9 HP) + 2,9 s
+8 HP → 5,8 s · 12 HP → 7,0 s · 36 HP → 10,2 s · 100 HP → 13,1 s
+```
+
+Eine reine Halbwertszeit endet nie. Unter ≈ 2,9 HP Restlast (wo λ·L unter 1 HP/s fällt) fließt der Rest gleichmäßig mit 1 HP/s ab und endet exakt bei 0.
+**Begründung (Vorschlag Claude, übernommen):** Jede Dosis macht genau ihren vollen Schaden, das Ende ist eindeutig. Vor allem eine Spielregel; aus der Natur nur schwach begründbar (gebundenes Toxin wirkt noch zu Ende). Alternative Wirkschwelle (Rest unter ~1 HP verfällt ohne Schaden) — endet fast gleich, verliert bis zu 1 HP je Vergiftung.
+
+### 12.5 Erfahrung und Anzeige
+
+- **Vorgabe (Entwickler):** Venom-Erfahrung wird stufenlos mitgerechnet — XP = Giftschaden, den die Giftlast eines Gegners in jedem Frame tatsächlich anrichtet (kein Überschuss über den Tod hinaus; stirbt das Ziel, verfällt der Rest). Werte, Wachstum und Skill-Liste werden einmal pro Sekunde nachgeführt.
+- **Vorgabe (Entwickler):** Die Schadenszahl erscheint einmal beim Einspritzen (= Dosis, violett neben der Trefferzahl), nicht pro Tick oder Sekunde.
+- **Begründung (Vorschlag Claude, übernommen):** Die HP-Leisten (HUD und Gegner) zeigen die Giftlast als violetten Abschnitt am Ende der HP — so viele HP wird das Gift noch kosten.
+- Gegner vergiften nur den Blob, Gegner untereinander nicht (Entity-Leveling ohne Gift). Tod, Respawn, Checkpoint und Laden leeren die Giftlast.
+
+### 12.6 Offen (Vorschläge Claude, nicht entschieden)
+
+- **Sättigung:** Ein Körper hat nur begrenzt viele Angriffspunkte für ein Toxin; mehr Gift würde dann nicht schneller, nur länger wirken. Vorerst weggelassen.
+- **Mehrere Giftarten:** eigene Giftlast je Toxin-Art (z. B. Nerven- und Blutgift) — Gift-Cocktails wie bei Schlangen.
+- **Körpergröße:** Kleine Körper haben einen schnelleren Stoffwechsel (Kleibers Gesetz) → kürzere Halbwertszeit.
+- **Giftresistenz:** Ein Skill, der einen Teil der Dosis ohne Schaden abbaut.
+
+---
+
 ## Siehe auch
 
 | Dokument / Datei | Relevanz |
@@ -565,7 +635,8 @@ src/
 | [src/systems/CombatSystem.ts](../src/systems/CombatSystem.ts) | Aktuelle Kampflogik — wird zu DamageSystem.ts + CombatSystem.ts aufgespalten |
 | [src/systems/StatusEffectSystem.ts](../src/systems/StatusEffectSystem.ts) | Aktuelle Effektverarbeitung — wird zu SkillEffectSystem.ts erweitert |
 | [src/systems/SkillEffects.ts](../src/systems/SkillEffects.ts) | Aktuelle Effekt-Formeln — migrieren nach DamageSystem.ts |
+| [src/data/venom.ts](../src/data/venom.ts) · [src/systems/VenomSystem.ts](../src/systems/VenomSystem.ts) | Gift: Stellschrauben und Rechenregeln (Abschnitt 12) |
 
 ---
 
-*Letzte Aktualisierung: v0.4 — Hinweis Übungsgrad statt Level in Abschnitt 5.4 (31. Oktober 2026); davor implementiert — DamageSystem (8-stufige Pipeline), SkillEffectSystem (deklarative Effekte), DamageType-System, Skill-Effekt-Deklaration für chitin_armor/superstrength/hemolymph/venom (Oktober 2026); LinearFormula.max, Treffer-Stufe 1b, dexterity; Milli-Einheiten (3.4) und Begründungen der Caps ergänzt; Mindestschaden 1 HP vor Effekten, HP-Anzeige immer aufgerundet; Begründungen für Milli-HP und Mindestschaden vom Entwickler; Geschick ohne eigenen Skill-Beitrag*
+*Letzte Aktualisierung: v0.4 — Abschnitt 12 Gift: Giftlast, stufenloser Abbau mit Halbwertszeit, Mindestrate, Effekt-Typ `inject_venom` (31. Oktober 2026); davor Hinweis Übungsgrad statt Level in Abschnitt 5.4 (31. Oktober 2026); davor implementiert — DamageSystem (8-stufige Pipeline), SkillEffectSystem (deklarative Effekte), DamageType-System, Skill-Effekt-Deklaration für chitin_armor/superstrength/hemolymph/venom (Oktober 2026); LinearFormula.max, Treffer-Stufe 1b, dexterity; Milli-Einheiten (3.4) und Begründungen der Caps ergänzt; Mindestschaden 1 HP vor Effekten, HP-Anzeige immer aufgerundet; Begründungen für Milli-HP und Mindestschaden vom Entwickler; Geschick ohne eigenen Skill-Beitrag*

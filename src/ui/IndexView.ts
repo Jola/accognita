@@ -19,6 +19,8 @@ import { SKILL_RANKS } from "../data/progression.js";
 import { xpForPractice, getEntitySkillPractice, rankNameForPractice } from "../systems/ProgressionSystem.js";
 import { evalFormula, resolveDefenderEffects, resolveAttackerEffects, resolveDexterity } from "../systems/SkillEffectSystem.js";
 import { calcSkillAttackDamage, calcJumpDistance, calcPhotosynthesisHeal } from "../systems/SkillEffects.js";
+import { venomDurationMs } from "../systems/VenomSystem.js";
+import { VENOM_HALF_LIFE_MS } from "../data/venom.js";
 import {
   getEntityBaseDamage, getEntityRangedDamage, getScaledMaxHp, getScaledDamage, getScaledSpeed,
 } from "../systems/EntityLevelingSystem.js";
@@ -40,7 +42,7 @@ const TRIGGER_DE: Record<string, string> = {
 };
 const EFFECT_DE: Record<EffectType, string> = {
   deal_damage: "Schaden", flat_block: "Flat-Block", percent_reduce: "%-Reduktion", weakness: "Schwäche",
-  heal_flat: "Heilung", heal_percent: "Heilung %", apply_status: "Status-Chance", reflect_damage: "Rückschlag",
+  heal_flat: "Heilung", heal_percent: "Heilung %", apply_status: "Status-Chance", inject_venom: "Gift-Chance", reflect_damage: "Rückschlag",
   damage_mult: "Schadens-Multiplikator", speed_mod: "Tempo-Multiplikator", grant_penetration: "Penetration",
   dexterity: "Geschick",
 };
@@ -65,7 +67,7 @@ const seconds = (ms?: number) => (ms === undefined ? "—" : `${num(ms / 1000)} 
 const orDash = (v: unknown) => (v === undefined || v === null ? "—" : String(v));
 
 const ABSOLUTE_EFFECTS: EffectType[] = ["deal_damage", "flat_block", "heal_flat", "reflect_damage", "grant_penetration"];
-const PERCENT_EFFECTS: EffectType[] = ["percent_reduce", "apply_status", "heal_percent"];
+const PERCENT_EFFECTS: EffectType[] = ["percent_reduce", "apply_status", "inject_venom", "heal_percent"];
 
 function formatEffectValue(type: EffectType, value: number): string {
   if (ABSOLUTE_EFFECTS.includes(type)) return `${num(value)} HP`;
@@ -237,6 +239,12 @@ function skillDetail(s: SkillDefinition): string {
       if (cfg.damageFormula) rows.push(["Schaden/Tick", LEVELS.map((l) => `${num(evalFormula(cfg.damageFormula!, l))} HP`)]);
       if (cfg.healFormula) rows.push(["Heilung/Tick", LEVELS.map((l) => `${num(evalFormula(cfg.healFormula!, l))} HP`)]);
     }
+    if (e.venomDose) {
+      const doseAt = (l: number) => evalFormula(e.venomDose!, l);
+      cfgText = ` · Dosis ${formatFormula(e.venomDose)} HP, stapelt, Halbwertszeit ${seconds(VENOM_HALF_LIFE_MS)}`;
+      rows.push(["Dosis", LEVELS.map((l) => `${num(doseAt(l))} HP`)]);
+      rows.push(["abgebaut nach", LEVELS.map((l) => seconds(venomDurationMs(doseAt(l) * MILLI)))]);
+    }
     const cond = formatCondition(e);
     return `<div class="idx-effect">
       <div><b>${EFFECT_DE[e.effectType]}</b> · ${TRIGGER_DE[e.trigger]}${cond ? ` · ${cond}` : ""}</div>
@@ -324,7 +332,13 @@ function entityDetail(e: EntityDefinition): string {
   for (const id of skillIds) {
     const s = ALL_SKILLS.get(id);
     for (const x of s?.effects ?? []) {
-      if (x.trigger !== "on_hit_enemy" || x.effectType !== "apply_status" || !x.statusConfig?.damageFormula) continue;
+      if (x.trigger !== "on_hit_enemy") continue;
+      if (x.effectType === "inject_venom" && x.venomDose) {
+        const dose = evalFormula(x.venomDose, skillLevels[id]);
+        combat.push(`<b>Bei Treffer (${s!.name}):</b> ${pct(evalFormula(x.formula, skillLevels[id]))} Chance, ` +
+          `${num(dose)} HP Gift (stapelt, abgebaut nach ${seconds(venomDurationMs(dose * MILLI))})`);
+      }
+      if (x.effectType !== "apply_status" || !x.statusConfig?.damageFormula) continue;
       combat.push(`<b>Bei Treffer (${s!.name}):</b> ${pct(evalFormula(x.formula, skillLevels[id]))} Chance, ` +
         `${num(evalFormula(x.statusConfig.damageFormula, skillLevels[id]))} HP/Tick für ${seconds(x.statusConfig.durationMs)}`);
     }

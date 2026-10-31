@@ -45,6 +45,8 @@
     .bar { width:clamp(36px,7vw,72px); height:5px; background:#1a2030; border-radius:3px; overflow:hidden; }
     .bar-fill { height:100%; border-radius:3px; transition:width .3s; }
     .bar-hp  .bar-fill { background:linear-gradient(90deg,var(--red),#ff8866); }
+    .bar-hp { position:relative; }
+    .bar-hp .bar-venom { position:absolute; top:0; left:0; width:0; border-radius:0 3px 3px 0; background:#aa44ff; transition:left .3s, width .3s; }
     .bar-mp  .bar-fill { background:linear-gradient(90deg,var(--accent2),#66aaff); }
     .bar-exp .bar-fill { background:linear-gradient(90deg,var(--gold),#ffe880); }
 
@@ -376,7 +378,7 @@
       </div>
       <div class="hud-stat"><span class="lbl">HP</span>
         <div class="bar-wrap">
-          <div class="bar bar-hp"><div class="bar-fill" id="hp-bar-fill" style="width:100%"></div></div>
+          <div class="bar bar-hp"><div class="bar-fill" id="hp-bar-fill" style="width:100%"></div><div class="bar-fill bar-venom" id="hp-bar-venom"></div></div>
           <span class="val" id="ui-hp" style="font-size:.62rem">80/80</span>
         </div>
       </div>

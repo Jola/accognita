@@ -54,6 +54,7 @@ export type EffectType =
   | "heal_flat"          // Heilt X HP (formula: HP)
   | "heal_percent"       // Heilt X% max HP (formula: 0.0–1.0)
   | "apply_status"       // Appliziert Status-Effekt; formula = Anwendungschance
+  | "inject_venom"       // Spritzt Gift ein (Giftlast, VenomSystem); formula = Chance, venomDose = Dosis
   | "reflect_damage"     // Gibt Schaden zurück (formula: HP)
   | "damage_mult"        // Multiplikativer Schadensbonus (formula: Faktor)
   | "speed_mod"          // Geschwindigkeits-Modifikator (formula: Faktor)
@@ -107,6 +108,7 @@ export interface SkillEffect {
   formula: LinearFormula;
   damageType?: DamageType;      // Welchen Schadenstyp betrifft der Effekt
   statusConfig?: StatusConfig;  // Nur für apply_status-Effekte
+  venomDose?: LinearFormula;    // Nur für inject_venom: Giftdosis je Biss in HP (src/data/venom.ts)
   reasoning: string;            // Pflichtfeld — Warum verhält sich der Effekt so?
 }
 

@@ -106,6 +106,7 @@ export interface EntityInstance {
   respawnAt?: number;       // Timestamp wenn absorbiert
   isAggro: boolean;         // Entity ist im Kampfmodus
   statusEffects: StatusEffect[];       // Aktive Effekte auf dieser Entity
+  venomLoad?: number;                  // Giftlast in milli-HP (VenomSystem); fehlt = 0
   attackCooldownRemaining: number;     // ms bis zum nächsten Angriff
   chunkKey?: string;        // "cx,cy" — welchem Chunk diese Entity gehört
 

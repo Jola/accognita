@@ -126,6 +126,7 @@ export interface AttackResult {
   message: string;
   reflectDamage?: number;              // milli-HP: Rückschlag-Schaden an den Angreifer (z.B. Hemolymph)
   absorbedDamage?: number;             // milli-HP: Schaden der durch Verteidigung aufgefangen wurde
+  venomDose?: number;                  // milli-HP: eingespritzte Giftdosis (VenomSystem), 0/fehlt = kein Gift
 }
 
 // -----------------------------------------------------------

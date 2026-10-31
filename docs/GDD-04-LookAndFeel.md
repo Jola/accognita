@@ -172,6 +172,7 @@ Ein einziges Menü für alle Bildschirmgrößen und Ausrichtungen ([src/ui/GameM
 - Responsive Schriftgrößen (`clamp()`) — lesbar auf kleinen Screens
 - ~~**Level**: Zahl, direkt sichtbar~~ [VERWORFEN] → **KAP**: belegte Skill-Kapazität in Prozent; „↑“ und goldener Balken bei Überdehnung ([GDD-02 Abschnitt 8.4/8.5](GDD-02-Skillsystem.md#84-kapazität-verlernen-wiedererlernen)). Es gibt kein Charakter-Level mehr.
 - **HP-Bar**: Rot-Gradient, immer sichtbar
+- **Giftlast**: violetter Abschnitt am Ende der HP-Bar (HUD und Gegner-HP-Balken) — so viele HP kostet das Gift noch; die Giftdosis erscheint einmal beim Biss als violette Zahl ([GDD-05 Abschnitt 12](GDD-05-Kampfmathematik.md))
 - **MP-Bar**: Lila-Blau-Gradient, immer sichtbar
 - ~~**EXP-Bar**: Gold-Gradient~~ [VERWORFEN] → der Balken unter KAP zeigt die Kapazität
 - **Skill-Count**: Anzahl entdeckter Skills
@@ -323,4 +324,4 @@ Kein lokales Node.js, npm oder Terminal auf Jörns Seite nötig.
 
 ---
 
-*Letzte Aktualisierung: v0.4 — Anzeige an Erfahrung statt Level angepasst: HUD zeigt Kapazität (KAP), Skills-Tab und INDEX nach Rängen, Rang-Aufstieg statt Level-Up, Spielstand-Format 3, Desktop-Steuerung (Tastatur/Maus) als verworfen markiert (31. Oktober 2026); davor Dev-Container und `npm run dev` für lokale Entwicklung; Begründungen für Spielmenü, Vollbild-Regel, Version und Spielstand-Migration ergänzt; Spielmenü als pausierendes Vollbild-Overlay mit INDEX-Tab (Oktober 2026)*
+*Letzte Aktualisierung: v0.4 — Giftlast in der HP-Bar und Giftdosis-Zahl (31. Oktober 2026); davor Anzeige an Erfahrung statt Level angepasst: HUD zeigt Kapazität (KAP), Skills-Tab und INDEX nach Rängen, Rang-Aufstieg statt Level-Up, Spielstand-Format 3, Desktop-Steuerung (Tastatur/Maus) als verworfen markiert (31. Oktober 2026); davor Dev-Container und `npm run dev` für lokale Entwicklung; Begründungen für Spielmenü, Vollbild-Regel, Version und Spielstand-Migration ergänzt; Spielmenü als pausierendes Vollbild-Overlay mit INDEX-Tab (Oktober 2026)*

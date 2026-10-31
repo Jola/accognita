@@ -17,6 +17,7 @@ import { ENTITY_MAP } from "../data/entities";
 import { discoverSkill, gainCoreAbilityXp } from "./SkillSystem";
 import { getCorePractice } from "./ProgressionSystem";
 import { addMaterial } from "./MaterialSystem";
+import { clearVenom } from "./VenomSystem";
 import type { SkillDiscoveryResult, DiscoveryMethod } from "../types/Skill";
 import { calcSuccessChance, ANALYZE_CHANCE_MODIFIER } from "../data/balance";
 
@@ -203,6 +204,7 @@ export function processRespawns(world: WorldState): string[] {
         instance.respawnAt = undefined;
         instance.currentHp = def.hp ?? 0;
         instance.statusEffects = [];
+        clearVenom(instance);
         instance.attackCooldownRemaining = 0;
         // Entity-Leveling: Bonus geht beim Respawn verloren (GDD-03 Abschnitt 9)
         instance.bonusLevel = 0;
