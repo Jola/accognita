@@ -113,6 +113,12 @@ export function createSkillBar(
     slot.addEventListener("pointercancel", () => {
       if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
     });
+
+    // Mobile: Nach dem Loslassen schiebt der Browser einen „click“ nach und
+    // ermittelt das Ziel neu — dann liegt dort schon das gerade geöffnete
+    // Skill-Menü. Der Klick traf den Hintergrund (Menü zu) oder „▶ Einsetzen“
+    // (Skill ausgelöst). preventDefault auf touchend unterdrückt diesen Klick.
+    slot.addEventListener("touchend", (e) => e.preventDefault(), { passive: false });
   }
 
   function update() {

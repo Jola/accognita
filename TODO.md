@@ -41,6 +41,8 @@ Format:
 
 ## Erledigt
 
+- `[BUG]` **Skill-Leiste: Menü ging sofort wieder zu, Skill wurde ausgelöst** — auf dem Handy schiebt der Browser nach dem Tippen einen Klick nach und sucht das Ziel neu; dort lag schon das gerade geöffnete Skill-Menü (Hintergrund → Menü zu, „▶ Einsetzen“ → Skill ausgelöst). Fix: `touchend` der Slots unterdrückt den Klick, das Menü verwirft Klicks in den ersten 400 ms (31. Oktober 2026).
+
 - `[BUG]` **Gift-Auffrischen setzte den Tick-Takt zurück** und **schwächeres Gift überschrieb stärkeres** (GDD-08 Abschnitt 12.3) — behoben durch gestapeltes Gift: Giftlast mit stufenlosem Abbau, kein Auffrischen mehr (GDD-05 Abschnitt 12, 31. Oktober 2026).
 
 - `[BUG]` **Bonus-Level überlebte den Respawn** — `processRespawns` und das Laden setzten `bonusLevel`/`skillWins` nicht zurück, obwohl der Bonus laut GDD-03 Abschnitt 9 beim Respawn verloren geht; die HP-Leiste stand dann nicht auf voll. Fix: beide setzen den Bonus jetzt zurück (31. Oktober 2026).

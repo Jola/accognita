@@ -84,6 +84,18 @@ export function createSkillMenu(skillBar: SkillBarState): {
   overlay.classList.add("hidden");
   document.body.appendChild(overlay);
 
+  // Klicks direkt nach dem Öffnen verwerfen (Capture-Phase, gilt für alle
+  // Knöpfe im Menü): Ein nachgeschobener Klick vom Tippen auf die Skill-Leiste
+  // darf das Menü nicht sofort schließen oder einen Skill auslösen.
+  const OPEN_GUARD_MS = 400;
+  let openedAt = 0;
+  overlay.addEventListener("click", (e) => {
+    if (performance.now() - openedAt < OPEN_GUARD_MS) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  }, true);
+
   // Schließen per Tap außerhalb einer Karte
   overlay.addEventListener("click", (e) => {
     if (e.target === overlay) close();
@@ -172,6 +184,7 @@ export function createSkillMenu(skillBar: SkillBarState): {
   }
 
   function open() {
+    openedAt = performance.now();
     render();
     overlay.classList.remove("hidden");
     const scene = (window as any).gameScene;
