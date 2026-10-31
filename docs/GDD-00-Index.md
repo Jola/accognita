@@ -60,7 +60,7 @@ Diese Datei ist der **Einstiegspunkt für Menschen und KI-Systeme**, die mit den
 | **[src/systems/SkillEffects.ts](../src/systems/SkillEffects.ts)** | Skill-Formeln für Angriffsschaden, Sprungweite, Photosynthese (enthält ungenutzte Alt-Formeln, siehe TODO.md) | Bei Fragen zu Skill-Werten |
 | **[src/systems/HitSystem.ts](../src/systems/HitSystem.ts)** | Treffer-Stufen (verfehlt bis kritisch): Wahrscheinlichkeiten aus Skill-Profil, Level und Geschick; Würfeln | Bei Fragen zu Treffer-Chancen |
 | **[src/systems/AiSystem.ts](../src/systems/AiSystem.ts)** | Aggro, Verfolgung, Angriffs-Trigger (kein Phaser) | Bei KI-Fragen |
-| **[src/systems/StatusEffectSystem.ts](../src/systems/StatusEffectSystem.ts)** | DoT/HoT/Aura, passive Skills | Bei Status-Effekt-Fragen |
+| **[src/systems/StatusEffectSystem.ts](../src/systems/StatusEffectSystem.ts)** | DoT/HoT/Aura, stufenlose Regeneration, passive Skills | Bei Status-Effekt-Fragen |
 | **[src/data/venom.ts](../src/data/venom.ts)** | Stellschrauben des Gifts mit Begründungen: Dosis, Giftlast, Halbwertszeit, Mindestrate | Bei Fragen zum Gift |
 | **[src/systems/VenomSystem.ts](../src/systems/VenomSystem.ts)** | Gift isoliert: Dosis würfeln, Giftlast, stufenloser Abbau | Bei Fragen zum Gift |
 | **[src/systems/MaterialSystem.ts](../src/systems/MaterialSystem.ts)** | Loot-Drop-Auflösung, Material-Inventar | Beim Erweitern des Loot-Systems |
@@ -220,4 +220,4 @@ Wenn du als KI-Assistent an diesem Projekt arbeitest, gelten folgende Regeln:
 
 ---
 
-*Letzte Aktualisierung: v0.4 — venom.ts und VenomSystem.ts ergänzt (31. Oktober 2026); davor fehlende Code-Dateien in der Tabelle ergänzt (progression.ts, version.ts, ProgressionSystem, EntityLevelingSystem, DamageSystem, SkillEffectSystem, SkillEffects, GameMenu, IndexView) (31. Oktober 2026); davor Erfahrung statt Level umgesetzt (GDD-02 Abschnitt 8, GDD-08 Teil 6), Backlog aktualisiert (30. Oktober 2026); GDD-08 (Progressionsmathematik, Teil 1–5) ergänzt; GDD-07 (Bestiarium-Entwurf) ergänzt; Begründungspflicht (Abschnitt 5 und 7) eingeführt; HitSystem (Treffer-Stufen) ergänzt; GDD-06 verworfen (Referenz jetzt als INDEX-Tab im Spiel), SaveSystem-Migration vermerkt (Oktober 2026)*
+*Letzte Aktualisierung: v0.4 — stufenlose Regeneration (StatusEffectSystem) vermerkt; venom.ts und VenomSystem.ts ergänzt (31. Oktober 2026); davor fehlende Code-Dateien in der Tabelle ergänzt (progression.ts, version.ts, ProgressionSystem, EntityLevelingSystem, DamageSystem, SkillEffectSystem, SkillEffects, GameMenu, IndexView) (31. Oktober 2026); davor Erfahrung statt Level umgesetzt (GDD-02 Abschnitt 8, GDD-08 Teil 6), Backlog aktualisiert (30. Oktober 2026); GDD-08 (Progressionsmathematik, Teil 1–5) ergänzt; GDD-07 (Bestiarium-Entwurf) ergänzt; Begründungspflicht (Abschnitt 5 und 7) eingeführt; HitSystem (Treffer-Stufen) ergänzt; GDD-06 verworfen (Referenz jetzt als INDEX-Tab im Spiel), SaveSystem-Migration vermerkt (Oktober 2026)*

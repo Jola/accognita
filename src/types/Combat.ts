@@ -70,6 +70,7 @@ export interface StatusEffect {
   // sind in Milli-Einheiten (1 HP = 1000). Faktoren bleiben als Dezimalzahl.
   damagePerTick: number;    // DoT: Schaden pro Tick (milli-HP)
   healPerTick: number;      // HoT: Heilung pro Tick (milli-HP)
+  healPerSecond: number;    // HoT stufenlos: Heilung pro Sekunde (milli-HP/s), jeden Frame anteilig
   speedMultiplier: number;  // stat_mod: 1.0 = neutral, 0.5 = halb so schnell
   damageReduction: number;  // stat_mod: 0.0–1.0 (Anteil abgefangener Schaden)
   reflectDamage: number;    // aura: Schaden zurück an Angreifer (milli-HP)
@@ -90,6 +91,7 @@ export function makeStatusEffect(
     lastTickAt:     0,
     damagePerTick:  0,
     healPerTick:    0,
+    healPerSecond:  0,
     speedMultiplier: 1.0,
     damageReduction: 0,
     reflectDamage:  0,

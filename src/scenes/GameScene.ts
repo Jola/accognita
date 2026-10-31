@@ -84,6 +84,7 @@ import {
 } from "../systems/CombatSystem.js";
 import {
   processTicks,
+  processRegeneration,
   applyEffect,
   removeExpiredEffects,
   syncPassiveEffects,
@@ -137,7 +138,7 @@ export class GameScene extends Phaser.Scene {
   private hpBarGraphics!: any;
   private skillBar!: SkillBarState;
   private playtimeAccumulator = 0; // Sekunden akkumulieren für player.playtimeSeconds
-  // Stufenlose Erfahrung (Gift) kommt jeden Frame in kleinen Beträgen —
+  // Stufenlose Erfahrung (Gift, Regeneration) kommt jeden Frame in kleinen Beträgen —
   // Werte, Wachstum und UI werden dann nur einmal pro Sekunde nachgeführt
   private progressDirty = false;
 
@@ -801,7 +802,7 @@ export class GameScene extends Phaser.Scene {
   private processCombatEffects(delta: number) {
     const now = Date.now();
 
-    // Spieler-Effekte
+    // Spieler-Effekte (getickt)
     const playerHpDelta = processTicks(this.gameState.player, now);
     if (playerHpDelta !== 0) {
       this.gameState.player.hp = Math.max(0,
@@ -811,13 +812,21 @@ export class GameScene extends Phaser.Scene {
           this.gameState.player.x, this.gameState.player.y,
           -playerHpDelta, "#aa44ff"
         );
-      } else if (playerHpDelta > 0) {
-        // Photosynthesis: XP = regenerierte HP (÷1000: milli-HP → XP, kein Entity-Level)
-        this.afterXpGain(gainSkillXp(this.gameState.player, "photosynthesis", Math.round(playerHpDelta / 1000)));
       }
       updateUI(this.gameState);
     }
     removeExpiredEffects(this.gameState.player, now);
+
+    // Regeneration (Photosynthesis): stufenlos als Rate, jeden Frame
+    const healed = processRegeneration(this.gameState.player, delta);
+    if (healed > 0) {
+      this.gameState.player.hp += healed;
+      // Photosynthesis: XP = regenerierte HP, stufenlos (÷1000: milli-HP → XP, kein Entity-Level)
+      const gain = gainSkillXp(this.gameState.player, "photosynthesis", healed / 1000);
+      this.logProgressionEvents(gain.events);
+      this.progressDirty = true;
+      updateVitalsUI(this.gameState.player);
+    }
 
     // Gift auf dem Spieler: stufenlos, keine Zahl (die kam beim Biss)
     const playerVenom = processVenom(this.gameState.player, this.gameState.player.hp, delta);

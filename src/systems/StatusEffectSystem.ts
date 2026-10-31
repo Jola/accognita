@@ -4,6 +4,7 @@
 //
 // Zuständig für:
 //   - Tick-Verarbeitung: DoT, HoT in festen Intervallen
+//   - Stufenlose Regeneration: HoT als kontinuierliche Rate (jeden Frame)
 //   - Effekt-Anwendung: applyEffect mit Duplikat-Handling
 //   - Ablauf: Abgelaufene Effekte entfernen
 //   - Passiv-Sync: Passiv-Skills → permanente Effekte aktuell halten
@@ -61,6 +62,27 @@ export function processTicks(
 }
 
 // -----------------------------------------------------------
+// Stufenlose Regeneration — im Game Loop jeden Frame aufrufen
+//
+// Vorgabe (Entwickler): Regeneration läuft stufenlos als kontinuierliche
+// Rate statt in 1-s-Ticks (keine Halbwertszeit wie beim Gift — die Rate
+// hängt nicht davon ab, wie viel schon geheilt ist).
+//   Heilung pro Frame = healPerSecond × deltaMs / 1000, höchstens bis maxHp
+// Gibt die tatsächliche Heilung zurück (milli-HP) — die Grundlage der XP.
+// -----------------------------------------------------------
+export function processRegeneration(
+  target: { statusEffects: StatusEffect[]; hp: number; maxHp: number },
+  deltaMs: number
+): number {
+  let rate = 0;
+  for (const effect of target.statusEffects) {
+    if (effect.type === "hot") rate += effect.healPerSecond;
+  }
+  if (rate <= 0 || deltaMs <= 0) return 0;
+  return Math.min((rate * deltaMs) / 1000, Math.max(0, target.maxHp - target.hp));
+}
+
+// -----------------------------------------------------------
 // Aura-Reaktion — aufrufen wenn Ziel getroffen wird
 //
 // Gibt Sofortschaden zurück der an den Angreifer geht.
@@ -101,6 +123,7 @@ export function applyEffect(
     // Werte aktualisieren (Level-Up könnte stärkeren Effekt liefern)
     existing.damagePerTick = effect.damagePerTick;
     existing.healPerTick   = effect.healPerTick;
+    existing.healPerSecond = effect.healPerSecond;
     return;
   }
 
@@ -151,8 +174,6 @@ export function clearAllEffects(
 // Nicht mehr vorhandene Passiv-Skills werden entfernt.
 // -----------------------------------------------------------
 export function syncPassiveEffects(player: PlayerState): void {
-  const now = Date.now();
-
   // Permanente Effekte aus Skills erzeugen
   for (const [skillId, instance] of player.discoveredSkills) {
     const def = ALL_SKILLS.get(skillId);
@@ -164,13 +185,12 @@ export function syncPassiveEffects(player: PlayerState): void {
     // → Kein StatusEffect auf dem Spieler nötig
     switch (skillId) {
       case "photosynthesis": {
+        // Stufenlos: kein Tick-Takt, Rate pro Sekunde (processRegeneration)
         applyEffect(player, makeStatusEffect({
           id: `passive_${skillId}`,
           type: "hot",
           sourceSkillId: skillId,
-          tickIntervalMs: 1000,
-          healPerTick: calcPhotosynthesisHeal(getSkillPractice(player, skillId)),
-          lastTickAt: now,
+          healPerSecond: calcPhotosynthesisHeal(getSkillPractice(player, skillId)),
         }));
         break;
       }
@@ -194,14 +214,12 @@ export function syncPassiveEffects(player: PlayerState): void {
 // Passive Werte nachführen — einmal pro Sekunde
 //
 // Skills verbessern sich fließend, deshalb müssen permanente Effekte
-// laufend den aktuellen Wert tragen. Nur der Wert wird ersetzt, der
-// Tick-Takt (lastTickAt) bleibt — ein erneutes applyEffect würde ihn
-// zurücksetzen und die Heilung ausbremsen (vgl. TODO Gift-Auffrischen).
+// laufend den aktuellen Wert tragen. Nur der Wert wird ersetzt.
 // -----------------------------------------------------------
 export function refreshPassiveEffectValues(player: PlayerState): void {
   for (const effect of player.statusEffects) {
     if (effect.id === "passive_photosynthesis") {
-      effect.healPerTick = calcPhotosynthesisHeal(getSkillPractice(player, "photosynthesis"));
+      effect.healPerSecond = calcPhotosynthesisHeal(getSkillPractice(player, "photosynthesis"));
     }
   }
 }

@@ -120,7 +120,7 @@ Passive Skills werden als permanente Effekte (`durationMs: -1`) geführt.
 | Effekt-Typ | Wirkung | Beispiel |
 |-----------|---------|---------|
 | `dot` (Damage over Time) | `damagePerTick` / `tickIntervalMs` | Venom-Skill [VERWORFEN — Gift läuft seit v0.4 über die Giftlast, [GDD-05 Abschnitt 12](GDD-05-Kampfmathematik.md)] |
-| `hot` (Heal over Time) | `healPerTick` / `tickIntervalMs` | Photosynthesis |
+| `hot` (Heal over Time) | `healPerTick` / `tickIntervalMs`; stufenlos: `healPerSecond`, jeden Frame anteilig (`processRegeneration`) | Photosynthesis (stufenlos) |
 | `stat_mod` | `speedMultiplier`, `damageBonus`, `damageMult`, `damageReduction` | Chitin Armor, Superstrength |
 | `aura` | `reflectDamage` bei jedem Treffer | Hemolymph |
 
@@ -134,7 +134,15 @@ Seit v0.4 wirken diese drei deklarativ über `effects[]` und die Schadenspipelin
 | Chitin Armor | `chitin_armor` | stat_mod: `damageReduction = 0.10 + 0.05×(level-1)` |
 | Superstrength | `superstrength` | stat_mod: `damageMult = 1.0 + 0.3×effectiveness` |
 | Hemolymph | `hemolymph` | aura: `reflectDamage = 2×level` pro Treffer |
-| Photosynthesis | `photosynthesis` | hot: `healPerTick = 0.5×level` alle 1 s |
+| Photosynthesis | `photosynthesis` | hot: `healPerTick = 0.5×level` alle 1 s [VERWORFEN — seit 31. Oktober 2026 stufenlos: `healPerSecond = 0.5 × u` HP/s, siehe unten] |
+
+### Regeneration stufenlos (Photosynthesis — implementiert)
+```
+Heilung pro Frame = 0.5 × u HP/s × Δt          höchstens bis maxHp
+XP (photosynthesis) = tatsächlich geheilte HP, stufenlos jeden Frame
+```
+**Vorgabe (Entwickler):** Regeneration läuft stufenlos als kontinuierliche Rate statt in 1-s-Ticks — anders als beim Gift ohne Halbwertszeit, weil die Rate nicht davon abhängt, wie viel schon geheilt ist. Umsetzung als eigene, isolierte Änderung.
+Gleiches Tempo wie vorher (0,5 HP/s je Einheit Übungsgrad), nur ohne Sprünge; Werte und Anzeige der Skills werden einmal pro Sekunde nachgeführt. Ob Photosynthese im Kampf heilen darf, ist weiter offen (TODO.md).
 
 ### Venom (Giftspinne → Spieler, oder Venom-Skill → Entity)
 
@@ -414,4 +422,4 @@ scenes/GameScene.ts                ← verdrahtet alle Systeme, Phaser-Rendering
 
 ---
 
-*Letzte Aktualisierung: 2026-10-31 — Venom-DoT durch Giftlast ersetzt (Verweis auf GDD-05 Abschnitt 12); Hinweis „Übungsgrad statt Skill-Level“ ergänzt, HP/MP wachsen mit dem Wachstum statt pro Level; 2026-10-25 — Größen- und levelabhängiges Aggro als Konzept (Abschnitt 4); 2026-10-24 — Geschick ohne Beitrag des eingesetzten Skills; Begründungen ergänzt bzw. als offen markiert, veraltete Werte (Spieler-Wachstum, Entity-Tabelle, Passiv-Effekte) als VERWORFEN gekennzeichnet; Treffer-Stufen und Geschick; Venom-Chance mit 100-%-Deckel*
+*Letzte Aktualisierung: 2026-10-31 — Regeneration (Photosynthesis) stufenlos; Venom-DoT durch Giftlast ersetzt (Verweis auf GDD-05 Abschnitt 12); Hinweis „Übungsgrad statt Skill-Level“ ergänzt, HP/MP wachsen mit dem Wachstum statt pro Level; 2026-10-25 — Größen- und levelabhängiges Aggro als Konzept (Abschnitt 4); 2026-10-24 — Geschick ohne Beitrag des eingesetzten Skills; Begründungen ergänzt bzw. als offen markiert, veraltete Werte (Spieler-Wachstum, Entity-Tabelle, Passiv-Effekte) als VERWORFEN gekennzeichnet; Treffer-Stufen und Geschick; Venom-Chance mit 100-%-Deckel*

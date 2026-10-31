@@ -32,7 +32,7 @@ Current state: **v0.3** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/systems/SkillSystem.ts` | Pure skill logic — what earns how much XP, discovery, combining, blob growth (HP/MP) |
 | `src/systems/ProgressionSystem.ts` | How experience is booked: relearn bonus, overtraining/rest, capacity and forgetting, ranks; same practice conversion for player and entities |
 | `src/systems/EntitySystem.ts` | Absorb/Analyze/Respawn logic |
-| `src/systems/StatusEffectSystem.ts` | DoT/HoT/Aura processing, passive skill sync |
+| `src/systems/StatusEffectSystem.ts` | DoT/HoT/Aura processing, continuous regeneration (HoT as rate per frame), passive skill sync |
 | `src/data/venom.ts` | Venom knobs with rationale: dose, stacking venom load, half-life, minimum rate |
 | `src/systems/VenomSystem.ts` | Venom feature, isolated: roll dose, venom load, continuous decay (= damage) |
 | `src/systems/CombatSystem.ts` | Damage calculation, skill dispatch, checkpoint logic |
