@@ -42,7 +42,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     ],
     respawnTime: 60, // 1 Minute — wächst nach
     interactRadius: 50,
-    worldSize: 5,    // Grashalm — etwas größer als der Blob auf Level 1
+    worldSize: 5,    // Grashalm — etwas größer als ein frischer Blob
   },
 
   // ==========================================================
@@ -69,8 +69,8 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 30,
     interactRadius: 35,
     aggroRadius: 8,    // 2.5 × worldSize
-    skillXp: { bite: 0, chitin_armor: 0 },   // bite u=1 → 7 Schaden; chitin → 10% DR
-    worldSize: 3,    // Ameise — winziges Insekt, ähnlich groß wie Level-1-Blob
+    skillXp: { bite: 0, chitin_armor: 0 },   // bite u=1 → 7 Schaden; chitin u=1 → blockt 3 HP Stich
+    worldSize: 3,    // Ameise — winziges Insekt, ähnlich groß wie ein frischer Blob
   },
   {
     id: "ladybug",
@@ -144,7 +144,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 50,
     interactRadius: 40,
     aggroRadius: 15,   // 2.5 × worldSize
-    // bite u=1 → 7 Schaden; venom u=3 → 40% Chance, 3/Tick; chitin_armor u=3 → 20% DR
+    // bite u=1 → 7 Schaden; venom u=3 → 44% Chance, 3/Tick; chitin_armor u=3 → blockt 7,2 HP Stich
     skillXp: { bite: 0, venom: 30, chitin_armor: 24 },
     worldSize: 6,    // Giftspinne — ähnlich groß wie Springspinne
   },
@@ -173,7 +173,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 60,
     interactRadius: 45,
     aggroRadius: 18,            // 2.5 × worldSize
-    // bite u=6 → 7×1.65 ≈ 12 Schaden; chitin u=5 → 30% DR; venom u=5 → 50%/4Tick
+    // bite u=6 → 7×1.65 ≈ 12 Schaden; chitin u=5 → blockt 9 HP Stich; venom u=5 → 50% Chance, 4/Tick
     skillXp: { bite: 150, chitin_armor: 96, venom: 120 },
     worldSize: 7,
   },
@@ -197,7 +197,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 120,
     interactRadius: 55,
     aggroRadius: 25,            // 2.5 × worldSize
-    // bite u=18 → 7×2.85 ≈ 20 Schaden; chitin u=8 → 45% DR; venom u=8 → 65%/5Tick
+    // bite u=18 → 7×2.85 ≈ 20 Schaden; chitin u=8 → blockt 10,9 HP Stich; venom u=8 → 56% Chance, 5,5/Tick
     skillXp: { bite: 1734, chitin_armor: 294, venom: 367.5 },
     worldSize: 10,
   },
@@ -258,7 +258,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 180,               // 3 Minuten — seltener Gegner
     interactRadius: 60,
     aggroRadius: 30,                // 2.5 × worldSize
-    // bite u=15 → 7×2.55 ≈ 18 Schaden; venom u=15 → 100% Chance, 9/Tick
+    // bite u=15 → 7×2.55 ≈ 18 Schaden; venom u=15 → 67% Chance, 9/Tick
     skillXp: { bite: 1176, venom: 1470 },
     worldSize: 12,
   },

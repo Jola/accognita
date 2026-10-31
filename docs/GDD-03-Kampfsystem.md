@@ -7,6 +7,8 @@
 > Echtzeit-Aggro, Nahkampfangriffe, Status-Effekte (DoT/HoT/Auren),
 > Checkpoint-Tod, SkillBar + SkillMenu vollständig spielbar.
 > Entity-Leveling-System implementiert (Kreaturen kämpfen untereinander).
+>
+> **Hinweis (v0.4, 31. Oktober 2026):** Skills haben keine Level mehr ([GDD-02 Abschnitt 8](GDD-02-Skillsystem.md#8-erfahrung-statt-level)). Wo in den Formeln dieser Datei „Level“ eines Skills steht (Absorb-Level, `jump.level`, Venom-Level, Skill-Level bei den Treffer-Stufen), wird heute der stetige Übungsgrad u eingesetzt; bei ganzzahligem u ergeben sich dieselben Werte. Das Level von **Gegnern** (`level` in entities.ts) und das Bonus-Level aus dem Entity-Leveling (Abschnitt 9) gibt es weiterhin.
 
 ---
 
@@ -47,15 +49,15 @@ Spieler HP ≤ 0 → Checkpoint (HP/MP voll, Spawn-Position, kein Verlust)
 
 | Attribut | Startwert | Wächst durch |
 |----------|-----------|-------------|
-| HP (Lebenspunkte) | 80 | Level-Up: ~~+10 pro Level~~ [VERWORFEN] → **+15 pro Level** |
-| MP (Magiepunkte) | 40 | Level-Up: ~~+5 pro Level~~ [VERWORFEN] → **+8 pro Level** |
+| HP (Lebenspunkte) | 80 | ~~Level-Up: +10 pro Level~~ [VERWORFEN] → ~~+15 pro Level~~ [VERWORFEN] → **+15 je Einheit Wachstum** (stetig, [GDD-02 Abschnitt 8.4](GDD-02-Skillsystem.md#84-kapazität-verlernen-wiedererlernen)) |
+| MP (Magiepunkte) | 40 | ~~Level-Up: +5 pro Level~~ [VERWORFEN] → ~~+8 pro Level~~ [VERWORFEN] → **+8 je Einheit Wachstum** |
 | Geschwindigkeit | 180 px/s | geplant: Wind-Skills |
 | Schaden-Multiplikator | 1.0 | ~~Superstrength +0.3/Level~~ [VERWORFEN] → Superstrength ×1,30 + 0,05/Level ([GDD-05](GDD-05-Kampfmathematik.md)) |
 | Schadensreduktion | 0 % | ~~Chitin 10 %+5 %/Level, max 85 %~~ [VERWORFEN] → Chitin wirkt je Schadenstyp ([GDD-05 Abschnitt 4.2](GDD-05-Kampfmathematik.md)) |
 | MP-Regeneration | 1 MP/s | konstant, passiv |
 
 Alle Werte intern in Milli-Einheiten ([GDD-05 Abschnitt 3.4](GDD-05-Kampfmathematik.md)).
-> Begründung offen — Startwerte (80 HP / 40 MP), Zuwachs pro Level (+15 / +8) und MP-Regeneration 1 MP/s.
+> Begründung offen — Startwerte (80 HP / 40 MP), Zuwachs pro Level bzw. Wachstum (+15 / +8) und MP-Regeneration 1 MP/s.
 
 **Basis-Nahkampfschaden:**
 ```
@@ -409,4 +411,4 @@ scenes/GameScene.ts                ← verdrahtet alle Systeme, Phaser-Rendering
 
 ---
 
-*Letzte Aktualisierung: 2026-10-25 — Größen- und levelabhängiges Aggro als Konzept (Abschnitt 4); 2026-10-24 — Geschick ohne Beitrag des eingesetzten Skills; Begründungen ergänzt bzw. als offen markiert, veraltete Werte (Spieler-Wachstum, Entity-Tabelle, Passiv-Effekte) als VERWORFEN gekennzeichnet; Treffer-Stufen und Geschick; Venom-Chance mit 100-%-Deckel*
+*Letzte Aktualisierung: 2026-10-31 — Hinweis „Übungsgrad statt Skill-Level“ ergänzt, HP/MP wachsen mit dem Wachstum statt pro Level; 2026-10-25 — Größen- und levelabhängiges Aggro als Konzept (Abschnitt 4); 2026-10-24 — Geschick ohne Beitrag des eingesetzten Skills; Begründungen ergänzt bzw. als offen markiert, veraltete Werte (Spieler-Wachstum, Entity-Tabelle, Passiv-Effekte) als VERWORFEN gekennzeichnet; Treffer-Stufen und Geschick; Venom-Chance mit 100-%-Deckel*

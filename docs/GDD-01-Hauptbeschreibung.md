@@ -32,7 +32,7 @@ Der Protagonist ist dem realen Organismus *Physarum polycephalum* nachempfunden 
 | Merkmal | Realität | Spielmechanik |
 |---------|----------|---------------|
 | **Intelligenz ohne Gehirn** | Findet in Labyrinthen den kürzesten Weg zu Nahrung, lernt dazu | Blob entdeckt und kombiniert Skills durch Interaktion |
-| **Wachstum** | Verdoppelt seine Größe unter idealen Bedingungen innerhalb eines Tages | Blob wächst mit jedem Level, Welt wirkt kleiner |
+| **Wachstum** | Verdoppelt seine Größe unter idealen Bedingungen innerhalb eines Tages | ~~Blob wächst mit jedem Level~~ [VERWORFEN] → Blob wächst stetig mit seiner Erfahrung ([GDD-02 Abschnitt 8.4](GDD-02-Skillsystem.md#84-kapazität-verlernen-wiedererlernen)), Welt wirkt kleiner |
 | **Wissensübertragung** | Wenn zwei Blobs verschmelzen, geben sie erworbene Informationen weiter | Absorb-Mechanic überträgt Skills absorbierter Entities |
 | **Widerstandsfähigkeit** | Trocknet bei Gefahr aus, Ruhezustand — mit Wasser wieder erweckbar | Checkpoint-System: Blob erwacht nach Tod am Spawn |
 | **Lebensraum** | Schattige, feuchte Orte, verrottendes Holz, Laub | Blob beginnt im Wald, erkundet feuchte und dunkle Biome zuerst |
@@ -49,7 +49,7 @@ Der Blob ist **kein klassischer Fantasy-Held**. Er hat keine Vergangenheit, kein
 ## 3. Alleinstellungsmerkmale (USPs)
 
 - **Dual-Interaction-System**: Jedes Entity kann entweder *absorbiert* (zerstört, starke Belohnung) oder *analysiert* (bleibt erhalten, schwache Belohnung) werden — der Spieler entscheidet strategisch.
-- **Organisches Skill-Discovery**: Skills werden nicht durch Menus freigeschaltet, sondern durch echte Interaktion mit der Spielwelt entdeckt. Gleiches Entity mehrfach absorbieren/analysieren = höheres Level.
+- **Organisches Skill-Discovery**: Skills werden nicht durch Menus freigeschaltet, sondern durch echte Interaktion mit der Spielwelt entdeckt. ~~Gleiches Entity mehrfach absorbieren/analysieren = höheres Level.~~ [VERWORFEN] → Gleiches Entity mehrfach absorbieren/analysieren = mehr Erfahrung im Skill (keine Level mehr, [GDD-02 Abschnitt 8](GDD-02-Skillsystem.md#8-erfahrung-statt-level)).
 - **Kombinations-Magie**: Zwei entdeckte Skills können zu einem neuen Skill kombiniert werden. Die Kombinations-Rezepte sind anfangs unbekannt und müssen experimentell erforscht werden.
 - **Lebendige Welt**: Entities sind keine statischen Gegner sondern Teil eines Ökosystems. Pflanzen, Tiere, Monster — alle haben Skills die der Blob erlernen kann.
 
@@ -73,7 +73,7 @@ Entity entdecken (Tier, Pflanze, Monster, Objekt)
     ↓
 ENTSCHEIDUNG: Absorbieren (Entity weg) vs. Analysieren (Entity bleibt)
     ↓
-Skill wird entdeckt oder im Level erhöht
+Skill wird entdeckt oder sammelt Erfahrung   (früher: „im Level erhöht“ [VERWORFEN])
     ↓
 Skills kombinieren → neue Skills freischalten
     ↓
@@ -126,6 +126,8 @@ Diese Pfade sind **nicht exklusiv** — der Spieler kann hybride Builds entwicke
 | [GDD-03-Kampfsystem.md](GDD-03-Kampfsystem.md) | Kampfmechaniken, Gegner, Balance |
 | [GDD-04-LookAndFeel.md](GDD-04-LookAndFeel.md) | Visuelles Design, UI/UX, Audio-Richtlinien |
 | [GDD-05-Kampfmathematik.md](GDD-05-Kampfmathematik.md) | Kampfmathematik, Schadenstypen, Skill-Engine (v0.4) |
+| [GDD-07-Bestiarium.md](GDD-07-Bestiarium.md) | Entwurf: Einheiten vom Wald bis zur Stadt, Größenklassen (Status: Diskussion) |
+| [GDD-08-Progressionsmathematik.md](GDD-08-Progressionsmathematik.md) | Mathematik von Erfahrung, Kapazität, Wirkungskurven und Wahrscheinlichkeiten |
 
 ---
 
@@ -211,7 +213,7 @@ Spieler startet ohne die Skills/XP des vertrockneten Blobs
 
 ### Wissen wiederherstellen
 
-Das angesammelte Wissen (Skills, XP, Level) des vertrockneten Blobs geht **vorübergehend verloren** — nicht permanent.
+Das angesammelte Wissen (Skills und ihre Erfahrung; ~~Level~~ [VERWORFEN], es gibt keine Level mehr) des vertrockneten Blobs geht **vorübergehend verloren** — nicht permanent.
 
 Der Spieler kann die Stelle aufsuchen, an der der Blob vertrocknet ist, und ihn **mit Wasser wiederbeleben**. Danach kann sich der Reise-Blob mit dem wiedererweckten Blob vereinigen und erhält so alles Wissen zurück.
 
@@ -239,4 +241,4 @@ Alle Skills und XP des vertrockneten Blobs übertragen
 
 ---
 
-*Letzte Aktualisierung: v0.3 — Startsequenz (Abschnitt 9) und Blob-Teilungs-Respawn-System (Abschnitt 10) als Konzepte ergänzt (März 2026)*
+*Letzte Aktualisierung: v0.4 — Level-Bezüge an „Erfahrung statt Level“ angepasst (Abschnitte 2, 3, 5, 10), GDD-07 und GDD-08 in den Referenzen ergänzt (31. Oktober 2026); davor Startsequenz (Abschnitt 9) und Blob-Teilungs-Respawn-System (Abschnitt 10) als Konzepte ergänzt (März 2026)*

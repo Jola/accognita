@@ -48,9 +48,16 @@ Diese Datei ist der **Einstiegspunkt für Menschen und KI-Systeme**, die mit den
 | **[src/data/entities.ts](../src/data/entities.ts)** | Alle Entity-Definitionen | Beim Hinzufügen von Entities |
 | **[src/data/materials.ts](../src/data/materials.ts)** | Alle Material-/Loot-Definitionen | Beim Balancing von Drops |
 | **[src/data/balance.ts](../src/data/balance.ts)** | Zentrale Balancing-Konstanten (XP-Kurven, Schaden usw.) | Beim Balancing |
+| **[src/data/progression.ts](../src/data/progression.ts)** | Stellschrauben der Progression mit Begründungen: Erfahrung → Übungsgrad, Ränge, Kapazität, Überdehnung, Wiedererlernen, Übertraining | Bei Fragen zu Erfahrung, Rängen, Kapazität |
+| **[src/data/version.ts](../src/data/version.ts)** | `GAME_VERSION` — muss zu `package.json` passen | Beim Versionswechsel |
 | **[src/systems/SkillSystem.ts](../src/systems/SkillSystem.ts)** | Reine Skill-Logik (kein Phaser) | Bei Skill-Logik-Fragen |
+| **[src/systems/ProgressionSystem.ts](../src/systems/ProgressionSystem.ts)** | Verbuchen von Erfahrung: Wiedererlernen, Übertraining/Ruhe, Kapazität und Verlernen, Ränge; gleiche Umrechnung für Blob und Gegner | Bei Fragen zu Erfahrung und Kapazität |
 | **[src/systems/EntitySystem.ts](../src/systems/EntitySystem.ts)** | Absorb/Analyze/Respawn-Logik (kein Phaser) | Bei Interaktions-Logik-Fragen |
+| **[src/systems/EntityLevelingSystem.ts](../src/systems/EntityLevelingSystem.ts)** | Gegner kämpfen untereinander, Bonus-Level, skalierte Kampfwerte | Bei Fragen zum Entity-Leveling |
 | **[src/systems/CombatSystem.ts](../src/systems/CombatSystem.ts)** | Schadensberechnung, Skill-Dispatch, Checkpoint-Logik | Bei Kampfsystem-Fragen |
+| **[src/systems/DamageSystem.ts](../src/systems/DamageSystem.ts)** | Schadenspipeline (GDD-05 Abschnitt 3) | Bei Fragen zur Schadensberechnung |
+| **[src/systems/SkillEffectSystem.ts](../src/systems/SkillEffectSystem.ts)** | Deklarative Skill-Effekte auswerten (`evalFormula`, Angreifer-/Verteidiger-Effekte, Geschick) | Bei Fragen zu Skill-Effekten |
+| **[src/systems/SkillEffects.ts](../src/systems/SkillEffects.ts)** | Skill-Formeln für Angriffsschaden, Sprungweite, Photosynthese (enthält ungenutzte Alt-Formeln, siehe TODO.md) | Bei Fragen zu Skill-Werten |
 | **[src/systems/HitSystem.ts](../src/systems/HitSystem.ts)** | Treffer-Stufen (verfehlt bis kritisch): Wahrscheinlichkeiten aus Skill-Profil, Level und Geschick; Würfeln | Bei Fragen zu Treffer-Chancen |
 | **[src/systems/AiSystem.ts](../src/systems/AiSystem.ts)** | Aggro, Verfolgung, Angriffs-Trigger (kein Phaser) | Bei KI-Fragen |
 | **[src/systems/StatusEffectSystem.ts](../src/systems/StatusEffectSystem.ts)** | DoT/HoT/Aura, passive Skills | Bei Status-Effekt-Fragen |
@@ -60,6 +67,8 @@ Diese Datei ist der **Einstiegspunkt für Menschen und KI-Systeme**, die mit den
 | **[src/ui/SkillBar.ts](../src/ui/SkillBar.ts)** | Touch-Skill-Slots mit Cooldown-Anzeige | Bei UI-Fragen |
 | **[src/ui/SkillMenu.ts](../src/ui/SkillMenu.ts)** | Vollbild-Skill-Management-Overlay | Bei UI-Fragen |
 | **[src/ui/SaveMenu.ts](../src/ui/SaveMenu.ts)** | Speicher-/Lade-Slot-Overlay | Bei Speicher-UI-Fragen |
+| **[src/ui/GameMenu.ts](../src/ui/GameMenu.ts)** | Vollbild-Spielmenü mit Tabs (Skills, Combo, Inventar, Nearby, Log, Index), pausiert das Spiel | Bei UI-Fragen |
+| **[src/ui/IndexView.ts](../src/ui/IndexView.ts)** | INDEX-Tab: Nachschlagewerk aller Skills und Einheiten, live berechnet | Bei Fragen zu Ist-Werten |
 | **[src/scenes/GameScene.ts](../src/scenes/GameScene.ts)** | Phaser-Scene: Rendering, Input, UI-Bridge | Bei Rendering/Input-Fragen |
 | **[src/world/Chunk.ts](../src/world/Chunk.ts)** | Typen: BiomeId, HeightLevel, ChunkDef, LoadedChunk, SpawnDef | Bei Welt-System-Fragen |
 | **[src/world/BiomeDefinitions.ts](../src/world/BiomeDefinitions.ts)** | Zonen-Layout, Spawn-Tabellen, Tile-Index-Mapping | Bei Biom-Fragen |
@@ -209,4 +218,4 @@ Wenn du als KI-Assistent an diesem Projekt arbeitest, gelten folgende Regeln:
 
 ---
 
-*Letzte Aktualisierung: v0.4 — Erfahrung statt Level umgesetzt (GDD-02 Abschnitt 8, GDD-08 Teil 6), Backlog aktualisiert (30. Oktober 2026); GDD-08 (Progressionsmathematik, Teil 1–5) ergänzt; GDD-07 (Bestiarium-Entwurf) ergänzt; Begründungspflicht (Abschnitt 5 und 7) eingeführt; HitSystem (Treffer-Stufen) ergänzt; GDD-06 verworfen (Referenz jetzt als INDEX-Tab im Spiel), SaveSystem-Migration vermerkt (Oktober 2026)*
+*Letzte Aktualisierung: v0.4 — fehlende Code-Dateien in der Tabelle ergänzt (progression.ts, version.ts, ProgressionSystem, EntityLevelingSystem, DamageSystem, SkillEffectSystem, SkillEffects, GameMenu, IndexView) (31. Oktober 2026); davor Erfahrung statt Level umgesetzt (GDD-02 Abschnitt 8, GDD-08 Teil 6), Backlog aktualisiert (30. Oktober 2026); GDD-08 (Progressionsmathematik, Teil 1–5) ergänzt; GDD-07 (Bestiarium-Entwurf) ergänzt; Begründungspflicht (Abschnitt 5 und 7) eingeführt; HitSystem (Treffer-Stufen) ergänzt; GDD-06 verworfen (Referenz jetzt als INDEX-Tab im Spiel), SaveSystem-Migration vermerkt (Oktober 2026)*

@@ -214,6 +214,8 @@ interface EffectCondition {
 
 Alle Formeln sind **linear** (Basis + Zuwachs pro Level). Komplexere Kurven werden durch `curve`-Modifier ausgedrückt.
 
+**Hinweis (v0.4, 31. Oktober 2026):** Skills haben keine Level mehr ([GDD-02 Abschnitt 8](GDD-02-Skillsystem.md#8-erfahrung-statt-level)). Für L wird der stetige Übungsgrad u eingesetzt (`evalFormula(formula, practice)` in SkillEffectSystem.ts); `perLevel` ist damit der Zuwachs je Einheit Übungsgrad. In den Beispielen unten (Abschnitte 6 und 7) sind `maxLevel`, `baseXpThreshold`, `xpThresholdMultiplier` und `skillLevels` [VERWORFEN]: heute stehen dort `learningEffort` bzw. `skillXp` (Erfahrung je Skill).
+
 ```typescript
 interface LinearFormula {
   base:     number;    // Wert bei Level 1
@@ -566,4 +568,4 @@ src/
 
 ---
 
-*Letzte Aktualisierung: v0.4 implementiert — DamageSystem (8-stufige Pipeline), SkillEffectSystem (deklarative Effekte), DamageType-System, Skill-Effekt-Deklaration für chitin_armor/superstrength/hemolymph/venom (Oktober 2026); LinearFormula.max, Treffer-Stufe 1b, dexterity; Milli-Einheiten (3.4) und Begründungen der Caps ergänzt; Mindestschaden 1 HP vor Effekten, HP-Anzeige immer aufgerundet; Begründungen für Milli-HP und Mindestschaden vom Entwickler; Geschick ohne eigenen Skill-Beitrag*
+*Letzte Aktualisierung: v0.4 — Hinweis Übungsgrad statt Level in Abschnitt 5.4 (31. Oktober 2026); davor implementiert — DamageSystem (8-stufige Pipeline), SkillEffectSystem (deklarative Effekte), DamageType-System, Skill-Effekt-Deklaration für chitin_armor/superstrength/hemolymph/venom (Oktober 2026); LinearFormula.max, Treffer-Stufe 1b, dexterity; Milli-Einheiten (3.4) und Begründungen der Caps ergänzt; Mindestschaden 1 HP vor Effekten, HP-Anzeige immer aufgerundet; Begründungen für Milli-HP und Mindestschaden vom Entwickler; Geschick ohne eigenen Skill-Beitrag*

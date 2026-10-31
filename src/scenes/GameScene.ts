@@ -469,6 +469,12 @@ export class GameScene extends Phaser.Scene {
       instance.statusEffects = [];
       instance.attackCooldownRemaining = 0;
       instance.isAlive = true;
+      instance.respawnAt = undefined;
+      // Bonus aus dem Entity-Leveling zurücksetzen — sonst passt currentHp
+      // (Grundwert) nicht zum skalierten Maximum
+      instance.bonusLevel = 0;
+      instance.skillWins = 0;
+      instance.levelingCooldown = 0;
     }
 
     updateUI(this.gameState);
@@ -1301,8 +1307,10 @@ function updateNearbyPanel(
 
   const bonusLv      = instance?.bonusLevel ?? 0;
   const effectiveLv  = entityDef.level + bonusLv;
-  const absorbChance = Math.round(calcSuccessChance(getCorePractice(state.player, "absorb"),  effectiveLv) * 100);
-  const analyzeChance= Math.round(calcSuccessChance(getCorePractice(state.player, "analyze"), effectiveLv) * 100);
+  // Gleiche Rechnung wie EntitySystem.absorbEntity/analyzeEntity: dort zählt die
+  // Grundstufe (def.level), das Bonus-Level aus dem Entity-Leveling nicht
+  const absorbChance = Math.round(calcSuccessChance(getCorePractice(state.player, "absorb"),  entityDef.level) * 100);
+  const analyzeChance= Math.round(calcSuccessChance(getCorePractice(state.player, "analyze"), entityDef.level) * 100);
 
   // HP-Leiste (intern milli-HP, Anzeige in HP)
   const scaledMaxHp    = getScaledMaxHp(entityDef, bonusLv);

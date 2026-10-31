@@ -84,16 +84,19 @@ Das Spiel ist primär für Mobilgeräte entwickelt. Desktop wird vollständig un
 | Layout | Vollbild-Canvas + Touch-Overlay | Vollbild-Canvas + Touch-Overlay (v0.4: gleiches Layout wie Mobile) |
 | Navigation | Spielmenü (Vollbild-Overlay, pausiert) — siehe unten | Spielmenü (Vollbild-Overlay, pausiert) |
 | ~~Layout / Navigation (bis v0.3)~~ | ~~Bottom Sheet~~ | ~~Canvas + festes Side Panel mit Tabs~~ — **[VERWORFEN]** durch Spielmenü |
-| Bewegung | Virtueller Joystick (links unten) | WASD / Pfeiltasten |
-| Interaktion | ABSORB / ANALYZE Touch-Buttons | E / Q Tasten oder Mausklick |
-| Entity-Klick (Absorb) | Tap auf Entity (wenn in Reichweite) | Linksklick |
-| Entity-Klick (Analyze) | — (über Button) | Rechtsklick |
+| Bewegung | Virtueller Joystick (links unten) | ~~WASD / Pfeiltasten~~ [VERWORFEN] → Joystick wie Mobile |
+| Interaktion | ABSORB / ANALYZE Touch-Buttons | ~~E / Q Tasten oder Mausklick~~ [VERWORFEN] → Buttons wie Mobile |
+| Entity-Klick (Absorb) | ~~Tap auf Entity (wenn in Reichweite)~~ [VERWORFEN] → Tap wählt das Wesen nur als Ziel aus, kein automatisches Absorb | ~~Linksklick~~ → Klick wie Tap |
+| Entity-Klick (Analyze) | — (über Button) | ~~Rechtsklick~~ [VERWORFEN] → über Button |
 | Viewport | `100dvh` (dynamic viewport height) | feste Berechnung |
+
+Tastatur- und Maussteuerung wurden mit Commit 0f3d348 („Switch to mobile-only controls“) entfernt; seitdem gibt es nur Joystick und Touch-Buttons, auch am Desktop.
+> Begründung offen — warum die Tastatur ganz entfernt wurde (statt zusätzlich zum Touch).
 
 ### Layout Mobile
 ```
 ┌────────────────────────────────────┐
-│  HEADER (Level / HP / MP / EXP)    │
+│  HEADER (Kapazität / HP / MP)      │
 ├────────────────────────────────────┤
 │                                    │   [📋] Panel-Button (oben rechts)
 │         SPIELBEREICH               │
@@ -128,7 +131,7 @@ Ein einziges Menü für alle Bildschirmgrößen und Ausrichtungen ([src/ui/GameM
 - Beim Spielen geschlossen — das Spielfeld nutzt immer den ganzen Bildschirm.
 - Der 📋-Button (oben rechts) öffnet es als **Vollbild-Overlay**; das Spiel ist pausiert, solange es offen ist. „✕ Weiterspielen" schließt es.
 - Tabs: **SKILLS · COMBO · INVENTAR · NEARBY · LOG · INDEX**
-- **INDEX** ([src/ui/IndexView.ts](../src/ui/IndexView.ts)): Nachschlagewerk aller Skills und Einheiten, umschaltbar, mit Suche. Ein Eintrag öffnet die Detailansicht mit allen Parametern: bei Skills Effekte mit Formel, Begründung und Werten für Lv 1/2/3/5/10/20, Schaden/Sprungweite/Heilung pro Level, Fundorte mit Absorb-/Analyze-Chance und welche Einheiten den Skill nutzen; bei Einheiten Grundwerte, Vorkommen pro Biom, Skills, Nahkampf, Treffer-Effekte, Verteidigung je Schadenstyp, Bonus-Level-Skalierung und Drops. Skills und Einheiten sind untereinander verlinkt, „← Zurück" geht einen Schritt zurück. Alle Werte werden zur Laufzeit über die echten Systeme berechnet und sind daher immer aktuell.
+- **INDEX** ([src/ui/IndexView.ts](../src/ui/IndexView.ts)): Nachschlagewerk aller Skills und Einheiten, umschaltbar, mit Suche. Ein Eintrag öffnet die Detailansicht mit allen Parametern: bei Skills Effekte mit Formel, Begründung und Werten ~~für Lv 1/2/3/5/10/20~~ [VERWORFEN] je Rang (Übungsgrad an der Ranggrenze, dazu Lernaufwand und XP ab Rang), Schaden/Sprungweite/Heilung je Rang, Fundorte mit Absorb-/Analyze-Chance und welche Einheiten den Skill nutzen; bei Einheiten Grundwerte, Vorkommen pro Biom, Skills, Nahkampf, Treffer-Effekte, Verteidigung je Schadenstyp, Bonus-Level-Skalierung und Drops. Skills und Einheiten sind untereinander verlinkt, „← Zurück" geht einen Schritt zurück. Alle Werte werden zur Laufzeit über die echten Systeme berechnet und sind daher immer aktuell.
 
 **Pause-Regel:** Gespielt wird nur im Vollbild-Modus. Das Spiel läuft nur, wenn der Vollbildmodus aktiv ist und kein Menü offen ist (Spielmenü, Skill-Menü, Speichern). Schon beim Start ist das Spiel pausiert und das Pause-Overlay fordert zum Wechsel in den Vollbild-Modus auf („⛶ Vollbild & Spielen"); dasselbe passiert, sobald der Vollbildmodus verlassen wird. Ist zusätzlich ein Menü offen, liegt das Menü oben; nach dem Schließen erscheint das Pause-Overlay. Ausnahme: Browser ohne Fullscreen-API (iPhone-Safari) spielen ohne Vollbild, sonst wäre das Spiel dort nicht spielbar.
 
@@ -160,22 +163,22 @@ Ein einziges Menü für alle Bildschirmgrößen und Ausrichtungen ([src/ui/GameM
 ### Side Panel — Tabs (beide Plattformen)
 | Tab | Funktion |
 |-----|---------|
-| SKILLS | Alle entdeckten Skills mit Level und XP-Fortschritt |
+| SKILLS | ~~Alle entdeckten Skills mit Level und XP-Fortschritt~~ [VERWORFEN] → Rang, Erfahrungsbalken im Rang mit Abschnitt für ausstehende Erfahrung ([GDD-02 Abschnitt 6](GDD-02-Skillsystem.md#6-skill-anzeige--verwaltung)) |
 | COMBINE | Zwei Skills auswählen, Kombination versuchen |
 | NEARBY | Entities in Reichweite mit Absorb/Analyze-Buttons |
 | LOG | Chronologisches Event-Journal |
 
 ### HUD-Elemente (Header)
 - Responsive Schriftgrößen (`clamp()`) — lesbar auf kleinen Screens
-- **Level**: Zahl, direkt sichtbar
+- ~~**Level**: Zahl, direkt sichtbar~~ [VERWORFEN] → **KAP**: belegte Skill-Kapazität in Prozent; „↑“ und goldener Balken bei Überdehnung ([GDD-02 Abschnitt 8.4/8.5](GDD-02-Skillsystem.md#84-kapazität-verlernen-wiedererlernen)). Es gibt kein Charakter-Level mehr.
 - **HP-Bar**: Rot-Gradient, immer sichtbar
 - **MP-Bar**: Lila-Blau-Gradient, immer sichtbar
-- **EXP-Bar**: Gold-Gradient
+- ~~**EXP-Bar**: Gold-Gradient~~ [VERWORFEN] → der Balken unter KAP zeigt die Kapazität
 - **Skill-Count**: Anzahl entdeckter Skills
 
 ### In-Canvas HUD (unten Mitte)
 - Maximal 5 aktive Skills als Icon-Leiste
-- Skill-Level als kleiner Text
+- ~~Skill-Level als kleiner Text~~ [VERWORFEN] — es gibt keine Skill-Level mehr
 - Cooldown-Overlay implementiert (v0.3)
 
 ---
@@ -197,7 +200,7 @@ Ein einziges Menü für alle Bildschirmgrößen und Ausrichtungen ([src/ui/GameM
 
 ### UI-Feedback
 - **Skill Discovery**: Notification-Banner erscheint (Slide-in, 2.5 Sekunden)
-- **Level-Up**: Gold-Notification
+- ~~**Level-Up**: Gold-Notification~~ [VERWORFEN] → Rang-Aufstieg und Verlernen als Log-Eintrag (⬆️ / 💭)
 - **Kombination**: Lila-Notification mit Combo-Icon
 
 ---
@@ -227,7 +230,7 @@ Ein einziges Menü für alle Bildschirmgrößen und Ausrichtungen ([src/ui/GameM
 | Absorb-Sound | Organisch, feucht, leicht unheimlich |
 | Analyze-Sound | Leises Summen, magische Resonanz |
 | Skill-Cast | Elementabhängig (Zischen für Feuer, Plätschern für Wasser) |
-| Level-Up | Kurze, triumphale Fanfare |
+| ~~Level-Up~~ [VERWORFEN] → Rang-Aufstieg | Kurze, triumphale Fanfare |
 | Umgebung | Windgeräusche, Grillen, Wasserplätschern je nach Gebiet |
 
 ---
@@ -302,7 +305,7 @@ Kein lokales Node.js, npm oder Terminal auf Jörns Seite nötig.
   **Begründung einzige Quelle + Build-Prüfung (Vorschlag Claude):** Vorher stand `0.3.0` an zwei Stellen, die nur von Hand gleich gehalten wurden.
   **Begründung Version im Spielstand (Vorschlag Claude):** So lässt sich erkennen, mit welcher Version ein Spielstand gespeichert wurde — Grundlage für Migrationen.
   > Begründung offen — Ob 0.4.0 die richtige Nummer ist: Die isometrische Ansicht war ursprünglich für v0.4 geplant (GDD-00 Abschnitt 6).
-- **Migration alter Spielstände** ([src/systems/SaveSystem.ts](../src/systems/SaveSystem.ts)): Das Speicherformat hat eine eigene Formatversion (derzeit 2) und eine Kette von Migrationsschritten, die beim Lesen angewendet werden. v1 → v2 rechnet HP/MP **anteilig** auf Milli-Einheiten um (Füllstand bleibt, Maximum aus dem Level).
+- **Migration alter Spielstände** ([src/systems/SaveSystem.ts](../src/systems/SaveSystem.ts)): Das Speicherformat hat eine eigene Formatversion (~~derzeit 2~~ derzeit 3) und eine Kette von Migrationsschritten, die beim Lesen angewendet werden. v1 → v2 rechnet HP/MP **anteilig** auf Milli-Einheiten um (Füllstand bleibt, Maximum aus dem damaligen Level). v2 → v3 stellt auf Erfahrung statt Level um: Jeder Skill behält seine je gesammelte Erfahrung als aktuelle Erfahrung und Höchststand, die Lebenserfahrung übernimmt die alte Gesamt-XP; liegt die Summe über der Kapazität, wird der Überhang beim Laden verlernt ([GDD-02 Abschnitt 8.8](GDD-02-Skillsystem.md#88-wo-im-code-was-steht)).
   **Vorgabe (Entwickler):** Migration für gespeicherte Spielstände schreiben.
   **Begründung (Vorschlag Claude, übernommen):** Ohne Migration hätte der Blob nach dem Laden eines alten Spielstands (HP in ganzen Punkten) nur 0,05 HP gehabt.
   **Begründung anteilig statt ×1000 (Vorschlag Claude):** Auch Spielstände nach der Umstellung tragen noch Formatversion 1 und sind schon in Milli — ein pauschales ×1000 hätte sie zerstört. **Migration nur beim Lesen, nicht zurückschreiben (Vorschlag Claude):** Geht bei einer Migration etwas schief, bleibt der Original-Spielstand erhalten.
@@ -320,4 +323,4 @@ Kein lokales Node.js, npm oder Terminal auf Jörns Seite nötig.
 
 ---
 
-*Letzte Aktualisierung: v0.4 — Dev-Container und `npm run dev` für lokale Entwicklung; Begründungen für Spielmenü, Vollbild-Regel, Version und Spielstand-Migration ergänzt; Spielmenü als pausierendes Vollbild-Overlay mit INDEX-Tab (Oktober 2026)*
+*Letzte Aktualisierung: v0.4 — Anzeige an Erfahrung statt Level angepasst: HUD zeigt Kapazität (KAP), Skills-Tab und INDEX nach Rängen, Rang-Aufstieg statt Level-Up, Spielstand-Format 3, Desktop-Steuerung (Tastatur/Maus) als verworfen markiert (31. Oktober 2026); davor Dev-Container und `npm run dev` für lokale Entwicklung; Begründungen für Spielmenü, Vollbild-Regel, Version und Spielstand-Migration ergänzt; Spielmenü als pausierendes Vollbild-Overlay mit INDEX-Tab (Oktober 2026)*

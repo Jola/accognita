@@ -15,6 +15,14 @@ Format:
 
 - `[BUG]` **Schwächeres Gift überschreibt stärkeres** — beim Refresh werden `damagePerTick`/`healPerTick` ersetzt statt das Maximum zu nehmen (z. B. Giftspinne Venom Lv3 überschreibt Schlange Venom Lv15). GDD-08 Abschnitt 12.3.
 
+- `[BUG]` **Unbewaffneter Angriff ist nicht erreichbar** — `playerAttack` kann ohne Skill angreifen (3 HP + 1,5 je Übungsgrad Absorb, Wucht; GDD-03 Abschnitte 3 und 6), aber kein Button und keine Taste ruft das auf. Ein Blob ohne Biss/Klaue kann nicht angreifen. Offen: eigener Angriffs-Button oder bewusst weglassen (dann GDD anpassen)?
+
+- `[BUG]` **Superstrength verstärkt auch Feueratem** — GDD-02/03 und die Skill-Beschreibung sagen „Nahkampf“, der Effekt (`on_hit_enemy`, `damage_mult`) gilt im Code für jeden Angriff des Blobs. Offen: auf Nahkampf begrenzen oder Beschreibung ändern?
+
+- `[BUG]` **Photosynthesis heilt auch im Kampf** — GDD-02 Abschnitt 3.2: „außerhalb des Kampfes“, Skill-Beschreibung: „solange der Blob sich nicht kämpfend fortbewegt“. Im Code heilt sie immer. Offen: Was zählt als Kampf (Aggro eines Gegners in der Nähe, Treffer in den letzten N Sekunden)?
+
+- `[POLISH]` **Skill-Leiste: 4 oder 5 Slots?** — GDD-02 Abschnitt 6 und GDD-04: „maximal 5 aktive Skills, Tasten 1–5“. Code und GDD-03: 4 Slots (`SkillBar.NUM_SLOTS`), keine Tastenbelegung; `activeSkillSlots` hat 5 Einträge, gespeichert werden 4.
+
 ---
 
 ## Features & Ideen
@@ -36,6 +44,12 @@ Format:
 ---
 
 ## Erledigt
+
+- `[BUG]` **Bonus-Level überlebte den Respawn** — `processRespawns` und das Laden setzten `bonusLevel`/`skillWins` nicht zurück, obwohl der Bonus laut GDD-03 Abschnitt 9 beim Respawn verloren geht; die HP-Leiste stand dann nicht auf voll. Fix: beide setzen den Bonus jetzt zurück (31. Oktober 2026).
+
+- `[BUG]` **Angezeigte Absorb-/Analyze-Chance wich von der echten ab** — die Nearby-Anzeige rechnete mit Stufe + Bonus-Level, gewürfelt wird mit der Grundstufe. Fix: Anzeige rechnet wie die Logik (31. Oktober 2026).
+
+- `[POLISH]` **HUD-Label „LVL“** trotz Kapazitätsanzeige → „KAP“ (31. Oktober 2026).
 
 - `[BUG]` **XP-/Level-Anzeige funktioniert nicht** — `updateUI()` hat den XP-Balken nicht befüllt. Fix: `calcPlayerLevel(p.totalExp)` liefert `xpIntoLevel/xpToNext`, daraus wird der Füllstand berechnet.
 

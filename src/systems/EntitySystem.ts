@@ -204,6 +204,10 @@ export function processRespawns(world: WorldState): string[] {
         instance.currentHp = def.hp ?? 0;
         instance.statusEffects = [];
         instance.attackCooldownRemaining = 0;
+        // Entity-Leveling: Bonus geht beim Respawn verloren (GDD-03 Abschnitt 9)
+        instance.bonusLevel = 0;
+        instance.skillWins = 0;
+        instance.levelingCooldown = 0;
         respawned.push(id);
       }
     }

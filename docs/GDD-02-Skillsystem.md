@@ -72,7 +72,8 @@ Die heutige Formel `min(1, Fähigkeits-Level / Entitäts-Level)` senkt die Chanc
 
 ## 2. Material-System
 
-> **Status: Konzept** — Noch nicht implementiert.
+> ~~**Status: Konzept** — Noch nicht implementiert.~~ [VERWORFEN]
+> **Status: Teilweise implementiert (v0.3)** — `MaterialSystem.ts` und `materials.ts` (7 Materialien) existieren, Absorb legt Materialien ins Inventar, der INVENTAR-Tab zeigt sie. Bisher liefert nur Gras Material (Pflanzenfasern); die einzige Verwendung (`grow`) ist nicht erreichbar, weil der Skill fehlt (Abschnitt 8.10).
 
 ### 2.1 Materialgewinnung
 
@@ -107,10 +108,10 @@ Fähigkeiten werden **nicht garantiert** übertragen. Ob ein Skill erworben wird
 
 | Entität | Level | Disposition | Kategorie | Quellen-Skills |
 |---------|-------|-------------|-----------|----------------|
-| Ameise | 1 | neutral | creature | Chitin Armor (15%), Superstrength (10%) |
+| Ameise | 1 | neutral | creature | Biss (12%), Chitin Armor (15%), Superstrength (10%) |
 | Marienkäfer | 1 | neutral | creature | Hemolymph (15%) |
-| Springspinne | 2 | hostile | creature | Jump (20%), Chitin Armor (10%) |
-| Giftspinne | 2 | hostile | creature | Venom (20%), Chitin Armor (8%) |
+| Springspinne | 2 | hostile | creature | Biss (15%), Jump (20%), Chitin Armor (10%) |
+| Giftspinne | 2 | hostile | creature | Biss (15%), Venom (20%), Chitin Armor (8%) |
 
 #### Skills
 
@@ -122,7 +123,9 @@ Fähigkeiten werden **nicht garantiert** übertragen. Ob ein Skill erworben wird
 | jump | Jump | aktiv | none | 🦘 | Springspinne | **Bewegungs-Unlock**: Ohne diesen Skill kann der Blob nicht springen. Höheres Level = größere Sprunghöhe/-weite. |
 | hemolymph | Hemolymph | passiv | poison | 🐞 | Marienkäfer | Bei eigenem Treffer: Angreifer vergiftet |
 
-Alle Basis-Skills haben `maxLevel: 0` (unlimitiert). XP-Skalierung via Option D (`balance.ts`).
+~~Alle Basis-Skills haben `maxLevel: 0` (unlimitiert).~~ [VERWORFEN] → Skills haben keine Level, nur Erfahrung; je Skill gibt es einen Lernaufwand (`learningEffort`, Abschnitt 8.3). XP-Skalierung via Option D (`balance.ts`).
+
+Weitere Einheiten (Skorpione, Schlange, Drache) und alle aktuellen Werte: im Spiel unter 📋 → INDEX.
 
 ### 3.2 Pflanzen-Skills
 
@@ -431,4 +434,4 @@ Bezug zum Code:
 
 ---
 
-*Letzte Aktualisierung: v0.4 — Rangnamen: Biologie-Reihe aktiv, Handwerk-Reihe als Alternative (Abschnitt 8.2, 31. Oktober 2026); davor Erfahrung statt Level umgesetzt (Abschnitt 8: Ränge, fließende Wirkung, Kapazität, Überdehnung, Wiedererlernen, gleiche Skills für Blob und Gegner, Übertraining, Idee Grow); alte Level-Regeln in 1.2, 4, 6, 7.1 als [VERWORFEN] markiert (30. Oktober 2026). Davor: Skill-Kapazität und Verlernen als Überlegung des Entwicklers (Abschnitt 7.1); Verweis auf GDD-08 (Progressionsmathematik) in Abschnitt 4; Größe beim Absorbieren/Analysieren als Konzept (Abschnitt 1.4); XP-Skalierung (Absorb/Analyze und Kampf-XP nach Gegner-Level) mit Begründungen dokumentiert, Erfolgsformel als vorläufig vermerkt, Superstrength-Beschreibung korrigiert (Oktober 2026)*
+*Letzte Aktualisierung: v0.4 — Abgleich mit dem Code: Material-System als teilweise implementiert (Abschnitt 2), Biss in den Quellen-Skills der Insekten ergänzt und `maxLevel` als verworfen markiert (Abschnitt 3.1) (31. Oktober 2026); davor Rangnamen: Biologie-Reihe aktiv, Handwerk-Reihe als Alternative (Abschnitt 8.2, 31. Oktober 2026); davor Erfahrung statt Level umgesetzt (Abschnitt 8: Ränge, fließende Wirkung, Kapazität, Überdehnung, Wiedererlernen, gleiche Skills für Blob und Gegner, Übertraining, Idee Grow); alte Level-Regeln in 1.2, 4, 6, 7.1 als [VERWORFEN] markiert (30. Oktober 2026). Davor: Skill-Kapazität und Verlernen als Überlegung des Entwicklers (Abschnitt 7.1); Verweis auf GDD-08 (Progressionsmathematik) in Abschnitt 4; Größe beim Absorbieren/Analysieren als Konzept (Abschnitt 1.4); XP-Skalierung (Absorb/Analyze und Kampf-XP nach Gegner-Level) mit Begründungen dokumentiert, Erfolgsformel als vorläufig vermerkt, Superstrength-Beschreibung korrigiert (Oktober 2026)*

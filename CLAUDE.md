@@ -34,6 +34,10 @@ Current state: **v0.3** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/systems/EntitySystem.ts` | Absorb/Analyze/Respawn logic |
 | `src/systems/StatusEffectSystem.ts` | DoT/HoT/Aura processing, passive skill sync |
 | `src/systems/CombatSystem.ts` | Damage calculation, skill dispatch, checkpoint logic |
+| `src/systems/DamageSystem.ts` | Damage pipeline (GDD-05 section 3) |
+| `src/systems/SkillEffectSystem.ts` | Evaluates declarative skill effects (`evalFormula`, attacker/defender effects, dexterity) |
+| `src/systems/SkillEffects.ts` | Skill formulas: attack damage, jump distance, photosynthesis (contains unused legacy formulas, see TODO.md) |
+| `src/systems/EntityLevelingSystem.ts` | Entities fight each other: bonus levels, scaled combat values |
 | `src/systems/HitSystem.ts` | Hit grades (miss/light/normal/heavy/crit): chances from skill profile, level and dexterity; dice roll |
 | `src/systems/AiSystem.ts` | Aggro, chase, attack-trigger (pure logic, no Phaser) |
 | `src/systems/MaterialSystem.ts` | Loot drop resolution and material inventory logic |
