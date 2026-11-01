@@ -9,6 +9,7 @@
 import type { SkillBarState } from "./SkillBar.js";
 import { getRankInfo, getLearningEffort } from "../systems/ProgressionSystem.js";
 import { formatPlayerSkillDamage } from "../systems/CombatSystem.js";
+import { describePlayerSkillValues } from "../systems/StatsSystem.js";
 
 function injectStyles() {
   if (document.getElementById("skillmenu-styles")) return;
@@ -145,7 +146,8 @@ export function createSkillMenu(skillBar: SkillBarState): {
                   <span class="smenu-card-lv">${getRankInfo(inst, getLearningEffort(id)).rankName}</span>
                   ${isPassive ? '<span class="smenu-passive-badge">PASSIV</span>' : ""}
                 </div>
-                ${(() => { const dmg = formatPlayerSkillDamage(player, id); return dmg ? `<div class="smenu-card-dmg">${dmg}</div>` : ""; })()}
+                ${[formatPlayerSkillDamage(player, id), ...describePlayerSkillValues(player, id)]
+                  .filter(Boolean).map((v) => `<div class="smenu-card-dmg">${v}</div>`).join("")}
                 <div class="smenu-card-desc">${def.description ?? ""}</div>
                 ${slotButtons ? `<div class="smenu-slots">${slotButtons}</div>` : ""}
                 ${useButton}

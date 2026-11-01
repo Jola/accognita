@@ -445,9 +445,12 @@ export function executeCheckpoint(player: PlayerState): void {
 // -----------------------------------------------------------
 // MP-REGENERATION — im Game Loop aufrufen (delta in ms)
 // -----------------------------------------------------------
+/** MP-Regeneration in milli-MP pro Sekunde (1 MP/s) — für Spiel und Anzeige. */
+export const MP_REGEN_MILLI_PER_SECOND = 1_000;
+
 export function regenMp(player: PlayerState, deltaMs: number): void {
   if (player.mp < player.maxMp) {
-    player.mp = Math.min(player.maxMp, player.mp + deltaMs);
+    player.mp = Math.min(player.maxMp, player.mp + (deltaMs * MP_REGEN_MILLI_PER_SECOND) / 1000);
   }
 }
 

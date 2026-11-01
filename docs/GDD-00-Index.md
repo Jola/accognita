@@ -63,6 +63,7 @@ Diese Datei ist der **Einstiegspunkt für Menschen und KI-Systeme**, die mit den
 | **[src/systems/StatusEffectSystem.ts](../src/systems/StatusEffectSystem.ts)** | DoT/HoT/Aura, stufenlose Regeneration, passive Skills | Bei Status-Effekt-Fragen |
 | **[src/data/venom.ts](../src/data/venom.ts)** | Stellschrauben des Gifts mit Begründungen: Dosis, Giftlast, Halbwertszeit, Mindestrate | Bei Fragen zum Gift |
 | **[src/systems/VenomSystem.ts](../src/systems/VenomSystem.ts)** | Gift isoliert: Dosis würfeln, Giftlast, stufenloser Abbau | Bei Fragen zum Gift |
+| **[src/systems/StatsSystem.ts](../src/systems/StatsSystem.ts)** | Effektive Werte je Skill und Charakterwerte, aus denselben Funktionen wie das Spiel; Größe, Tempo, Reichweite des Blobs | Bei Fragen zu angezeigten Werten |
 | **[src/systems/MaterialSystem.ts](../src/systems/MaterialSystem.ts)** | Loot-Drop-Auflösung, Material-Inventar | Beim Erweitern des Loot-Systems |
 | **[src/systems/SaveSystem.ts](../src/systems/SaveSystem.ts)** | Speichern/Laden via localStorage (3 Slots), Migration alter Spielstände (`SAVE_VERSION` + `MIGRATIONS`) | Bei Speicher-Fragen |
 | **[src/ui/Joystick.ts](../src/ui/Joystick.ts)** | Virtueller Joystick (DOM, kein Phaser) | Bei Touch-Input-Fragen |
@@ -71,6 +72,7 @@ Diese Datei ist der **Einstiegspunkt für Menschen und KI-Systeme**, die mit den
 | **[src/ui/SaveMenu.ts](../src/ui/SaveMenu.ts)** | Speicher-/Lade-Slot-Overlay | Bei Speicher-UI-Fragen |
 | **[src/ui/GameMenu.ts](../src/ui/GameMenu.ts)** | Vollbild-Spielmenü mit Tabs (Skills, Combo, Inventar, Nearby, Log, Index), pausiert das Spiel | Bei UI-Fragen |
 | **[src/ui/IndexView.ts](../src/ui/IndexView.ts)** | INDEX-Tab: Nachschlagewerk aller Skills und Einheiten, live berechnet | Bei Fragen zu Ist-Werten |
+| **[src/ui/StatsView.ts](../src/ui/StatsView.ts)** | WERTE-Tab: alle Charakterwerte des Blobs (HP, MP, Stärke, Geschick, Tempo, Verteidigung …) | Bei Fragen zur Werte-Ansicht |
 | **[src/ui/ValueChart.ts](../src/ui/ValueChart.ts)** | Werte-Graphen im INDEX: Kurve „Wert über Erfahrung“ je Skill-Wert, mit Rängen und Antipp-Anzeige | Bei Fragen zu den Graphen |
 | **[src/scenes/GameScene.ts](../src/scenes/GameScene.ts)** | Phaser-Scene: Rendering, Input, UI-Bridge | Bei Rendering/Input-Fragen |
 | **[src/world/Chunk.ts](../src/world/Chunk.ts)** | Typen: BiomeId, HeightLevel, ChunkDef, LoadedChunk, SpawnDef | Bei Welt-System-Fragen |
@@ -221,4 +223,4 @@ Wenn du als KI-Assistent an diesem Projekt arbeitest, gelten folgende Regeln:
 
 ---
 
-*Letzte Aktualisierung: v0.6 — progression.ts: Fortschritt 0–100 % statt Übungsgrad (1. November 2026); davor v0.5 — ValueChart.ts ergänzt (1. November 2026); stufenlose Regeneration (StatusEffectSystem) vermerkt; venom.ts und VenomSystem.ts ergänzt (31. Oktober 2026); davor fehlende Code-Dateien in der Tabelle ergänzt (progression.ts, version.ts, ProgressionSystem, EntityLevelingSystem, DamageSystem, SkillEffectSystem, SkillEffects, GameMenu, IndexView) (31. Oktober 2026); davor Erfahrung statt Level umgesetzt (GDD-02 Abschnitt 8, GDD-08 Teil 6), Backlog aktualisiert (30. Oktober 2026); GDD-08 (Progressionsmathematik, Teil 1–5) ergänzt; GDD-07 (Bestiarium-Entwurf) ergänzt; Begründungspflicht (Abschnitt 5 und 7) eingeführt; HitSystem (Treffer-Stufen) ergänzt; GDD-06 verworfen (Referenz jetzt als INDEX-Tab im Spiel), SaveSystem-Migration vermerkt (Oktober 2026)*
+*Letzte Aktualisierung: v0.6 — StatsSystem.ts und StatsView.ts ergänzt (1. November 2026); progression.ts: Fortschritt 0–100 % statt Übungsgrad (1. November 2026); davor v0.5 — ValueChart.ts ergänzt (1. November 2026); stufenlose Regeneration (StatusEffectSystem) vermerkt; venom.ts und VenomSystem.ts ergänzt (31. Oktober 2026); davor fehlende Code-Dateien in der Tabelle ergänzt (progression.ts, version.ts, ProgressionSystem, EntityLevelingSystem, DamageSystem, SkillEffectSystem, SkillEffects, GameMenu, IndexView) (31. Oktober 2026); davor Erfahrung statt Level umgesetzt (GDD-02 Abschnitt 8, GDD-08 Teil 6), Backlog aktualisiert (30. Oktober 2026); GDD-08 (Progressionsmathematik, Teil 1–5) ergänzt; GDD-07 (Bestiarium-Entwurf) ergänzt; Begründungspflicht (Abschnitt 5 und 7) eingeführt; HitSystem (Treffer-Stufen) ergänzt; GDD-06 verworfen (Referenz jetzt als INDEX-Tab im Spiel), SaveSystem-Migration vermerkt (Oktober 2026)*

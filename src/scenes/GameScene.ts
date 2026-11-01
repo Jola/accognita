@@ -95,14 +95,11 @@ import {
 } from "../systems/StatusEffectSystem.js";
 import {
   PLAYER_WORLD_RADIUS_MIN,
-  PLAYER_WORLD_RADIUS_MAX,
-  PLAYER_SIZE_GROWTH_MAX,
   PLAYER_SCREEN_RADIUS,
-  PLAYER_SPEED_PER_WORLD_RADIUS,
   PHOTOSYNTHESIS_XP_PER_HP,
-  PLAYER_REACH_FACTOR,
   toDisplayHp,
 } from "../data/balance.js";
+import { calcPlayerWorldRadius, calcPlayerSpeed, calcPlayerReach, describePlayerSkillValues } from "../systems/StatsSystem.js";
 import { addVenomDose, processVenom, getVenomLoad, clearVenom } from "../systems/VenomSystem.js";
 import { generateTileset, TILE_SIZE } from "../world/TilesetGenerator.js";
 import { ChunkManager } from "../world/ChunkManager.js";
@@ -282,19 +279,16 @@ export class GameScene extends Phaser.Scene {
     // Wobble wird in update() per Math.sin berechnet (kein Tween — kein Konflikt mit Skalierung)
   }
 
-  // Berechnet den Welt-Radius des Blobs aus seinem stetigen Wachstum.
-  // Wächst linear von PLAYER_WORLD_RADIUS_MIN bis PLAYER_WORLD_RADIUS_MAX.
+  // Welt-Radius des Blobs aus seinem stetigen Wachstum (StatsSystem — dieselbe
+  // Funktion zeigt der Werte-Tab an).
   private calcPlayerWorldRadius(): number {
-    const growth = calcGrowth(this.gameState.player.lifetimeXp);
-    const t = Math.min(growth / PLAYER_SIZE_GROWTH_MAX, 1.0);
-    return PLAYER_WORLD_RADIUS_MIN + t * (PLAYER_WORLD_RADIUS_MAX - PLAYER_WORLD_RADIUS_MIN);
+    return calcPlayerWorldRadius(this.gameState.player);
   }
 
   // Reichweite des Blobs (Nahkampf, Absorb, Analyze) in Weltpixeln, gemessen
-  // vom Mittelpunkt des Blobs bis zum RAND des Gegners (findNearestEntity).
-  // PLAYER_REACH_FACTOR × Blob-Radius: Berührung + 1,5 Blob-Radien (balance.ts).
+  // vom Mittelpunkt des Blobs bis zum RAND des Gegners (StatsSystem).
   private getPlayerAttackRange(): number {
-    return this.calcPlayerWorldRadius() * PLAYER_REACH_FACTOR;
+    return calcPlayerReach(this.gameState.player);
   }
 
   // Passt Kamera-Zoom an die aktuelle Größe des Blobs an.
@@ -577,8 +571,7 @@ export class GameScene extends Phaser.Scene {
 
   private handleMovement() {
     // Geschwindigkeit skaliert mit Weltgröße → Bildschirm-Speed bleibt über alle Größen konstant
-    const worldRadius = this.calcPlayerWorldRadius();
-    const speed = worldRadius * PLAYER_SPEED_PER_WORLD_RADIUS;
+    const speed = calcPlayerSpeed(this.gameState.player);
     const body = this.blobGraphic.body;
 
     let dx = this.joy.active ? this.joy.dx : 0;
@@ -1289,6 +1282,7 @@ function renderSkillList(state: GameState) {
           ${renderRankBar(info)}
           <div class="skill-xp-text">${formatRankProgress(info)}</div>
           ${damage ? `<div class="skill-dmg">${damage}, vor Rüstung des Ziels</div>` : ""}
+          ${describePlayerSkillValues(state.player, def.id).map((v) => `<div class="skill-dmg">${v}</div>`).join("")}
           <div class="skill-desc">${def.description}</div>
           ${hasGrow ? `<button class="btn-grow" onclick="window.doGrow()">🌱 Grow anwenden (−5 Pflanzenfaser)</button>` : ""}
         </div>

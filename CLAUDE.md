@@ -35,6 +35,7 @@ Current state: **v0.6** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/systems/StatusEffectSystem.ts` | DoT/HoT/Aura processing, continuous regeneration (HoT as rate per frame), passive skill sync |
 | `src/data/venom.ts` | Venom knobs with rationale: dose, stacking venom load, half-life, minimum rate |
 | `src/systems/VenomSystem.ts` | Venom feature, isolated: roll dose, venom load, continuous decay (= damage) |
+| `src/systems/StatsSystem.ts` | Effective values per skill and character stats, computed with the same functions the game uses; player size, speed, reach |
 | `src/systems/CombatSystem.ts` | Damage calculation, skill dispatch, checkpoint logic |
 | `src/systems/DamageSystem.ts` | Damage pipeline (GDD-05 section 3) |
 | `src/systems/SkillEffectSystem.ts` | Evaluates declarative skill effects (`evalSkillValue` = start + (max − start) × progress, attacker/defender effects, dexterity) |
@@ -48,8 +49,9 @@ Current state: **v0.6** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/ui/SkillBar.ts` | Touch skill slots with cooldown display and long-press menu |
 | `src/ui/SkillMenu.ts` | Full-screen skill management overlay (pauses game) |
 | `src/ui/SaveMenu.ts` | Save/load slot UI overlay |
-| `src/ui/GameMenu.ts` | Full-screen game menu (Skills, Combo, Inventar, Nearby, Log, Index) — pauses game; markup in `accognita.template.html` |
+| `src/ui/GameMenu.ts` | Full-screen game menu (Skills, Werte, Combo, Inventar, Nearby, Log, Index) — pauses game; markup in `accognita.template.html` |
 | `src/ui/IndexView.ts` | INDEX tab: in-game reference of all skills and entities with all parameters, computed live from data + systems |
+| `src/ui/StatsView.ts` | WERTE tab: all character stats of the blob (HP, MP, strength, dexterity, speed, defense, attacks) |
 | `src/ui/ValueChart.ts` | INDEX value charts: SVG curve "value over experience" per skill value, ranks as bands, tap/hover readout |
 | `src/scenes/GameScene.ts` | Phaser scene — only file that knows about Phaser |
 | `src/world/Chunk.ts` | Types: BiomeId, HeightLevel, ChunkDef, LoadedChunk, SpawnDef + constants |

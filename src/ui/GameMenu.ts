@@ -1,5 +1,5 @@
 // ============================================================
-// GAME MENU — Vollbild-Spielmenü (Skills, Combo, Inventar, Nearby, Log, Index)
+// GAME MENU — Vollbild-Spielmenü (Skills, Werte, Combo, Inventar, Nearby, Log, Index)
 //
 // Selbstständiges DOM-Modul. Das Markup steht in accognita.template.html
 // (#gameMenu), weil GameScene die Tab-Inhalte über deren IDs befüllt.
@@ -7,6 +7,7 @@
 // ============================================================
 
 import { createIndexView } from "./IndexView.js";
+import { renderStatsView } from "./StatsView.js";
 
 export interface GameMenu {
   open(tab?: string): void;
@@ -25,6 +26,8 @@ export function createGameMenu(): GameMenu {
     overlay.querySelectorAll<HTMLElement>(".tab-content").forEach((c) =>
       c.classList.toggle("active", c.id === `tab-${name}`));
 
+    // Werte-Tab: bei jedem Öffnen neu, damit er den aktuellen Stand zeigt
+    if (name === "stats") renderStatsView(document.getElementById("stats-root")!);
     if (name === "index" && !indexBuilt) {
       createIndexView(document.getElementById("index-root")!);
       indexBuilt = true;
@@ -38,6 +41,7 @@ export function createGameMenu(): GameMenu {
 
   function open(tab?: string) {
     if (tab) switchTab(tab);
+    else if (overlay.querySelector<HTMLElement>(".tab-btn.active")?.dataset.tab === "stats") switchTab("stats");
     if (isOpen) return;
     isOpen = true;
     overlay.classList.remove("hidden");

@@ -70,14 +70,20 @@ export function processTicks(
 //   Heilung pro Frame = healPerSecond × deltaMs / 1000, höchstens bis maxHp
 // Gibt die tatsächliche Heilung zurück (milli-HP) — die Grundlage der XP.
 // -----------------------------------------------------------
-export function processRegeneration(
-  target: { statusEffects: StatusEffect[]; hp: number; maxHp: number },
-  deltaMs: number
-): number {
+/** Heilrate aller Regenerations-Effekte (milli-HP pro Sekunde) — für Spiel und Anzeige. */
+export function getRegenerationRate(target: { statusEffects: StatusEffect[] }): number {
   let rate = 0;
   for (const effect of target.statusEffects) {
     if (effect.type === "hot") rate += effect.healPerSecond;
   }
+  return rate;
+}
+
+export function processRegeneration(
+  target: { statusEffects: StatusEffect[]; hp: number; maxHp: number },
+  deltaMs: number
+): number {
+  const rate = getRegenerationRate(target);
   if (rate <= 0 || deltaMs <= 0) return 0;
   return Math.min((rate * deltaMs) / 1000, Math.max(0, target.maxHp - target.hp));
 }

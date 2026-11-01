@@ -15,6 +15,7 @@ import { MATERIAL_MAP } from "../data/materials.js";
 import { ANALYZE_CHANCE_MODIFIER, MILLI, DEFAULT_HIT_PROFILE, HIT_DAMAGE_MULT } from "../data/balance.js";
 import { calcHitChances, HIT_GRADES, HIT_GRADE_DE } from "../systems/HitSystem.js";
 import { DAMAGE_TYPE_DE } from "../systems/DamageSystem.js";
+import { getEffectValue } from "../systems/StatsSystem.js";
 import { BIOME_SPAWNS } from "../world/BiomeDefinitions.js";
 import { SKILL_RANKS, NATUR_PROGRESS, LEVEL_AT_NATUR } from "../data/progression.js";
 import { xpForProgress, getEntitySkillProgress, rankNameForProgress, levelFromProgress } from "../systems/ProgressionSystem.js";
@@ -102,27 +103,6 @@ const VENOM_TAIL_HP = (VENOM_MIN_RATE_HP_PER_S * VENOM_HALF_LIFE_MS / 1000) / Ma
 const venomDurationFormula = (dose: string) =>
   `${num(VENOM_HALF_LIFE_MS / 1000)} s × log₂(Dosis / ${num(VENOM_TAIL_HP)} HP) + ${num(VENOM_TAIL_HP / VENOM_MIN_RATE_HP_PER_S)} s ` +
   `(Dosis unter ${num(VENOM_TAIL_HP)} HP: Dosis ÷ ${num(VENOM_MIN_RATE_HP_PER_S)} HP/s), Dosis = ${dose}`;
-
-/**
- * Wert eines Effekts beim Fortschritt p — über dieselben Funktionen, die
- * der Kampf aufruft (Vorgabe Entwickler: Anzeige und Spiel dürfen nie
- * auseinanderlaufen). Tabelle und Graph nutzen beide diese Funktion.
- */
-function effectValueFn(skillId: string, e: SkillEffect): (p: number) => number {
-  const cond = e.condition?.damageType;
-  const type = Array.isArray(cond) ? cond[0] : cond;
-  const defender = (p: number) => resolveDefenderEffects({ [skillId]: p }, type);
-  switch (e.effectType) {
-    case "flat_block":     return (p) => defender(p).flatBlock / MILLI;
-    case "percent_reduce": return (p) => defender(p).percentReduce;
-    case "weakness":       return (p) => defender(p).weaknessMult;
-    case "reflect_damage": return (p) => defender(p).reflectDamage / MILLI;
-    case "damage_mult":    return (p) => resolveAttackerEffects({ [skillId]: p }).damageMult;
-    case "dexterity":      return (p) => resolveDexterity({ [skillId]: p });
-    case "inject_venom":   return (p) => venomBiteChance(e, p);
-    default:               return (p) => evalSkillValue(e.formula, p); // ohne eigene Kampffunktion
-  }
-}
 
 function formatCondition(e: SkillEffect): string {
   const c = e.condition;
@@ -275,7 +255,7 @@ function skillDetail(s: SkillDefinition): string {
 
   const effects = (s.effects ?? []).map((e) => {
     const cond = formatCondition(e);
-    const valueAt = effectValueFn(s.id, e);
+    const valueAt = (p: number) => getEffectValue(s.id, e, p); // dieselbe Funktion wie im Kampf (StatsSystem)
     const rows: [string, string[]][] = [
       [EFFECT_DE[e.effectType], LEVELS.map((l) => formatEffectValue(e.effectType, valueAt(l)))],
     ];
