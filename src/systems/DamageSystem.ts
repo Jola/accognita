@@ -17,6 +17,12 @@ import {
   MIN_RESISTANCE_MULT,
 } from "../data/balance";
 
+/** Schadenstypen auf Deutsch — für Anzeigen (INDEX, Skill-Ansicht, Skill-Menü) */
+export const DAMAGE_TYPE_DE: Record<DamageType, string> = {
+  pierce: "Stich", slash: "Schnitt", blunt: "Wucht", acid: "Säure",
+  fire: "Feuer", poison: "Gift", magic: "Magie", psychic: "Psychisch",
+};
+
 // -----------------------------------------------------------
 // DamageInput: Alle Parameter für die Pipeline
 // -----------------------------------------------------------

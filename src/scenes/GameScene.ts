@@ -83,6 +83,7 @@ import {
   executeJump,
   executeCheckpoint,
   regenMp,
+  formatPlayerSkillDamage,
 } from "../systems/CombatSystem.js";
 import {
   processTicks,
@@ -1274,6 +1275,7 @@ function renderSkillList(state: GameState) {
       const hasGrow = def.id === "grow";
 
       const enabled = inst.isEnabled !== false;
+      const damage = formatPlayerSkillDamage(state.player, def.id);
       return `
         <div class="skill-card element-${def.element}${isPassive && !enabled ? " skill-disabled" : ""}">
           <div class="skill-header">
@@ -1286,6 +1288,7 @@ function renderSkillList(state: GameState) {
           </div>
           ${renderRankBar(info)}
           <div class="skill-xp-text">${formatRankProgress(info)}</div>
+          ${damage ? `<div class="skill-dmg">${damage}, vor Rüstung des Ziels</div>` : ""}
           <div class="skill-desc">${def.description}</div>
           ${hasGrow ? `<button class="btn-grow" onclick="window.doGrow()">🌱 Grow anwenden (−5 Pflanzenfaser)</button>` : ""}
         </div>

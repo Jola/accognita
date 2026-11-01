@@ -8,6 +8,7 @@
 
 import type { SkillBarState } from "./SkillBar.js";
 import { getRankInfo, getLearningEffort } from "../systems/ProgressionSystem.js";
+import { formatPlayerSkillDamage } from "../systems/CombatSystem.js";
 
 function injectStyles() {
   if (document.getElementById("skillmenu-styles")) return;
@@ -49,6 +50,7 @@ function injectStyles() {
     .smenu-card-name { font-size: .82em; color: #eee; font-weight: bold; flex: 1; }
     .smenu-card-lv { font-size: .72em; color: #888; white-space: nowrap; }
     .smenu-card-desc { font-size: .68em; color: #777; line-height: 1.35; }
+    .smenu-card-dmg { font-size: .74em; color: #ffcc66; }
     .smenu-passive-badge {
       font-size: .62em; background: rgba(74,240,200,0.18);
       color: #4af0c8; border-radius: 4px; padding: 2px 5px;
@@ -143,6 +145,7 @@ export function createSkillMenu(skillBar: SkillBarState): {
                   <span class="smenu-card-lv">${getRankInfo(inst, getLearningEffort(id)).rankName}</span>
                   ${isPassive ? '<span class="smenu-passive-badge">PASSIV</span>' : ""}
                 </div>
+                ${(() => { const dmg = formatPlayerSkillDamage(player, id); return dmg ? `<div class="smenu-card-dmg">${dmg}</div>` : ""; })()}
                 <div class="smenu-card-desc">${def.description ?? ""}</div>
                 ${slotButtons ? `<div class="smenu-slots">${slotButtons}</div>` : ""}
                 ${useButton}

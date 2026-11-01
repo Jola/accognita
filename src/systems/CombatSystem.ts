@@ -22,7 +22,7 @@ import { ENTITY_MAP } from "../data/entities";
 import { DEFAULT_HIT_PROFILE, HIT_DAMAGE_MULT, MIN_SKILL_DAMAGE, MILLI, toDisplayHp } from "../data/balance";
 import { getCoreProgress, getSkillProgress, getEntitySkillProgress, progressFromLevel } from "./ProgressionSystem";
 import { getScaledDamage, getEntityRangedDamage, getEntityMeleeSkillId } from "./EntityLevelingSystem";
-import { calcFinalDamage } from "./DamageSystem";
+import { calcFinalDamage, DAMAGE_TYPE_DE } from "./DamageSystem";
 import { calcHitChances, rollHitGrade, HIT_GRADE_DE } from "./HitSystem";
 import {
   resolveDefenderEffects,
@@ -130,6 +130,52 @@ function playerCombatant(player: PlayerState, attackSkillId?: string): Combatant
     effects: getPlayerPassiveSkillProgress(player),
     dex: resolveDexterity(getPlayerAllSkillProgress(player), attackSkillId),
   };
+}
+
+// -----------------------------------------------------------
+// SCHADENSANZEIGE — tatsächlicher Schaden eines Skills des Blobs
+//
+// Vorgabe (Entwickler, 1. November 2026): Der tatsächliche Schadenswert soll
+// im Skill-Menü (Auswahl für die Slots) und in der Skill-Ansicht stehen.
+// Gerechnet wird mit denselben Bausteinen wie playerAttack: Basisschaden aus
+// dem Fortschritt (calcSkillAttackDamage), Angreifer-Effekte der
+// eingeschalteten Passiv-Skills (z. B. Superstrength) und die
+// Schadenspipeline calcFinalDamage — für einen normalen Treffer gegen ein
+// Ziel ohne Rüstung. Treffer-Stufe und Rüstung des Ziels ändern ihn im Kampf.
+// -----------------------------------------------------------
+export interface SkillDamagePreview {
+  /** Skill allein, aus dem Fortschritt (milli-HP) */
+  base: number;
+  /** Faktor der eingeschalteten Passiv-Skills (1 = keiner) */
+  attackerMult: number;
+  /** Normaler Treffer, vor der Rüstung des Ziels (milli-HP) */
+  normal: number;
+  damageType: DamageType;
+}
+
+export function getPlayerSkillDamage(player: PlayerState, skillId: string): SkillDamagePreview | null {
+  const skillDef = ALL_SKILLS.get(skillId);
+  if (!skillDef?.damage) return null;
+  const damageType = skillDef.damageType ?? "blunt";
+  const base = calcSkillAttackDamage(skillId, getSkillProgress(player, skillId));
+  const atk = resolveAttackerEffects(playerCombatant(player, skillId).effects);
+  const normal = calcFinalDamage({
+    baseDmg: base, damageType, hitMult: HIT_DAMAGE_MULT.normal,
+    attackerMult: atk.damageMult, attackerPenetration: atk.penetration,
+    defenderFlatBlock: 0, defenderPercentReduce: 0, defenderWeaknessMult: 1, defenderImmune: false,
+  });
+  return { base, attackerMult: atk.damageMult, normal, damageType };
+}
+
+/** „⚔️ 23,2 HP Stich je Treffer (14,5 × 1,6 durch Passiv-Skills)“ — null bei Skills ohne Schaden */
+export function formatPlayerSkillDamage(player: PlayerState, skillId: string): string | null {
+  const d = getPlayerSkillDamage(player, skillId);
+  if (!d) return null;
+  const hp1 = (milli: number) => (milli / MILLI).toLocaleString("de-DE", { maximumFractionDigits: 1 });
+  const mult = d.attackerMult !== 1
+    ? ` (${hp1(d.base)} × ${d.attackerMult.toLocaleString("de-DE", { maximumFractionDigits: 2 })} durch Passiv-Skills)`
+    : "";
+  return `⚔️ ${hp1(d.normal)} HP ${DAMAGE_TYPE_DE[d.damageType]} je Treffer${mult}`;
 }
 
 function entityCombatant(def: EntityDefinition, attackSkillId?: string): Combatant {

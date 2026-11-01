@@ -14,6 +14,7 @@ import { ENTITY_DEFINITIONS, ENTITY_MAP } from "../data/entities.js";
 import { MATERIAL_MAP } from "../data/materials.js";
 import { ANALYZE_CHANCE_MODIFIER, MILLI, DEFAULT_HIT_PROFILE, HIT_DAMAGE_MULT } from "../data/balance.js";
 import { calcHitChances, HIT_GRADES, HIT_GRADE_DE } from "../systems/HitSystem.js";
+import { DAMAGE_TYPE_DE } from "../systems/DamageSystem.js";
 import { BIOME_SPAWNS } from "../world/BiomeDefinitions.js";
 import { SKILL_RANKS, NATUR_PROGRESS, LEVEL_AT_NATUR } from "../data/progression.js";
 import { xpForProgress, getEntitySkillProgress, rankNameForProgress, levelFromProgress } from "../systems/ProgressionSystem.js";
@@ -37,10 +38,6 @@ const ALL_DAMAGE_TYPES: DamageType[] = ["pierce", "slash", "blunt", "acid", "fir
 const ALL_SKILL_LIST = [...CORE_SKILLS, ...BASE_SKILLS, ...PLANT_SKILLS, ...COMBO_SKILLS];
 
 // ── Übersetzungen ──────────────────────────────────────────
-const DAMAGE_TYPE_DE: Record<DamageType, string> = {
-  pierce: "Stich", slash: "Schnitt", blunt: "Wucht", acid: "Säure",
-  fire: "Feuer", poison: "Gift", magic: "Magie", psychic: "Psychisch",
-};
 const TRIGGER_DE: Record<string, string> = {
   passive: "passiv", on_hit_enemy: "bei Treffer", on_receive_damage: "bei erlittenem Schaden",
   on_activate: "bei Aktivierung", on_kill: "bei Kill", per_second: "pro Sekunde", on_move: "bei Bewegung",
