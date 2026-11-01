@@ -20,6 +20,7 @@ import { xpForPractice, getEntitySkillPractice, rankNameForPractice } from "../s
 import { evalFormula, resolveDefenderEffects, resolveAttackerEffects, resolveDexterity } from "../systems/SkillEffectSystem.js";
 import { calcSkillAttackDamage, calcJumpDistance, calcPhotosynthesisHeal } from "../systems/SkillEffects.js";
 import { venomDurationMs } from "../systems/VenomSystem.js";
+import { valueChart, isConstant, attachChartHover, VALUE_CHART_CSS, type ChartSeries } from "./ValueChart.js";
 import { VENOM_HALF_LIFE_MS } from "../data/venom.js";
 import {
   getEntityBaseDamage, getEntityRangedDamage, getScaledMaxHp, getScaledDamage, getScaledSpeed,
@@ -227,36 +228,65 @@ function skillDetail(s: SkillDefinition): string {
     p.push(["Materialkosten", s.materialCost.map((m) => `${m.amount}× ${MATERIAL_MAP.get(m.materialId)?.name ?? m.materialId}`).join(", ")]);
   }
 
+  // Graphen: eine Kurve je Wert, der mit der Erfahrung wächst (konstante Werte nicht)
+  const charts = (list: ChartSeries[]) =>
+    list.filter((c) => !isConstant(c, s.learningEffort)).map((c) => valueChart(c, s.learningEffort)).join("");
+
   const effects = (s.effects ?? []).map((e) => {
+    const cond = formatCondition(e);
     const rows: [string, string[]][] = [
       [EFFECT_DE[e.effectType], LEVELS.map((l) => formatEffectValue(e.effectType, evalFormula(e.formula, l)))],
     ];
+    const series: ChartSeries[] = [{
+      label: `${EFFECT_DE[e.effectType]}${cond ? ` (${cond})` : ""}`,
+      value: (u) => evalFormula(e.formula, u),
+      format: (v) => formatEffectValue(e.effectType, v),
+    }];
     const cfg = e.statusConfig;
     let cfgText = "";
     if (cfg) {
       cfgText = ` · ${cfg.type.toUpperCase()} ${seconds(cfg.durationMs)}${cfg.tickIntervalMs ? `, Tick alle ${seconds(cfg.tickIntervalMs)}` : ""}`;
       if (cfg.damageFormula) rows.push(["Schaden/Tick", LEVELS.map((l) => `${num(evalFormula(cfg.damageFormula!, l))} HP`)]);
       if (cfg.healFormula) rows.push(["Heilung/Tick", LEVELS.map((l) => `${num(evalFormula(cfg.healFormula!, l))} HP`)]);
+      if (cfg.damageFormula) series.push({ label: "Schaden/Tick", value: (u) => evalFormula(cfg.damageFormula!, u), format: (v) => `${num(v)} HP` });
+      if (cfg.healFormula) series.push({ label: "Heilung/Tick", value: (u) => evalFormula(cfg.healFormula!, u), format: (v) => `${num(v)} HP` });
     }
     if (e.venomDose) {
       const doseAt = (l: number) => evalFormula(e.venomDose!, l);
       cfgText = ` · Dosis ${formatFormula(e.venomDose)} HP, stapelt, Halbwertszeit ${seconds(VENOM_HALF_LIFE_MS)}`;
       rows.push(["Dosis", LEVELS.map((l) => `${num(doseAt(l))} HP`)]);
       rows.push(["abgebaut nach", LEVELS.map((l) => seconds(venomDurationMs(doseAt(l) * MILLI)))]);
+      series.push({ label: "Giftdosis je Treffer", value: doseAt, format: (v) => `${num(v, 1)} HP` });
+      series.push({ label: "Gift abgebaut nach", value: (u) => venomDurationMs(doseAt(u) * MILLI) / 1000, format: (v) => `${num(v, 1)} s` });
     }
-    const cond = formatCondition(e);
     return `<div class="idx-effect">
       <div><b>${EFFECT_DE[e.effectType]}</b> · ${TRIGGER_DE[e.trigger]}${cond ? ` · ${cond}` : ""}</div>
       <div class="idx-formula">${formatFormula(e.formula)}${cfgText}</div>
       ${levelTable(rows)}
+      ${charts(series)}
       <div class="idx-reason">${e.reasoning}</div>
     </div>`;
   }).join("");
 
   const derived: [string, string[]][] = [];
-  if (s.baseDamage) derived.push(["Schaden (HP)", LEVELS.map((l) => hp(calcSkillAttackDamage(s.id, l)))]);
-  if (s.id === "jump") derived.push(["Sprungweite (px)", LEVELS.map((l) => String(calcJumpDistance(l)))]);
-  if (s.id === "photosynthesis") derived.push(["Heilung (HP/s)", LEVELS.map((l) => hp(calcPhotosynthesisHeal(l)))]);
+  const derivedSeries: ChartSeries[] = [];
+  if (s.baseDamage) {
+    derived.push(["Schaden (HP)", LEVELS.map((l) => hp(calcSkillAttackDamage(s.id, l)))]);
+    derivedSeries.push({ label: "Schaden je Treffer (normal, vor Rüstung)", value: (u) => calcSkillAttackDamage(s.id, u) / MILLI, format: (v) => `${num(v, 1)} HP` });
+  }
+  if (s.id === "jump") {
+    derived.push(["Sprungweite (px)", LEVELS.map((l) => String(calcJumpDistance(l)))]);
+    derivedSeries.push({ label: "Sprungweite", value: calcJumpDistance, format: (v) => `${num(v, 0)} px` });
+  }
+  if (s.id === "photosynthesis") {
+    derived.push(["Heilung (HP/s)", LEVELS.map((l) => hp(calcPhotosynthesisHeal(l)))]);
+    derivedSeries.push({ label: "Heilung", value: (u) => calcPhotosynthesisHeal(u) / MILLI, format: (v) => `${num(v, 2)} HP/s` });
+  }
+  if (s.id === "analyze" || s.id === "absorb") {
+    // Erfolgschance = min(1, u / Stufe des Wesens) — sicher bis Stufe u
+    derived.push(["Sicher erfolgreich bis Stufe", LEVELS.map((l) => num(l, 1))]);
+    derivedSeries.push({ label: "Sicher erfolgreich bis Wesen-Stufe", value: (u) => u, format: (v) => `Stufe ${num(v, 1)}` });
+  }
 
   const sources = ENTITY_DEFINITIONS.flatMap((e) =>
     e.skillDrops.filter((d) => d.skillId === s.id).map((d) =>
@@ -270,7 +300,7 @@ function skillDetail(s: SkillDefinition): string {
     `<p class="idx-desc">${s.description}</p>`,
     params(p),
     section("Effekte", effects),
-    section("Werte zu Rangbeginn (dazwischen fließend)", derived.length ? levelTable(derived) : ""),
+    section("Werte zu Rangbeginn (dazwischen fließend)", derived.length ? levelTable(derived) + charts(derivedSeries) : ""),
     section("Treffer-Stufen (ohne Geschick)", s.baseDamage
       ? `${hitTable(s.hitProfile ?? DEFAULT_HIT_PROFILE)}<p class="idx-reason">Geschick des Angreifers verschiebt die Verteilung zu besseren Stufen, Geschick des Ziels zu schlechteren.</p>`
       : ""),
@@ -453,6 +483,7 @@ function injectStyles() {
     }
     .idx-chip:active { border-color:var(--accent); }
     .idx code { font-size:.7rem; color:var(--accent2); }
+    ${VALUE_CHART_CSS}
   `;
   document.head.appendChild(s);
 }
@@ -480,6 +511,7 @@ export function createIndexView(root: HTMLElement): void {
   `;
   const body = root.querySelector<HTMLElement>(".idx-body")!;
   const search = root.querySelector<HTMLInputElement>(".idx-search")!;
+  attachChartHover(body);
 
   function render() {
     root.querySelectorAll<HTMLElement>("[data-sec]").forEach((b) =>

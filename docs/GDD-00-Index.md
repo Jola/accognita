@@ -71,6 +71,7 @@ Diese Datei ist der **Einstiegspunkt für Menschen und KI-Systeme**, die mit den
 | **[src/ui/SaveMenu.ts](../src/ui/SaveMenu.ts)** | Speicher-/Lade-Slot-Overlay | Bei Speicher-UI-Fragen |
 | **[src/ui/GameMenu.ts](../src/ui/GameMenu.ts)** | Vollbild-Spielmenü mit Tabs (Skills, Combo, Inventar, Nearby, Log, Index), pausiert das Spiel | Bei UI-Fragen |
 | **[src/ui/IndexView.ts](../src/ui/IndexView.ts)** | INDEX-Tab: Nachschlagewerk aller Skills und Einheiten, live berechnet | Bei Fragen zu Ist-Werten |
+| **[src/ui/ValueChart.ts](../src/ui/ValueChart.ts)** | Werte-Graphen im INDEX: Kurve „Wert über Erfahrung“ je Skill-Wert, mit Rängen und Antipp-Anzeige | Bei Fragen zu den Graphen |
 | **[src/scenes/GameScene.ts](../src/scenes/GameScene.ts)** | Phaser-Scene: Rendering, Input, UI-Bridge | Bei Rendering/Input-Fragen |
 | **[src/world/Chunk.ts](../src/world/Chunk.ts)** | Typen: BiomeId, HeightLevel, ChunkDef, LoadedChunk, SpawnDef | Bei Welt-System-Fragen |
 | **[src/world/BiomeDefinitions.ts](../src/world/BiomeDefinitions.ts)** | Zonen-Layout, Spawn-Tabellen, Tile-Index-Mapping | Bei Biom-Fragen |
@@ -220,4 +221,4 @@ Wenn du als KI-Assistent an diesem Projekt arbeitest, gelten folgende Regeln:
 
 ---
 
-*Letzte Aktualisierung: v0.4 — stufenlose Regeneration (StatusEffectSystem) vermerkt; venom.ts und VenomSystem.ts ergänzt (31. Oktober 2026); davor fehlende Code-Dateien in der Tabelle ergänzt (progression.ts, version.ts, ProgressionSystem, EntityLevelingSystem, DamageSystem, SkillEffectSystem, SkillEffects, GameMenu, IndexView) (31. Oktober 2026); davor Erfahrung statt Level umgesetzt (GDD-02 Abschnitt 8, GDD-08 Teil 6), Backlog aktualisiert (30. Oktober 2026); GDD-08 (Progressionsmathematik, Teil 1–5) ergänzt; GDD-07 (Bestiarium-Entwurf) ergänzt; Begründungspflicht (Abschnitt 5 und 7) eingeführt; HitSystem (Treffer-Stufen) ergänzt; GDD-06 verworfen (Referenz jetzt als INDEX-Tab im Spiel), SaveSystem-Migration vermerkt (Oktober 2026)*
+*Letzte Aktualisierung: v0.5 — ValueChart.ts ergänzt (1. November 2026); stufenlose Regeneration (StatusEffectSystem) vermerkt; venom.ts und VenomSystem.ts ergänzt (31. Oktober 2026); davor fehlende Code-Dateien in der Tabelle ergänzt (progression.ts, version.ts, ProgressionSystem, EntityLevelingSystem, DamageSystem, SkillEffectSystem, SkillEffects, GameMenu, IndexView) (31. Oktober 2026); davor Erfahrung statt Level umgesetzt (GDD-02 Abschnitt 8, GDD-08 Teil 6), Backlog aktualisiert (30. Oktober 2026); GDD-08 (Progressionsmathematik, Teil 1–5) ergänzt; GDD-07 (Bestiarium-Entwurf) ergänzt; Begründungspflicht (Abschnitt 5 und 7) eingeführt; HitSystem (Treffer-Stufen) ergänzt; GDD-06 verworfen (Referenz jetzt als INDEX-Tab im Spiel), SaveSystem-Migration vermerkt (Oktober 2026)*

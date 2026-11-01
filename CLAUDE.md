@@ -50,6 +50,7 @@ Current state: **v0.5** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/ui/SaveMenu.ts` | Save/load slot UI overlay |
 | `src/ui/GameMenu.ts` | Full-screen game menu (Skills, Combo, Inventar, Nearby, Log, Index) — pauses game; markup in `accognita.template.html` |
 | `src/ui/IndexView.ts` | INDEX tab: in-game reference of all skills and entities with all parameters, computed live from data + systems |
+| `src/ui/ValueChart.ts` | INDEX value charts: SVG curve "value over experience" per skill value, ranks as bands, tap/hover readout |
 | `src/scenes/GameScene.ts` | Phaser scene — only file that knows about Phaser |
 | `src/world/Chunk.ts` | Types: BiomeId, HeightLevel, ChunkDef, LoadedChunk, SpawnDef + constants |
 | `src/world/BiomeDefinitions.ts` | Zone layout, spawn tables, tile index mapping |
