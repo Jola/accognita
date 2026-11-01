@@ -28,7 +28,7 @@
 //
 // Dieselben Regeln gelten für Blob und Gegner: Ein Skill ist einmal
 // definiert und wird mit unterschiedlich viel Erfahrung ausgewertet
-// (getEntitySkillPractice).
+// (getEntitySkillProgress).
 //
 // Keine Phaser-Abhängigkeit. Kein Rendering.
 // ============================================================
@@ -38,12 +38,10 @@ import type { PlayerState } from "../types/GameState";
 import type { EntityDefinition } from "../types/Entity";
 import { ALL_SKILLS } from "../data/skills";
 import {
-  PRACTICE_CURVE_EXPONENT,
-  PRACTICE_XP_FACTOR,
+  NATUR_PROGRESS,
+  NATUR_XP_PER_EFFORT,
   SKILL_RANKS,
-  CAPACITY_BASE,
-  CAPACITY_MAX,
-  CAPACITY_HALF_XP,
+  LEVEL_AT_NATUR,
   FORGET_AGE_FLOOR_SECONDS,
   GROWTH_XP_SCALE,
   OVERSTRETCH_MAX_FRACTION,
@@ -55,7 +53,7 @@ import {
 } from "../data/progression";
 
 // -----------------------------------------------------------
-// 1. ERFAHRUNG → ÜBUNGSGRAD
+// 1. ERFAHRUNG → FORTSCHRITT
 // -----------------------------------------------------------
 
 /** Lernaufwand eines Skills aus skills.ts (unbekannte Skills: 1). */
@@ -63,76 +61,98 @@ export function getLearningEffort(skillId: string): number {
   return ALL_SKILLS.get(skillId)?.learningEffort ?? 1;
 }
 
+/** Erfahrung, die einen Skill auf Natur (90 %) bringt. */
+export function naturXp(learningEffort: number): number {
+  return learningEffort * NATUR_XP_PER_EFFORT;
+}
+
 /**
- * Übungsgrad u ≥ 1 aus Erfahrung — stetig, ohne Sprünge.
- * Mit u werden alle Effekt-Formeln ausgewertet (evalFormula).
+ * Fortschritt p (0 … 1, erreicht 1 nie) aus Erfahrung — stetig, ohne Sprünge.
+ * Mit p werden alle Skill-Werte ausgewertet: start + (max − start) × p.
  */
-export function practiceFromXp(xp: number, learningEffort: number): number {
-  if (xp <= 0) return 1;
-  return 1 + Math.pow(xp / (learningEffort * PRACTICE_XP_FACTOR), 1 / PRACTICE_CURVE_EXPONENT);
+export function progressFromXp(xp: number, learningEffort: number): number {
+  if (xp <= 0) return 0;
+  return 1 - Math.pow(1 - NATUR_PROGRESS, xp / naturXp(learningEffort));
 }
 
-/** Umkehrung: wie viel Erfahrung für Übungsgrad u nötig ist. */
-export function xpForPractice(practice: number, learningEffort: number): number {
-  if (practice <= 1) return 0;
-  return learningEffort * PRACTICE_XP_FACTOR * Math.pow(practice - 1, PRACTICE_CURVE_EXPONENT);
+/** Umkehrung: wie viel Erfahrung für Fortschritt p nötig ist (p ≥ 1: unendlich). */
+export function xpForProgress(progress: number, learningEffort: number): number {
+  if (progress <= 0) return 0;
+  if (progress >= 1) return Infinity;
+  return naturXp(learningEffort) * Math.log(1 - progress) / Math.log(1 - NATUR_PROGRESS);
 }
 
-/** Übungsgrad eines Skills des Spielers (nicht entdeckt: 1). */
-export function getSkillPractice(player: PlayerState, skillId: string): number {
+/** Fortschritt eines Skills des Spielers (nicht entdeckt: 0). */
+export function getSkillProgress(player: PlayerState, skillId: string): number {
   const inst = player.discoveredSkills.get(skillId);
-  return inst ? practiceFromXp(inst.xp, getLearningEffort(skillId)) : 1;
+  return inst ? progressFromXp(inst.xp, getLearningEffort(skillId)) : 0;
 }
 
-/** Übungsgrad einer Kern-Fähigkeit (Analyze/Absorb). */
-export function getCorePractice(player: PlayerState, ability: "absorb" | "analyze"): number {
-  return practiceFromXp(player.coreAbilities[ability].xp, getLearningEffort(ability));
+/** Fortschritt einer Kern-Fähigkeit (Analyze/Absorb). */
+export function getCoreProgress(player: PlayerState, ability: "absorb" | "analyze"): number {
+  return progressFromXp(player.coreAbilities[ability].xp, getLearningEffort(ability));
 }
 
 /**
- * Übungsgrade einer Gegner-Art { skillId → u }.
+ * Fortschritt je Skill einer Gegner-Art { skillId → p }.
  * Gegner tragen in entities.ts Erfahrung (skillXp) — dieselbe Umrechnung
  * wie beim Blob, damit derselbe Skill bei gleicher Erfahrung gleich wirkt.
  */
-const entityPracticeCache = new WeakMap<EntityDefinition, Record<string, number>>();
-export function getEntitySkillPractice(def: EntityDefinition): Record<string, number> {
-  let cached = entityPracticeCache.get(def);
+const entityProgressCache = new WeakMap<EntityDefinition, Record<string, number>>();
+export function getEntitySkillProgress(def: EntityDefinition): Record<string, number> {
+  let cached = entityProgressCache.get(def);
   if (!cached) {
     cached = {};
     for (const [id, xp] of Object.entries(def.skillXp ?? {})) {
-      cached[id] = practiceFromXp(xp, getLearningEffort(id));
+      cached[id] = progressFromXp(xp, getLearningEffort(id));
     }
-    entityPracticeCache.set(def, cached);
+    entityProgressCache.set(def, cached);
   }
   return cached;
+}
+
+// -----------------------------------------------------------
+// 2b. VERGLEICHSSTUFE (Fortschritt ↔ Wesen-Stufe)
+// -----------------------------------------------------------
+
+/** Fortschritt auf der Skala der Wesen-Stufen: 0 % → 1, Natur → 10, Grenze 11. */
+export function levelFromProgress(progress: number): number {
+  return 1 + (LEVEL_AT_NATUR - 1) * progress / NATUR_PROGRESS;
+}
+
+/** Umkehrung (für Gegner ohne Skill, die nur eine Stufe haben). */
+export function progressFromLevel(level: number): number {
+  return Math.max(0, Math.min(0.999, (level - 1) * NATUR_PROGRESS / (LEVEL_AT_NATUR - 1)));
 }
 
 // -----------------------------------------------------------
 // 2. RÄNGE (nur Anzeige)
 // -----------------------------------------------------------
 
-/** Index des Rangs für einen Übungsgrad (0 = erster Rang). */
-export function rankIndexForPractice(practice: number): number {
+/** Index des Rangs für einen Fortschritt (0 = erster Rang). */
+export function rankIndexForProgress(progress: number): number {
   let index = 0;
   for (let i = 0; i < SKILL_RANKS.length; i++) {
-    if (practice >= SKILL_RANKS[i].fromPractice) index = i;
+    if (progress + 1e-9 >= SKILL_RANKS[i].fromProgress) index = i; // Rundung an der Grenze
   }
   return index;
 }
 
-/** Rangname für einen Übungsgrad (z. B. für Gegner-Anzeigen). */
-export function rankNameForPractice(practice: number): string {
-  return SKILL_RANKS[rankIndexForPractice(practice)].name;
+/** Rangname für einen Fortschritt (z. B. für Gegner-Anzeigen). */
+export function rankNameForProgress(progress: number): string {
+  return SKILL_RANKS[rankIndexForProgress(progress)].name;
 }
 
 function rankIndexForXp(xp: number, learningEffort: number): number {
-  return rankIndexForPractice(practiceFromXp(xp, learningEffort));
+  return rankIndexForProgress(progressFromXp(xp, learningEffort));
 }
 
 export interface RankInfo {
   rankName: string;
+  /** Fortschritt 0–1 (allgemeines Schema, progression.ts Abschnitt 1) */
+  progress: number;
   nextRankName: string | null;   // null = höchster Rang
-  /** Fortschritt im aktuellen Rang 0–1 (höchster Rang: 1) */
+  /** Füllstand im aktuellen Rang 0–1 (höchster Rang: von 90 % bis 100 %) */
   fraction: number;
   /** Wo der Balken nach Gutschrift der ausstehenden Erfahrung stünde, 0–1 */
   pendingFraction: number;
@@ -147,17 +167,24 @@ export function getRankInfo(progress: SkillProgress, learningEffort: number): Ra
   const index = rankIndexForXp(progress.xp, learningEffort);
   const rank = SKILL_RANKS[index];
   const next = SKILL_RANKS[index + 1];
+  const p = progressFromXp(progress.xp, learningEffort);
   if (!next) {
+    // Höchster Rang: Balken läuft weiter von der Rang-Grenze bis zum (nie
+    // ganz erreichten) Höchstwert
+    const fill = (q: number) => clamp01((q - rank.fromProgress) / (1 - rank.fromProgress));
     return {
-      rankName: rank.name, nextRankName: null, fraction: 1, pendingFraction: 1,
+      rankName: rank.name, progress: p, nextRankName: null,
+      fraction: fill(p),
+      pendingFraction: fill(progressFromXp(progress.xp + progress.pendingXp, learningEffort)),
       xp: progress.xp, pendingXp: progress.pendingXp, xpToNextRank: 0,
     };
   }
-  const from = xpForPractice(rank.fromPractice, learningEffort);
-  const to   = xpForPractice(next.fromPractice, learningEffort);
+  const from = xpForProgress(rank.fromProgress, learningEffort);
+  const to   = xpForProgress(next.fromProgress, learningEffort);
   const span = to - from;
   return {
     rankName: rank.name,
+    progress: p,
     nextRankName: next.name,
     fraction: clamp01((progress.xp - from) / span),
     pendingFraction: clamp01((progress.xp + progress.pendingXp - from) / span),
@@ -177,13 +204,13 @@ export function calcGrowth(lifetimeXp: number): number {
 }
 
 /**
- * Kapazität: so viel Erfahrung können alle Skills zusammen dauerhaft halten.
- * Sättigt bei CAPACITY_MAX — je CAPACITY_HALF_XP Lebenserfahrung kommt die
- * Hälfte des noch fehlenden Stücks dazu.
+ * Kapazität: so viel Erfahrung können alle Skills zusammen dauerhaft halten —
+ * genau genug, um jeden entdeckten Skill auf Natur (90 %) zu bringen.
  */
 export function calcCapacity(player: PlayerState): number {
-  const grown = 1 - Math.pow(0.5, Math.max(0, player.lifetimeXp) / CAPACITY_HALF_XP);
-  return CAPACITY_BASE + (CAPACITY_MAX - CAPACITY_BASE) * grown;
+  let capacity = 0;
+  for (const id of player.discoveredSkills.keys()) capacity += naturXp(getLearningEffort(id));
+  return capacity;
 }
 
 /** Belegte Kapazität = Summe der Erfahrung aller entdeckten Skills (ohne Kern-Fähigkeiten). */
@@ -490,6 +517,8 @@ function clamp01(x: number): number {
 }
 
 // ------------------------------------------------------------
-// Zuletzt geändert: 2026-11-01 — Kapazität sättigt, Verlernen verteilt
+// Zuletzt geändert: 2026-11-01 — Fortschritt 0–100 % statt Übungsgrad,
+// Vergleichsstufe, Kapazität = entdeckte Skills bis 90 %
+// Davor: 2026-11-01 — Kapazität sättigt, Verlernen verteilt
 // Davor: 2026-10-30 — Erstfassung
 // ------------------------------------------------------------

@@ -16,11 +16,11 @@
 import type { PlayerState } from "../types/GameState";
 import type { EntityDefinition, EntityInstance } from "../types/Entity";
 import type { AttackResult, DamageType, HitGrade, HitProfile, StatusEffect } from "../types/Combat";
+import type { SkillValue } from "../types/Skill";
 import { ALL_SKILLS } from "../data/skills";
 import { ENTITY_MAP } from "../data/entities";
-import { DEFAULT_HIT_PROFILE, HIT_DAMAGE_MULT, MIN_SKILL_DAMAGE, toDisplayHp } from "../data/balance";
-import { getSkillEffectiveness } from "./SkillSystem";
-import { getCorePractice, getSkillPractice, getEntitySkillPractice } from "./ProgressionSystem";
+import { DEFAULT_HIT_PROFILE, HIT_DAMAGE_MULT, MIN_SKILL_DAMAGE, MILLI, toDisplayHp } from "../data/balance";
+import { getCoreProgress, getSkillProgress, getEntitySkillProgress, progressFromLevel } from "./ProgressionSystem";
 import { getScaledDamage, getEntityRangedDamage, getEntityMeleeSkillId } from "./EntityLevelingSystem";
 import { calcFinalDamage } from "./DamageSystem";
 import { calcHitChances, rollHitGrade, HIT_GRADE_DE } from "./HitSystem";
@@ -29,15 +29,17 @@ import {
   resolveAttackerEffects,
   resolveOnHitStatusEffects,
   resolveDexterity,
-  getPlayerPassiveSkillPractice,
-  getPlayerAllSkillPractice,
+  getPlayerPassiveSkillProgress,
+  getPlayerAllSkillProgress,
+  evalSkillValue,
 } from "./SkillEffectSystem";
-import { calcJumpDistance } from "./SkillEffects";
+import { calcJumpDistance, calcSkillAttackDamage } from "./SkillEffects";
 import { rollVenomDose, clearVenom } from "./VenomSystem";
 
-// Konstanten — Basis-Nahkampf des unausgerüsteten Blobs (milli-HP)
-const BASE_MELEE_DAMAGE  = 3_000;   // 3 HP Basisschaden ohne Skills
-const MELEE_ABSORB_SCALE = 1_500;   // 1.5 HP Bonus pro Einheit Übungsgrad von Absorb
+// Basis-Nahkampf des unausgerüsteten Blobs: Schaden in HP, läuft mit dem
+// Fortschritt von Absorb. 1 → 20 HP, bei Natur 18 HP (wie bisher).
+// [VERWORFEN, 1. November 2026] 3 HP + 1,5 HP × Übungsgrad u von Absorb.
+const UNARMED_DAMAGE: SkillValue = { start: 1, max: 20 };
 const UNARMED_DAMAGE_TYPE: DamageType = "blunt";  // Körpermasse = Wucht
 
 // -----------------------------------------------------------
@@ -64,15 +66,15 @@ export function getEntityAttackDamageType(def: EntityDefinition, skillId = getEn
   return "blunt";
 }
 
-/** Treffer-Profil und Übungsgrad, mit denen eine Entity im Nahkampf würfelt */
+/** Treffer-Profil und Fortschritt, mit denen eine Entity im Nahkampf würfelt */
 export function getEntityMeleeHitBasis(
   def: EntityDefinition,
   skillId = getEntityMeleeSkillId(def)
-): { profile: HitProfile; practice: number } {
-  if (!skillId) return { profile: DEFAULT_HIT_PROFILE, practice: def.level };
+): { profile: HitProfile; progress: number } {
+  if (!skillId) return { profile: DEFAULT_HIT_PROFILE, progress: progressFromLevel(def.level) };
   return {
     profile: ALL_SKILLS.get(skillId)?.hitProfile ?? DEFAULT_HIT_PROFILE,
-    practice: getEntitySkillPractice(def)[skillId],
+    progress: getEntitySkillProgress(def)[skillId],
   };
 }
 
@@ -95,11 +97,11 @@ function resolveHit(
   baseDmg: number,
   damageType: DamageType,
   profile: HitProfile,
-  practice: number,
+  progress: number,
   attacker: Combatant,
   defender: Combatant
 ): HitOutcome {
-  const grade = rollHitGrade(calcHitChances(profile, practice, attacker.dex, defender.dex));
+  const grade = rollHitGrade(calcHitChances(profile, progress, attacker.dex, defender.dex));
   if (grade === "miss") return { grade, dmg: 0, absorbed: 0, reflect: 0 };
 
   const atk = resolveAttackerEffects(attacker.effects);
@@ -125,14 +127,14 @@ function resolveHit(
 // Skills wird abgezogen (siehe resolveDexterity). Verteidiger: volles Geschick.
 function playerCombatant(player: PlayerState, attackSkillId?: string): Combatant {
   return {
-    effects: getPlayerPassiveSkillPractice(player),
-    dex: resolveDexterity(getPlayerAllSkillPractice(player), attackSkillId),
+    effects: getPlayerPassiveSkillProgress(player),
+    dex: resolveDexterity(getPlayerAllSkillProgress(player), attackSkillId),
   };
 }
 
 function entityCombatant(def: EntityDefinition, attackSkillId?: string): Combatant {
-  const practice = getEntitySkillPractice(def);
-  return { effects: practice, dex: resolveDexterity(practice, attackSkillId) };
+  const progress = getEntitySkillProgress(def);
+  return { effects: progress, dex: resolveDexterity(progress, attackSkillId) };
 }
 
 /** "(Schwerer Treffer)" usw.; bei normalem Treffer leer */
@@ -171,26 +173,26 @@ export function playerAttack(
   let baseDmg: number;
   let damageType: DamageType;
   let profile: HitProfile = DEFAULT_HIT_PROFILE;
-  let practice: number;
+  let progress: number;
 
   if (!skillId) {
-    // Unbewaffnet: Übungsgrad von Absorb bestimmt Schaden und Treffer-Güte
-    practice = getCorePractice(player, "absorb");
-    baseDmg = BASE_MELEE_DAMAGE + practice * MELEE_ABSORB_SCALE;
+    // Unbewaffnet: Fortschritt von Absorb bestimmt Schaden und Treffer-Güte
+    progress = getCoreProgress(player, "absorb");
+    baseDmg = evalSkillValue(UNARMED_DAMAGE, progress) * MILLI;
     damageType = UNARMED_DAMAGE_TYPE;
   } else {
     const skillDef = ALL_SKILLS.get(skillId);
-    if (!skillDef || !skillDef.baseDamage) {
+    if (!skillDef || !skillDef.damage) {
       return missResult(`Skill ${skillId} hat keinen Schadenswert.`);
     }
-    practice = getSkillPractice(player, skillId);
-    baseDmg = skillDef.baseDamage * getSkillEffectiveness(practice);
+    progress = getSkillProgress(player, skillId);
+    baseDmg = calcSkillAttackDamage(skillId, progress);
     damageType = skillDef.damageType ?? "blunt";
     profile = skillDef.hitProfile ?? DEFAULT_HIT_PROFILE;
   }
 
   const attacker = playerCombatant(player, skillId);
-  const outcome = resolveHit(baseDmg, damageType, profile, practice, attacker, entityCombatant(def));
+  const outcome = resolveHit(baseDmg, damageType, profile, progress, attacker, entityCombatant(def));
 
   if (outcome.grade === "miss") {
     return {
@@ -201,7 +203,7 @@ export function playerAttack(
 
   // Angreifer-seitige On-Hit-Effekte: Status-Effekte und Gift (VenomSystem)
   const appliedEffects: StatusEffect[] = resolveOnHitStatusEffects(attacker.effects);
-  const venomDose = rollVenomDose(attacker.effects, skillId ? { skillId, practice } : undefined);
+  const venomDose = rollVenomDose(attacker.effects, skillId ? { skillId, progress } : undefined);
 
   const msg = `${def.icon} ${def.name}: ${hp(outcome.dmg)} Schaden${gradeSuffix(outcome.grade)}` +
     (venomDose.total > 0 ? ` + ${hp(venomDose.total)} Gift!` : ".");
@@ -237,10 +239,10 @@ export function entityAttack(
   const label = occasional && skillDef ? ` — ${skillDef.icon} ${skillDef.name}` : "";
 
   const baseDmg = getScaledDamage(def, instance.bonusLevel ?? 0, skillId);
-  const { profile, practice } = getEntityMeleeHitBasis(def, skillId);
+  const { profile, progress } = getEntityMeleeHitBasis(def, skillId);
   const attacker = entityCombatant(def, skillId);
   const outcome = resolveHit(
-    baseDmg, getEntityAttackDamageType(def, skillId), profile, practice, attacker, playerCombatant(player)
+    baseDmg, getEntityAttackDamageType(def, skillId), profile, progress, attacker, playerCombatant(player)
   );
 
   if (outcome.grade === "miss") {
@@ -253,7 +255,7 @@ export function entityAttack(
   // On-Hit-Effekte der Entity: Status-Effekte und Gift (VenomSystem).
   // Gift aktiver Skills wirkt nur, wenn genau dieser Skill getroffen hat.
   const appliedEffects: StatusEffect[] = resolveOnHitStatusEffects(attacker.effects);
-  const venomDose = rollVenomDose(attacker.effects, skillId ? { skillId, practice } : undefined);
+  const venomDose = rollVenomDose(attacker.effects, skillId ? { skillId, progress } : undefined);
 
   const armor = outcome.absorbed > 0 ? `, ${hp(outcome.absorbed)} abgewehrt` : "";
   const msg = `${def.icon} ${def.name}${label}: ${HIT_GRADE_DE[outcome.grade]} — ${hp(outcome.dmg)} Schaden${armor}` +
@@ -284,7 +286,7 @@ export function entityRangedAttack(def: EntityDefinition, player: PlayerState): 
     getEntityRangedDamage(def),
     skillDef.damageType ?? "blunt",
     skillDef.hitProfile ?? DEFAULT_HIT_PROFILE,
-    getEntitySkillPractice(def)[skillId] ?? 1,
+    getEntitySkillProgress(def)[skillId] ?? 0,
     entityCombatant(def, skillId),
     playerCombatant(player)
   );
@@ -358,7 +360,7 @@ export function consumeSkill(player: PlayerState, skillId: string): number {
 // DASH-REICHWEITE berechnen (für Jump-Skill)
 // -----------------------------------------------------------
 export function calcDashDistance(player: PlayerState, skillId: string): number {
-  return calcJumpDistance(getSkillPractice(player, skillId));
+  return calcJumpDistance(getSkillProgress(player, skillId));
 }
 
 // -----------------------------------------------------------

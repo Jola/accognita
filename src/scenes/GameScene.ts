@@ -30,9 +30,10 @@ import {
   getCapacityInfo,
   calcGrowth,
   getLearningEffort,
-  getCorePractice,
-  getEntitySkillPractice,
-  rankNameForPractice,
+  getCoreProgress,
+  levelFromProgress,
+  getEntitySkillProgress,
+  rankNameForProgress,
 } from "../systems/ProgressionSystem.js";
 import type { GainResult, ProgressionEvent, RankInfo } from "../systems/ProgressionSystem.js";
 import {
@@ -1233,7 +1234,7 @@ function updateUI(state: GameState) {
   // Kern-Fähigkeiten
   const coreText = (ability: "absorb" | "analyze") => {
     const info = getRankInfo(p.coreAbilities[ability], getLearningEffort(ability));
-    return `${info.rankName} (${formatRankProgress(info)})`;
+    return `${info.rankName} ${formatProgress(info.progress)} (${formatRankProgress(info)})`;
   };
   setEl("ui-analyze-level", `🔍 ${coreText("analyze")}`);
   setEl("ui-absorb-level", `💥 ${coreText("absorb")}`);
@@ -1280,7 +1281,7 @@ function renderSkillList(state: GameState) {
             <span class="skill-name">${def.name}</span>
             ${def.category === "combo" ? '<span class="combo-badge">COMBO</span>' : ""}
             ${isPassive ? '<span class="combo-badge" style="background:#4af0c8;color:#000">PASSIV</span>' : ""}
-            <span class="skill-level">${info.rankName}</span>
+            <span class="skill-level">${info.rankName} ${formatProgress(info.progress)}</span>
             ${isPassive ? `<button class="btn-passive-toggle" onclick="window.togglePassiveSkill('${def.id}')">${enabled ? "AN" : "AUS"}</button>` : ""}
           </div>
           ${renderRankBar(info)}
@@ -1311,6 +1312,11 @@ function renderRankBar(info: RankInfo): string {
 /** XP-Beträge können Bruchteile sein (fließende Erfahrung) — eine Nachkommastelle */
 function formatXp(xp: number): string {
   return xp.toLocaleString("de-DE", { maximumFractionDigits: 1 });
+}
+
+/** Fortschritt in Prozent, abgerundet — passt zu den Rang-Grenzen (10 %, 20 % …) */
+function formatProgress(progress: number): string {
+  return `${Math.floor(progress * 100 + 1e-7)} %`;
 }
 
 function formatRankProgress(info: RankInfo): string {
@@ -1380,8 +1386,8 @@ function updateNearbyPanel(
   const effectiveLv  = entityDef.level + bonusLv;
   // Gleiche Rechnung wie EntitySystem.absorbEntity/analyzeEntity: dort zählt die
   // Grundstufe (def.level), das Bonus-Level aus dem Entity-Leveling nicht
-  const absorbChance = Math.round(calcSuccessChance(getCorePractice(state.player, "absorb"),  entityDef.level) * 100);
-  const analyzeChance= Math.round(calcSuccessChance(getCorePractice(state.player, "analyze"), entityDef.level) * 100);
+  const absorbChance = Math.round(calcSuccessChance(levelFromProgress(getCoreProgress(state.player, "absorb")),  entityDef.level) * 100);
+  const analyzeChance= Math.round(calcSuccessChance(levelFromProgress(getCoreProgress(state.player, "analyze")), entityDef.level) * 100);
 
   // HP-Leiste (intern milli-HP, Anzeige in HP)
   const scaledMaxHp    = getScaledMaxHp(entityDef, bonusLv);
@@ -1396,9 +1402,9 @@ function updateNearbyPanel(
 
   // Skills der Entity (aus skillXp) — mit Rang wie beim Blob
   const skillLines: string[] = [];
-  for (const [skillId, practice] of Object.entries(getEntitySkillPractice(entityDef))) {
+  for (const [skillId, progress] of Object.entries(getEntitySkillProgress(entityDef))) {
     const s = ALL_SKILLS.get(skillId);
-    if (s) skillLines.push(`${s.icon} ${s.name} (${rankNameForPractice(practice)})`);
+    if (s) skillLines.push(`${s.icon} ${s.name} (${rankNameForProgress(progress)})`);
   }
 
   // Effektiver Schaden (aus Biss-Erfahrung oder standalone)

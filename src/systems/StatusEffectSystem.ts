@@ -21,7 +21,7 @@ import { ALL_SKILLS } from "../data/skills";
 import {
   calcPhotosynthesisHeal,
 } from "./SkillEffects";
-import { getSkillPractice } from "./ProgressionSystem";
+import { getSkillProgress } from "./ProgressionSystem";
 
 // Maximale gleichzeitig aktive Effekte pro Ziel (Performance-Grenze)
 const MAX_EFFECTS = 8;
@@ -190,7 +190,7 @@ export function syncPassiveEffects(player: PlayerState): void {
           id: `passive_${skillId}`,
           type: "hot",
           sourceSkillId: skillId,
-          healPerSecond: calcPhotosynthesisHeal(getSkillPractice(player, skillId)),
+          healPerSecond: calcPhotosynthesisHeal(getSkillProgress(player, skillId)),
         }));
         break;
       }
@@ -219,7 +219,7 @@ export function syncPassiveEffects(player: PlayerState): void {
 export function refreshPassiveEffectValues(player: PlayerState): void {
   for (const effect of player.statusEffects) {
     if (effect.id === "passive_photosynthesis") {
-      effect.healPerSecond = calcPhotosynthesisHeal(getSkillPractice(player, "photosynthesis"));
+      effect.healPerSecond = calcPhotosynthesisHeal(getSkillProgress(player, "photosynthesis"));
     }
   }
 }

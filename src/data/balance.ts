@@ -83,10 +83,11 @@ export const BASE_MP = 40_000;
 export const MP_PER_GROWTH = 8_000;
 
 // -----------------------------------------------------------
-// XP-SKALIERUNG: ENTITY-LEVEL vs. ÜBUNGSGRAD DES SKILLS
+// XP-SKALIERUNG: ENTITY-LEVEL vs. VERGLEICHSSTUFE DES SKILLS
 //
-// Option D: clamp( (entityLevel / übungsgrad)^EXPONENT, MIN, MAX )
-// „Skill Lv“ in den Beispielen = Übungsgrad u (stetig, progression.ts).
+// Option D: clamp( (entityLevel / vergleichsstufe)^EXPONENT, MIN, MAX )
+// „Skill Lv“ in den Beispielen = Vergleichsstufe = 1 + 10 × Fortschritt
+// (progression.ts Abschnitt 2b): 0 % → 1, Natur (90 %) → 10.
 //
 // Beispiele bei EXPONENT=1.5:
 //   Entity Lv 1, Skill Lv 10  → ×0.05  (fast 0 — zu leicht)
@@ -141,7 +142,8 @@ export function scaleXp(baseXp: number, entityLevel: number, skillLevel: number)
 // -----------------------------------------------------------
 // ERFOLGSWAHRSCHEINLICHKEIT für Analyze & Absorb
 //
-// Formel: min(1, übungsgrad / entityLevel)  (Übungsgrad von Analyze/Absorb)
+// Formel: min(1, vergleichsstufe / entityLevel)  (Vergleichsstufe von Analyze/Absorb,
+//          = 1 + 10 × Fortschritt, progression.ts Abschnitt 2b)
 //   abilityLevel >= entityLevel → 100% Erfolg
 //   abilityLevel < entityLevel  → proportional weniger
 //
@@ -225,8 +227,9 @@ export const SKILL_DEFENSE_BASE_MULTIPLIER = 1.0;
 // TREFFER-STUFEN (verfehlt / leicht / normal / schwer / kritisch)
 //
 // Jeder Angriffsskill hat eine Grundverteilung (hitProfile, ohne Erfahrung, Geschick 0).
-// Übungsgrad und Geschick-Differenz kippen die Verteilung Richtung bessere Stufen:
-//   x    = HIT_TILT_PER_SKILL_LEVEL·(u−1) + HIT_TILT_PER_DEX·(Geschick Angreifer − Verteidiger)
+// Fortschritt und Geschick-Differenz kippen die Verteilung Richtung bessere Stufen:
+//   x    = HIT_TILT_PER_SKILL_LEVEL·(Stufe−1) + HIT_TILT_PER_DEX·(Geschick Angreifer − Verteidiger)
+//   Stufe = Vergleichsstufe des Angriffs-Skills = 1 + 10 × Fortschritt (progression.ts 2b)
 //   kipp = HIT_TILT_MAX · tanh(x)                       (weich begrenzt auf ±HIT_TILT_MAX)
 //   p_i  ∝ grund_i · e^(kipp · stufe_i),  stufe = −2 … +2 (verfehlt … kritisch)
 // Bei HIT_TILT_MAX 0.4 steigt Krit höchstens auf ≈2,2× und Verfehlen fällt auf ≈0,45× —
@@ -241,7 +244,7 @@ export const HIT_DAMAGE_MULT: HitProfile = { miss: 0, light: 0.6, normal: 1.0, h
 
 /** Maximales Kippen der Verteilung (in beide Richtungen) */
 export const HIT_TILT_MAX = 0.4;
-/** Beitrag pro Einheit Übungsgrad über 1 */
+/** Beitrag pro Vergleichsstufe über 1 (Natur: +0,45) */
 export const HIT_TILT_PER_SKILL_LEVEL = 0.05;
 /** Beitrag pro Geschick-Punkt Vorsprung des Angreifers */
 export const HIT_TILT_PER_DEX = 0.1;

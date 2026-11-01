@@ -15,6 +15,7 @@ import {
   HIT_TILT_PER_SKILL_LEVEL,
   HIT_TILT_PER_DEX,
 } from "../data/balance";
+import { levelFromProgress } from "./ProgressionSystem";
 
 /** Stufen von schlecht nach gut — die Position bestimmt die Kipprichtung */
 export const HIT_GRADES: HitGrade[] = ["miss", "light", "normal", "heavy", "crit"];
@@ -27,9 +28,13 @@ export const HIT_GRADE_DE: Record<HitGrade, string> = {
   crit: "Kritischer Treffer",
 };
 
-/** Kipp-Wert in [−HIT_TILT_MAX, +HIT_TILT_MAX]; positiv = bessere Treffer */
-export function calcHitTilt(practice: number, attackerDex: number, defenderDex: number): number {
-  const x = HIT_TILT_PER_SKILL_LEVEL * (Math.max(1, practice) - 1)
+/**
+ * Kipp-Wert in [−HIT_TILT_MAX, +HIT_TILT_MAX]; positiv = bessere Treffer.
+ * progress = Fortschritt des Angriffs-Skills (0–1), umgerechnet auf die
+ * Vergleichsstufe (progression.ts 2b): 0 % → 1, Natur → 10.
+ */
+export function calcHitTilt(progress: number, attackerDex: number, defenderDex: number): number {
+  const x = HIT_TILT_PER_SKILL_LEVEL * (levelFromProgress(progress) - 1)
           + HIT_TILT_PER_DEX * (attackerDex - defenderDex);
   return HIT_TILT_MAX * Math.tanh(x);
 }
@@ -37,11 +42,11 @@ export function calcHitTilt(practice: number, attackerDex: number, defenderDex: 
 /** Wahrscheinlichkeiten je Stufe (Summe 1) */
 export function calcHitChances(
   profile: HitProfile,
-  practice: number,
+  progress: number,
   attackerDex: number,
   defenderDex: number
 ): HitProfile {
-  const tilt = calcHitTilt(practice, attackerDex, defenderDex);
+  const tilt = calcHitTilt(progress, attackerDex, defenderDex);
   const weights = HIT_GRADES.map((g, i) => Math.max(0, profile[g]) * Math.exp(tilt * (i - 2)));
   const total = weights.reduce((sum, w) => sum + w, 0) || 1;
   const result = {} as HitProfile;

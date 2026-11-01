@@ -11,7 +11,11 @@
 //   - skillXp: Erfahrung der Art in ihren Skills { skillId → XP }. Gleiche
 //     Skills, gleiche Regeln wie beim Blob: dieselbe Erfahrung ergibt dieselbe
 //     Wirkung (Vorgabe Entwickler, GDD-02 Abschnitt 8.6). In den Kommentaren
-//     steht der Übungsgrad u, der daraus folgt (progression.ts Abschnitt 1).
+//     steht der Fortschritt in %, der daraus folgt (progression.ts
+//     Abschnitt 1), und die Werte, die sich daraus ergeben.
+//     Stand 1. Nov. 2026 (allgemeines Schema): Die XP sind unverändert, die
+//     Werte daraus sind bei wenig Erfahrung deutlich niedriger als vorher
+//     (Startwerte ≈ 1). Die alten Werte stehen als [VERWORFEN] dabei.
 //   - disposition: "neutral" | "hostile" — für Fehlschlag-Reaktion
 // ============================================================
 
@@ -69,7 +73,9 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 30,
     interactRadius: 35,
     aggroRadius: 8,    // 2.5 × worldSize
-    skillXp: { bite: 0, chitin_armor: 0 },   // bite u=1 → 7 Schaden; chitin u=1 → blockt 3 HP Stich
+    // bite 0 % → 1 Schaden; chitin 0 % → blockt nichts
+    //   ([VERWORFEN] bite u=1 → 7 Schaden; chitin u=1 → blockt 3 HP Stich)
+    skillXp: { bite: 0, chitin_armor: 0 },
     worldSize: 3,    // Ameise — winziges Insekt, ähnlich groß wie ein frischer Blob
   },
   {
@@ -91,7 +97,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     interactRadius: 35,
     aggroRadius: 10,   // 2.5 × worldSize
     // Kein bite — Marienkäfer greifen nicht aktiv an.
-    // Hemolymph u=1: 2 Rückschlag-Schaden wenn der Blob ihn trifft.
+    // Hemolymph 0 %: 1 Rückschlag-Schaden wenn der Blob ihn trifft ([VERWORFEN] u=1: 2).
     skillXp: { hemolymph: 0 },
     worldSize: 4,    // Marienkäfer — etwas größer als Ameise
   },
@@ -120,7 +126,8 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 45,
     interactRadius: 40,
     aggroRadius: 15,   // 2.5 × worldSize
-    // bite u=2 → 7 × 1.1 ≈ 8 Schaden; chitin_armor u=3; jump u=2 → Geschick ≈2 (weicht aus, trifft präziser)
+    // bite 3 % → 1,4 Schaden; chitin_armor 11 % → blockt 1,4 HP Stich; jump 3 % → Geschick 0,1
+    //   ([VERWORFEN] bite u=2 → 8 Schaden; chitin_armor u=3; jump u=2 → Geschick ≈2)
     skillXp: { bite: 6, chitin_armor: 24, jump: 6 },
     worldSize: 6,    // Springspinne — deutlich größer als Ameisen
   },
@@ -144,7 +151,8 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 50,
     interactRadius: 40,
     aggroRadius: 15,   // 2.5 × worldSize
-    // bite u=1 → 7 Schaden; venom u=3 → 44% Chance, 3/Tick; chitin_armor u=3 → blockt 7,2 HP Stich
+    // bite 0 % → 1 Schaden; venom 11 % → 8 % Chance auf 4 HP Gift; chitin_armor 11 % → blockt 1,4 HP Stich
+    //   ([VERWORFEN] bite u=1 → 7; venom u=3 → 44 % auf 12 HP; chitin u=3 → blockt 7,2 HP Stich)
     skillXp: { bite: 0, venom: 30, chitin_armor: 24 },
     worldSize: 6,    // Giftspinne — ähnlich groß wie Springspinne
   },
@@ -173,8 +181,9 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 60,
     interactRadius: 45,
     aggroRadius: 18,            // 2.5 × worldSize
-    // pincer u=5 → 7×1.55 ≈ 11 Wucht; chitin u=5 → blockt 9 HP Stich;
-    // venom_sting u=4 → 5×1.45 ≈ 7 Stich + 89% Chance auf 18 HP Gift
+    // pincer 37 % → 6,5 Wucht; chitin 37 % → blockt 4,7 HP Stich;
+    // venom_sting 23 % → 3,3 Stich + 23 % Chance auf 8 HP Gift
+    //   ([VERWORFEN] pincer u=5 → 11; chitin u=5 → 9; venom_sting u=4 → 7 + 89 % auf 18 HP)
     // Vorgabe (Entwickler, 1. Nov. 2026): Skorpione etwas schwächer
     //   ([VERWORFEN] pincer u=6 → 12, Giftdosis 24)
     skillXp: { pincer: 96, chitin_armor: 96, venom_sting: 81 },
@@ -206,8 +215,9 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 120,
     interactRadius: 55,
     aggroRadius: 25,            // 2.5 × worldSize
-    // pincer u=13 → 7×2.35 ≈ 16 Wucht; chitin u=8 → blockt 10,9 HP Stich;
-    // venom_sting u=7 → 5×1.75 ≈ 9 Stich + 92% Chance auf 24 HP Gift
+    // pincer 98 % → 15,8 Wucht; chitin 75 % → blockt 9,8 HP Stich;
+    // venom_sting 64 % → 7,4 Stich + 64 % Chance auf 21 HP Gift
+    //   ([VERWORFEN] pincer u=13 → 16; chitin u=8 → 10,9; venom_sting u=7 → 9 + 92 % auf 24 HP)
     // Vorgabe (Entwickler, 1. Nov. 2026): Skorpione etwas schwächer
     //   ([VERWORFEN] pincer u=18 → 20, Giftdosis 33)
     skillXp: { pincer: 864, chitin_armor: 294, venom_sting: 324 },
@@ -243,8 +253,9 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 600,                // 10 Minuten — sehr seltener Spawn
     interactRadius: 80,
     aggroRadius: 50,                 // 2.5 × worldSize
-    // claw u=20 → 8×3.05 ≈ 24 Nahkampf-Schaden
-    // fire_breath u=20 → 10×3.05 ≈ 31 Fernkampf-Schaden
+    // claw ≈ 100 % → 18 Nahkampf-Schaden (Höchstwert)
+    // fire_breath ≈ 100 % → 23 Fernkampf-Schaden (Höchstwert)
+    //   ([VERWORFEN] u=20 → 24 bzw. 31 — der alte Übungsgrad wuchs unbegrenzt)
     skillXp: { claw: 2707.5, fire_breath: 4512.5 },
     worldSize: 20,                   // Deutlich größer als alle anderen Gegner
   },
@@ -272,7 +283,8 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 180,               // 3 Minuten — seltener Gegner
     interactRadius: 60,
     aggroRadius: 30,                // 2.5 × worldSize
-    // bite u=10 → 7×2.05 ≈ 14 Schaden; venom u=6 → 52% Chance auf 18 HP Gift
+    // bite 90 % (Natur) → 14,5 Schaden; venom 51 % → 35 % Chance auf 15 HP Gift
+    //   ([VERWORFEN] bite u=10 → 14; venom u=6 → 52 % auf 18 HP)
     // Vorgabe (Entwickler, 1. Nov. 2026): Schlangen beißen etwas weniger fest,
     //   ihr Gift war viel zu stark ([VERWORFEN] bite u=15 → 18 HP, venom u=15
     //   → 67 % auf 36 HP: alle 1,2 s gebissen ≈ 20 HP/s Gift im Dauerzustand).

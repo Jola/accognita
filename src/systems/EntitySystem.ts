@@ -15,7 +15,7 @@ import type { EntityInstance, EntityDisposition } from "../types/Entity";
 import type { MaterialStack } from "../types/Material";
 import { ENTITY_MAP } from "../data/entities";
 import { discoverSkill, gainCoreAbilityXp } from "./SkillSystem";
-import { getCorePractice } from "./ProgressionSystem";
+import { getCoreProgress, levelFromProgress } from "./ProgressionSystem";
 import { addMaterial } from "./MaterialSystem";
 import { clearVenom } from "./VenomSystem";
 import type { SkillDiscoveryResult, DiscoveryMethod } from "../types/Skill";
@@ -71,7 +71,7 @@ export function absorbEntity(
   }
 
   // Erfolgs-Check
-  const chance = calcSuccessChance(getCorePractice(player, "absorb"), def.level);
+  const chance = calcSuccessChance(levelFromProgress(getCoreProgress(player, "absorb")), def.level);
 
   if (Math.random() > chance) {
     // FEHLSCHLAG
@@ -148,7 +148,7 @@ export function analyzeEntity(
   }
 
   // Erfolgs-Check
-  const chance = calcSuccessChance(getCorePractice(player, "analyze"), def.level);
+  const chance = calcSuccessChance(levelFromProgress(getCoreProgress(player, "analyze")), def.level);
 
   if (Math.random() > chance) {
     // FEHLSCHLAG

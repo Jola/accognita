@@ -10,11 +10,11 @@
 
 import type { PlayerState } from "../types/GameState";
 import type { DamageType, StatusEffect } from "../types/Combat";
-import type { LinearFormula, SkillEffect } from "../types/Skill";
+import type { SkillValue, SkillEffect } from "../types/Skill";
 import { ALL_SKILLS } from "../data/skills";
 import { MILLI, SKILL_DEFENSE_BASE_MULTIPLIER } from "../data/balance";
 import { makeStatusEffect } from "../types/Combat";
-import { getSkillPractice } from "./ProgressionSystem";
+import { getSkillProgress } from "./ProgressionSystem";
 
 // -----------------------------------------------------------
 // Formelauswertung
@@ -24,17 +24,11 @@ import { getSkillPractice } from "./ProgressionSystem";
 // Für Faktoren (percent_reduce, weakness, damage_mult): Wert direkt.
 // -----------------------------------------------------------
 //
-// practice = Übungsgrad u (stetig, aus Erfahrung — ProgressionSystem).
-// Gleiche Formel für Blob und Gegner: gleiche Erfahrung, gleicher Wert.
-export function evalFormula(formula: LinearFormula, practice: number): number {
-  const l = practice - 1;
-  let value: number;
-  switch (formula.curve ?? "linear") {
-    case "sqrt": value = formula.base + formula.perLevel * Math.sqrt(l); break;
-    case "log":  value = formula.base + formula.perLevel * (l > 0 ? Math.log2(l + 1) : 0); break;
-    default:     value = formula.base + formula.perLevel * l;
-  }
-  return formula.max !== undefined ? Math.min(formula.max, value) : value;
+// progress = Fortschritt p (0 … 1, stetig aus Erfahrung — ProgressionSystem).
+// Allgemeines Schema für jeden Wert: start + (max − start) × p.
+// Gleiche Auswertung für Blob und Gegner: gleiche Erfahrung, gleicher Wert.
+export function evalSkillValue(value: SkillValue, progress: number): number {
+  return value.start + (value.max - value.start) * progress;
 }
 
 // -----------------------------------------------------------
@@ -67,16 +61,16 @@ function emptyDefender(): DefenderEffects {
 // resolveDefenderEffects
 //
 // Wertet alle on_receive_damage-Effekte der gegebenen Skills aus.
-// skillPractice: { skillId → Übungsgrad } (Spieler oder Entity)
+// skillProgress: { skillId → Fortschritt } (Spieler oder Entity)
 // damageType:  Typ des eingehenden Schadens (undefined = untypisiert)
 // -----------------------------------------------------------
 export function resolveDefenderEffects(
-  skillPractice: Record<string, number>,
+  skillProgress: Record<string, number>,
   damageType?: DamageType
 ): DefenderEffects {
   const result = emptyDefender();
 
-  for (const [skillId, practice] of Object.entries(skillPractice)) {
+  for (const [skillId, progress] of Object.entries(skillProgress)) {
     const def = ALL_SKILLS.get(skillId);
     if (!def?.effects) continue;
 
@@ -84,7 +78,7 @@ export function resolveDefenderEffects(
       if (effect.trigger !== "on_receive_damage") continue;
       if (!matchesDamageType(effect, damageType)) continue;
 
-      const value = evalFormula(effect.formula, practice) * SKILL_DEFENSE_BASE_MULTIPLIER;
+      const value = evalSkillValue(effect.formula, progress) * SKILL_DEFENSE_BASE_MULTIPLIER;
 
       switch (effect.effectType) {
         case "flat_block":
@@ -129,18 +123,18 @@ function emptyAttacker(): AttackerEffects {
 // Wertet alle on_hit_enemy-Effekte der gegebenen Skills aus.
 // -----------------------------------------------------------
 export function resolveAttackerEffects(
-  skillPractice: Record<string, number>
+  skillProgress: Record<string, number>
 ): AttackerEffects {
   const result = emptyAttacker();
 
-  for (const [skillId, practice] of Object.entries(skillPractice)) {
+  for (const [skillId, progress] of Object.entries(skillProgress)) {
     const def = ALL_SKILLS.get(skillId);
     if (!def?.effects) continue;
 
     for (const effect of def.effects) {
       if (effect.trigger !== "on_hit_enemy" && effect.trigger !== "passive") continue;
 
-      const value = evalFormula(effect.formula, practice);
+      const value = evalSkillValue(effect.formula, progress);
 
       switch (effect.effectType) {
         case "damage_mult":
@@ -164,13 +158,13 @@ export function resolveAttackerEffects(
 // excludeSkillId: der angreifende Skill — sein eigener Geschick-Beitrag zählt
 // nicht, weil sein Level schon direkt in die Treffer-Stufen eingeht.
 // -----------------------------------------------------------
-export function resolveDexterity(skillPractice: Record<string, number>, excludeSkillId?: string): number {
+export function resolveDexterity(skillProgress: Record<string, number>, excludeSkillId?: string): number {
   let dex = 0;
-  for (const [skillId, practice] of Object.entries(skillPractice)) {
+  for (const [skillId, progress] of Object.entries(skillProgress)) {
     if (skillId === excludeSkillId) continue;
     for (const effect of ALL_SKILLS.get(skillId)?.effects ?? []) {
       if (effect.trigger === "passive" && effect.effectType === "dexterity") {
-        dex += evalFormula(effect.formula, practice);
+        dex += evalSkillValue(effect.formula, progress);
       }
     }
   }
@@ -184,12 +178,12 @@ export function resolveDexterity(skillPractice: Record<string, number>, excludeS
 // auf das Ziel angewendet werden sollen (z.B. Venom-DoT).
 // -----------------------------------------------------------
 export function resolveOnHitStatusEffects(
-  skillPractice: Record<string, number>
+  skillProgress: Record<string, number>
 ): StatusEffect[] {
   const result: StatusEffect[] = [];
   const now = Date.now();
 
-  for (const [skillId, practice] of Object.entries(skillPractice)) {
+  for (const [skillId, progress] of Object.entries(skillProgress)) {
     const def = ALL_SKILLS.get(skillId);
     if (!def?.effects) continue;
 
@@ -198,7 +192,7 @@ export function resolveOnHitStatusEffects(
       if (effect.effectType !== "apply_status") continue;
       if (!effect.statusConfig) continue;
 
-      const chance = evalFormula(effect.formula, practice);
+      const chance = evalSkillValue(effect.formula, progress);
       if (Math.random() >= chance) continue;
 
       const cfg = effect.statusConfig;
@@ -213,10 +207,10 @@ export function resolveOnHitStatusEffects(
         tickIntervalMs: cfg.tickIntervalMs ?? 0,
         lastTickAt: now,
         damagePerTick: cfg.damageFormula
-          ? Math.round(evalFormula(cfg.damageFormula, practice) * MILLI)
+          ? Math.round(evalSkillValue(cfg.damageFormula, progress) * MILLI)
           : 0,
         healPerTick: cfg.healFormula
-          ? Math.round(evalFormula(cfg.healFormula, practice) * MILLI)
+          ? Math.round(evalSkillValue(cfg.healFormula, progress) * MILLI)
           : 0,
       });
       result.push(statusEffect);
@@ -227,27 +221,27 @@ export function resolveOnHitStatusEffects(
 }
 
 // -----------------------------------------------------------
-// Hilfsfunktionen: Übungsgrade aus dem Spieler extrahieren
-// (Gegner: ProgressionSystem.getEntitySkillPractice)
+// Hilfsfunktionen: Fortschritte aus dem Spieler extrahieren
+// (Gegner: ProgressionSystem.getEntitySkillProgress)
 // -----------------------------------------------------------
 
-/** Alle aktiven passiven Skills des Spielers als { id → Übungsgrad }. */
-export function getPlayerPassiveSkillPractice(player: PlayerState): Record<string, number> {
+/** Alle aktiven passiven Skills des Spielers als { id → Fortschritt }. */
+export function getPlayerPassiveSkillProgress(player: PlayerState): Record<string, number> {
   const result: Record<string, number> = {};
   for (const [id, instance] of player.discoveredSkills) {
     const def = ALL_SKILLS.get(id);
     if (def?.activation === "passive" && instance.isEnabled !== false) {
-      result[id] = getSkillPractice(player, id);
+      result[id] = getSkillProgress(player, id);
     }
   }
   return result;
 }
 
-/** Alle Skills des Spielers (passiv und aktiv) als { id → Übungsgrad }. */
-export function getPlayerAllSkillPractice(player: PlayerState): Record<string, number> {
+/** Alle Skills des Spielers (passiv und aktiv) als { id → Fortschritt }. */
+export function getPlayerAllSkillProgress(player: PlayerState): Record<string, number> {
   const result: Record<string, number> = {};
   for (const id of player.discoveredSkills.keys()) {
-    result[id] = getSkillPractice(player, id);
+    result[id] = getSkillProgress(player, id);
   }
   return result;
 }

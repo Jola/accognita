@@ -34,9 +34,11 @@
 // Begründung (Vorschlag Claude, übernommen):
 //   - Gift ist eine Substanz. Zwei Bisse bringen doppelt so viel Gift in
 //     den Körper — nicht „dasselbe Gift noch einmal von vorn“.
-//   - Dosis = Gesamtschaden des früheren 4-s-Gifts (Schaden je Tick × 4):
-//     8 HP bei u = 1, 12 HP bei u = 3 (Giftspinne), 36 HP bei u = 15
-//     (Schlange). Ein einzelner Biss kostet also so viel wie vorher.
+//   - Dosis bei Natur = Gesamtschaden des früheren 4-s-Gifts bei Natur
+//     (Schaden je Tick × 4): Venom 26 HP, Stachelstich 30 HP. Wie jeder
+//     Skill-Wert läuft die Dosis vom Startwert 1 HP zum Höchstwert
+//     (progression.ts Abschnitt 1, Werte in skills.ts).
+//     [VERWORFEN, 1. Nov. 2026] 8 HP bei u = 1, 12 HP bei u = 3, 36 HP bei u = 15.
 //   - Die Bisschance bleibt: Auch Giftschlangen beißen oft „trocken“,
 //     ohne Gift abzugeben.
 //
@@ -139,4 +141,5 @@ export const VENOM_MIN_RATE_HP_PER_S = 1;
 //   kosten. Gleiches Prinzip wie der Abschnitt „in Ruhe“ beim Übertraining.
 // -----------------------------------------------------------
 
-// Stand: 31. Oktober 2026 (Stachelstich ergänzt)
+// Stand: 1. November 2026 (Dosis nach dem allgemeinen Schema start → max)
+// Davor: 31. Oktober 2026 (Stachelstich ergänzt)

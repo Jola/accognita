@@ -62,22 +62,20 @@ export type EffectType =
   | "dexterity";         // Geschick-Punkte: bessere Treffer-Stufen, Ausweichen (formula: Punkte)
 
 /**
- * Formel: Wert bei Übungsgrad u = base + perLevel × f(u−1)
- * u ist stetig und folgt aus der Erfahrung (ProgressionSystem.practiceFromXp).
- * „perLevel“ = Zuwachs je ganzer Einheit Übungsgrad; dazwischen fließend.
- * curve "linear" (Standard): f(n) = n
- * curve "sqrt":  f(n) = sqrt(n)   → stark zu Beginn, flacht ab
- * curve "log":   f(n) = log2(n+1) → sehr stark zu Beginn
+ * Ein Skill-Wert: läuft mit dem Fortschritt p (0 … 1) vom Startwert zum
+ * Höchstwert —  Wert = start + (max − start) × p.
+ * p folgt stetig aus der Erfahrung (ProgressionSystem.progressFromXp) und
+ * erreicht 1 nie; bei Natur (90 %) ist der Wert start + 0,9 × (max − start).
+ * Allgemeines Schema für alle Skills: src/data/progression.ts Abschnitt 1.
+ * Konstante Werte (z. B. Materialschwächen): start = max.
  *
  * Für absolute Effekte (flat_block, deal_damage, heal_flat, reflect_damage,
- * grant_penetration): Wert in Display-HP-Einheiten (÷1000 = milli-HP).
+ * grant_penetration) und Schaden: Wert in Display-HP-Einheiten (×1000 = milli-HP).
  * Für Faktoren und Prozentwerte: Wert direkt.
  */
-export interface LinearFormula {
-  base: number;
-  perLevel: number;
-  curve?: "linear" | "sqrt" | "log";
-  max?: number;   // Obergrenze des Ergebnisses (z.B. 1.0 für Chancen)
+export interface SkillValue {
+  start: number;
+  max: number;
 }
 
 /** Optionale Bedingung für einen SkillEffect */
@@ -93,8 +91,8 @@ export interface StatusConfig {
   type: StatusEffectType;
   durationMs: number;
   tickIntervalMs?: number;
-  damageFormula?: LinearFormula;  // für DoT: Schaden/Tick in HP-Einheiten
-  healFormula?: LinearFormula;    // für HoT: Heilung/Tick in HP-Einheiten
+  damageFormula?: SkillValue;   // für DoT: Schaden/Tick in HP-Einheiten
+  healFormula?: SkillValue;    // für HoT: Heilung/Tick in HP-Einheiten
 }
 
 /**
@@ -105,10 +103,10 @@ export interface SkillEffect {
   trigger: EffectTrigger;
   condition?: EffectCondition;
   effectType: EffectType;
-  formula: LinearFormula;
+  formula: SkillValue;
   damageType?: DamageType;      // Welchen Schadenstyp betrifft der Effekt
   statusConfig?: StatusConfig;  // Nur für apply_status-Effekte
-  venomDose?: LinearFormula;    // Nur für inject_venom: Giftdosis je Biss in HP (src/data/venom.ts)
+  venomDose?: SkillValue;    // Nur für inject_venom: Giftdosis je Biss in HP (src/data/venom.ts)
   reasoning: string;            // Pflichtfeld — Warum verhält sich der Effekt so?
 }
 
@@ -132,7 +130,7 @@ export interface SkillDefinition {
   description: string;
 
   // Für aktive Skills (Kampf)
-  baseDamage?: number;
+  damage?: SkillValue;           // Angriffsschaden in HP: start → max mit dem Fortschritt
   damageType?: DamageType;       // Schadenstyp des Angriffs (pierce, slash, fire, …)
   hitProfile?: HitProfile;       // Treffer-Stufen bei Lv1 ohne Geschick (Standard: DEFAULT_HIT_PROFILE)
   mpCost?: number;

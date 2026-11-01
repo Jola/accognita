@@ -4,16 +4,17 @@
 // Selbstständiges DOM-Modul: liefert SVG als String (für innerHTML) und
 // hängt einen Hover-/Tipp-Handler per Event-Delegation an.
 // Kein Phaser. Eine Kurve je Wert (verschiedene Einheiten nie auf einer
-// Achse), x = Erfahrung, Ränge als abwechselnd getönte Abschnitte.
+// Achse), x = Erfahrung, Ränge als abwechselnd getönte Abschnitte,
+// gestrichelte Linie = Höchstwert, dem sich der Wert annähert.
 // ============================================================
 
 import { SKILL_RANKS } from "../data/progression.js";
-import { practiceFromXp, xpForPractice, rankNameForPractice } from "../systems/ProgressionSystem.js";
+import { progressFromXp, xpForProgress, rankNameForProgress, naturXp } from "../systems/ProgressionSystem.js";
 
 export interface ChartSeries {
   label: string;
-  /** Wert beim Übungsgrad u */
-  value: (u: number) => number;
+  /** Wert beim Fortschritt p (0–1) */
+  value: (p: number) => number;
   /** Anzeige eines Werts, z. B. „12 HP“ oder „45 %“ */
   format: (v: number) => string;
 }
@@ -22,33 +23,34 @@ export interface ChartSeries {
 const W = 320, H = 132;
 const PAD = { left: 46, right: 8, top: 18, bottom: 20 };
 const SAMPLES = 64;
-// x-Achse reicht ein Stück über den höchsten Rang hinaus
-const TOP_RANK_PRACTICE = SKILL_RANKS[SKILL_RANKS.length - 1].fromPractice;
-const X_OVERSHOOT = 1.25;
+// x-Achse reicht über Natur hinaus: 1,5 × NaturXP ≈ 97 % Fortschritt
+const X_OVERSHOOT = 1.5;
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
 const xpText = (xp: number) => Math.round(xp).toLocaleString("de-DE");
+const pctText = (p: number) => `${Math.floor(p * 100)} %`;
 
 /** true, wenn sich der Wert über die Erfahrung nicht ändert (dann keine Kurve). */
-export function isConstant(series: ChartSeries, learningEffort: number): boolean {
-  const a = series.value(1);
-  const b = series.value(practiceFromXp(xpForPractice(TOP_RANK_PRACTICE, learningEffort), learningEffort));
-  return Math.abs(a - b) < 1e-9;
+export function isConstant(series: ChartSeries): boolean {
+  return Math.abs(series.value(0) - series.value(1)) < 1e-9;
 }
 
 /** SVG-Kurve eines Werts über die Erfahrung eines Skills (learningEffort aus skills.ts). */
 export function valueChart(series: ChartSeries, learningEffort: number): string {
-  const xpMax = xpForPractice(TOP_RANK_PRACTICE, learningEffort) * X_OVERSHOOT;
-  // Gleichmäßig im Übungsgrad abtasten: Am Anfang steigt die Kurve steil,
+  const natur = naturXp(learningEffort);
+  const xpMax = natur * X_OVERSHOOT;
+  // Gleichmäßig im Fortschritt abtasten: Am Anfang steigt die Kurve steil,
   // dort liegen so mehr Punkte als bei gleichmäßigen XP-Schritten.
-  const uMax = practiceFromXp(xpMax, learningEffort);
+  const pMax = progressFromXp(xpMax, learningEffort);
   const pts = Array.from({ length: SAMPLES + 1 }, (_, i) => {
-    const u = 1 + ((uMax - 1) * i) / SAMPLES;
-    return { xp: xpForPractice(u, learningEffort), u, v: series.value(u) };
+    const p = (pMax * i) / SAMPLES;
+    return { xp: xpForProgress(p, learningEffort), p, v: series.value(p) };
   });
 
-  const vMax = Math.max(...pts.map((p) => p.v));
-  const vMin = Math.min(0, ...pts.map((p) => p.v));
+  // y-Achse bis zum Höchstwert (p = 1), dem sich die Kurve annähert
+  const vEnd = series.value(1);
+  const vMax = Math.max(vEnd, ...pts.map((p) => p.v));
+  const vMin = Math.min(0, vEnd, ...pts.map((p) => p.v));
   const span = vMax - vMin || 1;
   const plotW = W - PAD.left - PAD.right, plotH = H - PAD.top - PAD.bottom;
   const x = (xp: number) => PAD.left + (xp / xpMax) * plotW;
@@ -58,9 +60,9 @@ export function valueChart(series: ChartSeries, learningEffort: number): string 
   const bands: string[] = [];
   let lastLabelEnd = -Infinity;
   SKILL_RANKS.forEach((r, i) => {
-    const x0 = x(xpForPractice(r.fromPractice, learningEffort));
+    const x0 = x(xpForProgress(r.fromProgress, learningEffort));
     const next = SKILL_RANKS[i + 1];
-    const x1 = next ? x(Math.min(xpMax, xpForPractice(next.fromPractice, learningEffort))) : x(xpMax);
+    const x1 = next ? x(Math.min(xpMax, xpForProgress(next.fromProgress, learningEffort))) : x(xpMax);
     if (i % 2 === 1) bands.push(`<rect class="vc-band" x="${x0}" y="${PAD.top}" width="${x1 - x0}" height="${plotH}"/>`);
     const labelW = r.name.length * 5.2;
     if (x1 - x0 >= labelW + 4 && x0 >= lastLabelEnd + 4) {
@@ -70,16 +72,16 @@ export function valueChart(series: ChartSeries, learningEffort: number): string 
   });
 
   const path = pts.map((p, i) => `${i ? "L" : "M"}${x(p.xp).toFixed(1)},${y(p.v).toFixed(1)}`).join("");
-  const natur = xpForPractice(TOP_RANK_PRACTICE, learningEffort);
-  const tips = pts.map((p) => `${rankNameForPractice(p.u)} · ${xpText(p.xp)} XP: ${series.format(p.v)}`).join("\n");
+  const tips = pts.map((p) => `${rankNameForProgress(p.p)} ${pctText(p.p)} · ${xpText(p.xp)} XP: ${series.format(p.v)}`).join("\n");
 
   return `<figure class="vc" data-tips="${esc(tips)}" data-x0="${PAD.left}" data-x1="${W - PAD.right}" data-w="${W}">
     <figcaption>${esc(series.label)}</figcaption>
     <svg class="vc-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(series.label)} über die Erfahrung">
       ${bands.join("")}
-      <line class="vc-grid" x1="${PAD.left}" x2="${W - PAD.right}" y1="${y(vMax)}" y2="${y(vMax)}"/>
+      <line class="vc-max" x1="${PAD.left}" x2="${W - PAD.right}" y1="${y(vEnd)}" y2="${y(vEnd)}"/>
+      <text class="vc-tick" x="${PAD.left - 4}" y="${y(vEnd) - 6}" text-anchor="end">Max</text>
       <line class="vc-axis" x1="${PAD.left}" x2="${W - PAD.right}" y1="${y(vMin)}" y2="${y(vMin)}"/>
-      <text class="vc-tick" x="${PAD.left - 4}" y="${y(vMax) + 3}" text-anchor="end">${esc(series.format(vMax))}</text>
+      <text class="vc-tick" x="${PAD.left - 4}" y="${y(vEnd) + 3}" text-anchor="end">${esc(series.format(vEnd))}</text>
       <text class="vc-tick" x="${PAD.left - 4}" y="${y(vMin) + 3}" text-anchor="end">${esc(series.format(vMin))}</text>
       <text class="vc-tick" x="${PAD.left}" y="${H - 6}">0 XP</text>
       <text class="vc-tick" x="${x(natur)}" y="${H - 6}" text-anchor="middle">${xpText(natur)} XP</text>
@@ -142,7 +144,7 @@ export const VALUE_CHART_CSS = `
   .vc-band { fill:rgba(255,255,255,.035); }
   .vc-rank { font-size:8px; fill:var(--muted); }
   .vc-tick { font-size:8px; fill:var(--muted); }
-  .vc-grid { stroke:rgba(255,255,255,.08); stroke-width:1; }
+  .vc-max { stroke:rgba(255,255,255,.28); stroke-width:1; stroke-dasharray:3 3; }
   .vc-axis { stroke:rgba(255,255,255,.22); stroke-width:1; }
   .vc-line { fill:none; stroke:#22a888; stroke-width:2; stroke-linejoin:round; stroke-linecap:round; }
   .vc-pts { display:none; }
@@ -153,4 +155,4 @@ export const VALUE_CHART_CSS = `
     font-size:.66rem; pointer-events:none; }
 `;
 
-// Stand: 1. November 2026
+// Stand: 1. November 2026 (Fortschritt 0–100 %, Höchstwert-Linie)

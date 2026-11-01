@@ -30,7 +30,7 @@ Der Blob besitzt genau **zwei angeborene Kern-Fähigkeiten**. Alle anderen Fähi
 [VERWORFEN] Beide Kern-Fähigkeiten haben ein eigenes Level (Start: Level 1) und steigen durch wiederholten Einsatz auf.
 Das Level der Kern-Fähigkeit bestimmt, wie hoch die Erfolgswahrscheinlichkeit gegen stärkere Entitäten ist.
 
-**Neu (Abschnitt 8):** Analyze und Absorb sammeln wie alle Skills nur Erfahrung. Ihr Übungsgrad bestimmt die Erfolgswahrscheinlichkeit. Sie belegen keine Kapazität und werden nie verlernt (Abschnitt 8.4).
+**Neu (Abschnitt 8):** Analyze und Absorb sammeln wie alle Skills nur Erfahrung. Ihr Fortschritt bestimmt die Erfolgswahrscheinlichkeit (über die Vergleichsstufe, Abschnitt 8.3). Sie belegen keine Kapazität und werden nie verlernt (Abschnitt 8.4).
 
 ### 1.3 Fehlschlag-Mechanik
 
@@ -120,12 +120,12 @@ Fähigkeiten werden **nicht garantiert** übertragen. Ob ein Skill erworben wird
 | Skill-ID | Name | Typ | Element | Icon | Quellen | Beschreibung |
 |----------|------|-----|---------|------|---------|--------------|
 | chitin_armor | Chitin Armor | passiv | earth | 🛡️ | Ameise, Springspinne, Giftspinne | Reduziert physischen Schaden |
-| superstrength | Superstrength | passiv | none | 💪 | Ameise | ~~Erhöht Material-Ausbeute bei Absorb~~ [VERWORFEN] → verstärkt Nahkampfschaden (×1,30 + 0,05/Level) — Begründung im `reasoning` des Skills |
+| superstrength | Superstrength | passiv | none | 💪 | Ameise | ~~Erhöht Material-Ausbeute bei Absorb~~ [VERWORFEN] → verstärkt Nahkampfschaden (~~×1,30 + 0,05/Level~~ → ×1,0 bis ×1,83, Abschnitt 8.3) — Begründung im `reasoning` des Skills |
 | venom | Venom | passiv | poison | 🕷️ | Giftspinne | Treffer vergiften Ziel (~~DoT-Chance~~ [VERWORFEN] → Chance auf Giftdosis, stapelt als Giftlast, [GDD-05 Abschnitt 12](GDD-05-Kampfmathematik.md)) |
 | jump | Jump | aktiv | none | 🦘 | Springspinne | **Bewegungs-Unlock**: Ohne diesen Skill kann der Blob nicht springen. Höheres Level = größere Sprunghöhe/-weite. |
 | hemolymph | Hemolymph | passiv | poison | 🐞 | Marienkäfer | Bei eigenem Treffer: Angreifer vergiftet |
-| pincer | Zangengriff | aktiv | none | 🦀 | Skorpione | Scherenangriff: packt und quetscht (7 HP, Wucht), kein Gift |
-| venom_sting | Stachelstich | aktiv | poison | 💉 | Skorpione | Giftstachel: 5 HP Stich + 80 % Chance auf starke Giftdosis (~~15 HP + 3~~ 12 HP + 2 je Übungsgrad, abgeschwächt 1. Nov. 2026), Gift nur bei diesem Angriff |
+| pincer | Zangengriff | aktiv | none | 🦀 | Skorpione | Scherenangriff: packt und quetscht (~~7 HP~~ → 1 bis 16 HP, Wucht), kein Gift |
+| venom_sting | Stachelstich | aktiv | poison | 💉 | Skorpione | Giftstachel: ~~5 HP Stich + 80 % Chance auf starke Giftdosis, 12 HP + 2 je Übungsgrad (vorher 15 + 3, abgeschwächt 1. Nov. 2026)~~ [VERWORFEN] → 1 bis 11 HP Stich, Chance 1 % bis 100 %, Dosis 1 bis 33 HP (Abschnitt 8.3); Gift nur bei diesem Angriff |
 
 **Skorpione (31. Oktober 2026):**
 **Vorgabe (Entwickler):** Skorpione bekommen einen zweiten Angriff, den sie nur gelegentlich einsetzen: Sie greifen mit den Scheren an und selten mit dem Giftstachel. Das Skorpiongift ist relativ stark, insbesondere stärker als das der Spinnen, und wirkt nur beim Giftstachel, nicht bei den Scheren. Namen und Symbole durfte Claude wählen.
@@ -154,7 +154,7 @@ Weitere Einheiten (Skorpione, Schlange, Drache) und alle aktuellen Werte: im Spi
 ## 4. Skill-Leveling
 
 > **Status: Implementiert (v0.2) — Kern-Mechanik gilt auch für Analyze & Absorb ab v0.3**
-> **Level und XP-Schwellen [VERWORFEN] — ersetzt durch Abschnitt 8 (Erfahrung statt Level).** Weiter gültig: wofür es wie viel XP gibt (Tabellen unten) und die Skalierung nach Gegner-Level; „Skill-Level“ ist dort jetzt der stetige Übungsgrad.
+> **Level und XP-Schwellen [VERWORFEN] — ersetzt durch Abschnitt 8 (Erfahrung statt Level).** Weiter gültig: wofür es wie viel XP gibt (Tabellen unten) und die Skalierung nach Gegner-Level; „Skill-Level“ ist dort jetzt die Vergleichsstufe = 1 + 10 × Fortschritt (Abschnitt 8.3; bis 1. November 2026 der Übungsgrad).
 
 Mathematische Analyse der Kurven und Alternativen (Status: Diskussion): [GDD-08 Progressionsmathematik](GDD-08-Progressionsmathematik.md).
 
@@ -230,6 +230,7 @@ Aktuell gibt es keine kombinierbaren Skills. Rezepte werden einzeln und gezielt 
 ### Skills-Tab (Side Panel)
 - [VERWORFEN] Zeigt alle entdeckten Skills mit Level, XP-Fortschritt, Beschreibung.
 - Zeigt alle entdeckten Skills mit Rang, Erfahrungsbalken im Rang (mit Abschnitt für ausstehende Erfahrung, Abschnitt 8.7), XP bis zum nächsten Rang, Beschreibung.
+- Seit v0.6: neben dem Rang der Fortschritt in Prozent (z. B. „Gewohnheit 47 %“, abgerundet). Im Rang Natur füllt sich der Balken von 90 % bis 100 % weiter (Abschnitt 8.3).
 - HUD: statt Charakter-Level die belegte Kapazität in Prozent; goldener Balken und „↑“ bei Überdehnung.
 - Kern-Fähigkeiten (Analyze, Absorb) werden separat als immer verfügbar angezeigt.
 - Farbcodierung nach Element.
@@ -282,7 +283,24 @@ Im Code ist das schon so: Geschick kommt aus Sprung, Stärke aus Superstrength. 
 **Vorgabe (Entwickler):** Die Erfahrungsskala wird in benannte Abschnitte geteilt. Namen und Anzahl dürfen noch überarbeitet werden.
 **Begründung (Entwickler):** Das macht dem Spieler verständlicher, was die Erfahrung an einem Skill bedeutet.
 
-Ränge ändern keinen Wert, sie beschriften nur den stetigen Fortschritt (Abschnitt 8.3). Die Grenzen sind als Übungsgrad festgelegt. Die nötige Erfahrung folgt daraus je Skill über den Lernaufwand.
+Ränge ändern keinen Wert, sie beschriften nur den stetigen Fortschritt (Abschnitt 8.3). Die nötige Erfahrung folgt je Skill über den Lernaufwand.
+
+**Vorgabe (Entwickler, 1. November 2026):** Die Ränge liegen bei festen Anteilen der erreichbaren Werte: bis 10 % Regung, bis 20 % Versuch, bis 40 % Übung, bis 60 % Gewohnheit, bis 80 % Routine, bis 90 % Instinkt, bis 100 % Natur.
+**Begründung (Entwickler):** Es braucht ein verständliches und allgemeines Schema der Skillentwicklung, um es managen zu können (Abschnitt 8.3).
+
+| Rang Biologie (aktiv) | Rang Handwerk (Alternative) | ab Fortschritt | XP Biss (Aufwand 12) | XP Feuerodem (Aufwand 25) |
+|---|---|---:|---:|---:|
+| Regung | Neuling | 0 % | 0 | 0 |
+| Versuch | Anfänger | 10 % | 22 | 46 |
+| Übung | Lehrling | 20 % | 47 | 98 |
+| Gewohnheit | Geselle | 40 % | 108 | 225 |
+| Routine | Könner | 60 % | 193 | 403 |
+| Instinkt | Experte | 80 % | 340 | 708 |
+| Natur | Meister | 90 % | 486 | 1013 |
+
+Natur endet nie: 99 % kosten doppelt so viel Erfahrung wie 90 % (Biss 972 XP).
+
+~~Grenzen als Übungsgrad:~~ [VERWORFEN, 1. November 2026 — ersetzt durch die Prozent-Grenzen oben]
 
 | Rang Biologie (aktiv) | Rang Handwerk (Alternative) | ab Übungsgrad | XP Biss (Aufwand 12) | XP Feuerodem (Aufwand 25) |
 |---|---|---:|---:|---:|
@@ -294,7 +312,7 @@ Ränge ändern keinen Wert, sie beschriften nur den stetigen Fortschritt (Abschn
 | Instinkt | Experte | 8 | 294 | 613 |
 | Natur | Meister | 10 | 486 | 1013 |
 
-**Begründung (Vorschlag Claude, offen) für die Grenzen:** Jeder Rang dauert länger als der vorige (Biss: 6, 18, 50, 76, 144, 192 XP), bleibt aber erreichbar. Der höchste Rang braucht bei einem einfachen Skill etwa so viel wie die Anfangs-Kapazität mal 2,5, also deutliche Spezialisierung.
+~~**Begründung (Vorschlag Claude, offen) für die Grenzen:**~~ [VERWORFEN] Jeder Rang dauert länger als der vorige (Biss: 6, 18, 50, 76, 144, 192 XP), bleibt aber erreichbar. Der höchste Rang braucht bei einem einfachen Skill etwa so viel wie die Anfangs-Kapazität mal 2,5, also deutliche Spezialisierung.
 
 **Vorgabe (Entwickler), 31. Oktober 2026:** Beide Namensreihen aus dem Gegenvorschlag übernehmen. Aktiv ist vorerst die Biologie-Reihe, damit Jörn sie im Spiel sieht. Die Handwerk-Reihe steht im Code auskommentiert daneben (`SKILL_RANKS` in `progression.ts`).
 **Begründung (Vorschlag Claude, übernommen):**
@@ -307,6 +325,69 @@ Ränge ändern keinen Wert, sie beschriften nur den stetigen Fortschritt (Abschn
 ### 8.3 Fließende Wirkung
 
 **Vorgabe (Entwickler):** Die Werte hängen direkt an der Erfahrung, nicht am Rang. Skills verbessern sich in sehr kleinen Schritten fließend statt in Level-Sprüngen.
+
+#### Allgemeines Schema (seit 1. November 2026)
+
+**Vorgabe (Entwickler):** Die Skalierung aller Skills wird so angepasst, dass sich jeder Wert einem Höchstwert annähert und bei 0 XP sehr niedrig ist, z. B. 1 Schaden. Die Skills sollen am Anfang von Regung wirklich sehr niedrig sein, sonst passt das nicht zu „Regung“. Der Höchstwert wird so gewählt, dass der bisherige Natur-Wert 90 % davon ist.
+**Begründung (Entwickler):** Es braucht ein verständliches und allgemeines Schema der Skillentwicklung, um es managen zu können.
+
+Umsetzung (Vorschlag Claude, übernommen), in zwei Schritten:
+
+```
+Fortschritt  p(xp) = 1 − 0,1^(xp / NaturXP)        NaturXP = Lernaufwand × 40,5
+Wert         = start + (max − start) × p             für JEDEN Wert jedes Skills
+```
+
+- NaturXP bringt einen Skill auf 90 %, doppelt so viel auf 99 %, dreimal so viel auf 99,9 %. Gleich viel Erfahrung schließt immer denselben Anteil der restlichen Lücke, wie eine Halbwertszeit.
+- Der Fortschritt in Prozent ist zugleich der Anteil des Wegs vom Startwert zum Höchstwert. „Routine“ heißt also bei jedem Skill und jedem Wert: 60–80 % des Wegs.
+- 40,5 übernimmt die bisherige Natur-Schwelle. Wer bisher Natur hatte, hat jetzt 90 %, und dort genau den bisherigen Natur-Wert.
+- Höchstwert: `max = start + (bisheriger Natur-Wert − start) / 0,9`, gerundet.
+- Im Code: jeder Wert als `{ start, max }` in [skills.ts](../src/data/skills.ts), Auswertung `evalSkillValue`.
+
+**Startwerte (Vorschlag Claude, offen, bitte bestätigen):**
+
+| Art des Werts | Startwert | Begründung |
+|---|---|---|
+| Schaden, Rückschlag, Giftdosis | 1 HP | Vorgabe Entwickler: „Wert 1, wie 1 Schaden“ |
+| Chancen (Gift) | 1 % | kleinster sichtbarer Wert |
+| Schutz (Flat-Block, %-Reduktion), Geschick | 0 | Ein Startblock von 1 HP höbe jeden Startschaden von 1 HP ganz auf. Zwei frische Wesen könnten sich dann gar nicht verletzen. |
+| Schadensfaktor (Superstrength) | ×1,0 | noch kein Bonus |
+| Sprungweite | 40 px | Ein Sprung von 1 px wäre keiner |
+| Photosynthese | 0,1 HP/s | kleinster Wert, der noch etwas bewirkt |
+| Materialschwächen (Chitin gegen Feuer/Säure) | konstant | Materialeigenschaft, wächst nicht |
+
+**Werte (Natur = 90 %):**
+
+| Skill · Wert | Start | Natur | Max | bisher bei Natur |
+|---|---:|---:|---:|---:|
+| Biss · Schaden | 1 | 14,5 | 16 | 14,35 |
+| Klauenhieb · Schaden | 1 | 16,3 | 18 | 16,4 |
+| Zangengriff · Schaden | 1 | 14,5 | 16 | 14,35 |
+| Stachelstich · Schaden | 1 | 10 | 11 | 10,25 |
+| Stachelstich · Gift-Chance | 1 % | 90 % | 100 % | 95 % |
+| Stachelstich · Dosis | 1 | 29,8 | 33 | 30 |
+| Feueratem · Schaden | 1 | 20,8 | 23 | 20,5 |
+| Venom · Gift-Chance | 1 % | 60 % | 67 % | 60 % |
+| Venom · Dosis | 1 | 26,2 | 29 | 26 |
+| Chitin · Block Stich / Schnitt | 0 | 11,7 / 8,1 | 13 / 9 | 12 / 8 |
+| Chitin · Wucht-Reduktion | 0 | 30 % | 33 % | 30 % |
+| Superstrength · Faktor | ×1,0 | ×1,75 | ×1,83 | ×1,75 |
+| Hemolymph · Rückschlag | 1 | 19,9 | 22 | 20 |
+| Jump · Geschick | 0 | 4,0 | 4,4 | 4 |
+| Jump · Sprungweite | 40 px | 342 px | 375 px | 340 px |
+| Photosynthese · Heilung | 0,1/s | 1,09/s | 1,2/s | 1,1/s |
+| Unbewaffnet (Absorb) · Schaden | 1 | 18,1 | 20 | 18 |
+
+Stachelstich: Die bisherigen 95 % bei Natur hätten einen Höchstwert über 100 % ergeben. Deshalb Höchstwert 100 %, bei Natur 90 %.
+
+**Folge für die Gegner:** Ihre Erfahrung (`skillXp`) bleibt unverändert, die Werte daraus sind bei wenig Erfahrung viel niedriger. Beispiele: Ameise Biss 7 → 1 HP, Giftspinne Gift 44 % auf 12 HP → 8 % auf 4 HP, kleiner Skorpion Zangengriff 11 → 6,5 HP. Schlange (Biss auf Natur) bleibt gleich. Der Drache lag mit u = 20 weit über Natur und ist jetzt auf die Höchstwerte begrenzt (Klaue 24 → 18, Feueratem 31 → 23). Alle Werte im Spiel unter 📋 → INDEX und in den Kommentaren von [entities.ts](../src/data/entities.ts).
+> Offen: Sollen die Gegner-XP angepasst werden, damit schwache Gegner nicht ganz bei Regung liegen?
+
+**Vergleichsstufe (Vorschlag Claude, offen):** Einige Regeln vergleichen einen Skill mit der Stufe eines Wesens (1–20): Erfolgschance von Analyze/Absorb, XP-Skalierung, Kippen der Treffer-Stufen. Dafür gilt `Vergleichsstufe = 1 + 10 × p` (0 % → 1, Natur → 10, Grenze 11). Natur = 10 wie beim alten Übungsgrad, die Vergleiche verhalten sich also wie bisher. [progression.ts](../src/data/progression.ts) Abschnitt 2b.
+
+#### [VERWORFEN, 1. November 2026] Übungsgrad
+
+Grund: Jeder Wert wuchs nach eigener Kurve und teils ohne Obergrenze. Das war nicht allgemein und schwer zu überblicken (Begründung Entwickler oben).
 
 Aus der Erfahrung folgt stetig der **Übungsgrad** u. Mit ihm werden alle Effekt-Formeln ausgewertet:
 
@@ -339,7 +420,20 @@ Der Schadens-Faktor aktiver Angriffe hatte einen Sprung (+0,15 ab Level 3). [VER
 
 **Vorgabe (Entwickler, 1. November 2026):** Die Kapazität muss deutlich größer werden. Es soll nicht möglich sein, alle Skills auf das Maximum zu bringen, aber mindestens 5 Skills auf das Maximum (Rang Natur), während die anderen niedriger, aber nicht auf dem Minimum sind.
 
-**Umsetzung (Vorschlag Claude, offen) — Kapazität sättigt:**
+**Vorgabe (Entwickler, 1. November 2026):** Die Kapazität wird so balanciert, dass man alle Skills bis 90 % entwickeln kann. Alles darüber hinaus verdrängt andere Skills. Gezählt werden nur die entdeckten Skills.
+**Begründung (Entwickler):** ein verständliches und allgemeines Schema (Abschnitt 8.3).
+
+```
+Kapazität = Σ NaturXP aller entdeckten Skills = 40,5 × Σ Lernaufwand
+```
+
+- Jeder neu entdeckte Skill bringt seinen eigenen Platz mit. Analyze und Absorb zählen nicht mit (sie belegen auch keine Kapazität).
+- Alle 11 Basis-Skills: 6601,5 XP, mit Überdehnung 7922 XP.
+- Einen Skill von 90 % auf 99 % zu bringen, kostet noch einmal seine NaturXP (Biss 486). Ohne Überdehnung verlieren die anderen dafür zusammen so viel. Gleichmäßig verteilt fallen 10 andere Skills von 90 % auf etwa 88 %.
+- Überdehnung (Abschnitt 8.5) gilt weiter obendrauf (Vorschlag Claude, offen).
+- Damit entfallen die Vorgaben „Kapazität wächst mit dem Blob“ und „mindestens 5 Skills auf Natur“ [VERWORFEN, 1. November 2026].
+
+~~**Umsetzung (Vorschlag Claude, offen) — Kapazität sättigt:**~~ [VERWORFEN, 1. November 2026 — ersetzt durch die Vorgabe oben]
 - `Kapazität = 300 + 3900 × (1 − 2^(−Lebenserfahrung / 3000))` → 300 · 2250 · 3225 · 3712 · … → 4200
 - **Begründung:** Lebewesen wachsen jung schnell und nähern sich dann einer Endgröße (Wachstumskurve nach von Bertalanffy). 4200 aus der Vorgabe hergeleitet: die fünf teuersten Skills auf Natur (≈ 3560 XP) plus die übrigen sechs auf Gewohnheit (≈ 480). Alle elf auf Natur bräuchten ≈ 6600 — auch mit Überdehnung (5040) nicht erreichbar. Kommen viele Skills dazu, muss das Maximum mitwachsen.
 - Herleitung und Zahlen: [progression.ts](../src/data/progression.ts) Abschnitt 3.
@@ -378,9 +472,9 @@ Der Schadens-Faktor aktiver Angriffe hatte einen Sprung (+0,15 ab Level 3). [VER
 
 Umsetzung:
 - Gegner tragen in `entities.ts` statt Skill-Leveln ihre Erfahrung (`skillXp`).
-- Blob und Gegner rechnen sie mit derselben Funktion in den Übungsgrad um (`ProgressionSystem.getEntitySkillPractice` bzw. `getSkillPractice`).
+- Blob und Gegner rechnen sie mit derselben Funktion in den Fortschritt um (`ProgressionSystem.getEntitySkillProgress` bzw. `getSkillProgress`, früher `…Practice`).
 - Dann werten beide dieselben Formeln aus.
-- Die Gegnerwerte wurden 1:1 umgerechnet, ihre Stärke ist unverändert.
+- ~~Die Gegnerwerte wurden 1:1 umgerechnet, ihre Stärke ist unverändert.~~ Mit dem allgemeinen Schema (1. November 2026) sind schwache Gegner deutlich schwächer geworden (Abschnitt 8.3).
 
 **Abweichung, die noch offen ist:** Das Gegner-Aufleveln (`EntityLevelingSystem`, Bonus-Level ×1,25 auf HP, Schaden und Tempo) skaliert Werte unabhängig von den Skills. Das widerspricht der Vorgabe, weil der Biss eines Bonus-Level-Skorpions stärker ist als derselbe Biss beim Blob. Vorschlag zum Klären: Siege geben den Gegnern stattdessen Skill-Erfahrung nach denselben Regeln (siehe TODO.md).
 
@@ -416,14 +510,16 @@ Simulation mit Biss bei 7 XP je Treffer und einem Treffer alle 2 s:
 | + 3 h Pause | 682 | 152 | — |
 | + 24 h Pause | 716 | 1 | — |
 
-Zwischen Treffer 100 und 150 ist die Erfahrung auch durch die Kapazitätsgrenze gebremst. Mit nur einem Skill liegt die Grenze bei 644.
+Zwischen Treffer 100 und 150 ist die Erfahrung auch durch die Kapazitätsgrenze gebremst. Mit nur einem Skill lag die Grenze damals bei 644. [Stand vor dem 1. November 2026 — jetzt liegt sie bei einem Skill bei seiner NaturXP × 1,2, Biss 583.]
 
 ### 8.8 Wo im Code was steht
 
 | Thema | Stellschrauben + Begründung | Rechenregel |
 |---|---|---|
-| Erfahrung → Übungsgrad | `progression.ts` Abschnitt 1 | `practiceFromXp`, `xpForPractice` |
-| Ränge | `progression.ts` Abschnitt 2 (`SKILL_RANKS`) | `getRankInfo`, `rankNameForPractice` |
+| Erfahrung → Fortschritt | `progression.ts` Abschnitt 1 | `progressFromXp`, `xpForProgress`, `naturXp` |
+| Fortschritt → Wert | `skills.ts` (`{ start, max }`) | `SkillEffectSystem.evalSkillValue` |
+| Ränge | `progression.ts` Abschnitt 2 (`SKILL_RANKS`) | `getRankInfo`, `rankNameForProgress` |
+| Vergleichsstufe | `progression.ts` Abschnitt 2b | `levelFromProgress` |
 | Kapazität, Wachstum | `progression.ts` Abschnitt 3 | `calcCapacity`, `calcGrowth`, `enforceHardLimit` |
 | Überdehnung | `progression.ts` Abschnitt 4 | `tickProgression` |
 | Verlernen, Wiedererlernen | `progression.ts` Abschnitt 5 | `forgetLeastPracticed`, `applyRelearnBonus` |
@@ -435,8 +531,10 @@ Zwischen Treffer 100 und 150 ist die Erfahrung auch durch die Kapazitätsgrenze 
 
 ### 8.9 Offene Punkte
 
-- **Kapazitätswachstum:** Wie wächst die Kapazität? Der Platzhalter ist die Lebenserfahrung. Denkbar sind auch die Zahl entdeckter Skills, absorbierte Masse oder die Größenklasse (GDD-07).
-- **Zahlenwerte:** Kurvenexponent, Ranggrenzen, Kapazität, +20 %, Halbwertszeiten, Übertrainings-Schwelle.
+- ~~**Kapazitätswachstum:** Wie wächst die Kapazität?~~ → entschieden 1. November 2026: entdeckte Skills bis 90 % (Abschnitt 8.4).
+- **Startwerte:** Regeln in Abschnitt 8.3 (Vorschlag Claude) bestätigen.
+- **Gegner-XP:** an das neue Schema anpassen? (Abschnitt 8.3)
+- **Zahlenwerte:** NaturXP-Faktor 40,5, +20 %, Halbwertszeiten, Übertrainings-Schwelle.
 - **Ranknamen:** Biologie oder Handwerk endgültig? (Abschnitt 8.2)
 - **Gegner:** Ihre Stärke (`level`) bleibt vorerst eine Zahl für Erfolgschance und XP-Skalierung. Soll auch sie entfallen? Dazu kommt das Gegner-Aufleveln (Abschnitt 8.6).
 - **HP und MP:** Sie folgen vorerst dem Wachstum. Sollen sie nach der Vorgabe „Attribute nur aus Skills“ auch aus Skills kommen?
@@ -456,4 +554,4 @@ Bezug zum Code:
 
 ---
 
-*Letzte Aktualisierung: v0.5 — Balancing: Kapazität sättigt bei 4200, Verlernen verteilt statt reihum, Photosynthese-XP ×0,25, Stachelstich-Dosis gesenkt (1. November 2026); XP-Skalierung Absorb/Analyze: kein Abrunden mehr (31. Oktober 2026); Skorpione: Zangengriff und Stachelstich (31. Oktober 2026); Venom: Giftlast statt DoT (31. Oktober 2026); davor Abgleich mit dem Code: Material-System als teilweise implementiert (Abschnitt 2), Biss in den Quellen-Skills der Insekten ergänzt und `maxLevel` als verworfen markiert (Abschnitt 3.1) (31. Oktober 2026); davor Rangnamen: Biologie-Reihe aktiv, Handwerk-Reihe als Alternative (Abschnitt 8.2, 31. Oktober 2026); davor Erfahrung statt Level umgesetzt (Abschnitt 8: Ränge, fließende Wirkung, Kapazität, Überdehnung, Wiedererlernen, gleiche Skills für Blob und Gegner, Übertraining, Idee Grow); alte Level-Regeln in 1.2, 4, 6, 7.1 als [VERWORFEN] markiert (30. Oktober 2026). Davor: Skill-Kapazität und Verlernen als Überlegung des Entwicklers (Abschnitt 7.1); Verweis auf GDD-08 (Progressionsmathematik) in Abschnitt 4; Größe beim Absorbieren/Analysieren als Konzept (Abschnitt 1.4); XP-Skalierung (Absorb/Analyze und Kampf-XP nach Gegner-Level) mit Begründungen dokumentiert, Erfolgsformel als vorläufig vermerkt, Superstrength-Beschreibung korrigiert (Oktober 2026)*
+*Letzte Aktualisierung: v0.6 — Allgemeines Schema: Fortschritt 0–100 %, jeder Wert läuft vom Startwert zum Höchstwert, Ränge in Prozent, Kapazität = entdeckte Skills bis 90 % (Abschnitte 8.2–8.4, 1. November 2026); davor v0.5 — Balancing: Kapazität sättigt bei 4200, Verlernen verteilt statt reihum, Photosynthese-XP ×0,25, Stachelstich-Dosis gesenkt (1. November 2026); XP-Skalierung Absorb/Analyze: kein Abrunden mehr (31. Oktober 2026); Skorpione: Zangengriff und Stachelstich (31. Oktober 2026); Venom: Giftlast statt DoT (31. Oktober 2026); davor Abgleich mit dem Code: Material-System als teilweise implementiert (Abschnitt 2), Biss in den Quellen-Skills der Insekten ergänzt und `maxLevel` als verworfen markiert (Abschnitt 3.1) (31. Oktober 2026); davor Rangnamen: Biologie-Reihe aktiv, Handwerk-Reihe als Alternative (Abschnitt 8.2, 31. Oktober 2026); davor Erfahrung statt Level umgesetzt (Abschnitt 8: Ränge, fließende Wirkung, Kapazität, Überdehnung, Wiedererlernen, gleiche Skills für Blob und Gegner, Übertraining, Idee Grow); alte Level-Regeln in 1.2, 4, 6, 7.1 als [VERWORFEN] markiert (30. Oktober 2026). Davor: Skill-Kapazität und Verlernen als Überlegung des Entwicklers (Abschnitt 7.1); Verweis auf GDD-08 (Progressionsmathematik) in Abschnitt 4; Größe beim Absorbieren/Analysieren als Konzept (Abschnitt 1.4); XP-Skalierung (Absorb/Analyze und Kampf-XP nach Gegner-Level) mit Begründungen dokumentiert, Erfolgsformel als vorläufig vermerkt, Superstrength-Beschreibung korrigiert (Oktober 2026)*

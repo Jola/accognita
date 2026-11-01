@@ -941,6 +941,8 @@ Zum Vergleich mit Rüstung nach der Formel `x/(x+K)` (Abschnitt 11.4, K = 7): Ch
 
 ## 22. Kurve Erfahrung → Übungsgrad
 
+> [VERWORFEN, 1. November 2026] — ersetzt durch das allgemeine Schema in Abschnitt 25. Der Abschnitt bleibt als Herleitung stehen.
+
 `u = 1 + √(xp / (0,5·A))` mit A = Lernaufwand. Das ist das Zwei-Exponenten-Modell aus Abschnitt 8 mit p = 1 und q = 0. Die Kosten je Einheit u steigen linear (`Δxp ≈ A·(u−1)`), die kumulierten quadratisch.
 
 - **Früh** fast wie bisher: Biss erreicht u = 3 nach 24 XP (alt: Lv3 nach 30 XP).
@@ -962,7 +964,8 @@ Mehr Skills bringen in Summe mehr. Spezialisierung lohnt sich trotzdem, weil Eff
 ```
 belegt  B = Σ xp (alle entdeckten Skills, ohne Analyze/Absorb)
 Kapazität K = 200 + 150 · log2(1 + Lebenserfahrung / 200)     (Platzhalter) [VERWORFEN, 1. Nov. 2026]
-Kapazität K = 300 + 3900 · (1 − 2^(−Lebenserfahrung / 3000))  (sättigt bei 4200 ≥ 5 Skills auf Natur)
+Kapazität K = 300 + 3900 · (1 − 2^(−Lebenserfahrung / 3000))  (sättigt bei 4200 ≥ 5 Skills auf Natur) [VERWORFEN, 1. Nov. 2026]
+Kapazität K = Σ NaturXP aller entdeckten Skills = 40,5 · Σ A      (alle entdeckten Skills bis 90 %, Abschnitt 25)
 harte Grenze = 1,2 · K
 ```
 
@@ -999,6 +1002,64 @@ Sie beginnt erst 2 Minuten nach der letzten Übung des Skills.
 
 > Begründung offen — Höhe der Schwelle und Halbwertszeit. Die Werte sind so gewählt, dass etwa 50 Treffer am Stück noch voll zählen und eine Nachtpause den Skill fast vollständig erholt.
 
+## 25. Allgemeines Schema: Fortschritt 0–100 % (1. November 2026)
+
+**Vorgabe (Entwickler):** Alle Skills nähern sich einem Höchstwert an und sind bei 0 XP sehr niedrig. Die Ränge liegen bei 10 / 20 / 40 / 60 / 80 / 90 % der erreichbaren Werte. Die Kapazität reicht, um alle entdeckten Skills bis 90 % zu entwickeln.
+**Begründung (Entwickler):** ein verständliches und allgemeines Schema der Skillentwicklung, um es managen zu können.
+Regeln, Startwerte und Wertetabelle: GDD-02 Abschnitte 8.2–8.4.
+
+### 25.1 Kurve
+
+```
+p(xp) = 1 − 0,1^(xp / N)          N = NaturXP = 40,5 · A
+xp(p) = N · log₁₀(1 / (1 − p))
+Wert  = start + (max − start) · p
+```
+
+Das ist exponentielle Sättigung mit der „Zehntelwertszeit“ N: Je N Erfahrung schrumpft die Lücke zum Höchstwert auf ein Zehntel (Halbwertszeit N · log₁₀ 2 ≈ 0,30 N). Die Ableitung `dp/dxp = (ln 10 / N) · (1 − p)` sagt: Jede XP bringt umso weniger, je näher der Skill am Höchstwert ist, genau im Verhältnis zur restlichen Lücke.
+
+| Fortschritt | Erfahrung (Vielfache von N) | Biss (A 12) |
+|---:|---:|---:|
+| 10 % (Versuch) | 0,046 | 22 |
+| 20 % (Übung) | 0,097 | 47 |
+| 40 % (Gewohnheit) | 0,222 | 108 |
+| 60 % (Routine) | 0,398 | 193 |
+| 80 % (Instinkt) | 0,699 | 340 |
+| 90 % (Natur) | 1 | 486 |
+| 99 % | 2 | 972 |
+| 99,9 % | 3 | 1458 |
+
+Die Ränge werden nach hinten länger (22, 25, 61, 85, 147, 146 XP beim Biss), Natur selbst endet nie.
+
+### 25.2 Warum der Wert linear im Fortschritt ist
+
+Alle Sättigung steckt in der einen Kurve p(xp). Jeder Wert ist eine Gerade in p. Das macht das Schema allgemein:
+- „x % Fortschritt“ heißt bei jedem Wert „x % des Wegs vom Start zum Höchstwert“.
+- Ein Skill wird mit zwei Zahlen je Wert beschrieben (start, max) statt mit Kurvenart, Zuwachs und optionaler Obergrenze.
+- Kein Wert kann über seinen Höchstwert wachsen. Chancen mit max ≤ 100 % bleiben automatisch gültig.
+
+### 25.3 Breite statt Tiefe
+
+Die Kurve ist weiter konkav, verteilte Erfahrung bringt in Summe mehr Fortschritt. Mit 600 XP und A = 12 (N = 486):
+
+| Verteilung | Summe der Fortschritte |
+|---|---:|
+| 1 Skill × 600 XP | 0,94 |
+| 3 Skills × 200 XP | 1,84 |
+| 6 Skills × 100 XP | 2,26 |
+
+### 25.4 Kapazität
+
+```
+K = Σ N_i (entdeckte Skills)        harte Grenze 1,2 · K (Überdehnung)
+```
+
+Alle 11 Basis-Skills: K = 6601,5. Wer einen Skill über 90 % treibt, zahlt mit den anderen: 90 % → 99 % kostet noch einmal N. Verteilt auf die anderen zehn Skills kostet das jeden etwa 7,9 % seiner XP, also etwa 2 Prozentpunkte Fortschritt (90 % → 88 %). Mit nur einem entdeckten Skill begrenzt die Überdehnung ihn auf 1,2 · N, also 93,7 %.
+
+### 25.5 Vergleichsstufe
+
+Für Vergleiche mit den Wesen-Stufen (Absorb/Analyze-Chance `min(1, Stufe / Wesen-Stufe)`, XP-Skalierung, Treffer-Kippen) gilt `Stufe = 1 + 10 · p`. Bei 0 % ist sie 1, bei Natur 10 (wie der alte Übungsgrad), die Grenze ist 11. Absorb auf Natur fängt Wesen bis Stufe 10 sicher, den Drachen (Stufe 20) zu 50 %, wie bisher. Vorschlag Claude, offen.
+
 ---
 
 ## Quellen
@@ -1024,4 +1085,4 @@ Sie beginnt erst 2 Minuten nach der letzten Übung des Skills.
 
 ---
 
-*Letzte Aktualisierung: v0.5 — Abschnitt 23: Kapazität sättigt, Verlernen verteilt (1. November 2026); Gift-Befunde in 12.3 und 19.2 als behoben markiert (Giftlast, 31. Oktober 2026); davor Teil 6 ergänzt (Erfahrung statt Level umgesetzt: Kurve, Kapazität, Übertraining; Status-Hinweis oben aktualisiert, 30. Oktober 2026); davor Teil 5 ergänzt (Skill-Kapazität und Verlernen nach Überlegung des Entwicklers, Gruppen schwacher Gegner, Weltstufen); davor Teil 4 ergänzt (Überlegung Entwickler: nur Verhältnisse zählen; feste Level-Grenze vs. Max-Level-Erhöhung; Level abschaffen; Synthese unbegrenzte Übung / begrenzte Stärke); davor Teil 3 ergänzt (Vorschlag Entwickler: unendliches Leveln, lineare Skala, Anzeige in %); davor Teil 2 ergänzt (Wirkungskurven, Trefferstufen, Gift-Chance und Gift-Takt-Fehler, Skill-Fund-Wahrscheinlichkeiten, Geschick, Stapelregeln, Schwellen); davor: Datei neu angelegt: Analyse der Leveling-Modelle (proportionale Erfahrung, Level-Differenz-Multiplikator, Kurvenfamilien, Integer-Grenzen, Vergleich mit anderen Spielen), Vorschlag Zwei-Exponenten-Modell (Oktober 2026)*
+*Letzte Aktualisierung: v0.6 — Abschnitt 25: allgemeines Schema (Fortschritt 0–100 %, Werte start → max, Ränge in Prozent, Kapazität = entdeckte Skills bis 90 %), Abschnitt 22 verworfen (1. November 2026); davor v0.5 — Abschnitt 23: Kapazität sättigt, Verlernen verteilt (1. November 2026); Gift-Befunde in 12.3 und 19.2 als behoben markiert (Giftlast, 31. Oktober 2026); davor Teil 6 ergänzt (Erfahrung statt Level umgesetzt: Kurve, Kapazität, Übertraining; Status-Hinweis oben aktualisiert, 30. Oktober 2026); davor Teil 5 ergänzt (Skill-Kapazität und Verlernen nach Überlegung des Entwicklers, Gruppen schwacher Gegner, Weltstufen); davor Teil 4 ergänzt (Überlegung Entwickler: nur Verhältnisse zählen; feste Level-Grenze vs. Max-Level-Erhöhung; Level abschaffen; Synthese unbegrenzte Übung / begrenzte Stärke); davor Teil 3 ergänzt (Vorschlag Entwickler: unendliches Leveln, lineare Skala, Anzeige in %); davor Teil 2 ergänzt (Wirkungskurven, Trefferstufen, Gift-Chance und Gift-Takt-Fehler, Skill-Fund-Wahrscheinlichkeiten, Geschick, Stapelregeln, Schwellen); davor: Datei neu angelegt: Analyse der Leveling-Modelle (proportionale Erfahrung, Level-Differenz-Multiplikator, Kurvenfamilien, Integer-Grenzen, Vergleich mit anderen Spielen), Vorschlag Zwei-Exponenten-Modell (Oktober 2026)*

@@ -85,11 +85,11 @@ export interface EntityDefinition {
   /**
    * Erfahrung der Entity in ihren Skills (skillId → XP).
    * Dieselbe Skill-Definition und dieselbe Umrechnung wie beim Blob
-   * (ProgressionSystem.getEntitySkillPractice): gleiche Erfahrung = gleiche Wirkung.
+   * (ProgressionSystem.getEntitySkillProgress): gleiche Erfahrung = gleiche Wirkung.
    * Überschreibt standalone Props wenn gesetzt:
    *   chitin_armor → damageReduction nach Spielerformel
    *   venom        → venomChance + venomDamagePerTick nach Spielerformel
-   *   bite         → damage nach Spielerformel (baseDamage × getSkillEffectiveness)
+   *   bite         → damage nach Spielerformel (damage-Wert des Skills, start → max)
    */
   skillXp?: Record<string, number>;
 

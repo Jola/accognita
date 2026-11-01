@@ -14,7 +14,7 @@
 
 import type { EntityDefinition, EntityInstance } from "../types/Entity";
 import { calcSkillAttackDamage } from "./SkillEffects";
-import { getEntitySkillPractice } from "./ProgressionSystem";
+import { getEntitySkillProgress } from "./ProgressionSystem";
 
 // -----------------------------------------------------------
 // Konstanten
@@ -69,19 +69,19 @@ export function getScaledMaxHp(def: EntityDefinition, bonusLevel: number): numbe
 /**
  * Nahkampf-Basisschaden einer Entity. Ohne skillId: Standard-Angriff
  * (getEntityMeleeSkillId), sonst standalone damage. Mit skillId: dieser Skill
- * (z.B. der gelegentliche Stachelstich) mit dem Übungsgrad aus skillXp.
+ * (z.B. der gelegentliche Stachelstich) mit dem Fortschritt aus skillXp.
  */
 export function getEntityBaseDamage(def: EntityDefinition, skillId = getEntityMeleeSkillId(def)): number {
-  const practice = getEntitySkillPractice(def);
-  if (skillId && practice[skillId] !== undefined) return calcSkillAttackDamage(skillId, practice[skillId]);
+  const progress = getEntitySkillProgress(def);
+  if (skillId && progress[skillId] !== undefined) return calcSkillAttackDamage(skillId, progress[skillId]);
   return def.damage ?? 1;
 }
 
-/** Fernkampf-Schaden einer Entity — rangedAttackSkillId mit dem Übungsgrad aus skillXp. */
+/** Fernkampf-Schaden einer Entity — rangedAttackSkillId mit dem Fortschritt aus skillXp. */
 export function getEntityRangedDamage(def: EntityDefinition): number {
   const skillId = def.rangedAttackSkillId;
   if (!skillId) return 0;
-  return calcSkillAttackDamage(skillId, getEntitySkillPractice(def)[skillId] ?? 1);
+  return calcSkillAttackDamage(skillId, getEntitySkillProgress(def)[skillId] ?? 0);
 }
 
 export function getScaledDamage(def: EntityDefinition, bonusLevel: number, skillId?: string): number {

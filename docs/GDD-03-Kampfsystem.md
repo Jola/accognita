@@ -8,7 +8,9 @@
 > Checkpoint-Tod, SkillBar + SkillMenu vollständig spielbar.
 > Entity-Leveling-System implementiert (Kreaturen kämpfen untereinander).
 >
-> **Hinweis (v0.4, 31. Oktober 2026):** Skills haben keine Level mehr ([GDD-02 Abschnitt 8](GDD-02-Skillsystem.md#8-erfahrung-statt-level)). Wo in den Formeln dieser Datei „Level“ eines Skills steht (Absorb-Level, `jump.level`, Venom-Level, Skill-Level bei den Treffer-Stufen), wird heute der stetige Übungsgrad u eingesetzt; bei ganzzahligem u ergeben sich dieselben Werte. Das Level von **Gegnern** (`level` in entities.ts) und das Bonus-Level aus dem Entity-Leveling (Abschnitt 9) gibt es weiterhin.
+> **Hinweis (v0.4, 31. Oktober 2026):** Skills haben keine Level mehr ([GDD-02 Abschnitt 8](GDD-02-Skillsystem.md#8-erfahrung-statt-level)). Wo in den Formeln dieser Datei „Level“ eines Skills steht (Absorb-Level, `jump.level`, Venom-Level, Skill-Level bei den Treffer-Stufen), wird heute der stetige Übungsgrad u eingesetzt; bei ganzzahligem u ergeben sich dieselben Werte.
+>
+> **Hinweis (v0.6, 1. November 2026):** Der Übungsgrad ist durch den Fortschritt 0–100 % ersetzt. Jeder Skill-Wert läuft vom Startwert zum Höchstwert (Biss 1 → 16 HP, Natur 14,5), siehe [GDD-02 Abschnitt 8.3](GDD-02-Skillsystem.md#83-fließende-wirkung). Wo hier noch Formeln mit Level oder u stehen, gelten die Werte aus `skills.ts` bzw. dem INDEX im Spiel. Vergleiche mit Gegner-Stufen nutzen die Vergleichsstufe `1 + 10 × Fortschritt`. Das Level von **Gegnern** (`level` in entities.ts) und das Bonus-Level aus dem Entity-Leveling (Abschnitt 9) gibt es weiterhin.
 
 ---
 
@@ -443,4 +445,4 @@ scenes/GameScene.ts                ← verdrahtet alle Systeme, Phaser-Rendering
 
 ---
 
-*Letzte Aktualisierung: 2026-11-01 — Treffer-Reichweite ab Rand des Gegners (Icon-Größe), Blob-Reichweite erhöht; Balancing: Photosynthese, Skorpione, Schlange schwächer; 2026-10-31 — Gelegentlicher Angriff (Skorpion-Stachelstich); Regeneration (Photosynthesis) stufenlos; Venom-DoT durch Giftlast ersetzt (Verweis auf GDD-05 Abschnitt 12); Hinweis „Übungsgrad statt Skill-Level“ ergänzt, HP/MP wachsen mit dem Wachstum statt pro Level; 2026-10-25 — Größen- und levelabhängiges Aggro als Konzept (Abschnitt 4); 2026-10-24 — Geschick ohne Beitrag des eingesetzten Skills; Begründungen ergänzt bzw. als offen markiert, veraltete Werte (Spieler-Wachstum, Entity-Tabelle, Passiv-Effekte) als VERWORFEN gekennzeichnet; Treffer-Stufen und Geschick; Venom-Chance mit 100-%-Deckel*
+*Letzte Aktualisierung: 2026-11-01 — Hinweis auf das allgemeine Schema (Fortschritt 0–100 %, v0.6); Treffer-Reichweite ab Rand des Gegners (Icon-Größe), Blob-Reichweite erhöht; Balancing: Photosynthese, Skorpione, Schlange schwächer; 2026-10-31 — Gelegentlicher Angriff (Skorpion-Stachelstich); Regeneration (Photosynthesis) stufenlos; Venom-DoT durch Giftlast ersetzt (Verweis auf GDD-05 Abschnitt 12); Hinweis „Übungsgrad statt Skill-Level“ ergänzt, HP/MP wachsen mit dem Wachstum statt pro Level; 2026-10-25 — Größen- und levelabhängiges Aggro als Konzept (Abschnitt 4); 2026-10-24 — Geschick ohne Beitrag des eingesetzten Skills; Begründungen ergänzt bzw. als offen markiert, veraltete Werte (Spieler-Wachstum, Entity-Tabelle, Passiv-Effekte) als VERWORFEN gekennzeichnet; Treffer-Stufen und Geschick; Venom-Chance mit 100-%-Deckel*

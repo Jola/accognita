@@ -25,8 +25,9 @@ import {
 } from "../data/balance";
 import {
   gainExperience,
-  getCorePractice,
-  getSkillPractice,
+  getCoreProgress,
+  getSkillProgress,
+  levelFromProgress,
   calcGrowth,
 } from "./ProgressionSystem";
 import type { GainResult } from "./ProgressionSystem";
@@ -44,7 +45,7 @@ export function gainCoreAbilityXp(
   method: DiscoveryMethod,
   entityLevel: number = 1
 ): GainResult {
-  const rawXp = scaleXp(BASE_XP_CORE, entityLevel, getCorePractice(player, method));
+  const rawXp = scaleXp(BASE_XP_CORE, entityLevel, levelFromProgress(getCoreProgress(player, method)));
   return gainExperience(player, method, rawXp, Date.now());
 }
 
@@ -64,8 +65,9 @@ function createSkillInstance(player: PlayerState, skillId: string): SkillInstanc
 
 // -----------------------------------------------------------
 // SKILL DISCOVER
-// entityLevel bestimmt den XP-Multiplikator (balance.ts) gegen den
-// Übungsgrad des Skills: schwache Entities → kaum XP, starke → Bonus-XP.
+// entityLevel bestimmt den XP-Multiplikator (balance.ts) gegen die
+// Vergleichsstufe des Skills (progression.ts 2b): schwache Entities → kaum
+// XP, starke → Bonus-XP.
 // -----------------------------------------------------------
 export function discoverSkill(
   player: PlayerState,
@@ -83,7 +85,7 @@ export function discoverSkill(
     return { skillId, method, xpGained: 0, wasNewDiscovery: true, events: [] };
   }
 
-  const rawXp = scaleXp(baseXp, entityLevel, getSkillPractice(player, skillId));
+  const rawXp = scaleXp(baseXp, entityLevel, levelFromProgress(getSkillProgress(player, skillId)));
   const gain = gainExperience(player, skillId, rawXp, Date.now());
   return { skillId, method, xpGained: gain.xpNow + gain.xpDeferred, wasNewDiscovery: false, events: gain.events };
 }
@@ -166,6 +168,9 @@ export function getDiscoveredSkillsSorted(player: PlayerState): SkillInstance[] 
 }
 
 /**
+ * [VERWORFEN, 1. November 2026] — nur noch von einer ungenutzten Alt-Formel
+ * (calcSuperstrengthMult) aufgerufen. Angriffe haben jetzt damage { start, max }
+ * in skills.ts.
  * Schadens-Faktor aktiver Angriffs-Skills (Biss, Klaue, Feuerodem) für
  * Blob und Gegner gleichermaßen. Stetig im Übungsgrad u:
  *   1 + 0,1·(u−1) + 0,15·Übergang(u zwischen 2 und 3)
@@ -189,7 +194,7 @@ export function getSkillEffectiveness(practice: number): number {
  * Gibt einem Skill XP.
  * amount:       Rohbetrag (in normalen XP-Einheiten, nicht milli-HP).
  * entityLevel:  Optional — wenn übergeben wird der Betrag per calcCombatXpMultiplier
- *               gegen den Übungsgrad skaliert. Fehlt er, wird amount direkt verwendet
+ *               gegen die Vergleichsstufe des Skills skaliert. Fehlt er, wird amount direkt verwendet
  *               (z.B. bei Selbst-Effekten wie Photosynthesis oder Fixbeträgen wie Jump).
  */
 export function gainSkillXp(
@@ -199,7 +204,7 @@ export function gainSkillXp(
   entityLevel?: number
 ): GainResult {
   const rawXp = entityLevel !== undefined
-    ? amount * calcCombatXpMultiplier(entityLevel, getSkillPractice(player, skillId))
+    ? amount * calcCombatXpMultiplier(entityLevel, levelFromProgress(getSkillProgress(player, skillId)))
     : amount;
   return gainExperience(player, skillId, rawXp, Date.now());
 }

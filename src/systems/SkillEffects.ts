@@ -2,17 +2,24 @@
 // SKILL EFFECTS
 // Absorb & Evolve — Skill-Formeln (zentrale Berechnungsquelle)
 //
-// Jede Funktion berechnet einen Effektwert auf Basis des Übungsgrads (stetig, aus Erfahrung).
+// Jede Funktion berechnet einen Effektwert auf Basis des Fortschritts p (0–1, stetig aus Erfahrung).
 // Gilt für Spieler UND Entitäten gleichermaßen — ein Code, ein Wert.
 //
 // Regel: Wer einen Skill-Wert berechnen möchte, ruft hier an.
 //         Nirgendwo sonst stehen diese Formeln.
 //
+// Allgemeines Schema (progression.ts Abschnitt 1): Wert = start + (max − start) × p.
+// Die Funktionen mit Parameter „practice“ (alter Übungsgrad u) sind
+// Alt-Formeln, die nirgends mehr aufgerufen werden (TODO.md) — [VERWORFEN].
+//
 // Keine Phaser-Abhängigkeit. Kein State. Rein funktional.
 // ============================================================
 
+import type { SkillValue } from "../types/Skill";
 import { getSkillEffectiveness } from "./SkillSystem";
+import { evalSkillValue } from "./SkillEffectSystem";
 import { ALL_SKILLS } from "../data/skills";
+import { MILLI } from "../data/balance";
 
 // -----------------------------------------------------------
 // chitin_armor — Passive Schadensreduktion (0.0–0.70)
@@ -46,52 +53,50 @@ export function calcVenomDmgPerTick(practice: number): number {
 // -----------------------------------------------------------
 // Generisch: Angriffsskill-Schaden für beliebigen Skill
 //
-// Liest baseDamage aus SkillDefinition × getSkillEffectiveness.
-// Neue Angriffsskills brauchen nur baseDamage in skills.ts — keine neue Formel.
+// Liest damage { start, max } aus der SkillDefinition (HP) → milli-HP.
+// Neue Angriffsskills brauchen nur damage in skills.ts — keine neue Formel.
+// [VERWORFEN, 1. November 2026] baseDamage × getSkillEffectiveness(u).
 // -----------------------------------------------------------
-export function calcSkillAttackDamage(skillId: string, practice: number): number {
-  const baseDamage = ALL_SKILLS.get(skillId)?.baseDamage ?? 0;
-  if (baseDamage === 0) return 0;
-  return Math.max(1, Math.round(baseDamage * getSkillEffectiveness(practice)));
+export function calcSkillAttackDamage(skillId: string, progress: number): number {
+  const damage = ALL_SKILLS.get(skillId)?.damage;
+  if (!damage) return 0;
+  return Math.max(1, Math.round(evalSkillValue(damage, progress) * MILLI));
 }
 
 // -----------------------------------------------------------
-// bite — Direktangriff-Schaden
-//
-// Lv 1 → 7,  Lv 2 → 8,  Lv 3 → 10,  Lv 6 → 12,  Lv 18 → 20
+// bite — Direktangriff-Schaden (Werte: skills.ts)
 // -----------------------------------------------------------
-export function calcBiteDamage(practice: number): number {
-  return calcSkillAttackDamage("bite", practice);
+export function calcBiteDamage(progress: number): number {
+  return calcSkillAttackDamage("bite", progress);
 }
 
 // -----------------------------------------------------------
-// claw — Klauenhieb (Nahkampf)
-//
-// Lv 1 → 8,  Lv 3 → 10,  Lv 10 → 16,  Lv 20 → 24
+// claw — Klauenhieb (Nahkampf, Werte: skills.ts)
 // -----------------------------------------------------------
-export function calcClawDamage(practice: number): number {
-  return calcSkillAttackDamage("claw", practice);
+export function calcClawDamage(progress: number): number {
+  return calcSkillAttackDamage("claw", progress);
 }
 
 // -----------------------------------------------------------
-// fire_breath — Feueratem (Fernkampf, 8 × worldSize Reichweite)
-//
-// Lv 1 → 10,  Lv 5 → 15,  Lv 10 → 18,  Lv 20 → 31
+// fire_breath — Feueratem (Fernkampf, 8 × worldSize Reichweite, Werte: skills.ts)
 // -----------------------------------------------------------
-export function calcFireBreathDamage(practice: number): number {
-  return calcSkillAttackDamage("fire_breath", practice);
+export function calcFireBreathDamage(progress: number): number {
+  return calcSkillAttackDamage("fire_breath", progress);
 }
 
 // -----------------------------------------------------------
 // jump — Dash-Reichweite in Weltpixeln
 //
-// Lv 1 → 160px,  Lv 2 → 180px,  Lv 5 → 240px
+// 40 → 375 px, bei Natur 342 px (bisher 340).
+// Startwert (Vorschlag Claude, offen): ein kleiner Hüpfer — der Wert soll
+// bei 0 XP sehr niedrig sein (Vorgabe Entwickler), ein Sprung von 1 px wäre
+// aber keiner.
+// [VERWORFEN, 1. November 2026] 160 + 20 × (u − 1) px.
 // -----------------------------------------------------------
-const JUMP_BASE_PX        = 160;
-const JUMP_BONUS_PER_LEVEL = 20;
+const JUMP_DISTANCE_PX: SkillValue = { start: 40, max: 375 };
 
-export function calcJumpDistance(practice: number): number {
-  return JUMP_BASE_PX + (practice - 1) * JUMP_BONUS_PER_LEVEL;
+export function calcJumpDistance(progress: number): number {
+  return evalSkillValue(JUMP_DISTANCE_PX, progress);
 }
 
 // -----------------------------------------------------------
@@ -116,15 +121,17 @@ export function calcSuperstrengthMult(practice: number): number {
 // -----------------------------------------------------------
 // photosynthesis — HP-Regeneration pro Sekunde (stufenlos, HoT)
 //
-// u 1 → 0,2/s,  u 3 → 0,4/s,  u 5 → 0,6/s,  u 10 → 1,1/s  (in HP)
-// Gespeichert in milli-HP: ×1000
+// 0,1 → 1,2 HP/s, bei Natur 1,09 HP/s (bisher 1,1). Gespeichert in milli-HP.
+// [VERWORFEN, 1. November 2026] 0,2 + 0,1 × (u − 1) HP/s (Schema-Umstellung).
 // [VERWORFEN, 1. November 2026] 0,5 × u HP/s (u 10 → 5 HP/s).
 // Vorgabe (Entwickler): Die Regeneration ist viel zu stark.
 // Begründung (Vorschlag Claude): Fotosynthese liefert einem Tier wenig
 // Energie — Schnecken mit eingelagerten Chloroplasten (Elysia) überleben
 // damit wochenlang, wachsen aber kaum. Ein Blob mit 80 HP braucht bei u 10
-// rund eine Minute, um sich voll zu heilen. VORLÄUFIG
+// bei Natur rund eine Minute, um sich voll zu heilen. VORLÄUFIG
 // -----------------------------------------------------------
-export function calcPhotosynthesisHeal(practice: number): number {
-  return Math.round((0.2 + 0.1 * (practice - 1)) * 1000);
+const PHOTOSYNTHESIS_HEAL_HP_PER_S: SkillValue = { start: 0.1, max: 1.2 };
+
+export function calcPhotosynthesisHeal(progress: number): number {
+  return Math.round(evalSkillValue(PHOTOSYNTHESIS_HEAL_HP_PER_S, progress) * MILLI);
 }

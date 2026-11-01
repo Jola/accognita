@@ -6,7 +6,7 @@
 // echten Systeme berechnet und sind daher immer aktuell.
 // ============================================================
 
-import type { SkillDefinition, SkillEffect, LinearFormula, EffectType } from "../types/Skill";
+import type { SkillDefinition, SkillEffect, SkillValue, EffectType } from "../types/Skill";
 import type { EntityDefinition } from "../types/Entity";
 import type { DamageType, HitProfile } from "../types/Combat";
 import { CORE_SKILLS, BASE_SKILLS, PLANT_SKILLS, COMBO_SKILLS, ALL_SKILLS } from "../data/skills.js";
@@ -15,9 +15,9 @@ import { MATERIAL_MAP } from "../data/materials.js";
 import { ANALYZE_CHANCE_MODIFIER, MILLI, DEFAULT_HIT_PROFILE, HIT_DAMAGE_MULT } from "../data/balance.js";
 import { calcHitChances, HIT_GRADES, HIT_GRADE_DE } from "../systems/HitSystem.js";
 import { BIOME_SPAWNS } from "../world/BiomeDefinitions.js";
-import { SKILL_RANKS } from "../data/progression.js";
-import { xpForPractice, getEntitySkillPractice, rankNameForPractice } from "../systems/ProgressionSystem.js";
-import { evalFormula, resolveDefenderEffects, resolveAttackerEffects, resolveDexterity } from "../systems/SkillEffectSystem.js";
+import { SKILL_RANKS, NATUR_PROGRESS } from "../data/progression.js";
+import { xpForProgress, getEntitySkillProgress, rankNameForProgress, levelFromProgress } from "../systems/ProgressionSystem.js";
+import { evalSkillValue, resolveDefenderEffects, resolveAttackerEffects, resolveDexterity } from "../systems/SkillEffectSystem.js";
 import { calcSkillAttackDamage, calcJumpDistance, calcPhotosynthesisHeal } from "../systems/SkillEffects.js";
 import { venomDurationMs } from "../systems/VenomSystem.js";
 import { valueChart, isConstant, attachChartHover, VALUE_CHART_CSS, type ChartSeries } from "./ValueChart.js";
@@ -27,8 +27,10 @@ import {
 } from "../systems/EntityLevelingSystem.js";
 import { getEntityAttackDamageType, getEntityMeleeHitBasis, getEntityMeleeSkillId } from "../systems/CombatSystem.js";
 
-// Werte-Tabellen: Übungsgrad zu Beginn jedes Rangs (Werte dazwischen fließend)
-const LEVELS = SKILL_RANKS.map((r) => r.fromPractice);
+// Werte-Tabellen: Fortschritt zu Beginn jedes Rangs, dazu der Höchstwert
+// (p = 1, wird nie ganz erreicht). Dazwischen fließend.
+const LEVELS = [...SKILL_RANKS.map((r) => r.fromProgress), 1];
+const LEVEL_HEADS = [...SKILL_RANKS.map((r) => `${r.name} ${Math.round(r.fromProgress * 100)} %`), "Max"];
 const ALL_DAMAGE_TYPES: DamageType[] = ["pierce", "slash", "blunt", "acid", "fire", "poison", "magic", "psychic"];
 const ALL_SKILL_LIST = [...CORE_SKILLS, ...BASE_SKILLS, ...PLANT_SKILLS, ...COMBO_SKILLS];
 
@@ -77,11 +79,10 @@ function formatEffectValue(type: EffectType, value: number): string {
   return factor(value);
 }
 
-function formatFormula(f: LinearFormula): string {
-  const curve = f.curve ?? "linear";
-  const step = curve === "sqrt" ? "√(L−1)" : curve === "log" ? "log₂(L)" : "(L−1)";
-  const text = f.perLevel === 0 ? `${num(f.base, 3)} (konstant)` : `${num(f.base, 3)} + ${num(f.perLevel, 3)}·${step}`;
-  return f.max !== undefined ? `${text}, max ${num(f.max, 3)}` : text;
+/** „1 → 16 HP (Natur 14,5 HP)“ — allgemeines Schema start + (max − start) × p */
+function formatFormula(f: SkillValue, fmt: (v: number) => string): string {
+  if (f.start === f.max) return `${fmt(f.start)} (konstant)`;
+  return `${fmt(f.start)} → ${fmt(f.max)} (Natur ${fmt(evalSkillValue(f, NATUR_PROGRESS))})`;
 }
 
 function formatCondition(e: SkillEffect): string {
@@ -116,7 +117,7 @@ function dataTable(head: string[], rows: string[][]): string {
 }
 
 const levelTable = (rows: [string, string[]][]) =>
-  dataTable(["", ...SKILL_RANKS.map((r) => r.name)], rows.map(([label, vals]) => [label, ...vals]));
+  dataTable(["", ...LEVEL_HEADS], rows.map(([label, vals]) => [label, ...vals]));
 
 const section = (title: string, html: string) => (html ? `<h4 class="idx-h">${title}</h4>${html}` : "");
 
@@ -127,7 +128,7 @@ function titleBlock(icon: string, name: string, sub: string): string {
 /** Treffer-Stufen pro Level (Geschick beider Seiten 0) */
 function hitTable(profile: HitProfile): string {
   return dataTable(
-    ["Stufe", "Schaden", ...SKILL_RANKS.map((r) => r.name)],
+    ["Stufe", "Schaden", ...LEVEL_HEADS],
     HIT_GRADES.map((g) => [
       HIT_GRADE_DE[g], factor(HIT_DAMAGE_MULT[g]),
       ...LEVELS.map((l) => pct(calcHitChances(profile, l, 0, 0)[g])),
@@ -141,9 +142,10 @@ function hitLine(chances: HitProfile): string {
 }
 
 // ── Gemeinsame Ableitungen ─────────────────────────────────
-/** „Übung · 24 XP“ — Rang und Erfahrung einer Einheit in einem Skill */
+/** „Übung 23 % · 24 XP“ — Rang, Fortschritt und Erfahrung einer Einheit in einem Skill */
 function skillXpLabel(e: EntityDefinition, skillId: string): string {
-  return `${rankNameForPractice(getEntitySkillPractice(e)[skillId])} · ${num(e.skillXp![skillId])} XP`;
+  const p = getEntitySkillProgress(e)[skillId];
+  return `${rankNameForProgress(p)} ${Math.floor(p * 100)} % · ${num(e.skillXp![skillId])} XP`;
 }
 
 function canMelee(e: EntityDefinition): boolean {
@@ -178,7 +180,7 @@ function skillList(query: string): string {
   const html = groups.map(([title, list]) => {
     const rows = list.filter((s) => matches(query, s.name, s.id)).map((s) => {
       const meta = [CATEGORY_DE[s.category], ACTIVATION_DE[s.activation]];
-      if (s.damageType && s.baseDamage) meta.push(`${DAMAGE_TYPE_DE[s.damageType]} ${hp(s.baseDamage)} HP`);
+      if (s.damageType && s.damage) meta.push(`${DAMAGE_TYPE_DE[s.damageType]} ${num(s.damage.start)}–${num(s.damage.max)} HP`);
       if (s.mpCost) meta.push(`${hp(s.mpCost)} MP`);
       return row(`data-skill="${s.id}"`, s.icon, s.name, meta.join(" · "));
     });
@@ -214,13 +216,13 @@ function skillDetail(s: SkillDefinition): string {
     ["Kategorie", `${CATEGORY_DE[s.category]} · ${ACTIVATION_DE[s.activation]}`],
     ["Element", s.element],
     ["Lernaufwand", String(s.learningEffort)],
-    ["XP ab Rang", SKILL_RANKS.map((r) => `${r.name} ${Math.round(xpForPractice(r.fromPractice, s.learningEffort))}`).join(" · ")],
+    ["XP ab Rang", SKILL_RANKS.map((r) => `${r.name} ${Math.round(xpForProgress(r.fromProgress, s.learningEffort))}`).join(" · ")],
   ];
   if (s.mpCost !== undefined) p.push(["MP-Kosten", `${hp(s.mpCost)} MP`]);
   if (s.cooldownMs !== undefined) p.push(["Cooldown", seconds(s.cooldownMs)]);
   if (s.attackType) p.push(["Angriffsart", s.attackType]);
   if (s.damageType) p.push(["Schadenstyp", DAMAGE_TYPE_DE[s.damageType]]);
-  if (s.baseDamage !== undefined) p.push(["Basisschaden", `${hp(s.baseDamage)} HP`]);
+  if (s.damage) p.push(["Schaden", formatFormula(s.damage, (v) => `${num(v, 1)} HP`)]);
   if (s.recipe) {
     p.push(["Rezept", s.recipe.map((id) => { const r = ALL_SKILLS.get(id); return r ? skillChip(r) : id; }).join(" + ")]);
   }
@@ -230,38 +232,38 @@ function skillDetail(s: SkillDefinition): string {
 
   // Graphen: eine Kurve je Wert, der mit der Erfahrung wächst (konstante Werte nicht)
   const charts = (list: ChartSeries[]) =>
-    list.filter((c) => !isConstant(c, s.learningEffort)).map((c) => valueChart(c, s.learningEffort)).join("");
+    list.filter((c) => !isConstant(c)).map((c) => valueChart(c, s.learningEffort)).join("");
 
   const effects = (s.effects ?? []).map((e) => {
     const cond = formatCondition(e);
     const rows: [string, string[]][] = [
-      [EFFECT_DE[e.effectType], LEVELS.map((l) => formatEffectValue(e.effectType, evalFormula(e.formula, l)))],
+      [EFFECT_DE[e.effectType], LEVELS.map((l) => formatEffectValue(e.effectType, evalSkillValue(e.formula, l)))],
     ];
     const series: ChartSeries[] = [{
       label: `${EFFECT_DE[e.effectType]}${cond ? ` (${cond})` : ""}`,
-      value: (u) => evalFormula(e.formula, u),
+      value: (x) => evalSkillValue(e.formula, x),
       format: (v) => formatEffectValue(e.effectType, v),
     }];
     const cfg = e.statusConfig;
     let cfgText = "";
     if (cfg) {
       cfgText = ` · ${cfg.type.toUpperCase()} ${seconds(cfg.durationMs)}${cfg.tickIntervalMs ? `, Tick alle ${seconds(cfg.tickIntervalMs)}` : ""}`;
-      if (cfg.damageFormula) rows.push(["Schaden/Tick", LEVELS.map((l) => `${num(evalFormula(cfg.damageFormula!, l))} HP`)]);
-      if (cfg.healFormula) rows.push(["Heilung/Tick", LEVELS.map((l) => `${num(evalFormula(cfg.healFormula!, l))} HP`)]);
-      if (cfg.damageFormula) series.push({ label: "Schaden/Tick", value: (u) => evalFormula(cfg.damageFormula!, u), format: (v) => `${num(v)} HP` });
-      if (cfg.healFormula) series.push({ label: "Heilung/Tick", value: (u) => evalFormula(cfg.healFormula!, u), format: (v) => `${num(v)} HP` });
+      if (cfg.damageFormula) rows.push(["Schaden/Tick", LEVELS.map((l) => `${num(evalSkillValue(cfg.damageFormula!, l))} HP`)]);
+      if (cfg.healFormula) rows.push(["Heilung/Tick", LEVELS.map((l) => `${num(evalSkillValue(cfg.healFormula!, l))} HP`)]);
+      if (cfg.damageFormula) series.push({ label: "Schaden/Tick", value: (x) => evalSkillValue(cfg.damageFormula!, x), format: (v) => `${num(v)} HP` });
+      if (cfg.healFormula) series.push({ label: "Heilung/Tick", value: (x) => evalSkillValue(cfg.healFormula!, x), format: (v) => `${num(v)} HP` });
     }
     if (e.venomDose) {
-      const doseAt = (l: number) => evalFormula(e.venomDose!, l);
-      cfgText = ` · Dosis ${formatFormula(e.venomDose)} HP, stapelt, Halbwertszeit ${seconds(VENOM_HALF_LIFE_MS)}`;
+      const doseAt = (l: number) => evalSkillValue(e.venomDose!, l);
+      cfgText = ` · Dosis ${formatFormula(e.venomDose, (v) => `${num(v, 1)} HP`)}, stapelt, Halbwertszeit ${seconds(VENOM_HALF_LIFE_MS)}`;
       rows.push(["Dosis", LEVELS.map((l) => `${num(doseAt(l))} HP`)]);
       rows.push(["abgebaut nach", LEVELS.map((l) => seconds(venomDurationMs(doseAt(l) * MILLI)))]);
       series.push({ label: "Giftdosis je Treffer", value: doseAt, format: (v) => `${num(v, 1)} HP` });
-      series.push({ label: "Gift abgebaut nach", value: (u) => venomDurationMs(doseAt(u) * MILLI) / 1000, format: (v) => `${num(v, 1)} s` });
+      series.push({ label: "Gift abgebaut nach", value: (x) => venomDurationMs(doseAt(x) * MILLI) / 1000, format: (v) => `${num(v, 1)} s` });
     }
     return `<div class="idx-effect">
       <div><b>${EFFECT_DE[e.effectType]}</b> · ${TRIGGER_DE[e.trigger]}${cond ? ` · ${cond}` : ""}</div>
-      <div class="idx-formula">${formatFormula(e.formula)}${cfgText}</div>
+      <div class="idx-formula">${formatFormula(e.formula, (v) => formatEffectValue(e.effectType, v))}${cfgText}</div>
       ${levelTable(rows)}
       ${charts(series)}
       <div class="idx-reason">${e.reasoning}</div>
@@ -270,22 +272,22 @@ function skillDetail(s: SkillDefinition): string {
 
   const derived: [string, string[]][] = [];
   const derivedSeries: ChartSeries[] = [];
-  if (s.baseDamage) {
+  if (s.damage) {
     derived.push(["Schaden (HP)", LEVELS.map((l) => hp(calcSkillAttackDamage(s.id, l)))]);
-    derivedSeries.push({ label: "Schaden je Treffer (normal, vor Rüstung)", value: (u) => calcSkillAttackDamage(s.id, u) / MILLI, format: (v) => `${num(v, 1)} HP` });
+    derivedSeries.push({ label: "Schaden je Treffer (normal, vor Rüstung)", value: (x) => calcSkillAttackDamage(s.id, x) / MILLI, format: (v) => `${num(v, 1)} HP` });
   }
   if (s.id === "jump") {
-    derived.push(["Sprungweite (px)", LEVELS.map((l) => String(calcJumpDistance(l)))]);
+    derived.push(["Sprungweite (px)", LEVELS.map((l) => num(calcJumpDistance(l), 0))]);
     derivedSeries.push({ label: "Sprungweite", value: calcJumpDistance, format: (v) => `${num(v, 0)} px` });
   }
   if (s.id === "photosynthesis") {
     derived.push(["Heilung (HP/s)", LEVELS.map((l) => hp(calcPhotosynthesisHeal(l)))]);
-    derivedSeries.push({ label: "Heilung", value: (u) => calcPhotosynthesisHeal(u) / MILLI, format: (v) => `${num(v, 2)} HP/s` });
+    derivedSeries.push({ label: "Heilung", value: (x) => calcPhotosynthesisHeal(x) / MILLI, format: (v) => `${num(v, 2)} HP/s` });
   }
   if (s.id === "analyze" || s.id === "absorb") {
-    // Erfolgschance = min(1, u / Stufe des Wesens) — sicher bis Stufe u
-    derived.push(["Sicher erfolgreich bis Stufe", LEVELS.map((l) => num(l, 1))]);
-    derivedSeries.push({ label: "Sicher erfolgreich bis Wesen-Stufe", value: (u) => u, format: (v) => `Stufe ${num(v, 1)}` });
+    // Erfolgschance = min(1, Vergleichsstufe / Stufe des Wesens) — sicher bis zur Vergleichsstufe
+    derived.push(["Sicher erfolgreich bis Stufe", LEVELS.map((l) => num(levelFromProgress(l), 1))]);
+    derivedSeries.push({ label: "Sicher erfolgreich bis Wesen-Stufe", value: levelFromProgress, format: (v) => `Stufe ${num(v, 1)}` });
   }
 
   const sources = ENTITY_DEFINITIONS.flatMap((e) =>
@@ -301,7 +303,7 @@ function skillDetail(s: SkillDefinition): string {
     params(p),
     section("Effekte", effects),
     section("Werte zu Rangbeginn (dazwischen fließend)", derived.length ? levelTable(derived) + charts(derivedSeries) : ""),
-    section("Treffer-Stufen (ohne Geschick)", s.baseDamage
+    section("Treffer-Stufen (ohne Geschick)", s.damage
       ? `${hitTable(s.hitProfile ?? DEFAULT_HIT_PROFILE)}<p class="idx-reason">Geschick des Angreifers verschiebt die Verteilung zu besseren Stufen, Geschick des Ziels zu schlechteren.</p>`
       : ""),
     section("Entdeckbar bei", sources.length ? dataTable(["Einheit", "Level", "Absorb", "Analyze"], sources) : ""),
@@ -337,7 +339,7 @@ function entityDetail(e: EntityDefinition): string {
   if (e.venomChance !== undefined) p.push(["venomChance (Altfeld)", pct(e.venomChance)]);
   if (e.venomDamagePerTick !== undefined) p.push(["venomDamagePerTick (Altfeld)", `${hp(e.venomDamagePerTick)} HP`]);
 
-  const skillLevels = getEntitySkillPractice(e); // Übungsgrade aus skillXp
+  const skillLevels = getEntitySkillProgress(e); // Fortschritt je Skill aus skillXp
   const dex = resolveDexterity(skillLevels);
   if (dex) p.push(["Geschick", num(dex)]);
   const skillIds = Object.keys(skillLevels);
@@ -354,9 +356,9 @@ function entityDetail(e: EntityDefinition): string {
     combat.push(`<b>Nahkampf:</b> ${hp(dmg)} HP ${DAMAGE_TYPE_DE[getEntityAttackDamageType(e)]}` +
       (atk.damageMult !== 1 ? ` ${factor(atk.damageMult)}` : "") +
       ` alle ${seconds(cd)} ≈ ${num((dmg * atk.damageMult) / MILLI / (cd / 1000))} HP/s (normaler Treffer, vor Rüstung)`);
-    const { profile, practice } = getEntityMeleeHitBasis(e);
+    const { profile, progress } = getEntityMeleeHitBasis(e);
     const attackDex = resolveDexterity(skillLevels, getEntityMeleeSkillId(e));
-    combat.push(`<b>Treffer-Stufen</b> gegen Geschick 0: ${hitLine(calcHitChances(profile, practice, attackDex, 0))}`);
+    combat.push(`<b>Treffer-Stufen</b> gegen Geschick 0: ${hitLine(calcHitChances(profile, progress, attackDex, 0))}`);
     const occ = e.occasionalAttack;
     const occSkill = occ ? ALL_SKILLS.get(occ.skillId) : undefined;
     if (occ && occSkill) {
@@ -370,14 +372,14 @@ function entityDetail(e: EntityDefinition): string {
     for (const x of s?.effects ?? []) {
       if (x.trigger !== "on_hit_enemy") continue;
       if (x.effectType === "inject_venom" && x.venomDose) {
-        const dose = evalFormula(x.venomDose, skillLevels[id]);
+        const dose = evalSkillValue(x.venomDose, skillLevels[id]);
         const only = s!.activation === "active" ? `nur mit ${s!.name}` : "jeder Treffer";
-        combat.push(`<b>Gift (${s!.name}, ${only}):</b> ${pct(evalFormula(x.formula, skillLevels[id]))} Chance, ` +
+        combat.push(`<b>Gift (${s!.name}, ${only}):</b> ${pct(evalSkillValue(x.formula, skillLevels[id]))} Chance, ` +
           `${num(dose)} HP Gift (stapelt, abgebaut nach ${seconds(venomDurationMs(dose * MILLI))})`);
       }
       if (x.effectType !== "apply_status" || !x.statusConfig?.damageFormula) continue;
-      combat.push(`<b>Bei Treffer (${s!.name}):</b> ${pct(evalFormula(x.formula, skillLevels[id]))} Chance, ` +
-        `${num(evalFormula(x.statusConfig.damageFormula, skillLevels[id]))} HP/Tick für ${seconds(x.statusConfig.durationMs)}`);
+      combat.push(`<b>Bei Treffer (${s!.name}):</b> ${pct(evalSkillValue(x.formula, skillLevels[id]))} Chance, ` +
+        `${num(evalSkillValue(x.statusConfig.damageFormula, skillLevels[id]))} HP/Tick für ${seconds(x.statusConfig.durationMs)}`);
     }
   }
   const reflect = resolveDefenderEffects(skillLevels).reflectDamage;

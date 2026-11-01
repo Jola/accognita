@@ -12,7 +12,7 @@ import type { VenomDose } from "../types/Combat";
 import { ALL_SKILLS } from "../data/skills";
 import { MILLI } from "../data/balance";
 import { VENOM_HALF_LIFE_MS, VENOM_MIN_RATE_HP_PER_S } from "../data/venom";
-import { evalFormula } from "./SkillEffectSystem";
+import { evalSkillValue } from "./SkillEffectSystem";
 
 /** Alles, was vergiftet werden kann: Blob (PlayerState) und Gegner (EntityInstance). */
 export interface VenomTarget {
@@ -39,7 +39,7 @@ const TAIL_LOAD = MIN_RATE_PER_MS / DECAY_PER_MS;
 /**
  * Würfelt für jeden Skill mit "inject_venom"-Effekt die Bisschance und
  * gibt die eingespritzten Dosen zurück (milli-HP; total 0 = trocken).
- * skillPractice: { skillId → Übungsgrad } des Angreifers.
+ * skillProgress: { skillId → Fortschritt } des Angreifers.
  * attack: der Skill, mit dem gerade getroffen wurde (fehlt = unbewaffnet).
  *
  * Passive Skills (Venom) spritzen bei jedem Treffer. Aktive Skills
@@ -47,19 +47,19 @@ const TAIL_LOAD = MIN_RATE_PER_MS / DECAY_PER_MS;
  * Stachel, nicht in den Scheren.
  */
 export function rollVenomDose(
-  skillPractice: Record<string, number>,
-  attack?: { skillId: string; practice: number }
+  skillProgress: Record<string, number>,
+  attack?: { skillId: string; progress: number }
 ): VenomDose {
-  const sources = { ...skillPractice, ...(attack ? { [attack.skillId]: attack.practice } : {}) };
+  const sources = { ...skillProgress, ...(attack ? { [attack.skillId]: attack.progress } : {}) };
   const dose: VenomDose = { total: 0, bySkill: {} };
-  for (const [skillId, practice] of Object.entries(sources)) {
+  for (const [skillId, progress] of Object.entries(sources)) {
     const def = ALL_SKILLS.get(skillId);
     if (def?.activation === "active" && skillId !== attack?.skillId) continue;
     for (const effect of def?.effects ?? []) {
       if (effect.trigger !== "on_hit_enemy" || effect.effectType !== "inject_venom") continue;
       if (!effect.venomDose) continue;
-      if (Math.random() >= evalFormula(effect.formula, practice)) continue;
-      const amount = Math.round(evalFormula(effect.venomDose, practice) * MILLI);
+      if (Math.random() >= evalSkillValue(effect.formula, progress)) continue;
+      const amount = Math.round(evalSkillValue(effect.venomDose, progress) * MILLI);
       dose.total += amount;
       dose.bySkill[skillId] = (dose.bySkill[skillId] ?? 0) + amount;
     }

@@ -35,7 +35,9 @@ Format:
 
 - `[FEATURE]` **Idee: Körpergröße verstärkt Skills** (für später) — z. B. mit wachsender Größe prozentual mehr Stärke; eine „Synergie mit dem Körper“. GDD-02 Abschnitt 8.6.
 
-- `[POLISH]` **Ungenutzte Alt-Formeln in SkillEffects.ts** — `calcChitinDr`, `calcVenomChance`, `calcVenomDmgPerTick`, `calcHemolymphReflect`, `calcSuperstrengthMult`, `calcFireBreathDamage` werden nirgends mehr aufgerufen und liefern teils andere Werte als die Effekt-Deklarationen in skills.ts. Entfernen, damit niemand sie versehentlich nutzt (GDD-05 Migrationsschritt 5). GDD-08 Abschnitt 11.2.
+- `[FEATURE]` **Gegner-XP an das allgemeine Schema anpassen?** — Seit v0.6 starten alle Skill-Werte bei ≈ 1 (Fortschritt 0 %). Die `skillXp` der Gegner sind unverändert, deshalb sind schwache Gegner viel schwächer geworden (Ameise Biss 7 → 1 HP, Giftspinne 44 % auf 12 HP Gift → 8 % auf 4 HP), der Drache ist auf die Höchstwerte begrenzt (Klaue 24 → 18). Offen: Gegner-XP anheben, damit z. B. Ameisen bei Übung liegen? GDD-02 Abschnitt 8.3.
+
+- `[POLISH]` **Ungenutzte Alt-Formeln in SkillEffects.ts** — `calcChitinDr`, `calcVenomChance`, `calcVenomDmgPerTick`, `calcHemolymphReflect`, `calcSuperstrengthMult`, `calcFireBreathDamage`, `calcBiteDamage`, `calcClawDamage` und `SkillSystem.getSkillEffectiveness` (seit v0.6) werden nirgends mehr aufgerufen und liefern teils andere Werte als die Effekt-Deklarationen in skills.ts. Entfernen, damit niemand sie versehentlich nutzt (GDD-05 Migrationsschritt 5). GDD-08 Abschnitt 11.2.
 
 ---
 

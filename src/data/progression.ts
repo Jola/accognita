@@ -16,8 +16,9 @@
 //                                          noch nicht abgestimmt
 //
 // Grundprinzip in einem Satz:
-//   Ein Skill hat nur Erfahrung (XP). Daraus folgt fließend seine Wirkung.
-//   Ränge sind nur Beschriftungen. Die Summe aller Erfahrung ist durch die
+//   Ein Skill hat nur Erfahrung (XP). Daraus folgt fließend sein
+//   Fortschritt (0–100 %), und jeder Wert läuft mit dem Fortschritt vom
+//   Startwert zum Höchstwert. Ränge sind nur Beschriftungen. Die Summe aller Erfahrung ist durch die
 //   Kapazität des Blobs begrenzt — Neues verdrängt das am längsten nicht
 //   Geübte.
 //
@@ -27,47 +28,56 @@
 // ============================================================
 
 // -----------------------------------------------------------
-// 1. ERFAHRUNG → ÜBUNGSGRAD (fließende Wirkung)
+// 1. ERFAHRUNG → FORTSCHRITT (fließende Wirkung)
 //
 // Vorgabe (Entwickler): Die Werte eines Skills hängen direkt an seiner
 //   Erfahrung, nicht am Rang. Sie verbessern sich fließend in sehr kleinen
 //   Schritten statt in Level-Sprüngen.
 //
-// Umsetzung: Aus der Erfahrung wird eine stetige Rechengröße abgeleitet,
-//   der „Übungsgrad“ u. Alle Effekt-Formeln in skills.ts werden mit u
-//   ausgewertet (evalFormula). u ist KEIN Level: es springt nie, wird nicht
-//   angezeigt und hat beliebig viele Nachkommastellen.
+// Vorgabe (Entwickler, 1. November 2026): Alle Skills folgen einem
+//   gemeinsamen Schema: Jeder Wert nähert sich einem Höchstwert an und ist
+//   bei 0 XP sehr niedrig (z. B. 1 Schaden). Der Wert bei Rang Natur (90 %)
+//   ist der bisherige Natur-Wert.
+// Begründung (Entwickler): Es braucht ein verständliches und allgemeines
+//   Schema der Skillentwicklung, um es managen zu können.
 //
-//     u(xp) = 1 + ( xp / (learningEffort × PRACTICE_XP_FACTOR) ) ^ (1 / PRACTICE_CURVE_EXPONENT)
-//     xp(u) = learningEffort × PRACTICE_XP_FACTOR × (u − 1) ^ PRACTICE_CURVE_EXPONENT
+// Umsetzung (Vorschlag Claude, übernommen) — zwei Schritte:
 //
-//   learningEffort steht je Skill in skills.ts (Lernaufwand).
+//   a) Erfahrung → Fortschritt p (0 … 1, erreicht 1 nie):
+//        p(xp) = 1 − 0,1 ^ (xp / NaturXP)        NaturXP = learningEffort × NATUR_XP_PER_EFFORT
+//        xp(p) = NaturXP × log₁₀(1 / (1 − p))
+//      NaturXP bringt einen Skill auf 90 %, doppelt so viel auf 99 %,
+//      dreimal so viel auf 99,9 %. Gleich viel Erfahrung schließt immer
+//      denselben Anteil der restlichen Lücke — wie eine Halbwertszeit.
 //
-// Begründung (Vorschlag Claude, offen):
-//   - u beginnt bei 1 und liegt auf derselben Skala wie die Werte der
-//     Gegner in entities.ts (skillLevels, level). Dadurch funktionieren alle
-//     Vergleiche Spieler↔Gegner (Erfolgschance, XP-Skalierung) und alle
-//     Effekt-Formeln unverändert weiter.
-//   - Exponent 2 heißt: doppelt so viel Wirkungszuwachs kostet vierfache
-//     Erfahrung. Der Skill wird also weiter besser, aber jeder weitere
-//     Schritt dauert länger (GDD-08 Abschnitt 8, Zwei-Exponenten-Modell).
-//   - Abwägung: Die alte Kurve (×1,5 je Level) war exponentiell — hohe
-//     Werte waren praktisch unerreichbar und sprengten den Zahlenbereich
-//     (GDD-08 Abschnitt 6). Eine Potenzkurve wächst gutmütig. Unbegrenztes
-//     Wachstum ist trotzdem ausgeschlossen, weil die Kapazität (Abschnitt 3)
-//     die Gesamterfahrung deckelt.
-//   - Die Kurve ist konkav: Erfahrung auf mehrere Skills verteilt bringt in
-//     Summe mehr Wirkung als alles in einen Skill. Das belohnt Breite statt
-//     Spezialisierung — passend zu „das Spiel entwickelt sich in die Breite“.
-//   - Faktor 0,5 hält die frühe Phase nah am alten Tempo (Biss: u≈3 nach
-//     24 XP, alt Lv3 nach 30 XP).
+//   b) Fortschritt → Wert, für JEDEN Wert jedes Skills gleich:
+//        Wert = start + (max − start) × p
+//      start und max stehen je Wert in skills.ts ({ start, max }).
+//      Der Fortschritt in Prozent ist also zugleich der Anteil des Wegs
+//      vom Startwert zum Höchstwert.
+//
+// Begründung (Vorschlag Claude, übernommen):
+//   - Ein Maß für alles: „Routine“ heißt bei jedem Skill und jedem Wert
+//     „60–80 % des Wegs zum Höchstwert“. Nichts wächst unbegrenzt.
+//   - Natur: Lernen sättigt — die ersten Übungen bringen viel, Perfektion
+//     kostet immer mehr (Lernkurve, Potenzgesetz der Übung).
+//   - NATUR_XP_PER_EFFORT = 40,5 übernimmt die bisherige Natur-Schwelle
+//     (Übungsgrad 10 = 40,5 × learningEffort XP). Wer bisher Natur hatte,
+//     hat jetzt 90 % — und dort genau den bisherigen Natur-Wert.
+//   [VERWORFEN, 1. November 2026] Übungsgrad u = 1 + √(xp / (0,5 × learningEffort)),
+//   Formeln linear/√/log in u, teils ohne Obergrenze. Begründung damals:
+//   gleiche Skala wie die Gegner-Stufen, konkave Kurve belohnt Breite.
+//   Warum geändert: jeder Wert wuchs nach eigener Kurve, ohne Obergrenze —
+//   nicht allgemein und schwer zu überblicken (Begründung Entwickler oben).
 // -----------------------------------------------------------
 
-/** Steilheit der Kurve: 2 = vierfache Erfahrung für doppelten Zuwachs. VORLÄUFIG */
-export const PRACTICE_CURVE_EXPONENT = 2;
+/** Fortschritt bei Rang Natur (90 %). Vorgabe (Entwickler) */
+export const NATUR_PROGRESS = 0.9;
 
-/** Skaliert den Lernaufwand eines Skills auf die Kurve. VORLÄUFIG */
-export const PRACTICE_XP_FACTOR = 0.5;
+/** Erfahrung bis Natur = learningEffort × dieser Faktor (Biss: 486 XP). VORLÄUFIG */
+export const NATUR_XP_PER_EFFORT = 40.5;
+
+// [VERWORFEN] PRACTICE_CURVE_EXPONENT = 2, PRACTICE_XP_FACTOR = 0.5 (Übungsgrad-Kurve)
 
 // -----------------------------------------------------------
 // 2. RÄNGE (nur Anzeige)
@@ -77,15 +87,19 @@ export const PRACTICE_XP_FACTOR = 0.5;
 // Begründung (Entwickler): Das soll dem Spieler verständlicher machen, was
 //   die Erfahrung an einem Skill bedeutet.
 //
-// Ränge ändern KEINEN Wert. Sie sind reine Beschriftung über dem
-// stetigen Fortschritt. Die Grenzen sind als Übungsgrad angegeben; daraus
-// folgt die nötige Erfahrung je Skill automatisch (xp(u), Abschnitt 1).
+// Vorgabe (Entwickler, 1. November 2026): Die Ränge liegen bei festen
+//   Anteilen der erreichbaren Werte: bis 10 % Regung, bis 20 % Versuch,
+//   bis 40 % Übung, bis 60 % Gewohnheit, bis 80 % Routine, bis 90 %
+//   Instinkt, bis 100 % Natur.
+// Begründung (Entwickler): siehe Abschnitt 1 — ein allgemeines Schema.
 //
-// Beispiel Biss (learningEffort 12) — XP ab Rangbeginn:
-//   0 · 6 · 24 · 74 · 150 · 294 · 486
-// Jeder Rang dauert länger als der vorige (6, 18, 50, 76, 144, 192 XP),
-// bleibt aber erreichbar.
-// Grenzen: Vorschlag Claude (offen), VORLÄUFIG.
+// Ränge ändern KEINEN Wert. Sie sind reine Beschriftung über dem
+// stetigen Fortschritt.
+//
+// Beispiel Biss (learningEffort 12, NaturXP 486) — XP ab Rangbeginn:
+//   0 · 22 · 47 · 108 · 193 · 340 · 486
+// [VERWORFEN, 1. November 2026] Grenzen als Übungsgrad 1 · 2 · 3 · 4,5 ·
+//   6 · 8 · 10 (Biss: 0 · 6 · 24 · 74 · 150 · 294 · 486 XP).
 //
 // Namen — Vorgabe (Entwickler): Beide Namensreihen aus dem Gegenvorschlag
 //   von Claude stehen im Code. Aktiv ist vorerst die Biologie-Reihe, damit
@@ -104,20 +118,46 @@ export const PRACTICE_XP_FACTOR = 0.5;
 
 export interface SkillRank {
   name: string;
-  /** Übungsgrad, ab dem der Rang gilt */
-  fromPractice: number;
+  /** Fortschritt (0–1), ab dem der Rang gilt */
+  fromProgress: number;
 }
 
 export const SKILL_RANKS: readonly SkillRank[] = [
   // Biologie (aktiv)                       // Handwerk (Alternative)
-  { name: "Regung",     fromPractice: 1 },    // { name: "Neuling",  fromPractice: 1 },
-  { name: "Versuch",    fromPractice: 2 },    // { name: "Anfänger", fromPractice: 2 },
-  { name: "Übung",      fromPractice: 3 },    // { name: "Lehrling", fromPractice: 3 },
-  { name: "Gewohnheit", fromPractice: 4.5 },  // { name: "Geselle",  fromPractice: 4.5 },
-  { name: "Routine",    fromPractice: 6 },    // { name: "Könner",   fromPractice: 6 },
-  { name: "Instinkt",   fromPractice: 8 },    // { name: "Experte",  fromPractice: 8 },
-  { name: "Natur",      fromPractice: 10 },   // { name: "Meister",  fromPractice: 10 },
+  { name: "Regung",     fromProgress: 0 },    // { name: "Neuling",  fromProgress: 0 },
+  { name: "Versuch",    fromProgress: 0.1 },  // { name: "Anfänger", fromProgress: 0.1 },
+  { name: "Übung",      fromProgress: 0.2 },  // { name: "Lehrling", fromProgress: 0.2 },
+  { name: "Gewohnheit", fromProgress: 0.4 },  // { name: "Geselle",  fromProgress: 0.4 },
+  { name: "Routine",    fromProgress: 0.6 },  // { name: "Könner",   fromProgress: 0.6 },
+  { name: "Instinkt",   fromProgress: 0.8 },  // { name: "Experte",  fromProgress: 0.8 },
+  { name: "Natur",      fromProgress: 0.9 },  // { name: "Meister",  fromProgress: 0.9 },
 ];
+
+// -----------------------------------------------------------
+// 2b. VERGLEICHSSTUFE (Fortschritt ↔ Wesen-Stufe)
+//
+// Manche Regeln vergleichen einen Skill mit der Stufe eines Wesens
+// (entities.ts, level 1–20): Erfolgschance von Analyze/Absorb, wie viel
+// XP ein Gegner bringt, Kippen der Treffer-Stufen. Dafür wird der
+// Fortschritt auf dieselbe Skala gelegt:
+//
+//     Vergleichsstufe = 1 + (LEVEL_AT_NATUR − 1) × p / NATUR_PROGRESS
+//                     = 1 + 10 × p
+//
+//   0 % → 1 · Versuch 2 · Übung 3 · Gewohnheit 5 · Routine 7 ·
+//   Instinkt 9 · Natur 10 · Grenze 11
+//
+// Begründung (Vorschlag Claude, offen — bitte bestätigen):
+//   - Natur = Stufe 10 wie beim alten Übungsgrad. Alle Vergleiche mit den
+//     Wesen-Stufen (Ameise 1 … Schlange 10 … Drache 20) verhalten sich
+//     also wie bisher: Absorb auf Natur fängt Schlangen sicher, Drachen zu
+//     50 %.
+//   - Die Stufe ist nur eine Rechengröße für diese Vergleiche, keine
+//     Anzeige und kein Level.
+// -----------------------------------------------------------
+
+/** Vergleichsstufe bei Rang Natur (= alter Übungsgrad 10). VORLÄUFIG */
+export const LEVEL_AT_NATUR = 10;
 
 // -----------------------------------------------------------
 // 3. KAPAZITÄT
@@ -131,32 +171,29 @@ export const SKILL_RANKS: readonly SkillRank[] = [
 //   kann sich so in die Breite entwickeln: neue Skills kommen hinzu, dafür
 //   wird die Kapazität eventuell etwas erweitert.
 //
-// Vorgabe (Entwickler): Die Kapazität wächst mit dem Blob. Wie genau, ist
-//   noch nicht festgelegt; sie muss zu den erlernbaren Skills passen.
+// Vorgabe (Entwickler, 1. November 2026): Die Kapazität reicht genau, um
+//   alle entdeckten Skills bis 90 % (Natur) zu entwickeln. Alles darüber
+//   hinaus verdrängt andere Skills.
+// Begründung (Entwickler): ein verständliches, allgemeines Schema
+//   (Abschnitt 1).
 //
-// Vorgabe (Entwickler, 1. November 2026): Die Kapazität muss deutlich
-//   größer werden. Es soll nicht möglich sein, alle Skills auf das Maximum
-//   zu bringen, aber mindestens 5 Skills auf das Maximum, während die
-//   anderen dann niedriger, aber nicht auf dem Minimum sind.
-//   „Maximum“ = höchster Rang (Natur, u = 10, xp = 40,5 × learningEffort).
+//   Kapazität = Σ NaturXP aller entdeckten Skills
+//             = NATUR_XP_PER_EFFORT × Σ learningEffort
 //
-// Umsetzung (Vorschlag Claude, offen) — Kapazität sättigt:
-//   Kapazität = CAPACITY_BASE + (CAPACITY_MAX − CAPACITY_BASE)
-//                               × (1 − 2^(−Lebenserfahrung / CAPACITY_HALF_XP))
-//   Je CAPACITY_HALF_XP Lebenserfahrung wächst die Hälfte des noch fehlenden
-//   Stücks bis CAPACITY_MAX dazu (300 → 2250 → 3225 → 3712 … → 4200).
-//   - Natur: Lebewesen wachsen jung schnell und nähern sich dann einer
-//     Endgröße (Wachstumskurve nach von Bertalanffy) — kein Wesen wächst
-//     unbegrenzt.
-//   - CAPACITY_MAX aus der Vorgabe hergeleitet (Skills Stand 1. Nov. 2026):
-//     die fünf teuersten Skills auf Natur (Feueratem 1012, Stachelstich 729,
-//     3 × 607) = 3562, dazu die übrigen sechs auf Gewohnheit (u = 4,5,
-//     zusammen ≈ 480) ≈ 4040 → 4200. Alle elf auf Natur bräuchten ≈ 6600 —
-//     auch mit Überdehnung (+20 % = 5040) nicht erreichbar.
-//   - Abwägung: Kommen viele neue Skills dazu, muss CAPACITY_MAX mitwachsen
-//     (Begründung Entwickler oben: „dafür wird die Kapazität eventuell etwas
-//     erweitert“).
-//   [VERWORFEN, 1. November 2026] Kapazität = 200 + 150 × Wachstum — viel zu
+//   - Jeder neu entdeckte Skill bringt seinen eigenen Platz mit.
+//   - Kern-Fähigkeiten (Analyze, Absorb) belegen keine Kapazität und
+//     zählen hier auch nicht mit.
+//   - 90 % → 99 % kostet bei einem Skill noch einmal seine ganze NaturXP —
+//     wer einen Skill darüber treibt, verdrängt deutlich andere.
+//   - Überdehnung (Abschnitt 4) gilt weiter obendrauf (Vorschlag Claude,
+//     offen: bisherige Vorgabe beibehalten).
+//
+// [VERWORFEN, 1. November 2026] Kapazität sättigt mit der Lebenserfahrung:
+//   300 + (4200 − 300) × (1 − 2^(−Lebenserfahrung / 3000)).
+//   Vorgabe damals: mindestens 5 Skills auf Natur, die anderen niedriger,
+//   aber nicht auf dem Minimum; Kapazität wächst mit dem Blob.
+//   Warum geändert: neue Vorgabe oben (alle entdeckten Skills bis 90 %).
+// [VERWORFEN, 1. November 2026] Kapazität = 200 + 150 × Wachstum — viel zu
 //   klein (Lebenserfahrung 10 000 → 1050), schon wenige Skills verdrängten
 //   sich gegenseitig.
 //
@@ -175,15 +212,7 @@ export const SKILL_RANKS: readonly SkillRank[] = [
 //     „Absorbieren“ vergessen und der Kern-Spielablauf bräche weg.
 // -----------------------------------------------------------
 
-/** Kapazität eines frisch geschlüpften Blobs (in XP). VORLÄUFIG ([VERWORFEN]: 200) */
-export const CAPACITY_BASE = 300;
-
-/** Endkapazität eines ausgewachsenen Blobs (in XP): ≥ 5 Skills auf Natur. VORLÄUFIG */
-export const CAPACITY_MAX = 4_200;
-
-/** Lebenserfahrung, nach der die Hälfte des Wegs zu CAPACITY_MAX geschafft ist. VORLÄUFIG */
-export const CAPACITY_HALF_XP = 3_000;
-
+// [VERWORFEN] CAPACITY_BASE = 300, CAPACITY_MAX = 4_200, CAPACITY_HALF_XP = 3_000
 // [VERWORFEN] CAPACITY_PER_GROWTH = 150 (Kapazität pro Einheit Wachstum)
 
 /** Lebenserfahrung, bei der das Wachstum 1 erreicht (danach je Verdopplung +1). */
@@ -314,7 +343,10 @@ export const RECOVERY_HALF_LIFE_MS = 3 * 3600 * 1000;
 export const REST_DELAY_MS = 2 * 60 * 1000;
 
 // ------------------------------------------------------------
-// Zuletzt geändert: 2026-11-01 — Kapazität sättigt bei 4200 (≥ 5 Skills
+// Zuletzt geändert: 2026-11-01 — Allgemeines Schema: Fortschritt 0–100 %,
+// jeder Wert start → max, Ränge in Prozent, Kapazität = alle entdeckten
+// Skills bis 90 %
+// Davor: 2026-11-01 — Kapazität sättigt bei 4200 (≥ 5 Skills
 // auf Natur), Verlernen verteilt statt reihum (Abschnitt 3b)
 // Davor: 2026-10-31 — Rangnamen: Biologie-Reihe aktiv,
 // Handwerk-Reihe als Alternative daneben

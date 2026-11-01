@@ -91,7 +91,8 @@ Jeder Angriff durchläuft exakt diese Stufen in dieser Reihenfolge:
 ### 3.2 Berechnung Schritt für Schritt
 
 ```
-baseDmg        = skill.baseDamage + skill.perLevelBonus * (skillLevel - 1)
+baseDmg        = skill.damage.start + (skill.damage.max − skill.damage.start) * p   // p = Fortschritt 0–1 (seit 1. Nov. 2026)
+                 // [VERWORFEN] skill.baseDamage + skill.perLevelBonus * (skillLevel - 1)
 afterMult      = baseDmg * attackerMultiplier           // Schritt 2
 effectiveBlock = max(0, defenderFlatBlock - attackerPenetration)  // Schritt 3+4
 afterBlock     = max(0, afterMult - effectiveBlock)
@@ -210,7 +211,22 @@ interface EffectCondition {
 }
 ```
 
-### 5.4 Formel-System: LinearFormula
+### 5.4 Formel-System: SkillValue (seit 1. November 2026)
+
+**Vorgabe (Entwickler, 1. November 2026):** Alle Skill-Werte folgen einem allgemeinen Schema: Sie nähern sich einem Höchstwert an und sind bei 0 XP sehr niedrig. **Begründung (Entwickler):** ein verständliches, allgemeines Schema, um die Skillentwicklung managen zu können. Herleitung: [GDD-02 Abschnitt 8.3](GDD-02-Skillsystem.md#83-fließende-wirkung), Mathematik: [GDD-08 Abschnitt 25](GDD-08-Progressionsmathematik.md).
+
+```typescript
+interface SkillValue {
+  start: number;   // Wert bei 0 XP
+  max:   number;   // Höchstwert, wird nie ganz erreicht; bei Natur (90 %) 90 % des Wegs
+}
+// Wert = start + (max − start) × p,   p = 1 − 0,1^(xp / NaturXP)   (evalSkillValue)
+// Konstant (Materialeigenschaft): start = max
+```
+
+Absolute Werte stehen in Anzeige-HP, Faktoren und Chancen direkt. Angriffsschaden steht als `damage: SkillValue` am Skill (statt `baseDamage`).
+
+#### [VERWORFEN, 1. November 2026] LinearFormula
 
 Alle Formeln sind **linear** (Basis + Zuwachs pro Level). Komplexere Kurven werden durch `curve`-Modifier ausgedrückt.
 
@@ -443,9 +459,10 @@ Powerlevel_Defense(skill, level) = erwartete Schadensmitigation pro Sekunde
 
 | Schraube | Wo im Code | Was sie verändert |
 |----------|------------|-------------------|
-| `base` in LinearFormula | [`src/data/skills.ts`](../src/data/skills.ts) | Wert bei Level 1 |
-| `perLevel` in LinearFormula | [`src/data/skills.ts`](../src/data/skills.ts) | Skalierung pro Level |
-| `curve` in LinearFormula | [`src/data/skills.ts`](../src/data/skills.ts) | Wachstumskurve |
+| `start` in SkillValue | [`src/data/skills.ts`](../src/data/skills.ts) | Wert bei 0 XP |
+| `max` in SkillValue | [`src/data/skills.ts`](../src/data/skills.ts) | Höchstwert (Natur = 90 % des Wegs) |
+| `learningEffort` am Skill | [`src/data/skills.ts`](../src/data/skills.ts) | Wie viel Erfahrung der Weg kostet (NaturXP = 40,5 × Aufwand) |
+| ~~`base`, `perLevel`, `curve` in LinearFormula~~ | — | [VERWORFEN, 1. November 2026] |
 
 Nichts anderes sollte verändert werden müssen um ein Skill zu rebalancen.
 
@@ -643,4 +660,4 @@ Eine reine Halbwertszeit endet nie. Unter ≈ 2,9 HP Restlast (wo λ·L unter 1 
 
 ---
 
-*Letzte Aktualisierung: v0.5 — Stachelstich-Dosis gesenkt (1. November 2026); Abschnitt 12: Gift aktiver Skills nur beim eigenen Treffer (Stachelstich), XP anteilig je Gift-Skill (31. Oktober 2026); Abschnitt 12 Gift: Giftlast, stufenloser Abbau mit Halbwertszeit, Mindestrate, Effekt-Typ `inject_venom` (31. Oktober 2026); davor Hinweis Übungsgrad statt Level in Abschnitt 5.4 (31. Oktober 2026); davor implementiert — DamageSystem (8-stufige Pipeline), SkillEffectSystem (deklarative Effekte), DamageType-System, Skill-Effekt-Deklaration für chitin_armor/superstrength/hemolymph/venom (Oktober 2026); LinearFormula.max, Treffer-Stufe 1b, dexterity; Milli-Einheiten (3.4) und Begründungen der Caps ergänzt; Mindestschaden 1 HP vor Effekten, HP-Anzeige immer aufgerundet; Begründungen für Milli-HP und Mindestschaden vom Entwickler; Geschick ohne eigenen Skill-Beitrag*
+*Letzte Aktualisierung: v0.6 — Formel-System SkillValue { start, max } statt LinearFormula, Angriffsschaden als damage-Wert (1. November 2026); davor v0.5 — Stachelstich-Dosis gesenkt (1. November 2026); Abschnitt 12: Gift aktiver Skills nur beim eigenen Treffer (Stachelstich), XP anteilig je Gift-Skill (31. Oktober 2026); Abschnitt 12 Gift: Giftlast, stufenloser Abbau mit Halbwertszeit, Mindestrate, Effekt-Typ `inject_venom` (31. Oktober 2026); davor Hinweis Übungsgrad statt Level in Abschnitt 5.4 (31. Oktober 2026); davor implementiert — DamageSystem (8-stufige Pipeline), SkillEffectSystem (deklarative Effekte), DamageType-System, Skill-Effekt-Deklaration für chitin_armor/superstrength/hemolymph/venom (Oktober 2026); LinearFormula.max, Treffer-Stufe 1b, dexterity; Milli-Einheiten (3.4) und Begründungen der Caps ergänzt; Mindestschaden 1 HP vor Effekten, HP-Anzeige immer aufgerundet; Begründungen für Milli-HP und Mindestschaden vom Entwickler; Geschick ohne eigenen Skill-Beitrag*

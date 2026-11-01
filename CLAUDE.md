@@ -8,7 +8,7 @@ This file is the project constitution. Read it at the start of every session bef
 
 **Absorb & Evolve** is a browser-based Action-RPG. The player controls a Blob (inspired by the real organism *Physarum polycephalum*) that evolves by absorbing or analyzing entities in a medieval fantasy world. Skills are discovered through interaction, leveled through repetition, and combined into new abilities.
 
-Current state: **v0.5** — Modular TypeScript + Phaser.js architecture, Skill-System + Combat-System implemented. Large procedural world (20×20 chunks = 20480×20480px) with 6 biomes, pixel art tiles, and dynamic chunk loading.
+Current state: **v0.6** — Modular TypeScript + Phaser.js architecture, Skill-System + Combat-System implemented. Large procedural world (20×20 chunks = 20480×20480px) with 6 biomes, pixel art tiles, and dynamic chunk loading.
 
 ---
 
@@ -27,18 +27,18 @@ Current state: **v0.5** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/data/entities.ts` | All entity definitions |
 | `src/data/materials.ts` | All material/loot definitions |
 | `src/data/balance.ts` | Central balancing constants (XP gains, damage, etc.) |
-| `src/data/progression.ts` | All progression knobs with rationale: experience → practice curve, ranks, capacity, overstretch, relearning, overtraining (no levels) |
+| `src/data/progression.ts` | All progression knobs with rationale: experience → progress 0–100 % (general scheme: every skill value runs start → max), ranks in %, comparison level vs. entity levels, capacity (discovered skills up to 90 %), overstretch, relearning, overtraining (no levels) |
 | `src/data/version.ts` | `GAME_VERSION` — must match `package.json` (build.js aborts otherwise). Shown in save dialog and stored in each save. |
 | `src/systems/SkillSystem.ts` | Pure skill logic — what earns how much XP, discovery, combining, blob growth (HP/MP) |
-| `src/systems/ProgressionSystem.ts` | How experience is booked: relearn bonus, overtraining/rest, capacity and forgetting, ranks; same practice conversion for player and entities |
+| `src/systems/ProgressionSystem.ts` | How experience is booked: relearn bonus, overtraining/rest, capacity and forgetting, ranks; same progress conversion for player and entities |
 | `src/systems/EntitySystem.ts` | Absorb/Analyze/Respawn logic |
 | `src/systems/StatusEffectSystem.ts` | DoT/HoT/Aura processing, continuous regeneration (HoT as rate per frame), passive skill sync |
 | `src/data/venom.ts` | Venom knobs with rationale: dose, stacking venom load, half-life, minimum rate |
 | `src/systems/VenomSystem.ts` | Venom feature, isolated: roll dose, venom load, continuous decay (= damage) |
 | `src/systems/CombatSystem.ts` | Damage calculation, skill dispatch, checkpoint logic |
 | `src/systems/DamageSystem.ts` | Damage pipeline (GDD-05 section 3) |
-| `src/systems/SkillEffectSystem.ts` | Evaluates declarative skill effects (`evalFormula`, attacker/defender effects, dexterity) |
-| `src/systems/SkillEffects.ts` | Skill formulas: attack damage, jump distance, photosynthesis (contains unused legacy formulas, see TODO.md) |
+| `src/systems/SkillEffectSystem.ts` | Evaluates declarative skill effects (`evalSkillValue` = start + (max − start) × progress, attacker/defender effects, dexterity) |
+| `src/systems/SkillEffects.ts` | Skill formulas: attack damage (`damage` start → max), jump distance, photosynthesis (contains unused legacy formulas, see TODO.md) |
 | `src/systems/EntityLevelingSystem.ts` | Entities fight each other: bonus levels, scaled combat values |
 | `src/systems/HitSystem.ts` | Hit grades (miss/light/normal/heavy/crit): chances from skill profile, level and dexterity; dice roll |
 | `src/systems/AiSystem.ts` | Aggro, chase, attack-trigger (pure logic, no Phaser) |
