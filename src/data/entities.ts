@@ -73,9 +73,12 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 30,
     interactRadius: 35,
     aggroRadius: 8,    // 2.5 × worldSize
-    // bite 0 % → 1 Schaden; chitin 0 % → blockt nichts
-    //   ([VERWORFEN] bite u=1 → 7 Schaden; chitin u=1 → blockt 3 HP Stich)
-    skillXp: { bite: 0, chitin_armor: 0 },
+    // bite 27 % (Übung) → 5 Schaden; chitin 0 % → blockt nichts
+    // Vorgabe (Entwickler, 1. Nov. 2026): Die Ameise soll 5 Schaden machen.
+    //   → Biss-Erfahrung 65,5 XP: 1 + (16 − 1) × 26,7 % = 5,0 HP
+    //   ([VERWORFEN] bite 0 XP → 1 Schaden; davor u=1 → 7 Schaden;
+    //    chitin u=1 → blockt 3 HP Stich)
+    skillXp: { bite: 65.5, chitin_armor: 0 },
     worldSize: 3,    // Ameise — winziges Insekt, ähnlich groß wie ein frischer Blob
   },
   {
