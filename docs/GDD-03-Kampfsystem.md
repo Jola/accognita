@@ -213,11 +213,17 @@ finalDmg  = baseDmg × (1 - reduction)
 
 ### Angriffs-Skill (Nahkampf)
 ```
-Ziel = lastNearbyId (Entity in ≤ 100 px)
+Ziel = lastNearbyId (Entity in ≤ 100 px)          [VERWORFEN]
+Ziel = nächster Gegner mit  Abstand − Gegner-Radius ≤ 2,5 × Blob-Radius
+       Gegner-Radius = worldSize × 0,55 (so groß wie sein Icon)
 baseDmg = 3 + absorb.level × 1.5
 effDmg  = baseDmg × damageMult
 Venom-Chance: 30 % + 5 % × venom.level   [VERWORFEN — neue Formel siehe Abschnitt 5, Venom]
 ```
+
+**Treffer-Reichweite (Nahkampf, Absorb, Analyze — implementiert):**
+**Vorgabe (Entwickler, 1. November 2026):** Den Trefferradius des Blobs erhöhen und die Größe der Gegner an die Größe ihres Icons anpassen, sodass sie getroffen werden können, sobald der Blob sie berührt.
+Gemessen wird vom Mittelpunkt des Blobs bis zum Rand des Gegners: Berühren reicht immer, dazu 1,5 Blob-Radien darüber hinaus. ~~Vorher: Mittelpunktabstand ≤ 2 × Blob-Radius~~ [VERWORFEN] — die Gegnergröße zählte nicht, ein frischer Blob (Radius 2) erreichte nur 4 px und konnte einen Skorpion berühren, ohne ihn zu treffen. Stellschrauben: `ENTITY_ICON_RADIUS_FACTOR`, `PLAYER_REACH_FACTOR` in [balance.ts](../src/data/balance.ts) (VORLÄUFIG).
 
 ### Dash-Skill (Jump)
 ```
@@ -437,4 +443,4 @@ scenes/GameScene.ts                ← verdrahtet alle Systeme, Phaser-Rendering
 
 ---
 
-*Letzte Aktualisierung: 2026-11-01 — Balancing: Photosynthese, Skorpione, Schlange schwächer; 2026-10-31 — Gelegentlicher Angriff (Skorpion-Stachelstich); Regeneration (Photosynthesis) stufenlos; Venom-DoT durch Giftlast ersetzt (Verweis auf GDD-05 Abschnitt 12); Hinweis „Übungsgrad statt Skill-Level“ ergänzt, HP/MP wachsen mit dem Wachstum statt pro Level; 2026-10-25 — Größen- und levelabhängiges Aggro als Konzept (Abschnitt 4); 2026-10-24 — Geschick ohne Beitrag des eingesetzten Skills; Begründungen ergänzt bzw. als offen markiert, veraltete Werte (Spieler-Wachstum, Entity-Tabelle, Passiv-Effekte) als VERWORFEN gekennzeichnet; Treffer-Stufen und Geschick; Venom-Chance mit 100-%-Deckel*
+*Letzte Aktualisierung: 2026-11-01 — Treffer-Reichweite ab Rand des Gegners (Icon-Größe), Blob-Reichweite erhöht; Balancing: Photosynthese, Skorpione, Schlange schwächer; 2026-10-31 — Gelegentlicher Angriff (Skorpion-Stachelstich); Regeneration (Photosynthesis) stufenlos; Venom-DoT durch Giftlast ersetzt (Verweis auf GDD-05 Abschnitt 12); Hinweis „Übungsgrad statt Skill-Level“ ergänzt, HP/MP wachsen mit dem Wachstum statt pro Level; 2026-10-25 — Größen- und levelabhängiges Aggro als Konzept (Abschnitt 4); 2026-10-24 — Geschick ohne Beitrag des eingesetzten Skills; Begründungen ergänzt bzw. als offen markiert, veraltete Werte (Spieler-Wachstum, Entity-Tabelle, Passiv-Effekte) als VERWORFEN gekennzeichnet; Treffer-Stufen und Geschick; Venom-Chance mit 100-%-Deckel*

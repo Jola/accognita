@@ -19,7 +19,8 @@ import { getCorePractice } from "./ProgressionSystem";
 import { addMaterial } from "./MaterialSystem";
 import { clearVenom } from "./VenomSystem";
 import type { SkillDiscoveryResult, DiscoveryMethod } from "../types/Skill";
-import { calcSuccessChance, ANALYZE_CHANCE_MODIFIER } from "../data/balance";
+import { calcSuccessChance, ANALYZE_CHANCE_MODIFIER, ENTITY_ICON_RADIUS_FACTOR } from "../data/balance";
+import type { EntityDefinition } from "../types/Entity";
 
 // calcSuccessChance kommt aus balance.ts — hier re-exportiert damit GameScene.ts nur einen Import braucht
 export { calcSuccessChance } from "../data/balance";
@@ -221,22 +222,32 @@ export function processRespawns(world: WorldState): string[] {
 // -----------------------------------------------------------
 // NEAREST ENTITY — findet nächste lebende Entity in Reichweite
 // -----------------------------------------------------------
+/** Radius eines Gegners in Weltpixeln — so groß wie sein Icon (balance.ts, Treffer-Reichweite). */
+export function getEntityRadius(def: EntityDefinition | undefined): number {
+  return (def?.worldSize ?? 5) * ENTITY_ICON_RADIUS_FACTOR;
+}
+
+/**
+ * Nächster lebender Gegner, dessen RAND höchstens `reach` vom Mittelpunkt
+ * des Blobs entfernt ist (Abstand − Gegner-Radius). Große Gegner sind also
+ * schon von weiter weg erreichbar — sobald der Blob sie berührt.
+ */
 export function findNearestEntity(
   player: PlayerState,
   world: WorldState,
-  maxRadius: number = 80
+  reach: number = 80
 ): EntityInstance | null {
   let nearest: EntityInstance | null = null;
-  let nearestDist = maxRadius;
+  let nearestDist = reach;
 
   for (const instance of world.entities.values()) {
     if (!instance.isAlive) continue;
 
     const dx = instance.x - player.x;
     const dy = instance.y - player.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
+    const dist = Math.sqrt(dx * dx + dy * dy) - getEntityRadius(ENTITY_MAP.get(instance.definitionId));
 
-    if (dist < nearestDist) {
+    if (dist <= nearestDist) {
       nearestDist = dist;
       nearest = instance;
     }

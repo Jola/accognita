@@ -39,6 +39,7 @@ import {
   absorbEntity,
   analyzeEntity,
   findNearestEntity,
+  getEntityRadius,
   processRespawns,
   calcSuccessChance,
 } from "../systems/EntitySystem.js";
@@ -97,6 +98,7 @@ import {
   PLAYER_SCREEN_RADIUS,
   PLAYER_SPEED_PER_WORLD_RADIUS,
   PHOTOSYNTHESIS_XP_PER_HP,
+  PLAYER_REACH_FACTOR,
   toDisplayHp,
 } from "../data/balance.js";
 import { addVenomDose, processVenom, getVenomLoad, clearVenom } from "../systems/VenomSystem.js";
@@ -225,10 +227,11 @@ export class GameScene extends Phaser.Scene {
       .setInteractive();
 
     text.on("pointerdown", () => {
+      // Abstand bis zum Rand des Gegners (Treffer-Reichweite, balance.ts)
       const dist = Math.hypot(
         this.gameState.player.x - instance.x,
         this.gameState.player.y - instance.y,
-      );
+      ) - getEntityRadius(def);
       if (dist > this.getPlayerAttackRange()) {
         showToast("Näher herangehen!", "system");
         return;
@@ -285,10 +288,11 @@ export class GameScene extends Phaser.Scene {
     return PLAYER_WORLD_RADIUS_MIN + t * (PLAYER_WORLD_RADIUS_MAX - PLAYER_WORLD_RADIUS_MIN);
   }
 
-  // Nahkampf-Angriffsreichweite des Blobs in Weltpixeln.
-  // = Rand des Charakters + nochmal eine Charaktergröße = 2 × worldRadius.
+  // Reichweite des Blobs (Nahkampf, Absorb, Analyze) in Weltpixeln, gemessen
+  // vom Mittelpunkt des Blobs bis zum RAND des Gegners (findNearestEntity).
+  // PLAYER_REACH_FACTOR × Blob-Radius: Berührung + 1,5 Blob-Radien (balance.ts).
   private getPlayerAttackRange(): number {
-    return this.calcPlayerWorldRadius() * 2;
+    return this.calcPlayerWorldRadius() * PLAYER_REACH_FACTOR;
   }
 
   // Passt Kamera-Zoom an die aktuelle Größe des Blobs an.

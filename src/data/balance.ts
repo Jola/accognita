@@ -282,6 +282,35 @@ export const PLAYER_SIZE_GROWTH_MAX = 19;
 /** Konstante Bildschirm-Radius des Blobs in Pixeln (ändert sich nie) */
 export const PLAYER_SCREEN_RADIUS = 16;
 
+// -----------------------------------------------------------
+// TREFFER-REICHWEITE (Nahkampf, Absorb, Analyze)
+//
+// Vorgabe (Entwickler, 1. November 2026): Der Trefferradius der Fähigkeiten
+//   des Blobs wird erhöht, und die Größe der Gegner richtet sich nach der
+//   Größe ihres Icons — sie sollen getroffen werden können, sobald der Blob
+//   sie berührt (Nahkampf, Absorb, Analyze).
+//
+// Gemessen wird von Rand zu Rand:
+//   in Reichweite ⇔ Mittelpunktabstand − Gegner-Radius ≤ PLAYER_REACH_FACTOR × Blob-Radius
+//   Gegner-Radius = worldSize × ENTITY_ICON_RADIUS_FACTOR
+//   Berührung ist Mittelpunktabstand = Blob-Radius + Gegner-Radius, also
+//   reicht der Blob PLAYER_REACH_FACTOR − 1 Blob-Radien über die Berührung
+//   hinaus.
+// [VERWORFEN] Mittelpunktabstand ≤ 2 × Blob-Radius — die Größe des Gegners
+//   zählte nicht. Ein frischer Blob (Radius 2) erreichte nur 4 px um seinen
+//   Mittelpunkt; einen Skorpion (Icon ≈ 7–11 px breit) konnte er berühren,
+//   ohne ihn zu treffen.
+// -----------------------------------------------------------
+
+/**
+ * Radius eines Gegners im Verhältnis zu worldSize. Das Emoji wird in
+ * Schriftgröße worldSize gezeichnet und ist etwa 1,1 × so breit. VORLÄUFIG
+ */
+export const ENTITY_ICON_RADIUS_FACTOR = 0.55;
+
+/** Reichweite des Blobs ab dem Rand des Gegners, in Blob-Radien ([VERWORFEN]: 2 ab Mittelpunkt). VORLÄUFIG */
+export const PLAYER_REACH_FACTOR = 2.5;
+
 /**
  * Geschwindigkeit des Blobs pro World-Pixel Radius.
  * speed = worldRadius × PLAYER_SPEED_PER_WORLD_RADIUS

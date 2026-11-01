@@ -151,7 +151,7 @@ Ein einziges Menü für alle Bildschirmgrößen und Ausrichtungen ([src/ui/GameM
 
 ### Touch Controls (Mobile)
 - **Virtueller Joystick** (links unten): Kreis mit beweglichem Thumb, max. Radius 44px. Bewegung wird als Vektor (dx/dy) an den Spieler übergeben und mit Keyboard-Input addiert.
-- **ABSORB-Button** (rechts unten): Großer runder Button, greift das nächste Entity in Reichweite an.
+- **ABSORB-Button** (rechts unten): Großer runder Button, greift das nächste Entity in Reichweite an. Reichweite: Berührung genügt — gemessen bis zum Rand des Wesens (Icon-Größe), siehe [GDD-03, Angriffs-Skill](GDD-03-Kampfsystem.md).
 - **ANALYZE-Button** (neben Absorb): Analysiert das nächste Entity in Reichweite.
 - **Panel-Button** (oben rechts): Öffnet das Spielmenü (bis v0.3: Bottom Sheet).
 
@@ -325,4 +325,4 @@ Kein lokales Node.js, npm oder Terminal auf Jörns Seite nötig.
 
 ---
 
-*Letzte Aktualisierung: v0.5 — Version 0.5.0 (1. November 2026); Giftlast in der HP-Bar und Giftdosis-Zahl (31. Oktober 2026); davor Anzeige an Erfahrung statt Level angepasst: HUD zeigt Kapazität (KAP), Skills-Tab und INDEX nach Rängen, Rang-Aufstieg statt Level-Up, Spielstand-Format 3, Desktop-Steuerung (Tastatur/Maus) als verworfen markiert (31. Oktober 2026); davor Dev-Container und `npm run dev` für lokale Entwicklung; Begründungen für Spielmenü, Vollbild-Regel, Version und Spielstand-Migration ergänzt; Spielmenü als pausierendes Vollbild-Overlay mit INDEX-Tab (Oktober 2026)*
+*Letzte Aktualisierung: v0.5 — Reichweite bis zum Rand des Wesens; Version 0.5.0 (1. November 2026); Giftlast in der HP-Bar und Giftdosis-Zahl (31. Oktober 2026); davor Anzeige an Erfahrung statt Level angepasst: HUD zeigt Kapazität (KAP), Skills-Tab und INDEX nach Rängen, Rang-Aufstieg statt Level-Up, Spielstand-Format 3, Desktop-Steuerung (Tastatur/Maus) als verworfen markiert (31. Oktober 2026); davor Dev-Container und `npm run dev` für lokale Entwicklung; Begründungen für Spielmenü, Vollbild-Regel, Version und Spielstand-Migration ergänzt; Spielmenü als pausierendes Vollbild-Overlay mit INDEX-Tab (Oktober 2026)*
