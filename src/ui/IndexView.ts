@@ -15,13 +15,15 @@ import { MATERIAL_MAP } from "../data/materials.js";
 import { ANALYZE_CHANCE_MODIFIER, MILLI, DEFAULT_HIT_PROFILE, HIT_DAMAGE_MULT } from "../data/balance.js";
 import { calcHitChances, HIT_GRADES, HIT_GRADE_DE } from "../systems/HitSystem.js";
 import { BIOME_SPAWNS } from "../world/BiomeDefinitions.js";
-import { SKILL_RANKS, NATUR_PROGRESS } from "../data/progression.js";
+import { SKILL_RANKS, NATUR_PROGRESS, LEVEL_AT_NATUR } from "../data/progression.js";
 import { xpForProgress, getEntitySkillProgress, rankNameForProgress, levelFromProgress } from "../systems/ProgressionSystem.js";
 import { evalSkillValue, resolveDefenderEffects, resolveAttackerEffects, resolveDexterity } from "../systems/SkillEffectSystem.js";
-import { calcSkillAttackDamage, calcJumpDistance, calcPhotosynthesisHeal } from "../systems/SkillEffects.js";
+import {
+  calcSkillAttackDamage, calcJumpDistance, calcPhotosynthesisHeal, JUMP_DISTANCE_PX, PHOTOSYNTHESIS_HEAL_HP_PER_S,
+} from "../systems/SkillEffects.js";
 import { venomDurationMs } from "../systems/VenomSystem.js";
 import { valueChart, isConstant, attachChartHover, VALUE_CHART_CSS, type ChartSeries } from "./ValueChart.js";
-import { VENOM_HALF_LIFE_MS } from "../data/venom.js";
+import { VENOM_HALF_LIFE_MS, VENOM_MIN_RATE_HP_PER_S } from "../data/venom.js";
 import {
   getEntityBaseDamage, getEntityRangedDamage, getScaledMaxHp, getScaledDamage, getScaledSpeed,
 } from "../systems/EntityLevelingSystem.js";
@@ -84,6 +86,25 @@ function formatFormula(f: SkillValue, fmt: (v: number) => string): string {
   if (f.start === f.max) return `${fmt(f.start)} (konstant)`;
   return `${fmt(f.start)} → ${fmt(f.max)} (Natur ${fmt(evalSkillValue(f, NATUR_PROGRESS))})`;
 }
+
+/** „1 HP + 15 HP × p“ — Rechenformel eines Werts im Fortschritt p (Schema start + (max − start) × p) */
+function valueFormula(v: SkillValue, fmt: (x: number) => string): string {
+  const step = `${fmt(v.max - v.start)} × p`;
+  return v.start === 0 ? step : `${fmt(v.start)} + ${step}`;
+}
+
+function effectFormula(type: EffectType, v: SkillValue): string {
+  if (ABSOLUTE_EFFECTS.includes(type)) return valueFormula(v, (x) => `${num(x)} HP`);
+  if (PERCENT_EFFECTS.includes(type)) return valueFormula(v, pct);
+  if (type === "dexterity") return valueFormula(v, (x) => num(x));
+  return `×(${valueFormula(v, (x) => num(x))})`;
+}
+
+// Gift: über TAIL HP baut die Halbwertszeit ab, darunter die Mindestrate (venom.ts Abschnitte 3–4)
+const VENOM_TAIL_HP = (VENOM_MIN_RATE_HP_PER_S * VENOM_HALF_LIFE_MS / 1000) / Math.LN2;
+const venomDurationFormula = (dose: string) =>
+  `${num(VENOM_HALF_LIFE_MS / 1000)} s × log₂(Dosis / ${num(VENOM_TAIL_HP)} HP) + ${num(VENOM_TAIL_HP / VENOM_MIN_RATE_HP_PER_S)} s ` +
+  `(Dosis unter ${num(VENOM_TAIL_HP)} HP: Dosis ÷ ${num(VENOM_MIN_RATE_HP_PER_S)} HP/s), Dosis = ${dose}`;
 
 function formatCondition(e: SkillEffect): string {
   const c = e.condition;
@@ -243,6 +264,7 @@ function skillDetail(s: SkillDefinition): string {
       label: `${EFFECT_DE[e.effectType]}${cond ? ` (${cond})` : ""}`,
       value: (x) => evalSkillValue(e.formula, x),
       format: (v) => formatEffectValue(e.effectType, v),
+      formula: effectFormula(e.effectType, e.formula),
     }];
     const cfg = e.statusConfig;
     let cfgText = "";
@@ -250,16 +272,17 @@ function skillDetail(s: SkillDefinition): string {
       cfgText = ` · ${cfg.type.toUpperCase()} ${seconds(cfg.durationMs)}${cfg.tickIntervalMs ? `, Tick alle ${seconds(cfg.tickIntervalMs)}` : ""}`;
       if (cfg.damageFormula) rows.push(["Schaden/Tick", LEVELS.map((l) => `${num(evalSkillValue(cfg.damageFormula!, l))} HP`)]);
       if (cfg.healFormula) rows.push(["Heilung/Tick", LEVELS.map((l) => `${num(evalSkillValue(cfg.healFormula!, l))} HP`)]);
-      if (cfg.damageFormula) series.push({ label: "Schaden/Tick", value: (x) => evalSkillValue(cfg.damageFormula!, x), format: (v) => `${num(v)} HP` });
-      if (cfg.healFormula) series.push({ label: "Heilung/Tick", value: (x) => evalSkillValue(cfg.healFormula!, x), format: (v) => `${num(v)} HP` });
+      if (cfg.damageFormula) series.push({ label: "Schaden/Tick", value: (x) => evalSkillValue(cfg.damageFormula!, x), format: (v) => `${num(v)} HP`, formula: effectFormula("deal_damage", cfg.damageFormula) });
+      if (cfg.healFormula) series.push({ label: "Heilung/Tick", value: (x) => evalSkillValue(cfg.healFormula!, x), format: (v) => `${num(v)} HP`, formula: effectFormula("heal_flat", cfg.healFormula) });
     }
     if (e.venomDose) {
       const doseAt = (l: number) => evalSkillValue(e.venomDose!, l);
       cfgText = ` · Dosis ${formatFormula(e.venomDose, (v) => `${num(v, 1)} HP`)}, stapelt, Halbwertszeit ${seconds(VENOM_HALF_LIFE_MS)}`;
       rows.push(["Dosis", LEVELS.map((l) => `${num(doseAt(l))} HP`)]);
       rows.push(["abgebaut nach", LEVELS.map((l) => seconds(venomDurationMs(doseAt(l) * MILLI)))]);
-      series.push({ label: "Giftdosis je Treffer", value: doseAt, format: (v) => `${num(v, 1)} HP` });
-      series.push({ label: "Gift abgebaut nach", value: (x) => venomDurationMs(doseAt(x) * MILLI) / 1000, format: (v) => `${num(v, 1)} s` });
+      const doseFormula = valueFormula(e.venomDose, (x) => `${num(x)} HP`);
+      series.push({ label: "Giftdosis je Treffer", value: doseAt, format: (v) => `${num(v, 1)} HP`, formula: doseFormula });
+      series.push({ label: "Gift abgebaut nach", value: (x) => venomDurationMs(doseAt(x) * MILLI) / 1000, format: (v) => `${num(v, 1)} s`, formula: venomDurationFormula(doseFormula) });
     }
     return `<div class="idx-effect">
       <div><b>${EFFECT_DE[e.effectType]}</b> · ${TRIGGER_DE[e.trigger]}${cond ? ` · ${cond}` : ""}</div>
@@ -274,20 +297,24 @@ function skillDetail(s: SkillDefinition): string {
   const derivedSeries: ChartSeries[] = [];
   if (s.damage) {
     derived.push(["Schaden (HP)", LEVELS.map((l) => hp(calcSkillAttackDamage(s.id, l)))]);
-    derivedSeries.push({ label: "Schaden je Treffer (normal, vor Rüstung)", value: (x) => calcSkillAttackDamage(s.id, x) / MILLI, format: (v) => `${num(v, 1)} HP` });
+    derivedSeries.push({ label: "Schaden je Treffer (normal, vor Rüstung)", value: (x) => calcSkillAttackDamage(s.id, x) / MILLI, format: (v) => `${num(v, 1)} HP`, formula: valueFormula(s.damage, (x) => `${num(x)} HP`) });
   }
   if (s.id === "jump") {
     derived.push(["Sprungweite (px)", LEVELS.map((l) => num(calcJumpDistance(l), 0))]);
-    derivedSeries.push({ label: "Sprungweite", value: calcJumpDistance, format: (v) => `${num(v, 0)} px` });
+    derivedSeries.push({ label: "Sprungweite", value: calcJumpDistance, format: (v) => `${num(v, 0)} px`, formula: valueFormula(JUMP_DISTANCE_PX, (x) => `${num(x)} px`) });
   }
   if (s.id === "photosynthesis") {
     derived.push(["Heilung (HP/s)", LEVELS.map((l) => hp(calcPhotosynthesisHeal(l)))]);
-    derivedSeries.push({ label: "Heilung", value: (x) => calcPhotosynthesisHeal(x) / MILLI, format: (v) => `${num(v, 2)} HP/s` });
+    derivedSeries.push({ label: "Heilung", value: (x) => calcPhotosynthesisHeal(x) / MILLI, format: (v) => `${num(v, 2)} HP/s`, formula: valueFormula(PHOTOSYNTHESIS_HEAL_HP_PER_S, (x) => `${num(x)} HP/s`) });
   }
   if (s.id === "analyze" || s.id === "absorb") {
     // Erfolgschance = min(1, Vergleichsstufe / Stufe des Wesens) — sicher bis zur Vergleichsstufe
     derived.push(["Sicher erfolgreich bis Stufe", LEVELS.map((l) => num(levelFromProgress(l), 1))]);
-    derivedSeries.push({ label: "Sicher erfolgreich bis Wesen-Stufe", value: levelFromProgress, format: (v) => `Stufe ${num(v, 1)}` });
+    derivedSeries.push({
+      label: "Sicher erfolgreich bis Wesen-Stufe", value: levelFromProgress, format: (v) => `Stufe ${num(v, 1)}`,
+      formula: `${valueFormula({ start: 1, max: levelFromProgress(1) }, (x) => num(x))}; Erfolgschance = min(1, Stufe / Wesen-Stufe)` +
+        ` (Stufe ${num(LEVEL_AT_NATUR)} bei Natur ${pct(NATUR_PROGRESS)})`,
+    });
   }
 
   const sources = ENTITY_DEFINITIONS.flatMap((e) =>

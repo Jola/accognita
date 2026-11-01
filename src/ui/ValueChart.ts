@@ -17,6 +17,8 @@ export interface ChartSeries {
   value: (p: number) => number;
   /** Anzeige eines Werts, z. B. „12 HP“ oder „45 %“ */
   format: (v: number) => string;
+  /** Rechenformel im Fortschritt p, z. B. „1 HP + 15 HP × p“ — wird mit der Formel für p angezeigt */
+  formula?: string;
 }
 
 // Geometrie im viewBox-Raum (skaliert gleichmäßig mit der Breite)
@@ -76,6 +78,7 @@ export function valueChart(series: ChartSeries, learningEffort: number): string 
 
   return `<figure class="vc" data-tips="${esc(tips)}" data-x0="${PAD.left}" data-x1="${W - PAD.right}" data-w="${W}">
     <figcaption>${esc(series.label)}</figcaption>
+    ${series.formula ? `<div class="vc-formula">= ${esc(series.formula)} · p = 1 − 0,1<sup>XP / ${natur.toLocaleString("de-DE", { maximumFractionDigits: 1 })}</sup></div>` : ""}
     <svg class="vc-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(series.label)} über die Erfahrung">
       ${bands.join("")}
       <line class="vc-max" x1="${PAD.left}" x2="${W - PAD.right}" y1="${y(vEnd)}" y2="${y(vEnd)}"/>
@@ -140,6 +143,8 @@ export function attachChartHover(root: HTMLElement): void {
 export const VALUE_CHART_CSS = `
   .vc { position:relative; margin:6px 0 10px; }
   .vc figcaption { font-size:.68rem; color:var(--text); margin-bottom:2px; }
+  .vc-formula { font-size:.64rem; color:var(--gold); margin-bottom:2px; line-height:1.5; }
+  .vc-formula sup { font-size:.55rem; }
   .vc-svg { width:100%; height:auto; display:block; touch-action:pan-y; }
   .vc-band { fill:rgba(255,255,255,.035); }
   .vc-rank { font-size:8px; fill:var(--muted); }
@@ -155,4 +160,4 @@ export const VALUE_CHART_CSS = `
     font-size:.66rem; pointer-events:none; }
 `;
 
-// Stand: 1. November 2026 (Fortschritt 0–100 %, Höchstwert-Linie)
+// Stand: 1. November 2026 (Fortschritt 0–100 %, Höchstwert-Linie, Formelzeile)

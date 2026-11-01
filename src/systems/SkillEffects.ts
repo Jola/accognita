@@ -93,7 +93,7 @@ export function calcFireBreathDamage(progress: number): number {
 // aber keiner.
 // [VERWORFEN, 1. November 2026] 160 + 20 × (u − 1) px.
 // -----------------------------------------------------------
-const JUMP_DISTANCE_PX: SkillValue = { start: 40, max: 375 };
+export const JUMP_DISTANCE_PX: SkillValue = { start: 40, max: 375 };
 
 export function calcJumpDistance(progress: number): number {
   return evalSkillValue(JUMP_DISTANCE_PX, progress);
@@ -130,7 +130,7 @@ export function calcSuperstrengthMult(practice: number): number {
 // damit wochenlang, wachsen aber kaum. Ein Blob mit 80 HP braucht bei u 10
 // bei Natur rund eine Minute, um sich voll zu heilen. VORLÄUFIG
 // -----------------------------------------------------------
-const PHOTOSYNTHESIS_HEAL_HP_PER_S: SkillValue = { start: 0.1, max: 1.2 };
+export const PHOTOSYNTHESIS_HEAL_HP_PER_S: SkillValue = { start: 0.1, max: 1.2 };
 
 export function calcPhotosynthesisHeal(progress: number): number {
   return Math.round(evalSkillValue(PHOTOSYNTHESIS_HEAL_HP_PER_S, progress) * MILLI);
