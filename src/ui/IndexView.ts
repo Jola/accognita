@@ -21,7 +21,7 @@ import { evalSkillValue, resolveDefenderEffects, resolveAttackerEffects, resolve
 import {
   calcSkillAttackDamage, calcJumpDistance, calcPhotosynthesisHeal, JUMP_DISTANCE_PX, PHOTOSYNTHESIS_HEAL_HP_PER_S,
 } from "../systems/SkillEffects.js";
-import { venomDurationMs } from "../systems/VenomSystem.js";
+import { venomDurationMs, venomBiteChance, venomDoseMilli } from "../systems/VenomSystem.js";
 import { valueChart, isConstant, attachChartHover, VALUE_CHART_CSS, type ChartSeries } from "./ValueChart.js";
 import { VENOM_HALF_LIFE_MS, VENOM_MIN_RATE_HP_PER_S } from "../data/venom.js";
 import {
@@ -105,6 +105,27 @@ const VENOM_TAIL_HP = (VENOM_MIN_RATE_HP_PER_S * VENOM_HALF_LIFE_MS / 1000) / Ma
 const venomDurationFormula = (dose: string) =>
   `${num(VENOM_HALF_LIFE_MS / 1000)} s × log₂(Dosis / ${num(VENOM_TAIL_HP)} HP) + ${num(VENOM_TAIL_HP / VENOM_MIN_RATE_HP_PER_S)} s ` +
   `(Dosis unter ${num(VENOM_TAIL_HP)} HP: Dosis ÷ ${num(VENOM_MIN_RATE_HP_PER_S)} HP/s), Dosis = ${dose}`;
+
+/**
+ * Wert eines Effekts beim Fortschritt p — über dieselben Funktionen, die
+ * der Kampf aufruft (Vorgabe Entwickler: Anzeige und Spiel dürfen nie
+ * auseinanderlaufen). Tabelle und Graph nutzen beide diese Funktion.
+ */
+function effectValueFn(skillId: string, e: SkillEffect): (p: number) => number {
+  const cond = e.condition?.damageType;
+  const type = Array.isArray(cond) ? cond[0] : cond;
+  const defender = (p: number) => resolveDefenderEffects({ [skillId]: p }, type);
+  switch (e.effectType) {
+    case "flat_block":     return (p) => defender(p).flatBlock / MILLI;
+    case "percent_reduce": return (p) => defender(p).percentReduce;
+    case "weakness":       return (p) => defender(p).weaknessMult;
+    case "reflect_damage": return (p) => defender(p).reflectDamage / MILLI;
+    case "damage_mult":    return (p) => resolveAttackerEffects({ [skillId]: p }).damageMult;
+    case "dexterity":      return (p) => resolveDexterity({ [skillId]: p });
+    case "inject_venom":   return (p) => venomBiteChance(e, p);
+    default:               return (p) => evalSkillValue(e.formula, p); // ohne eigene Kampffunktion
+  }
+}
 
 function formatCondition(e: SkillEffect): string {
   const c = e.condition;
@@ -257,12 +278,13 @@ function skillDetail(s: SkillDefinition): string {
 
   const effects = (s.effects ?? []).map((e) => {
     const cond = formatCondition(e);
+    const valueAt = effectValueFn(s.id, e);
     const rows: [string, string[]][] = [
-      [EFFECT_DE[e.effectType], LEVELS.map((l) => formatEffectValue(e.effectType, evalSkillValue(e.formula, l)))],
+      [EFFECT_DE[e.effectType], LEVELS.map((l) => formatEffectValue(e.effectType, valueAt(l)))],
     ];
     const series: ChartSeries[] = [{
       label: `${EFFECT_DE[e.effectType]}${cond ? ` (${cond})` : ""}`,
-      value: (x) => evalSkillValue(e.formula, x),
+      value: valueAt,
       format: (v) => formatEffectValue(e.effectType, v),
       formula: effectFormula(e.effectType, e.formula),
     }];
@@ -270,13 +292,14 @@ function skillDetail(s: SkillDefinition): string {
     let cfgText = "";
     if (cfg) {
       cfgText = ` · ${cfg.type.toUpperCase()} ${seconds(cfg.durationMs)}${cfg.tickIntervalMs ? `, Tick alle ${seconds(cfg.tickIntervalMs)}` : ""}`;
+      // Status-Effekte (DoT/HoT): kein Skill nutzt sie derzeit; Werte wie in resolveOnHitStatusEffects
       if (cfg.damageFormula) rows.push(["Schaden/Tick", LEVELS.map((l) => `${num(evalSkillValue(cfg.damageFormula!, l))} HP`)]);
       if (cfg.healFormula) rows.push(["Heilung/Tick", LEVELS.map((l) => `${num(evalSkillValue(cfg.healFormula!, l))} HP`)]);
       if (cfg.damageFormula) series.push({ label: "Schaden/Tick", value: (x) => evalSkillValue(cfg.damageFormula!, x), format: (v) => `${num(v)} HP`, formula: effectFormula("deal_damage", cfg.damageFormula) });
       if (cfg.healFormula) series.push({ label: "Heilung/Tick", value: (x) => evalSkillValue(cfg.healFormula!, x), format: (v) => `${num(v)} HP`, formula: effectFormula("heal_flat", cfg.healFormula) });
     }
     if (e.venomDose) {
-      const doseAt = (l: number) => evalSkillValue(e.venomDose!, l);
+      const doseAt = (l: number) => venomDoseMilli(e, l) / MILLI;
       cfgText = ` · Dosis ${formatFormula(e.venomDose, (v) => `${num(v, 1)} HP`)}, stapelt, Halbwertszeit ${seconds(VENOM_HALF_LIFE_MS)}`;
       rows.push(["Dosis", LEVELS.map((l) => `${num(doseAt(l))} HP`)]);
       rows.push(["abgebaut nach", LEVELS.map((l) => seconds(venomDurationMs(doseAt(l) * MILLI)))]);
@@ -399,9 +422,9 @@ function entityDetail(e: EntityDefinition): string {
     for (const x of s?.effects ?? []) {
       if (x.trigger !== "on_hit_enemy") continue;
       if (x.effectType === "inject_venom" && x.venomDose) {
-        const dose = evalSkillValue(x.venomDose, skillLevels[id]);
+        const dose = venomDoseMilli(x, skillLevels[id]) / MILLI;
         const only = s!.activation === "active" ? `nur mit ${s!.name}` : "jeder Treffer";
-        combat.push(`<b>Gift (${s!.name}, ${only}):</b> ${pct(evalSkillValue(x.formula, skillLevels[id]))} Chance, ` +
+        combat.push(`<b>Gift (${s!.name}, ${only}):</b> ${pct(venomBiteChance(x, skillLevels[id]))} Chance, ` +
           `${num(dose)} HP Gift (stapelt, abgebaut nach ${seconds(venomDurationMs(dose * MILLI))})`);
       }
       if (x.effectType !== "apply_status" || !x.statusConfig?.damageFormula) continue;

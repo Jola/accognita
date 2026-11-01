@@ -9,6 +9,7 @@
 // ============================================================
 
 import type { VenomDose } from "../types/Combat";
+import type { SkillEffect } from "../types/Skill";
 import { ALL_SKILLS } from "../data/skills";
 import { MILLI } from "../data/balance";
 import { VENOM_HALF_LIFE_MS, VENOM_MIN_RATE_HP_PER_S } from "../data/venom";
@@ -36,6 +37,16 @@ const TAIL_LOAD = MIN_RATE_PER_MS / DECAY_PER_MS;
 // 1. DOSIS JE BISS — beim Treffer würfeln
 // -----------------------------------------------------------
 
+/** Chance, dass ein Treffer Gift einspritzt (0–1) — für Würfeln und Anzeige. */
+export function venomBiteChance(effect: SkillEffect, progress: number): number {
+  return evalSkillValue(effect.formula, progress);
+}
+
+/** Eingespritzte Dosis in milli-HP — für Würfeln und Anzeige. */
+export function venomDoseMilli(effect: SkillEffect, progress: number): number {
+  return effect.venomDose ? Math.round(evalSkillValue(effect.venomDose, progress) * MILLI) : 0;
+}
+
 /**
  * Würfelt für jeden Skill mit "inject_venom"-Effekt die Bisschance und
  * gibt die eingespritzten Dosen zurück (milli-HP; total 0 = trocken).
@@ -58,8 +69,8 @@ export function rollVenomDose(
     for (const effect of def?.effects ?? []) {
       if (effect.trigger !== "on_hit_enemy" || effect.effectType !== "inject_venom") continue;
       if (!effect.venomDose) continue;
-      if (Math.random() >= evalSkillValue(effect.formula, progress)) continue;
-      const amount = Math.round(evalSkillValue(effect.venomDose, progress) * MILLI);
+      if (Math.random() >= venomBiteChance(effect, progress)) continue;
+      const amount = venomDoseMilli(effect, progress);
       dose.total += amount;
       dose.bySkill[skillId] = (dose.bySkill[skillId] ?? 0) + amount;
     }
@@ -147,4 +158,5 @@ export function processVenom(target: VenomTarget, currentHp: number, deltaMs: nu
   return { dealt, bySkill };
 }
 
-// Stand: 31. Oktober 2026 (Anteile je Gift-Skill für die XP)
+// Stand: 1. November 2026 (Chance und Dosis als eigene Funktionen — dieselben für Anzeige und Spiel)
+// Davor: 31. Oktober 2026 (Anteile je Gift-Skill für die XP)
