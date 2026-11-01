@@ -134,8 +134,34 @@ export const SKILL_RANKS: readonly SkillRank[] = [
 // Vorgabe (Entwickler): Die Kapazität wächst mit dem Blob. Wie genau, ist
 //   noch nicht festgelegt; sie muss zu den erlernbaren Skills passen.
 //
-// PLATZHALTER bis zur Festlegung — Vorschlag Claude (offen):
-//   Kapazität = CAPACITY_BASE + CAPACITY_PER_GROWTH × Wachstum
+// Vorgabe (Entwickler, 1. November 2026): Die Kapazität muss deutlich
+//   größer werden. Es soll nicht möglich sein, alle Skills auf das Maximum
+//   zu bringen, aber mindestens 5 Skills auf das Maximum, während die
+//   anderen dann niedriger, aber nicht auf dem Minimum sind.
+//   „Maximum“ = höchster Rang (Natur, u = 10, xp = 40,5 × learningEffort).
+//
+// Umsetzung (Vorschlag Claude, offen) — Kapazität sättigt:
+//   Kapazität = CAPACITY_BASE + (CAPACITY_MAX − CAPACITY_BASE)
+//                               × (1 − 2^(−Lebenserfahrung / CAPACITY_HALF_XP))
+//   Je CAPACITY_HALF_XP Lebenserfahrung wächst die Hälfte des noch fehlenden
+//   Stücks bis CAPACITY_MAX dazu (300 → 2250 → 3225 → 3712 … → 4200).
+//   - Natur: Lebewesen wachsen jung schnell und nähern sich dann einer
+//     Endgröße (Wachstumskurve nach von Bertalanffy) — kein Wesen wächst
+//     unbegrenzt.
+//   - CAPACITY_MAX aus der Vorgabe hergeleitet (Skills Stand 1. Nov. 2026):
+//     die fünf teuersten Skills auf Natur (Feueratem 1012, Stachelstich 729,
+//     3 × 607) = 3562, dazu die übrigen sechs auf Gewohnheit (u = 4,5,
+//     zusammen ≈ 480) ≈ 4040 → 4200. Alle elf auf Natur bräuchten ≈ 6600 —
+//     auch mit Überdehnung (+20 % = 5040) nicht erreichbar.
+//   - Abwägung: Kommen viele neue Skills dazu, muss CAPACITY_MAX mitwachsen
+//     (Begründung Entwickler oben: „dafür wird die Kapazität eventuell etwas
+//     erweitert“).
+//   [VERWORFEN, 1. November 2026] Kapazität = 200 + 150 × Wachstum — viel zu
+//   klein (Lebenserfahrung 10 000 → 1050), schon wenige Skills verdrängten
+//   sich gegenseitig.
+//
+// Wachstum des Körpers (Größe, HP, MP) — weiter Platzhalter, Vorschlag
+// Claude (offen):
 //   Wachstum  = log2(1 + Lebenserfahrung / GROWTH_XP_SCALE)
 //   Lebenserfahrung = alle je gesammelte Erfahrung, auch später verlernte.
 //   - Wachstum ist stetig (kein Level) und schrumpft nie: Was der Blob
@@ -149,14 +175,48 @@ export const SKILL_RANKS: readonly SkillRank[] = [
 //     „Absorbieren“ vergessen und der Kern-Spielablauf bräche weg.
 // -----------------------------------------------------------
 
-/** Kapazität eines frisch geschlüpften Blobs (in XP). VORLÄUFIG */
-export const CAPACITY_BASE = 200;
+/** Kapazität eines frisch geschlüpften Blobs (in XP). VORLÄUFIG ([VERWORFEN]: 200) */
+export const CAPACITY_BASE = 300;
 
-/** Zusätzliche Kapazität pro Einheit Wachstum (in XP). VORLÄUFIG */
-export const CAPACITY_PER_GROWTH = 150;
+/** Endkapazität eines ausgewachsenen Blobs (in XP): ≥ 5 Skills auf Natur. VORLÄUFIG */
+export const CAPACITY_MAX = 4_200;
+
+/** Lebenserfahrung, nach der die Hälfte des Wegs zu CAPACITY_MAX geschafft ist. VORLÄUFIG */
+export const CAPACITY_HALF_XP = 3_000;
+
+// [VERWORFEN] CAPACITY_PER_GROWTH = 150 (Kapazität pro Einheit Wachstum)
 
 /** Lebenserfahrung, bei der das Wachstum 1 erreicht (danach je Verdopplung +1). */
 export const GROWTH_XP_SCALE = 200;
+
+// -----------------------------------------------------------
+// 3b. WIE VERLERNT WIRD
+//
+// Vorgabe (Entwickler): Wird an der Grenze weiter trainiert, verlieren die
+//   Skills Erfahrung, die am längsten nicht geübt wurden (Abschnitt 3).
+// Vorgabe (Entwickler, 1. November 2026): Beim Vergessen soll nicht sofort
+//   eine ganze Stufe zurückgesprungen werden, sondern nur Erfahrung
+//   abgezogen werden — das Vergessen wird über Erfahrungspunkte balanciert,
+//   nicht über Ränge. Die nicht maximierten Skills sollen nicht auf dem
+//   Minimum landen.
+//
+// Umsetzung (Vorschlag Claude, offen):
+//   Das Verlernen wird auf ALLE Skills außer dem gerade trainierten
+//   verteilt, gewichtet mit
+//     Gewicht = Erfahrung × (Spielzeit seit letzter Übung + FORGET_AGE_FLOOR_SECONDS)
+//   - Lange nicht Geübtes verliert am meisten (Vorgabe Abschnitt 3 bleibt).
+//   - Wer viel Erfahrung hat, verliert absolut mehr, aber anteilig gleich
+//     viel wie ein kleiner Skill mit demselben Alter — kleine Skills werden
+//     nicht leergeräumt.
+//   - Kein Skill verliert auf einen Schlag alles; ein Rangwechsel passiert
+//     nur, wenn die Erfahrung tatsächlich unter die Ranggrenze sinkt.
+//   [VERWORFEN, 1. November 2026] Reihum: Der am längsten nicht geübte
+//   Skill verlor ALLES, bevor der nächste drankam — er fiel dabei oft
+//   mehrere Ränge auf einmal bis auf 0.
+// -----------------------------------------------------------
+
+/** Mindest-„Alter“ im Gewicht, damit gerade geübte Skills nicht Gewicht 0 haben (Spielsekunden). VORLÄUFIG */
+export const FORGET_AGE_FLOOR_SECONDS = 60;
 
 // -----------------------------------------------------------
 // 4. ÜBERDEHNUNG (Kapazität zeitweise überschreiten)
@@ -254,7 +314,9 @@ export const RECOVERY_HALF_LIFE_MS = 3 * 3600 * 1000;
 export const REST_DELAY_MS = 2 * 60 * 1000;
 
 // ------------------------------------------------------------
-// Zuletzt geändert: 2026-10-31 — Rangnamen: Biologie-Reihe aktiv,
+// Zuletzt geändert: 2026-11-01 — Kapazität sättigt bei 4200 (≥ 5 Skills
+// auf Natur), Verlernen verteilt statt reihum (Abschnitt 3b)
+// Davor: 2026-10-31 — Rangnamen: Biologie-Reihe aktiv,
 // Handwerk-Reihe als Alternative daneben
 // Davor: 2026-10-30 — Erstfassung: Erfahrung statt Level, Ränge,
 // Kapazität, Überdehnung, Wiedererlernen, Übertraining

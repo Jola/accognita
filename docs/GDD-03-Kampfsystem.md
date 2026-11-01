@@ -90,8 +90,10 @@ Eine Entity kann neben ihrem Standard-Nahkampf einen zweiten Angriff haben. Bei 
 
 | Entity | Standard | Gelegentlich |
 |--------|----------|--------------|
-| Kleiner Skorpion | Zangengriff (u≈6, 12 HP Wucht) | 15 %: Stachelstich (u≈4, 7 HP Stich + 89 % Chance auf 24 HP Gift) |
-| Großer Skorpion | Zangengriff (u≈18, 20 HP Wucht) | 15 %: Stachelstich (u≈7, 9 HP Stich + 92 % Chance auf 33 HP Gift) |
+| Kleiner Skorpion | Zangengriff (u≈5, 11 HP Wucht; vorher u≈6, 12 HP) | 15 %: Stachelstich (u≈4, 7 HP Stich + 89 % Chance auf 18 HP Gift; vorher 24) |
+| Großer Skorpion | Zangengriff (u≈13, 16 HP Wucht; vorher u≈18, 20 HP) | 15 %: Stachelstich (u≈7, 9 HP Stich + 92 % Chance auf 24 HP Gift; vorher 33) |
+
+**Vorgabe (Entwickler, 1. November 2026):** Skorpione und Schlange etwas schwächer; vor allem das Schlangengift war viel zu stark. Schlange jetzt: Biss u≈10 (14 HP, vorher 18), Venom u≈6 (52 % auf 18 HP Gift, vorher 67 % auf 36 HP — bei einem Biss alle 1,2 s ≈ 8 statt 20 HP/s Gift im Dauerzustand). Zahlen VORLÄUFIG.
 
 Standard-Nahkampf: erster vorhandener Skill aus `bite`, `claw`, `pincer` (`ENTITY_MELEE_SKILLS` in EntityLevelingSystem).
 **Vorgabe (Entwickler):** Skorpione stechen nur gelegentlich, sonst Scheren; Gift nur beim Stachel. Begründung der Zahlen: [GDD-02, Skorpione](GDD-02-Skillsystem.md).
@@ -150,11 +152,12 @@ Seit v0.4 wirken diese drei deklarativ über `effects[]` und die Schadenspipelin
 
 ### Regeneration stufenlos (Photosynthesis — implementiert)
 ```
-Heilung pro Frame = 0.5 × u HP/s × Δt          höchstens bis maxHp
-XP (photosynthesis) = tatsächlich geheilte HP, stufenlos jeden Frame
+Heilung pro Frame = 0.5 × u HP/s × Δt          höchstens bis maxHp   [VERWORFEN, 1. Nov. 2026]
+Heilung pro Frame = (0.2 + 0.1 × (u − 1)) HP/s × Δt    u1 0,2 · u5 0,6 · u10 1,1 HP/s
+XP (photosynthesis) = tatsächlich geheilte HP × 0,25, stufenlos jeden Frame
 ```
 **Vorgabe (Entwickler):** Regeneration läuft stufenlos als kontinuierliche Rate statt in 1-s-Ticks — anders als beim Gift ohne Halbwertszeit, weil die Rate nicht davon abhängt, wie viel schon geheilt ist. Umsetzung als eigene, isolierte Änderung.
-Gleiches Tempo wie vorher (0,5 HP/s je Einheit Übungsgrad), nur ohne Sprünge; Werte und Anzeige der Skills werden einmal pro Sekunde nachgeführt. Ob Photosynthese im Kampf heilen darf, ist weiter offen (TODO.md).
+**Vorgabe (Entwickler, 1. November 2026):** Die Regeneration ist viel zu stark und viel zu schnell auf dem höchsten Rang. **Begründung (Vorschlag Claude):** Fotosynthese liefert einem Tier wenig Energie (Schnecken mit Chloroplasten überleben damit, wachsen aber kaum); sie läuft passiv mit und soll langsamer lernen als Kampffähigkeiten. ~~Gleiches Tempo wie vorher (0,5 HP/s je Einheit Übungsgrad), nur ohne Sprünge;~~ Werte und Anzeige der Skills werden einmal pro Sekunde nachgeführt. Ob Photosynthese im Kampf heilen darf, ist weiter offen (TODO.md).
 
 ### Venom (Giftspinne → Spieler, oder Venom-Skill → Entity)
 
@@ -434,4 +437,4 @@ scenes/GameScene.ts                ← verdrahtet alle Systeme, Phaser-Rendering
 
 ---
 
-*Letzte Aktualisierung: 2026-10-31 — Gelegentlicher Angriff (Skorpion-Stachelstich); Regeneration (Photosynthesis) stufenlos; Venom-DoT durch Giftlast ersetzt (Verweis auf GDD-05 Abschnitt 12); Hinweis „Übungsgrad statt Skill-Level“ ergänzt, HP/MP wachsen mit dem Wachstum statt pro Level; 2026-10-25 — Größen- und levelabhängiges Aggro als Konzept (Abschnitt 4); 2026-10-24 — Geschick ohne Beitrag des eingesetzten Skills; Begründungen ergänzt bzw. als offen markiert, veraltete Werte (Spieler-Wachstum, Entity-Tabelle, Passiv-Effekte) als VERWORFEN gekennzeichnet; Treffer-Stufen und Geschick; Venom-Chance mit 100-%-Deckel*
+*Letzte Aktualisierung: 2026-11-01 — Balancing: Photosynthese, Skorpione, Schlange schwächer; 2026-10-31 — Gelegentlicher Angriff (Skorpion-Stachelstich); Regeneration (Photosynthesis) stufenlos; Venom-DoT durch Giftlast ersetzt (Verweis auf GDD-05 Abschnitt 12); Hinweis „Übungsgrad statt Skill-Level“ ergänzt, HP/MP wachsen mit dem Wachstum statt pro Level; 2026-10-25 — Größen- und levelabhängiges Aggro als Konzept (Abschnitt 4); 2026-10-24 — Geschick ohne Beitrag des eingesetzten Skills; Begründungen ergänzt bzw. als offen markiert, veraltete Werte (Spieler-Wachstum, Entity-Tabelle, Passiv-Effekte) als VERWORFEN gekennzeichnet; Treffer-Stufen und Geschick; Venom-Chance mit 100-%-Deckel*

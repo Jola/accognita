@@ -173,9 +173,11 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 60,
     interactRadius: 45,
     aggroRadius: 18,            // 2.5 × worldSize
-    // pincer u=6 → 7×1.65 ≈ 12 Wucht; chitin u=5 → blockt 9 HP Stich;
-    // venom_sting u=4 → 5×1.45 ≈ 7 Stich + 89% Chance auf 24 HP Gift
-    skillXp: { pincer: 150, chitin_armor: 96, venom_sting: 81 },
+    // pincer u=5 → 7×1.55 ≈ 11 Wucht; chitin u=5 → blockt 9 HP Stich;
+    // venom_sting u=4 → 5×1.45 ≈ 7 Stich + 89% Chance auf 18 HP Gift
+    // Vorgabe (Entwickler, 1. Nov. 2026): Skorpione etwas schwächer
+    //   ([VERWORFEN] pincer u=6 → 12, Giftdosis 24)
+    skillXp: { pincer: 96, chitin_armor: 96, venom_sting: 81 },
     // Vorgabe (Entwickler): Der Stachel kommt nur gelegentlich zum Einsatz,
     //   sonst greifen Skorpione mit den Scheren an.
     // Begründung (Vorschlag Claude): Gift kostet viel Energie und braucht Tage
@@ -204,9 +206,11 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 120,
     interactRadius: 55,
     aggroRadius: 25,            // 2.5 × worldSize
-    // pincer u=18 → 7×2.85 ≈ 20 Wucht; chitin u=8 → blockt 10,9 HP Stich;
-    // venom_sting u=7 → 5×1.75 ≈ 9 Stich + 92% Chance auf 33 HP Gift
-    skillXp: { pincer: 1734, chitin_armor: 294, venom_sting: 324 },
+    // pincer u=13 → 7×2.35 ≈ 16 Wucht; chitin u=8 → blockt 10,9 HP Stich;
+    // venom_sting u=7 → 5×1.75 ≈ 9 Stich + 92% Chance auf 24 HP Gift
+    // Vorgabe (Entwickler, 1. Nov. 2026): Skorpione etwas schwächer
+    //   ([VERWORFEN] pincer u=18 → 20, Giftdosis 33)
+    skillXp: { pincer: 864, chitin_armor: 294, venom_sting: 324 },
     // Stachel nur gelegentlich — Begründung beim kleinen Skorpion. VORLÄUFIG
     occasionalAttack: { skillId: "venom_sting", chance: 0.15 },
     worldSize: 10,
@@ -268,8 +272,12 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 180,               // 3 Minuten — seltener Gegner
     interactRadius: 60,
     aggroRadius: 30,                // 2.5 × worldSize
-    // bite u=15 → 7×2.55 ≈ 18 Schaden; venom u=15 → 67% Chance, 9/Tick
-    skillXp: { bite: 1176, venom: 1470 },
+    // bite u=10 → 7×2.05 ≈ 14 Schaden; venom u=6 → 52% Chance auf 18 HP Gift
+    // Vorgabe (Entwickler, 1. Nov. 2026): Schlangen beißen etwas weniger fest,
+    //   ihr Gift war viel zu stark ([VERWORFEN] bite u=15 → 18 HP, venom u=15
+    //   → 67 % auf 36 HP: alle 1,2 s gebissen ≈ 20 HP/s Gift im Dauerzustand).
+    //   Jetzt ≈ 8 HP/s Gift im Dauerzustand. VORLÄUFIG
+    skillXp: { bite: 486, venom: 187.5 },
     worldSize: 12,
   },
 ];

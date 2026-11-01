@@ -46,6 +46,17 @@ export const BASE_XP_ANALYZE = 1;
 /** XP die eine Kern-Fähigkeit (Analyze/Absorb) pro erfolgreichem Einsatz bekommt */
 export const BASE_XP_CORE = 1;
 
+/**
+ * Photosynthesis: XP je geheiltem HP. VORLÄUFIG
+ * Vorgabe (Entwickler, 1. November 2026): Die Regeneration ist viel zu
+ * schnell auf dem höchsten Rang.
+ * Begründung (Vorschlag Claude): Photosynthese läuft passiv mit, ohne dass
+ * der Spieler etwas tut — sie soll langsamer lernen als Fähigkeiten, die man
+ * im Kampf einsetzen muss. [VERWORFEN] 1 XP je HP: Natur nach wenigen
+ * Minuten. Jetzt mit der schwächeren Heilung grob eine Stunde Heilen.
+ */
+export const PHOTOSYNTHESIS_XP_PER_HP = 0.25;
+
 // -----------------------------------------------------------
 // [VERWORFEN] LEVEL-UP SCHWELLEN und SPIELER-HAUPTLEVEL
 // Früher: XP_LEVEL_MULTIPLIER 1.5 (Skill-Level), PLAYER_LEVEL_BASE_XP 200

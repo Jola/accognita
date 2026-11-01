@@ -125,7 +125,7 @@ Fähigkeiten werden **nicht garantiert** übertragen. Ob ein Skill erworben wird
 | jump | Jump | aktiv | none | 🦘 | Springspinne | **Bewegungs-Unlock**: Ohne diesen Skill kann der Blob nicht springen. Höheres Level = größere Sprunghöhe/-weite. |
 | hemolymph | Hemolymph | passiv | poison | 🐞 | Marienkäfer | Bei eigenem Treffer: Angreifer vergiftet |
 | pincer | Zangengriff | aktiv | none | 🦀 | Skorpione | Scherenangriff: packt und quetscht (7 HP, Wucht), kein Gift |
-| venom_sting | Stachelstich | aktiv | poison | 💉 | Skorpione | Giftstachel: 5 HP Stich + 80 % Chance auf starke Giftdosis (15 HP + 3 je Übungsgrad), Gift nur bei diesem Angriff |
+| venom_sting | Stachelstich | aktiv | poison | 💉 | Skorpione | Giftstachel: 5 HP Stich + 80 % Chance auf starke Giftdosis (~~15 HP + 3~~ 12 HP + 2 je Übungsgrad, abgeschwächt 1. Nov. 2026), Gift nur bei diesem Angriff |
 
 **Skorpione (31. Oktober 2026):**
 **Vorgabe (Entwickler):** Skorpione bekommen einen zweiten Angriff, den sie nur gelegentlich einsetzen: Sie greifen mit den Scheren an und selten mit dem Giftstachel. Das Skorpiongift ist relativ stark, insbesondere stärker als das der Spinnen, und wirkt nur beim Giftstachel, nicht bei den Scheren. Namen und Symbole durfte Claude wählen.
@@ -188,7 +188,7 @@ Schwache Wesen geben für hohe Skills kaum XP, starke Wesen einen Bonus.
 | Hemolymph | Rückschlag-Schaden in HP | ja |
 | Venom | Gift-Schaden in HP | ja |
 | Superstrength | 1 pro Treffer | ja |
-| Photosynthesis | geheilte HP | nein (kein Gegner beteiligt) |
+| Photosynthesis | ~~geheilte HP~~ geheilte HP × 0,25 (1. Nov. 2026, Vorgabe Entwickler: zu schnell auf dem höchsten Rang; Begründung Claude: läuft passiv ohne Zutun) | nein (kein Gegner beteiligt) |
 | Jump | 1 pro Sprung | nein (kein Gegner beteiligt) |
 
 **Skalierung nach Gegner-Level** ([balance.ts](../src/data/balance.ts) `calcCombatXpMultiplier`):
@@ -337,9 +337,16 @@ Der Schadens-Faktor aktiver Angriffe hatte einen Sprung (+0,15 ab Level 3). [VER
 
 **Vorgabe (Entwickler):** Die Kapazität wächst mit dem Blob. Wie genau, legt Jörn später fest. Sie muss zu den erlernbaren Skills passen.
 
-**Platzhalter (Vorschlag Claude, offen):**
-- `Kapazität = 200 + 150 × Wachstum`
-- `Wachstum = log2(1 + Lebenserfahrung / 200)`
+**Vorgabe (Entwickler, 1. November 2026):** Die Kapazität muss deutlich größer werden. Es soll nicht möglich sein, alle Skills auf das Maximum zu bringen, aber mindestens 5 Skills auf das Maximum (Rang Natur), während die anderen niedriger, aber nicht auf dem Minimum sind.
+
+**Umsetzung (Vorschlag Claude, offen) — Kapazität sättigt:**
+- `Kapazität = 300 + 3900 × (1 − 2^(−Lebenserfahrung / 3000))` → 300 · 2250 · 3225 · 3712 · … → 4200
+- **Begründung:** Lebewesen wachsen jung schnell und nähern sich dann einer Endgröße (Wachstumskurve nach von Bertalanffy). 4200 aus der Vorgabe hergeleitet: die fünf teuersten Skills auf Natur (≈ 3560 XP) plus die übrigen sechs auf Gewohnheit (≈ 480). Alle elf auf Natur bräuchten ≈ 6600 — auch mit Überdehnung (5040) nicht erreichbar. Kommen viele Skills dazu, muss das Maximum mitwachsen.
+- Herleitung und Zahlen: [progression.ts](../src/data/progression.ts) Abschnitt 3.
+
+~~**Platzhalter (Vorschlag Claude, offen):**~~ [VERWORFEN, 1. November 2026 — viel zu klein, Lebenserfahrung 10 000 ergab nur 1050]
+- ~~`Kapazität = 200 + 150 × Wachstum`~~
+- `Wachstum = log2(1 + Lebenserfahrung / 200)` (gilt weiter für Größe, HP und MP)
 - Lebenserfahrung = alle je gutgeschriebene Erfahrung, auch verlernte. Das Wachstum ist stetig und schrumpft nie.
 - Wachstum entspricht genau dem alten „Charakter-Level − 1“. Größe, HP und MP des Blobs bleiben wie bisher, nur ohne Sprünge.
 
@@ -347,7 +354,12 @@ Der Schadens-Faktor aktiver Angriffe hatte einen Sprung (+0,15 ab Level 3). [VER
 - Analyze und Absorb belegen keine Kapazität und werden nie verlernt. Abwägung: Sonst könnte der Blob das Absorbieren vergessen, und der Kern-Spielablauf bräche weg.
 - Ein Skill fällt höchstens auf 0 XP und bleibt entdeckt.
 - Ein abgeschalteter Passiv-Skill belegt weiter Kapazität. Weil er nicht geübt wird, wird er zuerst verlernt.
-- „Am längsten nicht geübt“ wird in Spielzeit gemessen. Bei Gleichstand trifft es den zuerst entdeckten Skill.
+- „Am längsten nicht geübt“ wird in Spielzeit gemessen. Bei Gleichstand trifft es den zuerst entdeckten Skill. [VERWORFEN, 1. November 2026 — siehe Verteilung unten]
+
+**Wie verlernt wird:**
+**Vorgabe (Entwickler, 1. November 2026):** Beim Vergessen soll nicht sofort eine ganze Stufe zurückgesprungen werden, sondern nur Erfahrung abgezogen werden. Das Vergessen wird über Erfahrungspunkte balanciert, nicht über Ränge.
+**Umsetzung (Vorschlag Claude, offen):** Das Verlernen wird auf alle Skills außer dem gerade trainierten verteilt, gewichtet mit `Erfahrung × (Spielzeit seit letzter Übung + 60 s)`. Lange nicht Geübtes verliert am meisten; kein Skill verliert auf einen Schlag alles. Ein Rangwechsel passiert nur, wenn die Erfahrung tatsächlich unter die Ranggrenze sinkt.
+~~Reihum: Der am längsten nicht geübte Skill verliert alles, bevor der nächste drankommt.~~ [VERWORFEN — er fiel dabei oft mehrere Ränge auf einmal bis auf 0]
 
 ### 8.5 Überdehnung
 
@@ -444,4 +456,4 @@ Bezug zum Code:
 
 ---
 
-*Letzte Aktualisierung: v0.4 — XP-Skalierung Absorb/Analyze: kein Abrunden mehr (31. Oktober 2026); Skorpione: Zangengriff und Stachelstich (31. Oktober 2026); Venom: Giftlast statt DoT (31. Oktober 2026); davor Abgleich mit dem Code: Material-System als teilweise implementiert (Abschnitt 2), Biss in den Quellen-Skills der Insekten ergänzt und `maxLevel` als verworfen markiert (Abschnitt 3.1) (31. Oktober 2026); davor Rangnamen: Biologie-Reihe aktiv, Handwerk-Reihe als Alternative (Abschnitt 8.2, 31. Oktober 2026); davor Erfahrung statt Level umgesetzt (Abschnitt 8: Ränge, fließende Wirkung, Kapazität, Überdehnung, Wiedererlernen, gleiche Skills für Blob und Gegner, Übertraining, Idee Grow); alte Level-Regeln in 1.2, 4, 6, 7.1 als [VERWORFEN] markiert (30. Oktober 2026). Davor: Skill-Kapazität und Verlernen als Überlegung des Entwicklers (Abschnitt 7.1); Verweis auf GDD-08 (Progressionsmathematik) in Abschnitt 4; Größe beim Absorbieren/Analysieren als Konzept (Abschnitt 1.4); XP-Skalierung (Absorb/Analyze und Kampf-XP nach Gegner-Level) mit Begründungen dokumentiert, Erfolgsformel als vorläufig vermerkt, Superstrength-Beschreibung korrigiert (Oktober 2026)*
+*Letzte Aktualisierung: v0.5 — Balancing: Kapazität sättigt bei 4200, Verlernen verteilt statt reihum, Photosynthese-XP ×0,25, Stachelstich-Dosis gesenkt (1. November 2026); XP-Skalierung Absorb/Analyze: kein Abrunden mehr (31. Oktober 2026); Skorpione: Zangengriff und Stachelstich (31. Oktober 2026); Venom: Giftlast statt DoT (31. Oktober 2026); davor Abgleich mit dem Code: Material-System als teilweise implementiert (Abschnitt 2), Biss in den Quellen-Skills der Insekten ergänzt und `maxLevel` als verworfen markiert (Abschnitt 3.1) (31. Oktober 2026); davor Rangnamen: Biologie-Reihe aktiv, Handwerk-Reihe als Alternative (Abschnitt 8.2, 31. Oktober 2026); davor Erfahrung statt Level umgesetzt (Abschnitt 8: Ränge, fließende Wirkung, Kapazität, Überdehnung, Wiedererlernen, gleiche Skills für Blob und Gegner, Übertraining, Idee Grow); alte Level-Regeln in 1.2, 4, 6, 7.1 als [VERWORFEN] markiert (30. Oktober 2026). Davor: Skill-Kapazität und Verlernen als Überlegung des Entwicklers (Abschnitt 7.1); Verweis auf GDD-08 (Progressionsmathematik) in Abschnitt 4; Größe beim Absorbieren/Analysieren als Konzept (Abschnitt 1.4); XP-Skalierung (Absorb/Analyze und Kampf-XP nach Gegner-Level) mit Begründungen dokumentiert, Erfolgsformel als vorläufig vermerkt, Superstrength-Beschreibung korrigiert (Oktober 2026)*

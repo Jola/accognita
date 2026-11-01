@@ -961,15 +961,16 @@ Mehr Skills bringen in Summe mehr. Spezialisierung lohnt sich trotzdem, weil Eff
 
 ```
 belegt  B = Σ xp (alle entdeckten Skills, ohne Analyze/Absorb)
-Kapazität K = 200 + 150 · log2(1 + Lebenserfahrung / 200)     (Platzhalter)
+Kapazität K = 200 + 150 · log2(1 + Lebenserfahrung / 200)     (Platzhalter) [VERWORFEN, 1. Nov. 2026]
+Kapazität K = 300 + 3900 · (1 − 2^(−Lebenserfahrung / 3000))  (sättigt bei 4200 ≥ 5 Skills auf Natur)
 harte Grenze = 1,2 · K
 ```
 
-- **Über der harten Grenze:** Jede neue Erfahrung wird sofort beim am längsten nicht geübten Skill abgezogen, danach beim nächsten.
+- **Über der harten Grenze:** ~~Jede neue Erfahrung wird sofort beim am längsten nicht geübten Skill abgezogen, danach beim nächsten.~~ [VERWORFEN] → Sie wird auf alle anderen Skills verteilt abgezogen, gewichtet mit `xp × (Alter + 60 s)` (GDD-02 Abschnitt 8.4).
 - **Zwischen K und 1,2·K:** Der Überhang schmilzt in Spielzeit mit `Ü(t) = Ü₀ · 0,5^(t / 2 h)`.
 - **Wiedererlernen:** Unter dem Höchststand zählt jede XP doppelt. Nach dem Verlernen braucht der Weg zurück also die halbe Zeit, wie von Jörn vorgegeben.
 
-Ein Nebeneffekt des Platzhalters: Die Kapazität wächst mit dem Training selbst. Wer viel trainiert, erhöht die Lebenserfahrung und damit K. Jede Verdopplung der Lebenserfahrung bringt +150 XP Kapazität. Das ist gewollt mild (logarithmisch), muss aber zur endgültigen Wachstumsregel passen.
+[VERWORFEN, 1. Nov. 2026 — die Kapazität sättigt jetzt:] Ein Nebeneffekt des Platzhalters: Die Kapazität wächst mit dem Training selbst. Wer viel trainiert, erhöht die Lebenserfahrung und damit K. Jede Verdopplung der Lebenserfahrung bringt +150 XP Kapazität. Das ist gewollt mild (logarithmisch), muss aber zur endgültigen Wachstumsregel passen.
 
 ## 24. Übertraining
 
@@ -1023,4 +1024,4 @@ Sie beginnt erst 2 Minuten nach der letzten Übung des Skills.
 
 ---
 
-*Letzte Aktualisierung: v0.4 — Gift-Befunde in 12.3 und 19.2 als behoben markiert (Giftlast, 31. Oktober 2026); davor Teil 6 ergänzt (Erfahrung statt Level umgesetzt: Kurve, Kapazität, Übertraining; Status-Hinweis oben aktualisiert, 30. Oktober 2026); davor Teil 5 ergänzt (Skill-Kapazität und Verlernen nach Überlegung des Entwicklers, Gruppen schwacher Gegner, Weltstufen); davor Teil 4 ergänzt (Überlegung Entwickler: nur Verhältnisse zählen; feste Level-Grenze vs. Max-Level-Erhöhung; Level abschaffen; Synthese unbegrenzte Übung / begrenzte Stärke); davor Teil 3 ergänzt (Vorschlag Entwickler: unendliches Leveln, lineare Skala, Anzeige in %); davor Teil 2 ergänzt (Wirkungskurven, Trefferstufen, Gift-Chance und Gift-Takt-Fehler, Skill-Fund-Wahrscheinlichkeiten, Geschick, Stapelregeln, Schwellen); davor: Datei neu angelegt: Analyse der Leveling-Modelle (proportionale Erfahrung, Level-Differenz-Multiplikator, Kurvenfamilien, Integer-Grenzen, Vergleich mit anderen Spielen), Vorschlag Zwei-Exponenten-Modell (Oktober 2026)*
+*Letzte Aktualisierung: v0.5 — Abschnitt 23: Kapazität sättigt, Verlernen verteilt (1. November 2026); Gift-Befunde in 12.3 und 19.2 als behoben markiert (Giftlast, 31. Oktober 2026); davor Teil 6 ergänzt (Erfahrung statt Level umgesetzt: Kurve, Kapazität, Übertraining; Status-Hinweis oben aktualisiert, 30. Oktober 2026); davor Teil 5 ergänzt (Skill-Kapazität und Verlernen nach Überlegung des Entwicklers, Gruppen schwacher Gegner, Weltstufen); davor Teil 4 ergänzt (Überlegung Entwickler: nur Verhältnisse zählen; feste Level-Grenze vs. Max-Level-Erhöhung; Level abschaffen; Synthese unbegrenzte Übung / begrenzte Stärke); davor Teil 3 ergänzt (Vorschlag Entwickler: unendliches Leveln, lineare Skala, Anzeige in %); davor Teil 2 ergänzt (Wirkungskurven, Trefferstufen, Gift-Chance und Gift-Takt-Fehler, Skill-Fund-Wahrscheinlichkeiten, Geschick, Stapelregeln, Schwellen); davor: Datei neu angelegt: Analyse der Leveling-Modelle (proportionale Erfahrung, Level-Differenz-Multiplikator, Kurvenfamilien, Integer-Grenzen, Vergleich mit anderen Spielen), Vorschlag Zwei-Exponenten-Modell (Oktober 2026)*

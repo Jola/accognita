@@ -114,11 +114,17 @@ export function calcSuperstrengthMult(practice: number): number {
 }
 
 // -----------------------------------------------------------
-// photosynthesis — HP-Regeneration pro Sekunde (HoT)
+// photosynthesis — HP-Regeneration pro Sekunde (stufenlos, HoT)
 //
-// Lv 1 → 0.5/s,  Lv 3 → 1.5/s,  Lv 5 → 2.5/s  (in HP)
+// u 1 → 0,2/s,  u 3 → 0,4/s,  u 5 → 0,6/s,  u 10 → 1,1/s  (in HP)
 // Gespeichert in milli-HP: ×1000
+// [VERWORFEN, 1. November 2026] 0,5 × u HP/s (u 10 → 5 HP/s).
+// Vorgabe (Entwickler): Die Regeneration ist viel zu stark.
+// Begründung (Vorschlag Claude): Fotosynthese liefert einem Tier wenig
+// Energie — Schnecken mit eingelagerten Chloroplasten (Elysia) überleben
+// damit wochenlang, wachsen aber kaum. Ein Blob mit 80 HP braucht bei u 10
+// rund eine Minute, um sich voll zu heilen. VORLÄUFIG
 // -----------------------------------------------------------
 export function calcPhotosynthesisHeal(practice: number): number {
-  return Math.round(0.5 * practice * 1000);
+  return Math.round((0.2 + 0.1 * (practice - 1)) * 1000);
 }

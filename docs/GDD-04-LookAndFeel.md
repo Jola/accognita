@@ -301,11 +301,12 @@ Kein lokales Node.js, npm oder Terminal auf Jörns Seite nötig.
 
 ### Versionsnummer & Spielstände (implementiert, v0.4)
 
-- **Versionsnummer** steht an genau einer Stelle im Code: [src/data/version.ts](../src/data/version.ts) (`GAME_VERSION`, derzeit 0.4.0). `build.js` bricht ab, wenn sie nicht mit `package.json` übereinstimmt. Angezeigt wird sie im Speichern-Dialog; jeder Spielstand speichert, mit welcher Version er gespeichert wurde, und Spielstände anderer Versionen werden dort gelb markiert.
+- **Versionsnummer** steht an genau einer Stelle im Code: [src/data/version.ts](../src/data/version.ts) (`GAME_VERSION`, ~~derzeit 0.4.0~~ derzeit 0.5.0). `build.js` bricht ab, wenn sie nicht mit `package.json` übereinstimmt. Angezeigt wird sie im Speichern-Dialog; jeder Spielstand speichert, mit welcher Version er gespeichert wurde, und Spielstände anderer Versionen werden dort gelb markiert.
   **Vorgabe (Entwickler):** Es braucht eine Stelle, an der die Version angezeigt wird; falls es keine Versionsnummer gibt, eine einführen; Anzeige im Speichern-Dialog.
   **Begründung einzige Quelle + Build-Prüfung (Vorschlag Claude):** Vorher stand `0.3.0` an zwei Stellen, die nur von Hand gleich gehalten wurden.
   **Begründung Version im Spielstand (Vorschlag Claude):** So lässt sich erkennen, mit welcher Version ein Spielstand gespeichert wurde — Grundlage für Migrationen.
   > Begründung offen — Ob 0.4.0 die richtige Nummer ist: Die isometrische Ansicht war ursprünglich für v0.4 geplant (GDD-00 Abschnitt 6).
+  **Vorgabe (Entwickler, 1. November 2026):** Die Versionsnummer weiterzählen. → 0.5.0 (gestapeltes Gift, stufenlose Regeneration, Skorpion-Angriffe, Balancing von Kapazität, Verlernen, Photosynthese, Schlange und Skorpionen).
 - **Migration alter Spielstände** ([src/systems/SaveSystem.ts](../src/systems/SaveSystem.ts)): Das Speicherformat hat eine eigene Formatversion (~~derzeit 2~~ derzeit 3) und eine Kette von Migrationsschritten, die beim Lesen angewendet werden. v1 → v2 rechnet HP/MP **anteilig** auf Milli-Einheiten um (Füllstand bleibt, Maximum aus dem damaligen Level). v2 → v3 stellt auf Erfahrung statt Level um: Jeder Skill behält seine je gesammelte Erfahrung als aktuelle Erfahrung und Höchststand, die Lebenserfahrung übernimmt die alte Gesamt-XP; liegt die Summe über der Kapazität, wird der Überhang beim Laden verlernt ([GDD-02 Abschnitt 8.8](GDD-02-Skillsystem.md#88-wo-im-code-was-steht)).
   **Vorgabe (Entwickler):** Migration für gespeicherte Spielstände schreiben.
   **Begründung (Vorschlag Claude, übernommen):** Ohne Migration hätte der Blob nach dem Laden eines alten Spielstands (HP in ganzen Punkten) nur 0,05 HP gehabt.
@@ -324,4 +325,4 @@ Kein lokales Node.js, npm oder Terminal auf Jörns Seite nötig.
 
 ---
 
-*Letzte Aktualisierung: v0.4 — Giftlast in der HP-Bar und Giftdosis-Zahl (31. Oktober 2026); davor Anzeige an Erfahrung statt Level angepasst: HUD zeigt Kapazität (KAP), Skills-Tab und INDEX nach Rängen, Rang-Aufstieg statt Level-Up, Spielstand-Format 3, Desktop-Steuerung (Tastatur/Maus) als verworfen markiert (31. Oktober 2026); davor Dev-Container und `npm run dev` für lokale Entwicklung; Begründungen für Spielmenü, Vollbild-Regel, Version und Spielstand-Migration ergänzt; Spielmenü als pausierendes Vollbild-Overlay mit INDEX-Tab (Oktober 2026)*
+*Letzte Aktualisierung: v0.5 — Version 0.5.0 (1. November 2026); Giftlast in der HP-Bar und Giftdosis-Zahl (31. Oktober 2026); davor Anzeige an Erfahrung statt Level angepasst: HUD zeigt Kapazität (KAP), Skills-Tab und INDEX nach Rängen, Rang-Aufstieg statt Level-Up, Spielstand-Format 3, Desktop-Steuerung (Tastatur/Maus) als verworfen markiert (31. Oktober 2026); davor Dev-Container und `npm run dev` für lokale Entwicklung; Begründungen für Spielmenü, Vollbild-Regel, Version und Spielstand-Migration ergänzt; Spielmenü als pausierendes Vollbild-Overlay mit INDEX-Tab (Oktober 2026)*

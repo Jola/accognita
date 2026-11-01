@@ -96,6 +96,7 @@ import {
   PLAYER_SIZE_GROWTH_MAX,
   PLAYER_SCREEN_RADIUS,
   PLAYER_SPEED_PER_WORLD_RADIUS,
+  PHOTOSYNTHESIS_XP_PER_HP,
   toDisplayHp,
 } from "../data/balance.js";
 import { addVenomDose, processVenom, getVenomLoad, clearVenom } from "../systems/VenomSystem.js";
@@ -821,8 +822,9 @@ export class GameScene extends Phaser.Scene {
     const healed = processRegeneration(this.gameState.player, delta);
     if (healed > 0) {
       this.gameState.player.hp += healed;
-      // Photosynthesis: XP = regenerierte HP, stufenlos (÷1000: milli-HP → XP, kein Entity-Level)
-      const gain = gainSkillXp(this.gameState.player, "photosynthesis", healed / 1000);
+      // Photosynthesis: XP = regenerierte HP × PHOTOSYNTHESIS_XP_PER_HP, stufenlos
+      // (÷1000: milli-HP → HP, kein Entity-Level)
+      const gain = gainSkillXp(this.gameState.player, "photosynthesis", (healed / 1000) * PHOTOSYNTHESIS_XP_PER_HP);
       this.logProgressionEvents(gain.events);
       this.progressDirty = true;
       updateVitalsUI(this.gameState.player);

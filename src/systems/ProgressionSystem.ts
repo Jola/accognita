@@ -42,7 +42,9 @@ import {
   PRACTICE_XP_FACTOR,
   SKILL_RANKS,
   CAPACITY_BASE,
-  CAPACITY_PER_GROWTH,
+  CAPACITY_MAX,
+  CAPACITY_HALF_XP,
+  FORGET_AGE_FLOOR_SECONDS,
   GROWTH_XP_SCALE,
   OVERSTRETCH_MAX_FRACTION,
   OVERSTRETCH_HALF_LIFE_PLAY_SECONDS,
@@ -174,9 +176,14 @@ export function calcGrowth(lifetimeXp: number): number {
   return Math.log2(1 + Math.max(0, lifetimeXp) / GROWTH_XP_SCALE);
 }
 
-/** Kapazität: so viel Erfahrung können alle Skills zusammen dauerhaft halten. */
+/**
+ * Kapazität: so viel Erfahrung können alle Skills zusammen dauerhaft halten.
+ * Sättigt bei CAPACITY_MAX — je CAPACITY_HALF_XP Lebenserfahrung kommt die
+ * Hälfte des noch fehlenden Stücks dazu.
+ */
 export function calcCapacity(player: PlayerState): number {
-  return CAPACITY_BASE + CAPACITY_PER_GROWTH * calcGrowth(player.lifetimeXp);
+  const grown = 1 - Math.pow(0.5, Math.max(0, player.lifetimeXp) / CAPACITY_HALF_XP);
+  return CAPACITY_BASE + (CAPACITY_MAX - CAPACITY_BASE) * grown;
 }
 
 /** Belegte Kapazität = Summe der Erfahrung aller entdeckten Skills (ohne Kern-Fähigkeiten). */
@@ -334,8 +341,10 @@ function enforceHardLimit(player: PlayerState, protectedId: string, events: Prog
 }
 
 /**
- * Zieht `amount` Erfahrung ab — reihum von den Skills, die am längsten
- * nicht geübt wurden (Gleichstand: zuerst entdeckt). Gibt zurück, wie viel
+ * Zieht `amount` Erfahrung ab — verteilt auf alle Skills außer protectedId,
+ * gewichtet mit Erfahrung × (Zeit seit letzter Übung + Mindestalter)
+ * (progression.ts Abschnitt 3b). Wer sein Restguthaben ausschöpft, scheidet
+ * aus; der Rest wird auf die übrigen neu verteilt. Gibt zurück, wie viel
  * nicht abgezogen werden konnte.
  */
 function forgetLeastPracticed(
@@ -344,19 +353,31 @@ function forgetLeastPracticed(
   protectedId: string | null,
   events: ProgressionEvent[]
 ): number {
-  const candidates = allTracks(player)
-    .filter((t) => t.usesCapacity && t.id !== protectedId && t.progress.xp > 0)
-    .sort((a, b) =>
-      a.progress.lastPracticedAt - b.progress.lastPracticedAt || a.discoveredAt - b.discoveredAt);
+  const now = player.playtimeSeconds;
+  const plan = new Map<Track, number>();
+  const left = (t: Track) => t.progress.xp - (plan.get(t) ?? 0);
+  const weight = (t: Track) =>
+    left(t) * (Math.max(0, now - t.progress.lastPracticedAt) + FORGET_AGE_FLOOR_SECONDS);
 
+  let pool = allTracks(player).filter((t) => t.usesCapacity && t.id !== protectedId && t.progress.xp > 0);
   let remaining = amount;
-  for (const track of candidates) {
-    if (remaining <= 0) break;
-    const take = Math.min(remaining, track.progress.xp);
-    forgetFrom(track, take, events);
-    remaining -= take;
+  while (remaining > 1e-6 && pool.length > 0) {
+    const total = pool.reduce((sum, t) => sum + weight(t), 0);
+    if (total <= 0) break;
+    const shares = pool.map((t) => remaining * weight(t) / total);
+    const next: Track[] = [];
+    pool.forEach((t, i) => {
+      const take = Math.min(shares[i], left(t));
+      plan.set(t, (plan.get(t) ?? 0) + take);
+      remaining -= take;
+      if (left(t) > 1e-9) next.push(t);
+    });
+    if (next.length === pool.length) break; // alles verteilt
+    pool = next;
   }
-  return remaining;
+
+  for (const [track, take] of plan) forgetFrom(track, take, events);
+  return remaining > 1e-6 ? remaining : 0;
 }
 
 /** Verlernt Erfahrung eines Skills. Höchststand bleibt — für das Wiedererlernen. */
@@ -469,5 +490,6 @@ function clamp01(x: number): number {
 }
 
 // ------------------------------------------------------------
-// Zuletzt geändert: 2026-10-30 — Erstfassung
+// Zuletzt geändert: 2026-11-01 — Kapazität sättigt, Verlernen verteilt
+// Davor: 2026-10-30 — Erstfassung
 // ------------------------------------------------------------

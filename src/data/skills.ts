@@ -287,7 +287,7 @@ export const BASE_SKILLS: SkillDefinition[] = [
     learningEffort: 18,
     description:
       "Aktiv: Sticht mit dem Giftstachel zu (5 HP Basis, Stich) und spritzt fast immer eine " +
-      "starke Giftdosis ein: anfangs 15 HP, +3 HP je Übungsgrad. Das Gift stapelt wie Venom. " +
+      "starke Giftdosis ein: anfangs 12 HP, +2 HP je Übungsgrad. Das Gift stapelt wie Venom. " +
       "MP-Kosten: 6.",
     mpCost: 6_000,
     cooldownMs: 2500,
@@ -303,12 +303,13 @@ export const BASE_SKILLS: SkillDefinition[] = [
         trigger: "on_hit_enemy",
         effectType: "inject_venom",
         formula: { base: 0.80, perLevel: 0.05, curve: "sqrt", max: 1.0 },
-        venomDose: { base: 15, perLevel: 3 },
+        venomDose: { base: 12, perLevel: 2 },
         reasoning:
           "Gift wirkt nur, wenn mit dem Stachel gestochen wird (aktiver Skill: Effekt nur beim eigenen Treffer). " +
           "Der Stachel ist ein reines Giftwerkzeug mit großer Giftblase und Muskulatur zum Einspritzen — " +
           "anders als Spinnen, deren Biss vor allem packt und nicht immer Gift abgibt. Deshalb 80 % Chance " +
-          "statt 30 % und fast doppelte Dosis: 15 HP statt 8 bei u1, 24 statt 14 bei u4, 33 statt 20 bei u7. " +
+          "statt 30 % und höhere Dosis: 12 HP statt 8 bei u1, 18 statt 14 bei u4, 24 statt 20 bei u7 " +
+          "(abgeschwächt am 1. Nov. 2026 auf Wunsch des Entwicklers, vorher 15 + 3 je Übungsgrad). " +
           "Gift ist teuer herzustellen (Gift-Ökonomie) — Skorpione stechen darum nur gelegentlich. VORLÄUFIG.",
       },
     ],

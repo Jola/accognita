@@ -567,7 +567,7 @@ Dosis = 8 + 2 × (u − 1) HP        u=1: 8 · Giftspinne u=3: 12 · Schlange u=
 
 Deklaration in [skills.ts](../src/data/skills.ts): Effekt `inject_venom`, `formula` = Chance, `venomDose` = Dosis.
 
-**Wer Gift einspritzt:** Ein passiver Skill (Venom) bei jedem Nahkampftreffer, ein aktiver Skill (Stachelstich 💉: Chance 80 % + 5 % × √(u−1), Dosis 15 + 3 × (u−1) HP) nur, wenn genau dieser Skill getroffen hat.
+**Wer Gift einspritzt:** Ein passiver Skill (Venom) bei jedem Nahkampftreffer, ein aktiver Skill (Stachelstich 💉: Chance 80 % + 5 % × √(u−1), Dosis ~~15 + 3 × (u−1)~~ 12 + 2 × (u−1) HP, abgeschwächt 1. Nov. 2026) nur, wenn genau dieser Skill getroffen hat.
 **Vorgabe (Entwickler):** Das Skorpiongift wirkt nur beim Giftstachel, nicht bei den Scheren, und ist stärker als das der Spinnen.
 **Begründung (Vorschlag Claude, übernommen):** Das Gift sitzt in der Giftblase am Stachel; der Stachel ist ein reines Giftwerkzeug, Spinnen packen mit dem Biss und geben nicht immer Gift ab.
 
@@ -643,4 +643,4 @@ Eine reine Halbwertszeit endet nie. Unter ≈ 2,9 HP Restlast (wo λ·L unter 1 
 
 ---
 
-*Letzte Aktualisierung: v0.4 — Abschnitt 12: Gift aktiver Skills nur beim eigenen Treffer (Stachelstich), XP anteilig je Gift-Skill (31. Oktober 2026); Abschnitt 12 Gift: Giftlast, stufenloser Abbau mit Halbwertszeit, Mindestrate, Effekt-Typ `inject_venom` (31. Oktober 2026); davor Hinweis Übungsgrad statt Level in Abschnitt 5.4 (31. Oktober 2026); davor implementiert — DamageSystem (8-stufige Pipeline), SkillEffectSystem (deklarative Effekte), DamageType-System, Skill-Effekt-Deklaration für chitin_armor/superstrength/hemolymph/venom (Oktober 2026); LinearFormula.max, Treffer-Stufe 1b, dexterity; Milli-Einheiten (3.4) und Begründungen der Caps ergänzt; Mindestschaden 1 HP vor Effekten, HP-Anzeige immer aufgerundet; Begründungen für Milli-HP und Mindestschaden vom Entwickler; Geschick ohne eigenen Skill-Beitrag*
+*Letzte Aktualisierung: v0.5 — Stachelstich-Dosis gesenkt (1. November 2026); Abschnitt 12: Gift aktiver Skills nur beim eigenen Treffer (Stachelstich), XP anteilig je Gift-Skill (31. Oktober 2026); Abschnitt 12 Gift: Giftlast, stufenloser Abbau mit Halbwertszeit, Mindestrate, Effekt-Typ `inject_venom` (31. Oktober 2026); davor Hinweis Übungsgrad statt Level in Abschnitt 5.4 (31. Oktober 2026); davor implementiert — DamageSystem (8-stufige Pipeline), SkillEffectSystem (deklarative Effekte), DamageType-System, Skill-Effekt-Deklaration für chitin_armor/superstrength/hemolymph/venom (Oktober 2026); LinearFormula.max, Treffer-Stufe 1b, dexterity; Milli-Einheiten (3.4) und Begründungen der Caps ergänzt; Mindestschaden 1 HP vor Effekten, HP-Anzeige immer aufgerundet; Begründungen für Milli-HP und Mindestschaden vom Entwickler; Geschick ohne eigenen Skill-Beitrag*
