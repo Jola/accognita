@@ -73,7 +73,7 @@ Jeder Angriff durchläuft exakt diese Stufen in dieser Reihenfolge:
 [1b] Treffer-Stufe        (implementiert: verfehlt ×0 → Abbruch, leicht ×0,6, normal ×1,
                            schwer ×1,3, kritisch ×2,5 — Details: GDD-03 Abschnitt 6, Treffer-Stufen)
       ↓
-[2] Angreifer-Multiplikator   (Stärke-Buffs, Superstrength etc.)
+[2] Angreifer-Multiplikator   (Eigenschafts-Skalierung: 1 + Σ perPoint × Stärke/Geschick, GDD-02 Abschnitt 8.11; Stärke-Buffs etc.)
       ↓
 [3] Penetrations-Bonus    (Angreifer ignoriert X Punkte Rüstung)
       ↓
@@ -660,4 +660,4 @@ Eine reine Halbwertszeit endet nie. Unter ≈ 2,9 HP Restlast (wo λ·L unter 1 
 
 ---
 
-*Letzte Aktualisierung: v0.6 — Formel-System SkillValue { start, max } statt LinearFormula, Angriffsschaden als damage-Wert (1. November 2026); davor v0.5 — Stachelstich-Dosis gesenkt (1. November 2026); Abschnitt 12: Gift aktiver Skills nur beim eigenen Treffer (Stachelstich), XP anteilig je Gift-Skill (31. Oktober 2026); Abschnitt 12 Gift: Giftlast, stufenloser Abbau mit Halbwertszeit, Mindestrate, Effekt-Typ `inject_venom` (31. Oktober 2026); davor Hinweis Übungsgrad statt Level in Abschnitt 5.4 (31. Oktober 2026); davor implementiert — DamageSystem (8-stufige Pipeline), SkillEffectSystem (deklarative Effekte), DamageType-System, Skill-Effekt-Deklaration für chitin_armor/superstrength/hemolymph/venom (Oktober 2026); LinearFormula.max, Treffer-Stufe 1b, dexterity; Milli-Einheiten (3.4) und Begründungen der Caps ergänzt; Mindestschaden 1 HP vor Effekten, HP-Anzeige immer aufgerundet; Begründungen für Milli-HP und Mindestschaden vom Entwickler; Geschick ohne eigenen Skill-Beitrag*
+*Letzte Aktualisierung: v0.6 — Pipeline-Schritt [2]: Eigenschafts-Skalierung (13. November 2026); Formel-System SkillValue { start, max } statt LinearFormula, Angriffsschaden als damage-Wert (1. November 2026); davor v0.5 — Stachelstich-Dosis gesenkt (1. November 2026); Abschnitt 12: Gift aktiver Skills nur beim eigenen Treffer (Stachelstich), XP anteilig je Gift-Skill (31. Oktober 2026); Abschnitt 12 Gift: Giftlast, stufenloser Abbau mit Halbwertszeit, Mindestrate, Effekt-Typ `inject_venom` (31. Oktober 2026); davor Hinweis Übungsgrad statt Level in Abschnitt 5.4 (31. Oktober 2026); davor implementiert — DamageSystem (8-stufige Pipeline), SkillEffectSystem (deklarative Effekte), DamageType-System, Skill-Effekt-Deklaration für chitin_armor/superstrength/hemolymph/venom (Oktober 2026); LinearFormula.max, Treffer-Stufe 1b, dexterity; Milli-Einheiten (3.4) und Begründungen der Caps ergänzt; Mindestschaden 1 HP vor Effekten, HP-Anzeige immer aufgerundet; Begründungen für Milli-HP und Mindestschaden vom Entwickler; Geschick ohne eigenen Skill-Beitrag*

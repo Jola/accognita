@@ -107,6 +107,70 @@ export function valueChart(series: ChartSeries, learningEffort: number): string 
   </figure>`;
 }
 
+// -----------------------------------------------------------
+// Kurve „Wert über Eigenschafts-Punkte“ (z. B. Schaden über Stärke)
+//
+// Vorgabe (Entwickler, 13. November 2026): Formel und Kurve der
+// Eigenschafts-Skalierung stehen im Skill-Index. Die x-Achse sind die
+// Punkte der Eigenschaft von 0 bis zum Höchstwert aller Skills, die sie
+// geben; die Natur-Marke zeigt die Summe ihrer Natur-Werte. Gleiches
+// Aussehen und gleiches Hover wie valueChart.
+// -----------------------------------------------------------
+export interface PointsChartSeries {
+  label: string;
+  /** Wert bei x Punkten — die echte Berechnungsfunktion des Spiels */
+  value: (points: number) => number;
+  format: (v: number) => string;
+  formula?: string;
+  /** Name der Eigenschaft für die Achse, z. B. „Stärke“ */
+  unit: string;
+  /** Höchste erreichbare Punkte (x-Achse endet hier) */
+  maxPoints: number;
+  /** Punkte bei Natur aller Quellen (gestrichelte Marke) */
+  naturPoints?: number;
+}
+
+export function pointsChart(series: PointsChartSeries): string {
+  const xMax = series.maxPoints || 1;
+  const pts = Array.from({ length: SAMPLES + 1 }, (_, i) => {
+    const pt = xMax * (i / SAMPLES);
+    return { pt, v: series.value(pt) };
+  });
+  const v0 = series.value(0), v1 = series.value(xMax);
+  const lo = Math.min(v0, v1), span = Math.abs(v1 - v0) || 1;
+  const plotW = W - PAD.left - PAD.right, plotH = H - PAD.top - PAD.bottom;
+  const x = (pt: number) => PAD.left + (pt / xMax) * plotW;
+  const y = (v: number) => PAD.top + plotH - ((v - lo) / span) * plotH;
+  const ptText = (pt: number) => pt.toLocaleString("de-DE", { maximumFractionDigits: 1 });
+
+  const path = pts.map((p, i) => `${i ? "L" : "M"}${x(p.pt).toFixed(1)},${y(p.v).toFixed(1)}`).join("");
+  const tips = pts.map((p) => `${ptText(p.pt)} ${series.unit}: ${series.format(p.v)}`).join("\n");
+  const nat = series.naturPoints;
+  const natur = nat !== undefined && nat > 0 && nat < xMax
+    ? `<line class="vc-grid" x1="${x(nat)}" x2="${x(nat)}" y1="${PAD.top}" y2="${PAD.top + plotH}"/>
+       <text class="vc-tick" x="${x(nat)}" y="${H - 6}" text-anchor="middle">Natur ${ptText(nat)}</text>`
+    : "";
+
+  return `<figure class="vc" data-tips="${esc(tips)}" data-x0="${PAD.left}" data-x1="${W - PAD.right}" data-w="${W}">
+    <figcaption>${esc(series.label)}</figcaption>
+    ${series.formula ? `<div class="vc-formula">= ${esc(series.formula)}</div>` : ""}
+    <svg class="vc-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(series.label)} über ${esc(series.unit)}">
+      <line class="vc-max" x1="${PAD.left}" x2="${W - PAD.right}" y1="${y(v1)}" y2="${y(v1)}"/>
+      <line class="vc-axis" x1="${PAD.left}" x2="${W - PAD.right}" y1="${y(v0)}" y2="${y(v0)}"/>
+      <text class="vc-tick" x="${PAD.left - 4}" y="${y(v1) + 3}" text-anchor="end">${esc(series.format(v1))}</text>
+      <text class="vc-tick" x="${PAD.left - 4}" y="${y(v0) + 3}" text-anchor="end">${esc(series.format(v0))}</text>
+      <text class="vc-tick" x="${PAD.left}" y="${H - 6}">0 ${esc(series.unit)}</text>
+      <text class="vc-tick" x="${W - PAD.right}" y="${H - 6}" text-anchor="end">${ptText(xMax)}</text>
+      ${natur}
+      <path class="vc-line" d="${path}"/>
+      <line class="vc-cross" y1="${PAD.top}" y2="${PAD.top + plotH}" x1="-10" x2="-10"/>
+      <circle class="vc-dot" r="4" cx="-10" cy="-10"/>
+      <polyline class="vc-pts" points="${pts.map((p) => `${x(p.pt).toFixed(1)},${y(p.v).toFixed(1)}`).join(" ")}"/>
+    </svg>
+    <div class="vc-tip" hidden></div>
+  </figure>`;
+}
+
 /** Hover (Maus) und Tippen/Ziehen (Touch): Fadenkreuz + Wert am nächsten Messpunkt. */
 export function attachChartHover(root: HTMLElement): void {
   const show = (ev: PointerEvent) => {
@@ -171,6 +235,7 @@ export const VALUE_CHART_CSS = `
     font-size:.66rem; pointer-events:none; }
 `;
 
-// Stand: 1. November 2026 (Ränge als waagerechte Werte-Zonen, Punkte über
+// Stand: 13. November 2026 (pointsChart: Wert über Eigenschafts-Punkte)
+// Davor: 1. November 2026 (Ränge als waagerechte Werte-Zonen, Punkte über
 // progressFromXp und die echte Berechnungsfunktion)
 // Davor: 1. November 2026 (Fortschritt 0–100 %, Höchstwert-Linie, Formelzeile)

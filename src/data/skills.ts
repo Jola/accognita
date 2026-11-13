@@ -165,15 +165,20 @@ export const BASE_SKILLS: SkillDefinition[] = [
     learningEffort: 15,
     description:
       "Passiv: Ameisen tragen das 50-fache ihres Körpergewichts — der Blob übernimmt diese Stärke. " +
-      "Verstärkt den Nahkampf-Angriff des Blobs: anfangs kaum, mit der Übung bis +83 %.",
+      "Gibt Stärke (0 → 10 Punkte mit der Übung). Stärke verstärkt Angriffe, die mit Stärke " +
+      "skalieren (Biss, Klauenhieb, Zangengriff) — wie viel, steht am Angriff.",
     effects: [
       {
-        trigger: "on_hit_enemy",
-        effectType: "damage_mult",
-        formula: { start: 1.0, max: 1.83 },
+        trigger: "passive",
+        effectType: "strength",
+        formula: { start: 0, max: 10 },
         reasoning:
-          "Ameisen tragen das 50-fache ihres Körpergewichts. " +
-          "×1,0 → ×1,83, bei Natur ×1,75 (wie bisher). [VERWORFEN] 1,30 + 0,05·(u−1).",
+          "Ameisen tragen das 50-fache ihres Körpergewichts. Vorgabe (Entwickler, 13. November 2026): " +
+          "Superstrength gibt dem Charakter Stärke, Stärke verstärkt Angriffe wie Schläge und Bisse. " +
+          "0 → 10 Punkte, bei Natur 9 (Vorschlag Claude, offen: runde Skala; mit +8 % je Punkt beim Biss " +
+          "ergibt Natur ≈ +72 %, nah am bisherigen ×1,75). " +
+          "[VERWORFEN, 13. November 2026] Schadensfaktor ×1,0 → ×1,83 auf jeden Angriff (auch Feueratem). " +
+          "[VERWORFEN] 1,30 + 0,05·(u−1).",
       },
     ],
   },
@@ -223,6 +228,14 @@ export const BASE_SKILLS: SkillDefinition[] = [
     damageType: "pierce",
     // Gezielt und präzise: etwas mehr kritische Treffer als ein Körperstoß
     hitProfile: { miss: 0.03, light: 0.17, normal: 0.52, heavy: 0.24, crit: 0.04 },
+    scaling: [
+      {
+        attribute: "strength", perPoint: 0.08,
+        reasoning:
+          "Vorgabe (Entwickler): Stärke verstärkt Bisse. +8 % je Punkt (Vorschlag Claude, offen): " +
+          "bei Natur-Stärke 9 rund +72 %, fast der bisherige Superstrength-Bonus (+75 %).",
+      },
+    ],
   },
   {
     id: "jump",
@@ -269,6 +282,21 @@ export const BASE_SKILLS: SkillDefinition[] = [
     damageType: "slash",
     // Weit ausholender Hieb: öfter schwer, aber auch öfter daneben
     hitProfile: { miss: 0.05, light: 0.15, normal: 0.45, heavy: 0.32, crit: 0.03 },
+    scaling: [
+      {
+        attribute: "strength", perPoint: 0.06,
+        reasoning:
+          "Vorgabe (Entwickler): Stärke verstärkt Schläge. +6 % je Punkt (Vorschlag Claude, offen): " +
+          "weniger als beim Biss, weil ein Teil der Wirkung aus der Körperbeherrschung kommt.",
+      },
+      {
+        attribute: "dexterity", perPoint: 0.05,
+        reasoning:
+          "Vorschlag Claude, offen: Ein weit ausholender Hieb braucht Kraft und Körperbeherrschung — " +
+          "Beispiel für einen Skill mit zwei Eigenschaften. +5 % je Punkt Geschick (Natur-Geschick 4 → +20 %); " +
+          "zusammen mit Stärke bei Natur ≈ +74 %, nah am bisherigen +75 %.",
+      },
+    ],
   },
 
   // --- SKORPION-SKILLS ---
@@ -303,6 +331,13 @@ export const BASE_SKILLS: SkillDefinition[] = [
     // weniger kritische Treffer als ein Biss. Lernaufwand und Schaden wie
     // beim Biss: Die Scheren ersetzen beim Skorpion den bisherigen Biss.
     hitProfile: { miss: 0.02, light: 0.20, normal: 0.58, heavy: 0.17, crit: 0.03 },
+    scaling: [
+      {
+        attribute: "strength", perPoint: 0.08,
+        reasoning:
+          "Quetschen ist reine Muskelkraft — wie beim Biss +8 % je Punkt Stärke (Vorschlag Claude, offen).",
+      },
+    ],
   },
   {
     id: "venom_sting",

@@ -10,7 +10,7 @@
 
 import type { PlayerState } from "../types/GameState";
 import type { DamageType, StatusEffect } from "../types/Combat";
-import type { SkillValue, SkillEffect } from "../types/Skill";
+import type { SkillValue, SkillEffect, Attribute } from "../types/Skill";
 import { ALL_SKILLS } from "../data/skills";
 import { MILLI, SKILL_DEFENSE_BASE_MULTIPLIER } from "../data/balance";
 import { makeStatusEffect } from "../types/Combat";
@@ -169,6 +169,51 @@ export function resolveDexterity(skillProgress: Record<string, number>, excludeS
     }
   }
   return dex;
+}
+
+// -----------------------------------------------------------
+// resolveStrength
+//
+// Summe aller passiven Stärke-Effekte (Superstrength). Stärke verstärkt
+// Angriffe, die mit Stärke skalieren (SkillDefinition.scaling).
+// -----------------------------------------------------------
+export function resolveStrength(skillProgress: Record<string, number>): number {
+  let str = 0;
+  for (const [skillId, progress] of Object.entries(skillProgress)) {
+    for (const effect of ALL_SKILLS.get(skillId)?.effects ?? []) {
+      if (effect.trigger === "passive" && effect.effectType === "strength") {
+        str += evalSkillValue(effect.formula, progress);
+      }
+    }
+  }
+  return str;
+}
+
+// -----------------------------------------------------------
+// Eigenschafts-Skalierung eines Angriffs (GDD-02 Abschnitt 8.11)
+//
+// Faktor = 1 + Σ perPoint × Punkte der Eigenschaft — additiv über alle
+// Eigenschaften des Skills. Skills ohne scaling: Faktor 1.
+// Begründung (Vorschlag Claude, offen): additiv, damit die Formel lesbar
+// bleibt und sich zwei Eigenschaften nicht gegenseitig hochmultiplizieren.
+// -----------------------------------------------------------
+export type AttributeValues = Record<Attribute, number>;
+
+export function calcAttributeMult(skillId: string | undefined, attrs: AttributeValues): number {
+  const scaling = skillId ? ALL_SKILLS.get(skillId)?.scaling : undefined;
+  if (!scaling) return 1;
+  return 1 + scaling.reduce((sum, s) => sum + s.perPoint * attrs[s.attribute], 0);
+}
+
+/** Höchste erreichbare Punkte einer Eigenschaft: Summe der Höchstwerte aller Skills, die sie geben. */
+export function maxAttributePoints(attribute: Attribute, at = 1): number {
+  let sum = 0;
+  for (const def of ALL_SKILLS.values()) {
+    for (const e of def.effects ?? []) {
+      if (e.trigger === "passive" && e.effectType === attribute) sum += evalSkillValue(e.formula, at);
+    }
+  }
+  return sum;
 }
 
 // -----------------------------------------------------------

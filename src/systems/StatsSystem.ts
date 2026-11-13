@@ -11,8 +11,9 @@
 // aus derselben Funktion, die auch das Spiel aufruft.
 //
 // Vorgabe (Entwickler, GDD-02 8.1): Charakter-Attribute kommen nur aus den
-// Skills — Stärke = Schadensfaktor der Passiv-Skills (Superstrength),
+// Skills — Stärke = Summe der Stärke-Effekte (Superstrength),
 // Geschick = Summe der Geschick-Effekte (Jump).
+// [VERWORFEN, 13. November 2026] Stärke = Schadensfaktor der Passiv-Skills.
 //
 // Keine Phaser-Abhängigkeit. Kein Rendering.
 // ============================================================
@@ -32,8 +33,8 @@ import {
 import {
   evalSkillValue,
   resolveDefenderEffects,
-  resolveAttackerEffects,
   resolveDexterity,
+  resolveStrength,
   getPlayerPassiveSkillProgress,
   getPlayerAllSkillProgress,
 } from "./SkillEffectSystem";
@@ -83,8 +84,9 @@ export function getEffectValue(skillId: string, e: SkillEffect, progress: number
     case "percent_reduce": return defender().percentReduce;
     case "weakness":       return defender().weaknessMult;
     case "reflect_damage": return defender().reflectDamage / MILLI;
-    case "damage_mult":    return resolveAttackerEffects({ [skillId]: progress }).damageMult;
+    case "damage_mult":    return evalSkillValue(e.formula, progress); // derzeit von keinem Skill genutzt
     case "dexterity":      return resolveDexterity({ [skillId]: progress });
+    case "strength":       return resolveStrength({ [skillId]: progress });
     case "inject_venom":   return venomBiteChance(e, progress);
     default:               return evalSkillValue(e.formula, progress); // ohne eigene Kampffunktion
   }
@@ -112,6 +114,7 @@ export function describeEffect(skillId: string, e: SkillEffect, progress: number
     case "reflect_damage": return `↩️ Rückschlag ${num(v)} HP`;
     case "damage_mult":    return `💪 ${v >= 1 ? "+" : "−"}${pct(Math.abs(v - 1))} Schaden`;
     case "dexterity":      return `🎯 Geschick +${num(v)}`;
+    case "strength":       return `💪 Stärke +${num(v)}`;
     case "inject_venom": {
       const when = ALL_SKILLS.get(skillId)?.activation === "active" ? "beim Stich" : "je Treffer";
       return `☠️ ${pct(v)} Chance auf ${num(venomDoseMilli(e, progress) / MILLI)} HP Gift ${when}`;
@@ -149,7 +152,7 @@ function sources(progress: Record<string, number>, type: SkillEffect["effectType
 }
 
 export interface CharacterStats {
-  /** Schadensfaktor aller eingeschalteten Passiv-Skills (1 = neutral) */
+  /** Stärke-Punkte aus den eingeschalteten Passiv-Skills (wie im Kampf) */
   strength: number;
   strengthSources: string[];
   /** Geschick aus allen Skills (wie im Kampf, beim Verteidigen) */
@@ -183,8 +186,8 @@ export function getCharacterStats(player: PlayerState, hpRegen: number, mpRegen:
   const all = getPlayerAllSkillProgress(player);
   const def = (t: DamageType) => resolveDefenderEffects(passive, t);
   return {
-    strength: resolveAttackerEffects(passive).damageMult,
-    strengthSources: sources(passive, "damage_mult"),
+    strength: resolveStrength(passive),
+    strengthSources: sources(passive, "strength"),
     dexterity: resolveDexterity(all),
     dexteritySources: sources(all, "dexterity"),
     speed: calcPlayerSpeed(player),

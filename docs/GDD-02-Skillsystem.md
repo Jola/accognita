@@ -120,7 +120,7 @@ Fähigkeiten werden **nicht garantiert** übertragen. Ob ein Skill erworben wird
 | Skill-ID | Name | Typ | Element | Icon | Quellen | Beschreibung |
 |----------|------|-----|---------|------|---------|--------------|
 | chitin_armor | Chitin Armor | passiv | earth | 🛡️ | Ameise, Springspinne, Giftspinne | Reduziert physischen Schaden |
-| superstrength | Superstrength | passiv | none | 💪 | Ameise | ~~Erhöht Material-Ausbeute bei Absorb~~ [VERWORFEN] → verstärkt Nahkampfschaden (~~×1,30 + 0,05/Level~~ → ×1,0 bis ×1,83, Abschnitt 8.3) — Begründung im `reasoning` des Skills |
+| superstrength | Superstrength | passiv | none | 💪 | Ameise | ~~Erhöht Material-Ausbeute bei Absorb~~ [VERWORFEN] → verstärkt Nahkampfschaden (~~×1,30 + 0,05/Level~~ → ~~×1,0 bis ×1,83, Abschnitt 8.3~~ [VERWORFEN] → gibt Stärke 0 → 10 Punkte, Abschnitt 8.11) — Begründung im `reasoning` des Skills |
 | venom | Venom | passiv | poison | 🕷️ | Giftspinne | Treffer vergiften Ziel (~~DoT-Chance~~ [VERWORFEN] → Chance auf Giftdosis, stapelt als Giftlast, [GDD-05 Abschnitt 12](GDD-05-Kampfmathematik.md)) |
 | jump | Jump | aktiv | none | 🦘 | Springspinne | **Bewegungs-Unlock**: Ohne diesen Skill kann der Blob nicht springen. Höheres Level = größere Sprunghöhe/-weite. |
 | hemolymph | Hemolymph | passiv | poison | 🐞 | Marienkäfer | Bei eigenem Treffer: Angreifer vergiftet |
@@ -280,7 +280,7 @@ Biologisch passend: *Physarum* verliert eine erlernte Gewöhnung, wenn der Reiz 
 **Begründung (Entwickler):** Level wirken wie eine unnatürliche Einheit.
 
 **Vorgabe (Entwickler):** Charakter-Attribute wie Stärke, Geschick oder Intelligenz kommen ausschließlich aus den einzelnen Skills.
-Im Code ist das schon so: Geschick kommt aus Sprung, Stärke aus Superstrength. Es gibt keine eigenen Attributwerte.
+Im Code ist das schon so: Geschick kommt aus Sprung, Stärke aus Superstrength. Es gibt keine eigenen Attributwerte. Wie Angriffe mit den Eigenschaften skalieren: Abschnitt 8.11.
 
 ### 8.2 Ränge (nur Anzeige)
 
@@ -377,7 +377,7 @@ Wert         = start + (max − start) × p             für JEDEN Wert jedes Sk
 | Venom · Dosis | 1 | 26,2 | 29 | 26 |
 | Chitin · Block Stich / Schnitt | 0 | 11,7 / 8,1 | 13 / 9 | 12 / 8 |
 | Chitin · Wucht-Reduktion | 0 | 30 % | 33 % | 30 % |
-| Superstrength · Faktor | ×1,0 | ×1,75 | ×1,83 | ×1,75 |
+| ~~Superstrength · Faktor~~ [VERWORFEN, 13. November 2026 — jetzt Stärke 0 → 10, Abschnitt 8.11] | ×1,0 | ×1,75 | ×1,83 | ×1,75 |
 | Hemolymph · Rückschlag | 1 | 19,9 | 22 | 20 |
 | Jump · Geschick | 0 | 4,0 | 4,4 | 4 |
 | Jump · Sprungweite | 40 px | 342 px | 375 px | 340 px |
@@ -560,6 +560,44 @@ Bezug zum Code:
 - Der Skill `grow` fehlt in `skills.ts`, deshalb ist das bisher nicht erreichbar.
 - Passt zu „Kapazität wächst mit dem Blob“ (Abschnitt 8.4): Wachsen könnte der Weg sein, auf dem Größe und Kapazität steigen.
 
+### 8.11 Eigenschaften und Skalierung der Angriffe (implementiert, 13. November 2026)
+
+**Vorgabe (Entwickler):** Superstrength gibt dem Charakter Stärke. Stärke verstärkt Angriffe wie Schläge und Bisse.
+**Vorgabe (Entwickler):** An den Skills steht, mit welcher Eigenschaft sie wie skalieren. Ein Skill kann mit mehreren Eigenschaften skalieren.
+**Vorgabe (Entwickler):** Formel und Kurve der Skalierung werden im Skill-Index angezeigt.
+> Begründung offen — warum Stärke als eigene Eigenschaft statt eines direkten Schadensfaktors? (Naheliegend nach Abschnitt 8.1 „Attribute nur aus Skills“, aber nicht ausdrücklich gesagt.)
+
+**Eigenschaften:** Stärke und Geschick. Jede ist die Summe der passiven Effekte gleichen Namens (`strength`, `dexterity`) aller Skills, die wirken. Beim Blob zählen für Stärke die eingeschalteten Passiv-Skills (wie alle Kampf-Effekte). Für Geschick zählen alle bekannten Skills, ohne den Beitrag des gerade eingesetzten Skills (GDD-03 Abschnitt 6).
+
+**Formel:**
+```
+Schaden = Grundschaden × (1 + Σ perPoint × Punkte der Eigenschaft)
+```
+Das wirkt in Schritt [2] der Schadenspipeline (GDD-05 Abschnitt 3.1), also vor Rüstung und Treffer-Stufe gleichrangig mit anderen Angreifer-Faktoren.
+**Begründung (Vorschlag Claude, offen):** Die Eigenschaften werden addiert, nicht multipliziert. So bleibt die Formel lesbar, und zwei Eigenschaften treiben sich nicht gegenseitig hoch.
+
+**Werte** (`scaling` in [skills.ts](../src/data/skills.ts), mit `reasoning` je Eintrag):
+
+| Skill | Eigenschaft | je Punkt | Faktor bei Natur |
+|---|---|---:|---:|
+| Superstrength | gibt Stärke 0 → 10 (Natur 9) | — | — |
+| Biss | Stärke | +8 % | ×1,72 |
+| Zangengriff | Stärke | +8 % | ×1,72 |
+| Klauenhieb | Stärke + Geschick | +6 % / +5 % | ×1,74 (Stärke 9, Geschick 4) |
+| Stachelstich | — | — | ×1 |
+| Feueratem | — | — | ×1 |
+
+**Begründung (Vorschlag Claude, offen):** Die Zahlen halten die bisherige Stärke des Blobs bei Natur ungefähr fest (bisher Superstrength ×1,75 auf jeden Angriff). Stachelstich (dünner Stachel, die Wirkung kommt vom Gift) und Feueratem (kein Muskelangriff) skalieren nicht mit Stärke. Klauenhieb ist ein Beispiel für zwei Eigenschaften: Ein weit ausholender Hieb braucht Kraft und Körperbeherrschung.
+
+**Folgen:**
+- Feueratem wird nicht mehr von Superstrength verstärkt. Damit ist der Widerspruch aus TODO.md („Superstrength verstärkt auch Feueratem“) aufgelöst.
+- Klauenhieb wird jetzt auch durch Geschick (Jump) verstärkt, schon ohne Superstrength.
+- Gegner nutzen dieselben Regeln. Derzeit hat kein Gegner Superstrength-Erfahrung. Geschick hat nur die Springspinne (Biss skaliert nicht mit Geschick).
+
+**Anzeige:** Im INDEX zeigt jeder Angriff unter „Skaliert mit Eigenschaften“ die Formel, die Skills, die die Punkte geben, und je Eigenschaft eine Kurve „Schaden je Treffer bei Natur über Punkte“. Skills, die eine Eigenschaft geben, zeigen unter „Verstärkt Angriffe“, welche Angriffe davon profitieren. Der WERTE-Tab zeigt Stärke und Geschick als Punkte und welche bekannten Angriffe sie verstärken.
+
+**[VERWORFEN, 13. November 2026]** Superstrength als Schadensfaktor ×1,0 → ×1,83 auf jeden Angriff des Blobs (Effekt `damage_mult`). Grund für die Änderung: Vorgabe des Entwicklers oben.
+
 ---
 
-*Letzte Aktualisierung: v0.6 — Unbewaffneter Schaden verworfen, kein Angriff ohne Skill (Abschnitt 8, 13. November 2026); Effektive Werte an allen Skills (Abschnitt 6, 1. November 2026); Tatsächlicher Schaden in Skill-Ansicht und Skill-Menü (Abschnitt 6, 1. November 2026); Ameise: Biss-Erfahrung 65,5 XP → 5 Schaden (Abschnitt 8.3, 1. November 2026); Allgemeines Schema: Fortschritt 0–100 %, jeder Wert läuft vom Startwert zum Höchstwert, Ränge in Prozent, Kapazität = entdeckte Skills bis 90 % (Abschnitte 8.2–8.4, 1. November 2026); davor v0.5 — Balancing: Kapazität sättigt bei 4200, Verlernen verteilt statt reihum, Photosynthese-XP ×0,25, Stachelstich-Dosis gesenkt (1. November 2026); XP-Skalierung Absorb/Analyze: kein Abrunden mehr (31. Oktober 2026); Skorpione: Zangengriff und Stachelstich (31. Oktober 2026); Venom: Giftlast statt DoT (31. Oktober 2026); davor Abgleich mit dem Code: Material-System als teilweise implementiert (Abschnitt 2), Biss in den Quellen-Skills der Insekten ergänzt und `maxLevel` als verworfen markiert (Abschnitt 3.1) (31. Oktober 2026); davor Rangnamen: Biologie-Reihe aktiv, Handwerk-Reihe als Alternative (Abschnitt 8.2, 31. Oktober 2026); davor Erfahrung statt Level umgesetzt (Abschnitt 8: Ränge, fließende Wirkung, Kapazität, Überdehnung, Wiedererlernen, gleiche Skills für Blob und Gegner, Übertraining, Idee Grow); alte Level-Regeln in 1.2, 4, 6, 7.1 als [VERWORFEN] markiert (30. Oktober 2026). Davor: Skill-Kapazität und Verlernen als Überlegung des Entwicklers (Abschnitt 7.1); Verweis auf GDD-08 (Progressionsmathematik) in Abschnitt 4; Größe beim Absorbieren/Analysieren als Konzept (Abschnitt 1.4); XP-Skalierung (Absorb/Analyze und Kampf-XP nach Gegner-Level) mit Begründungen dokumentiert, Erfolgsformel als vorläufig vermerkt, Superstrength-Beschreibung korrigiert (Oktober 2026)*
+*Letzte Aktualisierung: v0.6 — Eigenschaften Stärke/Geschick und Skalierung der Angriffe (Abschnitt 8.11, 13. November 2026); Unbewaffneter Schaden verworfen, kein Angriff ohne Skill (Abschnitt 8, 13. November 2026); Effektive Werte an allen Skills (Abschnitt 6, 1. November 2026); Tatsächlicher Schaden in Skill-Ansicht und Skill-Menü (Abschnitt 6, 1. November 2026); Ameise: Biss-Erfahrung 65,5 XP → 5 Schaden (Abschnitt 8.3, 1. November 2026); Allgemeines Schema: Fortschritt 0–100 %, jeder Wert läuft vom Startwert zum Höchstwert, Ränge in Prozent, Kapazität = entdeckte Skills bis 90 % (Abschnitte 8.2–8.4, 1. November 2026); davor v0.5 — Balancing: Kapazität sättigt bei 4200, Verlernen verteilt statt reihum, Photosynthese-XP ×0,25, Stachelstich-Dosis gesenkt (1. November 2026); XP-Skalierung Absorb/Analyze: kein Abrunden mehr (31. Oktober 2026); Skorpione: Zangengriff und Stachelstich (31. Oktober 2026); Venom: Giftlast statt DoT (31. Oktober 2026); davor Abgleich mit dem Code: Material-System als teilweise implementiert (Abschnitt 2), Biss in den Quellen-Skills der Insekten ergänzt und `maxLevel` als verworfen markiert (Abschnitt 3.1) (31. Oktober 2026); davor Rangnamen: Biologie-Reihe aktiv, Handwerk-Reihe als Alternative (Abschnitt 8.2, 31. Oktober 2026); davor Erfahrung statt Level umgesetzt (Abschnitt 8: Ränge, fließende Wirkung, Kapazität, Überdehnung, Wiedererlernen, gleiche Skills für Blob und Gegner, Übertraining, Idee Grow); alte Level-Regeln in 1.2, 4, 6, 7.1 als [VERWORFEN] markiert (30. Oktober 2026). Davor: Skill-Kapazität und Verlernen als Überlegung des Entwicklers (Abschnitt 7.1); Verweis auf GDD-08 (Progressionsmathematik) in Abschnitt 4; Größe beim Absorbieren/Analysieren als Konzept (Abschnitt 1.4); XP-Skalierung (Absorb/Analyze und Kampf-XP nach Gegner-Level) mit Begründungen dokumentiert, Erfolgsformel als vorläufig vermerkt, Superstrength-Beschreibung korrigiert (Oktober 2026)*

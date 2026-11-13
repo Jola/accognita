@@ -6,7 +6,7 @@
 // echten Systeme berechnet und sind daher immer aktuell.
 // ============================================================
 
-import type { SkillDefinition, SkillEffect, SkillValue, EffectType } from "../types/Skill";
+import type { SkillDefinition, SkillEffect, SkillValue, EffectType, Attribute } from "../types/Skill";
 import type { EntityDefinition } from "../types/Entity";
 import type { DamageType, HitProfile } from "../types/Combat";
 import { CORE_SKILLS, BASE_SKILLS, PLANT_SKILLS, COMBO_SKILLS, ALL_SKILLS } from "../data/skills.js";
@@ -19,17 +19,20 @@ import { getEffectValue } from "../systems/StatsSystem.js";
 import { BIOME_SPAWNS } from "../world/BiomeDefinitions.js";
 import { SKILL_RANKS, NATUR_PROGRESS, LEVEL_AT_NATUR } from "../data/progression.js";
 import { xpForProgress, getEntitySkillProgress, rankNameForProgress, levelFromProgress } from "../systems/ProgressionSystem.js";
-import { evalSkillValue, resolveDefenderEffects, resolveAttackerEffects, resolveDexterity } from "../systems/SkillEffectSystem.js";
+import {
+  evalSkillValue, resolveDefenderEffects, resolveAttackerEffects, resolveDexterity, resolveStrength,
+  calcAttributeMult, maxAttributePoints,
+} from "../systems/SkillEffectSystem.js";
 import {
   calcSkillAttackDamage, calcJumpDistance, calcPhotosynthesisHeal, JUMP_DISTANCE_PX, PHOTOSYNTHESIS_HEAL_HP_PER_S,
 } from "../systems/SkillEffects.js";
 import { venomDurationMs, venomBiteChance, venomDoseMilli } from "../systems/VenomSystem.js";
-import { valueChart, isConstant, attachChartHover, VALUE_CHART_CSS, type ChartSeries } from "./ValueChart.js";
+import { valueChart, pointsChart, isConstant, attachChartHover, VALUE_CHART_CSS, type ChartSeries } from "./ValueChart.js";
 import { VENOM_HALF_LIFE_MS, VENOM_MIN_RATE_HP_PER_S } from "../data/venom.js";
 import {
   getEntityBaseDamage, getEntityRangedDamage, getScaledMaxHp, getScaledDamage, getScaledSpeed,
 } from "../systems/EntityLevelingSystem.js";
-import { getEntityAttackDamageType, getEntityMeleeHitBasis, getEntityMeleeSkillId } from "../systems/CombatSystem.js";
+import { getEntityAttackDamageType, getEntityMeleeHitBasis, getEntityMeleeSkillId, getEntityAttributeMult } from "../systems/CombatSystem.js";
 
 // Werte-Tabellen: Fortschritt zu Beginn jedes Rangs, dazu der Höchstwert
 // (p = 1, wird nie ganz erreicht). Dazwischen fließend.
@@ -47,8 +50,10 @@ const EFFECT_DE: Record<EffectType, string> = {
   deal_damage: "Schaden", flat_block: "Flat-Block", percent_reduce: "%-Reduktion", weakness: "Schwäche",
   heal_flat: "Heilung", heal_percent: "Heilung %", apply_status: "Status-Chance", inject_venom: "Gift-Chance", reflect_damage: "Rückschlag",
   damage_mult: "Schadens-Multiplikator", speed_mod: "Tempo-Multiplikator", grant_penetration: "Penetration",
-  dexterity: "Geschick",
+  dexterity: "Geschick", strength: "Stärke",
 };
+const ATTRIBUTE_DE: Record<Attribute, string> = { strength: "Stärke", dexterity: "Geschick" };
+const ATTRIBUTE_ICON: Record<Attribute, string> = { strength: "💪", dexterity: "🎯" };
 const CATEGORY_DE: Record<string, string> = { core: "Kern", basic: "Basis", combo: "Kombo" };
 const ACTIVATION_DE: Record<string, string> = { active: "aktiv", passive: "passiv" };
 const ENTITY_CATEGORY_DE: Record<string, string> = { creature: "Kreatur", plant: "Pflanze", mineral: "Mineral" };
@@ -75,7 +80,7 @@ const PERCENT_EFFECTS: EffectType[] = ["percent_reduce", "apply_status", "inject
 function formatEffectValue(type: EffectType, value: number): string {
   if (ABSOLUTE_EFFECTS.includes(type)) return `${num(value)} HP`;
   if (PERCENT_EFFECTS.includes(type)) return pct(value);
-  if (type === "dexterity") return `+${num(value)}`;
+  if (type === "dexterity" || type === "strength") return `+${num(value)}`;
   return factor(value);
 }
 
@@ -94,7 +99,7 @@ function valueFormula(v: SkillValue, fmt: (x: number) => string): string {
 function effectFormula(type: EffectType, v: SkillValue): string {
   if (ABSOLUTE_EFFECTS.includes(type)) return valueFormula(v, (x) => `${num(x)} HP`);
   if (PERCENT_EFFECTS.includes(type)) return valueFormula(v, pct);
-  if (type === "dexterity") return valueFormula(v, (x) => num(x));
+  if (type === "dexterity" || type === "strength") return valueFormula(v, (x) => num(x));
   return `×(${valueFormula(v, (x) => num(x))})`;
 }
 
@@ -317,6 +322,44 @@ function skillDetail(s: SkillDefinition): string {
     });
   }
 
+  // Eigenschafts-Skalierung (GDD-02 Abschnitt 8.11): Formel, Begründung, Kurve je Eigenschaft
+  let scalingHtml = "";
+  if (s.scaling?.length && s.damage) {
+    const terms = s.scaling.map((x) => `${pct(x.perPoint)} × ${ATTRIBUTE_DE[x.attribute]}`).join(" + ");
+    const baseNatur = calcSkillAttackDamage(s.id, NATUR_PROGRESS) / MILLI;
+    const items = s.scaling.map((x) => {
+      const attr = x.attribute;
+      const only = (pts: number) => ({ strength: 0, dexterity: 0, [attr]: pts } as Record<Attribute, number>);
+      const givers = ALL_SKILL_LIST.filter((g) => g.effects?.some((e) => e.trigger === "passive" && e.effectType === attr));
+      const chart = pointsChart({
+        label: `Schaden je Treffer bei Natur über ${ATTRIBUTE_DE[attr]} (nur diese Eigenschaft, normal, vor Rüstung)`,
+        value: (pts) => baseNatur * calcAttributeMult(s.id, only(pts)), // dieselbe Funktion wie im Kampf
+        format: (v) => `${num(v, 1)} HP`,
+        formula: `${num(baseNatur, 1)} HP × (1 + ${pct(x.perPoint)} × ${ATTRIBUTE_DE[attr]})`,
+        unit: ATTRIBUTE_DE[attr],
+        maxPoints: maxAttributePoints(attr),
+        naturPoints: maxAttributePoints(attr, NATUR_PROGRESS),
+      });
+      return `<div class="idx-effect">
+        <div><b>${ATTRIBUTE_ICON[attr]} ${ATTRIBUTE_DE[attr]}</b> · +${pct(x.perPoint)} Schaden je Punkt</div>
+        <div class="idx-formula">Punkte aus ${givers.length ? givers.map((g) => skillChip(g)).join(" ") : "— (noch kein Skill)"}</div>
+        ${chart}
+        <div class="idx-reason">${x.reasoning}</div>
+      </div>`;
+    }).join("");
+    scalingHtml = `<div class="idx-formula">Schaden = Grundschaden × (1 + ${terms})</div>${items}`;
+  }
+
+  // Skills, die eine Eigenschaft geben: welche Angriffe sie verstärken
+  const givenAttrs = (s.effects ?? []).map((e) => e.effectType).filter((t): t is Attribute => t === "strength" || t === "dexterity");
+  const boostsHtml = givenAttrs.map((attr) => {
+    const boosted = ALL_SKILL_LIST.flatMap((t) => {
+      const sc = t.scaling?.find((x) => x.attribute === attr);
+      return sc ? [skillChip(t, ` +${pct(sc.perPoint)}/Punkt`)] : [];
+    });
+    return `<div>${ATTRIBUTE_ICON[attr]} ${ATTRIBUTE_DE[attr]} verstärkt: ${boosted.length ? boosted.join("") : "noch keinen Angriff"}</div>`;
+  }).join("");
+
   const sources = ENTITY_DEFINITIONS.flatMap((e) =>
     e.skillDrops.filter((d) => d.skillId === s.id).map((d) =>
       [entityChip(e), `Lv${e.level}`, pct(d.chance), pct(d.chance * ANALYZE_CHANCE_MODIFIER)]));
@@ -329,6 +372,8 @@ function skillDetail(s: SkillDefinition): string {
     `<p class="idx-desc">${s.description}</p>`,
     params(p),
     section("Effekte", effects),
+    section("Verstärkt Angriffe", boostsHtml),
+    section("Skaliert mit Eigenschaften", scalingHtml),
     section("Werte zu Rangbeginn (dazwischen fließend)", derived.length ? levelTable(derived) + charts(derivedSeries) : ""),
     section("Treffer-Stufen (ohne Geschick)", s.damage
       ? `${hitTable(s.hitProfile ?? DEFAULT_HIT_PROFILE)}<p class="idx-reason">Geschick des Angreifers verschiebt die Verteilung zu besseren Stufen, Geschick des Ziels zu schlechteren.</p>`
@@ -369,6 +414,8 @@ function entityDetail(e: EntityDefinition): string {
   const skillLevels = getEntitySkillProgress(e); // Fortschritt je Skill aus skillXp
   const dex = resolveDexterity(skillLevels);
   if (dex) p.push(["Geschick", num(dex)]);
+  const str = resolveStrength(skillLevels);
+  if (str) p.push(["Stärke", num(str)]);
   const skillIds = Object.keys(skillLevels);
   const skills = skillIds.map((id) => {
     const s = ALL_SKILLS.get(id);
@@ -377,12 +424,12 @@ function entityDetail(e: EntityDefinition): string {
 
   const combat: string[] = [];
   if (canMelee(e)) {
-    const atk = resolveAttackerEffects(skillLevels);
+    const mult = resolveAttackerEffects(skillLevels).damageMult * getEntityAttributeMult(e);
     const dmg = getEntityBaseDamage(e);
     const cd = e.attackCooldownMs ?? 1500;
     combat.push(`<b>Nahkampf:</b> ${hp(dmg)} HP ${DAMAGE_TYPE_DE[getEntityAttackDamageType(e)]}` +
-      (atk.damageMult !== 1 ? ` ${factor(atk.damageMult)}` : "") +
-      ` alle ${seconds(cd)} ≈ ${num((dmg * atk.damageMult) / MILLI / (cd / 1000))} HP/s (normaler Treffer, vor Rüstung)`);
+      (mult !== 1 ? ` ${factor(mult)}` : "") +
+      ` alle ${seconds(cd)} ≈ ${num((dmg * mult) / MILLI / (cd / 1000))} HP/s (normaler Treffer, vor Rüstung)`);
     const { profile, progress } = getEntityMeleeHitBasis(e);
     const attackDex = resolveDexterity(skillLevels, getEntityMeleeSkillId(e));
     combat.push(`<b>Treffer-Stufen</b> gegen Geschick 0: ${hitLine(calcHitChances(profile, progress, attackDex, 0))}`);

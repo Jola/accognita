@@ -28,6 +28,8 @@ import {
   resolveAttackerEffects,
   resolveOnHitStatusEffects,
   resolveDexterity,
+  resolveStrength,
+  calcAttributeMult,
   getPlayerPassiveSkillProgress,
   getPlayerAllSkillProgress,
 } from "./SkillEffectSystem";
@@ -80,7 +82,8 @@ export function getEntityMeleeHitBasis(
 // attacker/defender.effects: Skills, deren Kampf-Effekte gelten
 // attacker/defender.dex:     Geschick (aus allen bekannten Skills)
 // -----------------------------------------------------------
-interface Combatant { effects: Record<string, number>; dex: number }
+// attacker/defender.str:     Stärke (aus den Kampf-Effekt-Skills)
+interface Combatant { effects: Record<string, number>; dex: number; str: number }
 
 interface HitOutcome {
   grade: HitGrade;
@@ -95,7 +98,8 @@ function resolveHit(
   profile: HitProfile,
   progress: number,
   attacker: Combatant,
-  defender: Combatant
+  defender: Combatant,
+  attackSkillId: string | undefined
 ): HitOutcome {
   const grade = rollHitGrade(calcHitChances(profile, progress, attacker.dex, defender.dex));
   if (grade === "miss") return { grade, dmg: 0, absorbed: 0, reflect: 0 };
@@ -103,29 +107,38 @@ function resolveHit(
   const atk = resolveAttackerEffects(attacker.effects);
   const def = resolveDefenderEffects(defender.effects, damageType);
   const hitMult = HIT_DAMAGE_MULT[grade];
+  const attackerMult = atk.damageMult * combatantAttributeMult(attacker, attackSkillId);
   const dmg = calcFinalDamage({
     baseDmg,
     damageType,
     hitMult,
-    attackerMult: atk.damageMult,
+    attackerMult,
     attackerPenetration: atk.penetration,
     defenderFlatBlock: def.flatBlock,
     defenderPercentReduce: def.percentReduce,
     defenderWeaknessMult: def.weaknessMult,
     defenderImmune: def.immune,
   });
-  const rawDmg = Math.max(MIN_SKILL_DAMAGE, baseDmg) * hitMult * atk.damageMult;
+  const rawDmg = Math.max(MIN_SKILL_DAMAGE, baseDmg) * hitMult * attackerMult;
   const absorbed = Math.max(0, Math.round(rawDmg) - dmg);
   return { grade, dmg, absorbed, reflect: def.reflectDamage };
 }
 
 // attackSkillId: nur beim Angreifer — der Geschick-Beitrag des eingesetzten
 // Skills wird abgezogen (siehe resolveDexterity). Verteidiger: volles Geschick.
+// Stärke: eingeschaltete Passiv-Skills (wie die übrigen Kampf-Effekte).
 function playerCombatant(player: PlayerState, attackSkillId?: string): Combatant {
+  const effects = getPlayerPassiveSkillProgress(player);
   return {
-    effects: getPlayerPassiveSkillProgress(player),
+    effects,
     dex: resolveDexterity(getPlayerAllSkillProgress(player), attackSkillId),
+    str: resolveStrength(effects),
   };
+}
+
+/** Eigenschafts-Faktor eines Angriffs mit den Werten des Angreifers (GDD-02 Abschnitt 8.11). */
+function combatantAttributeMult(c: Combatant, attackSkillId: string | undefined): number {
+  return calcAttributeMult(attackSkillId, { strength: c.str, dexterity: c.dex });
 }
 
 // -----------------------------------------------------------
@@ -142,7 +155,7 @@ function playerCombatant(player: PlayerState, attackSkillId?: string): Combatant
 export interface SkillDamagePreview {
   /** Skill allein, aus dem Fortschritt (milli-HP) */
   base: number;
-  /** Faktor der eingeschalteten Passiv-Skills (1 = keiner) */
+  /** Faktor aus Eigenschaften (Stärke, Geschick) und Passiv-Skills (1 = keiner) */
   attackerMult: number;
   /** Normaler Treffer, vor der Rüstung des Ziels (milli-HP) */
   normal: number;
@@ -154,29 +167,39 @@ export function getPlayerSkillDamage(player: PlayerState, skillId: string): Skil
   if (!skillDef?.damage) return null;
   const damageType = skillDef.damageType ?? "blunt";
   const base = calcSkillAttackDamage(skillId, getSkillProgress(player, skillId));
-  const atk = resolveAttackerEffects(playerCombatant(player, skillId).effects);
+  const attacker = playerCombatant(player, skillId);
+  const atk = resolveAttackerEffects(attacker.effects);
+  const attackerMult = atk.damageMult * combatantAttributeMult(attacker, skillId);
   const normal = calcFinalDamage({
     baseDmg: base, damageType, hitMult: HIT_DAMAGE_MULT.normal,
-    attackerMult: atk.damageMult, attackerPenetration: atk.penetration,
+    attackerMult, attackerPenetration: atk.penetration,
     defenderFlatBlock: 0, defenderPercentReduce: 0, defenderWeaknessMult: 1, defenderImmune: false,
   });
-  return { base, attackerMult: atk.damageMult, normal, damageType };
+  return { base, attackerMult, normal, damageType };
 }
 
-/** „⚔️ 23,2 HP Stich je Treffer (14,5 × 1,6 durch Passiv-Skills)“ — null bei Skills ohne Schaden */
+/** „⚔️ 23,2 HP Stich je Treffer (14,5 × 1,6 durch Stärke/Geschick)“ — null bei Skills ohne Schaden */
 export function formatPlayerSkillDamage(player: PlayerState, skillId: string): string | null {
   const d = getPlayerSkillDamage(player, skillId);
   if (!d) return null;
   const hp1 = (milli: number) => (milli / MILLI).toLocaleString("de-DE", { maximumFractionDigits: 1 });
   const mult = d.attackerMult !== 1
-    ? ` (${hp1(d.base)} × ${d.attackerMult.toLocaleString("de-DE", { maximumFractionDigits: 2 })} durch Passiv-Skills)`
+    ? ` (${hp1(d.base)} × ${d.attackerMult.toLocaleString("de-DE", { maximumFractionDigits: 2 })} durch Stärke/Geschick)`
     : "";
   return `⚔️ ${hp1(d.normal)} HP ${DAMAGE_TYPE_DE[d.damageType]} je Treffer${mult}`;
 }
 
 function entityCombatant(def: EntityDefinition, attackSkillId?: string): Combatant {
   const progress = getEntitySkillProgress(def);
-  return { effects: progress, dex: resolveDexterity(progress, attackSkillId) };
+  return { effects: progress, dex: resolveDexterity(progress, attackSkillId), str: resolveStrength(progress) };
+}
+
+/**
+ * Eigenschafts-Faktor des Nahkampfs einer Entity (Anzeige im INDEX) —
+ * dieselbe Rechnung wie im Kampf.
+ */
+export function getEntityAttributeMult(def: EntityDefinition, skillId = getEntityMeleeSkillId(def)): number {
+  return combatantAttributeMult(entityCombatant(def, skillId), skillId);
 }
 
 /** "(Schwerer Treffer)" usw.; bei normalem Treffer leer */
@@ -220,7 +243,7 @@ export function playerAttack(
   const profile: HitProfile = skillDef.hitProfile ?? DEFAULT_HIT_PROFILE;
 
   const attacker = playerCombatant(player, skillId);
-  const outcome = resolveHit(baseDmg, damageType, profile, progress, attacker, entityCombatant(def));
+  const outcome = resolveHit(baseDmg, damageType, profile, progress, attacker, entityCombatant(def), skillId);
 
   if (outcome.grade === "miss") {
     return {
@@ -270,7 +293,7 @@ export function entityAttack(
   const { profile, progress } = getEntityMeleeHitBasis(def, skillId);
   const attacker = entityCombatant(def, skillId);
   const outcome = resolveHit(
-    baseDmg, getEntityAttackDamageType(def, skillId), profile, progress, attacker, playerCombatant(player)
+    baseDmg, getEntityAttackDamageType(def, skillId), profile, progress, attacker, playerCombatant(player), skillId
   );
 
   if (outcome.grade === "miss") {
@@ -316,7 +339,8 @@ export function entityRangedAttack(def: EntityDefinition, player: PlayerState): 
     skillDef.hitProfile ?? DEFAULT_HIT_PROFILE,
     getEntitySkillProgress(def)[skillId] ?? 0,
     entityCombatant(def, skillId),
-    playerCombatant(player)
+    playerCombatant(player),
+    skillId
   );
 
   if (outcome.grade === "miss") {

@@ -10,6 +10,7 @@
 // ============================================================
 
 import type { PlayerState } from "../types/GameState.js";
+import type { Attribute } from "../types/Skill.js";
 import { ALL_SKILLS } from "../data/skills.js";
 import { MILLI, MAX_PERCENT_REDUCTION } from "../data/balance.js";
 import { getCharacterStats, describePlayerSkillValues } from "../systems/StatsSystem.js";
@@ -33,6 +34,15 @@ function statsHtml(p: PlayerState): string {
   const s = getCharacterStats(p, getRegenerationRate(p), MP_REGEN_MILLI_PER_SECOND);
   const cap = getCapacityInfo(p);
   const from = (list: string[]) => (list.length ? `aus ${list.join(", ")}` : "noch kein Skill");
+  // Bekannte Angriffe, die mit der Eigenschaft skalieren: „Biss +8 %/Punkt“
+  const scaledBy = (attr: Attribute) => {
+    const list = [...p.discoveredSkills.keys()].flatMap((id) => {
+      const def = ALL_SKILLS.get(id);
+      const sc = def?.scaling?.find((x) => x.attribute === attr);
+      return def && sc ? [`${def.name} +${num(sc.perPoint * 100, 1)} %/Punkt`] : [];
+    });
+    return list.length ? list.join(", ") : "keinen bekannten Angriff";
+  };
 
   const body: [string, string, string?][] = [
     ["❤️ HP", `${hp(p.hp, 0)} / ${hp(p.maxHp, 0)}`, s.hpRegen ? `+${hp(s.hpRegen, 2)} HP/s Regeneration` : "keine Regeneration"],
@@ -44,8 +54,8 @@ function statsHtml(p: PlayerState): string {
   ];
 
   const attributes: [string, string, string?][] = [
-    ["💪 Stärke", `×${num(s.strength, 2)}`, `${s.strength !== 1 ? `${s.strength > 1 ? "+" : "−"}${pct(Math.abs(s.strength - 1))} Schaden · ` : ""}${from(s.strengthSources)}`],
-    ["🎯 Geschick", num(s.dexterity, 2), `bessere Treffer, Gegner treffen seltener gut · ${from(s.dexteritySources)}`],
+    ["💪 Stärke", num(s.strength, 2), `verstärkt ${scaledBy("strength")} · ${from(s.strengthSources)}`],
+    ["🎯 Geschick", num(s.dexterity, 2), `bessere Treffer, Gegner treffen seltener gut; verstärkt ${scaledBy("dexterity")} · ${from(s.dexteritySources)}`],
     ["💨 Geschwindigkeit", `${num(s.speed, 0)} px/s`, "wächst mit der Größe"],
     ["📐 Reichweite", `${num(s.reach)} px`, "Nahkampf, Absorb, Analyze — bis zum Rand des Ziels"],
   ];

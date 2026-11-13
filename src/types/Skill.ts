@@ -59,7 +59,27 @@ export type EffectType =
   | "damage_mult"        // Multiplikativer Schadensbonus (formula: Faktor)
   | "speed_mod"          // Geschwindigkeits-Modifikator (formula: Faktor)
   | "grant_penetration"  // Ignoriert X HP Flat-Block beim Angriff (formula: HP)
-  | "dexterity";         // Geschick-Punkte: bessere Treffer-Stufen, Ausweichen (formula: Punkte)
+  | "dexterity"          // Geschick-Punkte: bessere Treffer-Stufen, Ausweichen (formula: Punkte)
+  | "strength";          // Stärke-Punkte: verstärkt Angriffe, die mit Stärke skalieren (formula: Punkte)
+
+/**
+ * Charakter-Eigenschaften. Sie kommen nur aus Skills (GDD-02 Abschnitt 8.1):
+ * Summe der passiven Effekte gleichen Namens.
+ */
+export type Attribute = "strength" | "dexterity";
+
+/**
+ * Wie ein Angriffs-Skill mit einer Eigenschaft skaliert (GDD-02 Abschnitt 8.11):
+ * Schaden × (1 + Σ perPoint × Punkte der Eigenschaft).
+ * Vorgabe (Entwickler, 13. November 2026): An den Skills steht, mit welcher
+ * Eigenschaft sie wie skalieren; ein Skill kann mit mehreren skalieren.
+ */
+export interface AttributeScaling {
+  attribute: Attribute;
+  /** Schadensbonus je Punkt, z. B. 0.08 = +8 % je Punkt */
+  perPoint: number;
+  reasoning: string;            // Pflichtfeld — Warum skaliert der Skill so?
+}
 
 /**
  * Ein Skill-Wert: läuft mit dem Fortschritt p (0 … 1) vom Startwert zum
@@ -136,6 +156,7 @@ export interface SkillDefinition {
   mpCost?: number;
   cooldownMs?: number;
   attackType?: AttackType;       // Wie der Angriff ausgeführt wird
+  scaling?: AttributeScaling[];  // Mit welchen Eigenschaften der Schaden wächst (keine = keine)
 
   // Deklarative Effekt-Liste (GDD-05) — bevorzugt gegenüber hardcoded Logik
   effects?: SkillEffect[];

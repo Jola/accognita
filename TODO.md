@@ -11,8 +11,6 @@ Format:
 
 ## Bugs
 
-- `[BUG]` **Superstrength verstärkt auch Feueratem** — GDD-02/03 und die Skill-Beschreibung sagen „Nahkampf“, der Effekt (`on_hit_enemy`, `damage_mult`) gilt im Code für jeden Angriff des Blobs. Offen: auf Nahkampf begrenzen oder Beschreibung ändern?
-
 - `[BUG]` **Photosynthesis heilt auch im Kampf** — GDD-02 Abschnitt 3.2: „außerhalb des Kampfes“, Skill-Beschreibung: „solange der Blob sich nicht kämpfend fortbewegt“. Im Code heilt sie immer. Offen: Was zählt als Kampf (Aggro eines Gegners in der Nähe, Treffer in den letzten N Sekunden)?
 
 - `[POLISH]` **Skill-Leiste: 4 oder 5 Slots?** — GDD-02 Abschnitt 6 und GDD-04: „maximal 5 aktive Skills, Tasten 1–5“. Code und GDD-03: 4 Slots (`SkillBar.NUM_SLOTS`), keine Tastenbelegung; `activeSkillSlots` hat 5 Einträge, gespeichert werden 4.
@@ -40,6 +38,8 @@ Format:
 ---
 
 ## Erledigt
+
+- `[BUG]` **Superstrength verstärkte auch Feueratem**: Superstrength gibt jetzt Stärke, und nur Angriffe mit Stärke-Skalierung (Biss, Klauenhieb, Zangengriff) werden davon verstärkt. Feueratem gehört nicht dazu (GDD-02 Abschnitt 8.11, 13. November 2026).
 
 - `[BUG]` **Unbewaffneter Angriff war nicht erreichbar** — Entscheidung Entwickler: Ohne Skill ist kein Angriff möglich, weil man so gut wie alles lernen muss. Den unbewaffneten Pfad in `playerAttack` habe ich entfernt, GDD-03 Abschnitt 3 ist angepasst (13. November 2026).
 
