@@ -271,6 +271,7 @@ Die tanh-Begrenzung hält Ränder klein: kritisch höchstens ≈ 2,2× Grundwert
 Skill-Level: ~~beim unbewaffneten Angriff zählt das Absorb-Level~~ [VERWORFEN]; beim Blob das Level des eingesetzten Skills; bei Gegnern das Level ihres Angriffsskills (bite/claw/fire_breath), ohne Angriffsskill ihr Entity-Level.
 Geschick kommt aus `dexterity`-Effekten aller bekannten Skills (derzeit Jump; Springspinne hat Jump Lv2).
 **Vorgabe (Entwickler, 13. November 2026):** Geschick erhöht die Präzision (mehr schwere und kritische, weniger leichte und verfehlte Treffer), nicht den Schaden, zumindest bei Schlägen und Bissen (GDD-02 Abschnitt 8.11).
+**Begründung (Entwickler):** Geschick ermöglicht, bei Schlägen und Stichen besser zu treffen, nicht fester zuzuschlagen.
 **Eigener Beitrag zählt nicht:** Beim Angriff wird das Geschick ohne den Beitrag des eingesetzten Skills gerechnet — z.B. 10 Geschick gesamt, der Skill liefert davon 2 → für die Treffer-Stufen zählen 8. Der Verteidiger setzt keinen Skill ein und rechnet mit vollem Geschick.
 **Vorgabe (Entwickler):** Das Geschick wird gegen den eigenen Beitrag des Skills gerechnet.
 **Begründung (Entwickler):** Der Bonus aus dem Skill-Level ist im Skill selbst schon angelegt — sonst würde das Level doppelt zählen.

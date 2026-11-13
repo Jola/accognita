@@ -75,7 +75,8 @@ export type Attribute = "strength" | "dexterity";
  * Eigenschaft sie wie skalieren; ein Skill kann mit mehreren skalieren.
  * Vorgabe (Entwickler, 13. November 2026): Geschick erhöht die Präzision
  * (Treffer-Stufen, HitSystem), nicht den Schaden — zumindest bei Schlägen
- * und Bissen. Präzision gilt für jeden Angriff und steht nicht hier.
+ * und Bissen. Begründung (Entwickler): Geschick lässt besser treffen, nicht
+ * fester zuschlagen. Präzision gilt für jeden Angriff und steht nicht hier.
  */
 export interface AttributeScaling {
   attribute: Attribute;
