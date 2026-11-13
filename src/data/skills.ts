@@ -432,7 +432,7 @@ export const PLANT_SKILLS: SkillDefinition[] = [
     activation: "passive", // Wirkt automatisch, kein manueller Einsatz
     learningEffort: 15,
     description:
-      "Passiv: Regeneriert langsam HP, solange der Blob sich nicht kämpfend fortbewegt. " +
+      "Passiv: Regeneriert langsam HP — immer, auch im Kampf. " +
       "Wirkt automatisch nach Entdeckung. 0,1 → 1,2 HP/s mit der Übung.",
   },
 ];

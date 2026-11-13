@@ -11,8 +11,6 @@ Format:
 
 ## Bugs
 
-- `[BUG]` **Photosynthesis heilt auch im Kampf** — GDD-02 Abschnitt 3.2: „außerhalb des Kampfes“, Skill-Beschreibung: „solange der Blob sich nicht kämpfend fortbewegt“. Im Code heilt sie immer. Offen: Was zählt als Kampf (Aggro eines Gegners in der Nähe, Treffer in den letzten N Sekunden)?
-
 - `[POLISH]` **Skill-Leiste: 4 oder 5 Slots?** — GDD-02 Abschnitt 6 und GDD-04: „maximal 5 aktive Skills, Tasten 1–5“. Code und GDD-03: 4 Slots (`SkillBar.NUM_SLOTS`), keine Tastenbelegung; `activeSkillSlots` hat 5 Einträge, gespeichert werden 4.
 
 ---
@@ -38,6 +36,8 @@ Format:
 ---
 
 ## Erledigt
+
+- `[BUG]` **Photosynthesis heilt auch im Kampf**: kein Bug. Vorgabe Entwickler: Photosynthese wirkt immer. GDD und Skill-Beschreibung sind angepasst, der Code bleibt unverändert (13. November 2026).
 
 - `[BUG]` **Superstrength verstärkte auch Feueratem**: Superstrength gibt jetzt Stärke, und nur Angriffe mit Stärke-Skalierung (Biss, Klauenhieb, Zangengriff) werden davon verstärkt. Feueratem gehört nicht dazu (GDD-02 Abschnitt 8.11, 13. November 2026).
 
