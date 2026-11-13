@@ -1,2 +1,2 @@
 // Muss mit "version" in package.json übereinstimmen — build.js prüft das.
-export const GAME_VERSION = "0.6.9";
+export const GAME_VERSION = "0.7.0";

@@ -8,7 +8,7 @@ This file is the project constitution. Read it at the start of every session bef
 
 **Absorb & Evolve** is a browser-based Action-RPG. The player controls a Blob (inspired by the real organism *Physarum polycephalum*) that evolves by absorbing or analyzing entities in a medieval fantasy world. Skills are discovered through interaction, leveled through repetition, and combined into new abilities.
 
-Current state: **v0.6** — Modular TypeScript + Phaser.js architecture, Skill-System + Combat-System implemented. Large procedural world (20×20 chunks = 20480×20480px) with 6 biomes, pixel art tiles, and dynamic chunk loading.
+Current state: **v0.7** — Modular TypeScript + Phaser.js architecture, Skill-System + Combat-System implemented. The blob awakens blind and immobile and learns movement and sight (GDD-09). Large procedural world (20×20 chunks = 20480×20480px) with 6 biomes, pixel art tiles, and dynamic chunk loading.
 
 ---
 
@@ -33,6 +33,9 @@ Current state: **v0.6** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/systems/ProgressionSystem.ts` | How experience is booked: relearn bonus, overtraining/rest, capacity and forgetting, ranks; same progress conversion for player and entities |
 | `src/systems/EntitySystem.ts` | Absorb/Analyze/Respawn logic |
 | `src/systems/StatusEffectSystem.ts` | DoT/HoT/Aura processing, continuous regeneration (HoT as rate per frame), passive skill sync |
+| `src/data/body.ts` | Body knobs with rationale: movement XP per distance, strength bonus from size, sight edge and sight XP |
+| `src/systems/BodySystem.ts` | Movement (best skill speed), strength incl. size bonus, vision (range, color, red) and color matrix |
+| `src/systems/IntroSystem.ts` | Awakening intro: step derived from skills (blind/immobile), hint texts |
 | `src/data/grow.ts` | Grow knobs with rationale: food material, digestion rate, XP per fiber, growth from body mass |
 | `src/systems/GrowSystem.ts` | Grow feature, isolated: digest plant fibers over time → body mass → growth (size, HP, MP) |
 | `src/data/venom.ts` | Venom knobs with rationale: dose, stacking venom load, half-life, minimum rate |
@@ -71,6 +74,7 @@ Current state: **v0.6** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `docs/GDD-04-LookAndFeel.md` | Colors, typography, UI layout, mobile/desktop, tech stack. |
 | `docs/GDD-05-Kampfmathematik.md` | Damage pipeline, damage types, declarative skill effects. |
 | `docs/GDD-07-Bestiarium.md` | Draft: ~100 units from forest to city, size classes, skill ideas (Status: Diskussion; Teil 6 = implemented XP model). |
+| `docs/GDD-09-Grundwerte-und-Sinne.md` | Base stats (strength, dexterity, speed, sight), movement skills, strength from size, vision black → gray → color, awakening intro with nest. |
 | `docs/GDD-08-Progressionsmathematik.md` | Math of leveling (curve families, XP models, integer limits, other games) and of effects (power per level, hit/effect probabilities, skill interactions) (Status: Diskussion; Teil 6 = implemented XP model). |
 
 ---

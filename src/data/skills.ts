@@ -166,7 +166,8 @@ export const BASE_SKILLS: SkillDefinition[] = [
     description:
       "Passiv: Ameisen tragen das 50-fache ihres Körpergewichts — der Blob übernimmt diese Stärke. " +
       "Gibt Stärke (0 → 10 Punkte mit der Übung). Stärke verstärkt Angriffe, die mit Stärke " +
-      "skalieren (Biss, Klauenhieb, Zangengriff) — wie viel, steht am Angriff.",
+      "skalieren (Biss, Klauenhieb, Zangengriff) — wie viel, steht am Angriff. Die Körpergröße verstärkt " +
+      "die Stärke prozentual.",
     effects: [
       {
         trigger: "passive",
@@ -230,10 +231,11 @@ export const BASE_SKILLS: SkillDefinition[] = [
     hitProfile: { miss: 0.03, light: 0.17, normal: 0.52, heavy: 0.24, crit: 0.04 },
     scaling: [
       {
-        attribute: "strength", perPoint: 0.08,
+        attribute: "strength", perPoint: 0.04,
         reasoning:
-          "Vorgabe (Entwickler): Stärke verstärkt Bisse. +8 % je Punkt (Vorschlag Claude, offen): " +
-          "bei Natur-Stärke 9 rund +72 %, fast der bisherige Superstrength-Bonus (+75 %).",
+          "Vorgabe (Entwickler): Stärke verstärkt Bisse. +4 % je Punkt (VORLÄUFIG): Stärke reicht jetzt " +
+          "bis ≈ 28 (Kriechen 1 + Krabbeln 3 + Superstrength 10, × 2 bei voller Größe, GDD-09). " +
+          "[VERWORFEN, 13. November 2026] +8 % je Punkt bei Stärke 0–10.",
       },
     ],
   },
@@ -284,12 +286,156 @@ export const BASE_SKILLS: SkillDefinition[] = [
     hitProfile: { miss: 0.05, light: 0.15, normal: 0.45, heavy: 0.32, crit: 0.03 },
     scaling: [
       {
-        attribute: "strength", perPoint: 0.08,
+        attribute: "strength", perPoint: 0.04,
         reasoning:
-          "Vorgabe (Entwickler): Stärke verstärkt Schläge. +8 % je Punkt wie beim Biss (Vorschlag Claude, offen): " +
-          "bei Natur-Stärke 9 rund +72 %, nah am bisherigen Superstrength-Bonus (+75 %). " +
+          "Vorgabe (Entwickler): Stärke verstärkt Schläge. +4 % je Punkt wie beim Biss (VORLÄUFIG, neue Stärke-Skala GDD-09). " +
+          "[VERWORFEN, 13. November 2026] +8 % je Punkt. " +
           "[VERWORFEN, 13. November 2026] +6 % je Punkt Stärke und +5 % je Punkt Geschick — Vorgabe (Entwickler): " +
           "Geschick erhöht die Präzision, nicht den Schaden, zumindest bei Schlägen und Bissen.",
+      },
+    ],
+  },
+
+  // --- BEWEGUNG UND SINNE (GDD-09) ---
+  // Vorgabe (Entwickler, 13. November 2026): Der Blob erwacht ohne Bewegung
+  //   und ohne Sicht und lernt beides erst durch Analyze und Absorb.
+  //   Bewegung gibt Stärke und Geschick, die mit dem Fortschritt wachsen;
+  //   das Tempo steigt mit dem Skill. Wurm und Schnecke geben Kriechen,
+  //   Insekten Krabbeln, später kommt Laufen. Sehen: Schwarz → Schwarz-Weiß
+  //   → Farbe. Regeln für „bester Skill zählt“ und Größe: src/data/body.ts.
+  // Alle Zahlen VORLÄUFIG (Vorschlag Claude, Skala übernommen).
+
+  {
+    id: "crawl",
+    name: "Kriechen",
+    element: "earth",
+    icon: "🐌",
+    category: "basic",
+    activation: "passive",
+    // Klein, damit man nach kurzer Zeit annehmbar schnell ist (Vorgabe Entwickler)
+    learningEffort: 5,
+    description:
+      "Passiv: Der Blob schiebt sich wie Wurm und Schnecke über den Boden. Erst damit kann er sich " +
+      "überhaupt bewegen. Tempo ×0,15 → ×0,6 des Grundtempos, Stärke 0 → 1, Geschick 0 → 1 mit der Übung. " +
+      "Lernt durch Bewegen. Quelle: Regenwurm, Schnecke.",
+    effects: [
+      {
+        trigger: "passive", effectType: "move_speed", formula: { start: 0.15, max: 0.6 },
+        reasoning:
+          "Kriechen ist die langsamste Fortbewegung: Wellen von Muskelkontraktionen (Wurm) oder ein " +
+          "Kriechfuß auf Schleim (Schnecke). Am Anfang ein mühsames Schieben, geübt ein stetiges Gleiten.",
+      },
+      {
+        trigger: "passive", effectType: "strength", formula: { start: 0, max: 1 },
+        reasoning: "Vorgabe (Entwickler): Bewegung gibt Stärke. Kriechen trainiert nur wenig Muskelkraft.",
+      },
+      {
+        trigger: "passive", effectType: "dexterity", formula: { start: 0, max: 1 },
+        reasoning: "Vorgabe (Entwickler): Bewegung gibt Geschick. Kriechen verlangt wenig Körperbeherrschung.",
+      },
+    ],
+  },
+  {
+    id: "scuttle",
+    name: "Krabbeln",
+    element: "earth",
+    icon: "🐞",
+    category: "basic",
+    activation: "passive",
+    learningEffort: 10,
+    description:
+      "Passiv: Der Blob formt kleine Beinchen und krabbelt wie Insekten und Spinnen. Tempo ×0,4 → ×1,0 " +
+      "des Grundtempos, Stärke 0 → 3, Geschick 0 → 3 mit der Übung. Lernt durch Bewegen. " +
+      "Quelle: Ameise, Marienkäfer, Spinnen, Skorpione.",
+    effects: [
+      {
+        trigger: "passive", effectType: "move_speed", formula: { start: 0.4, max: 1.0 },
+        reasoning:
+          "Gegliederte Beine heben den Körper vom Boden — viel schneller als Kriechen. ×1,0 bei Höchstwert " +
+          "entspricht dem bisherigen Tempo des Blobs.",
+      },
+      {
+        trigger: "passive", effectType: "strength", formula: { start: 0, max: 3 },
+        reasoning: "Vorgabe (Entwickler): Bewegung gibt Stärke. Beine tragen und stemmen den Körper.",
+      },
+      {
+        trigger: "passive", effectType: "dexterity", formula: { start: 0, max: 3 },
+        reasoning: "Vorgabe (Entwickler): Bewegung gibt Geschick. Sechs bis acht Beine zu koordinieren schult die Körperbeherrschung.",
+      },
+    ],
+  },
+  {
+    id: "light_sense",
+    name: "Lichtsinn",
+    element: "light",
+    icon: "🌗",
+    category: "basic",
+    activation: "passive",
+    learningEffort: 8,
+    description:
+      "Passiv: Lichtempfindliche Zellen unterscheiden hell und dunkel. Der Blob sieht seine Umgebung " +
+      "in Graustufen — Sichtweite 2 → 10 Körperradien mit der Übung. Lernt durch Sehen (Zeit mit Licht). " +
+      "Quelle: Regenwurm, Schnecke.",
+    effects: [
+      {
+        trigger: "passive", effectType: "sight_range", formula: { start: 2, max: 10 },
+        reasoning:
+          "Regenwürmer haben keine Augen, aber lichtempfindliche Zellen in der Haut; Schnecken einfache " +
+          "Augen auf den Fühlern. Beide sehen nur hell und dunkel — eine Sorte Lichtsinneszellen ergibt " +
+          "Graustufen, unscharf und nah.",
+      },
+    ],
+  },
+  {
+    id: "compound_eye",
+    name: "Facettenauge",
+    element: "light",
+    icon: "🪲",
+    category: "basic",
+    activation: "passive",
+    learningEffort: 12,
+    description:
+      "Passiv: Viele Einzelaugen sehen weiter und in Farbe — aber ohne Rot, Rot erscheint dunkel. " +
+      "Sichtweite 6 → 25 Körperradien, Farbe 0 → 100 % mit der Übung. Lernt durch Sehen. " +
+      "Quelle: Ameise, Marienkäfer.",
+    effects: [
+      {
+        trigger: "passive", effectType: "sight_range", formula: { start: 6, max: 25 },
+        reasoning: "Insektenaugen bestehen aus Hunderten Einzelaugen — weiter Blick, aber grob gerastert.",
+      },
+      {
+        trigger: "passive", effectType: "color_vision", formula: { start: 0, max: 1 },
+        reasoning:
+          "Insekten haben Lichtsinneszellen für UV, Blau und Grün, aber kaum für Rot. Mit der Übung kommt " +
+          "fließend Farbe ins Bild (Vorgabe Entwickler: Übergang von Schwarz-Weiß zu Farbe).",
+      },
+    ],
+  },
+  {
+    id: "principal_eyes",
+    name: "Hauptaugen",
+    element: "light",
+    icon: "🕷️",
+    category: "basic",
+    activation: "passive",
+    learningEffort: 15,
+    description:
+      "Passiv: Zwei große, scharfe Linsenaugen wie bei der Springspinne. Volle Farbe einschließlich Rot " +
+      "und weiter Blick — Sichtweite 10 → 40 Körperradien, Rot 0 → 100 % mit der Übung. Lernt durch Sehen. " +
+      "Quelle: Springspinne.",
+    effects: [
+      {
+        trigger: "passive", effectType: "sight_range", formula: { start: 10, max: 40 },
+        reasoning: "Springspinnen haben die schärfsten Augen unter den Kleintieren — sie jagen auf Sicht.",
+      },
+      {
+        trigger: "passive", effectType: "color_vision", formula: { start: 0.5, max: 1 },
+        reasoning: "Die Hauptaugen sehen Farben; wer sie lernt, sieht sofort zumindest blass farbig.",
+      },
+      {
+        trigger: "passive", effectType: "red_vision", formula: { start: 0, max: 1 },
+        reasoning:
+          "Manche Springspinnen sehen Rot — mit der Übung leuchtet Rot (Feuer, Drache) im Bild auf.",
       },
     ],
   },
@@ -328,9 +474,10 @@ export const BASE_SKILLS: SkillDefinition[] = [
     hitProfile: { miss: 0.02, light: 0.20, normal: 0.58, heavy: 0.17, crit: 0.03 },
     scaling: [
       {
-        attribute: "strength", perPoint: 0.08,
+        attribute: "strength", perPoint: 0.04,
         reasoning:
-          "Quetschen ist reine Muskelkraft — wie beim Biss +8 % je Punkt Stärke (Vorschlag Claude, offen).",
+          "Quetschen ist reine Muskelkraft — wie beim Biss +4 % je Punkt Stärke (VORLÄUFIG, neue Stärke-Skala GDD-09). " +
+          "[VERWORFEN, 13. November 2026] +8 % je Punkt.",
       },
     ],
   },

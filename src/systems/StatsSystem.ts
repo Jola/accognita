@@ -41,6 +41,7 @@ import {
 import { venomBiteChance, venomDoseMilli } from "./VenomSystem";
 import { getSkillProgress } from "./ProgressionSystem";
 import { getPlayerGrowth, calcGrowFibersPerMinute, isGrowActive } from "./GrowSystem";
+import { bestOfEffect, getMoveSpeedFactor, getActiveMoveSkill, getPlayerStrength, getSizeStrengthMult, getPlayerVision, type Vision } from "./BodySystem";
 import { calcJumpDistance, calcPhotosynthesisHeal } from "./SkillEffects";
 import { DAMAGE_TYPE_DE } from "./DamageSystem";
 
@@ -54,9 +55,11 @@ export function calcPlayerWorldRadius(player: PlayerState): number {
   return PLAYER_WORLD_RADIUS_MIN + t * (PLAYER_WORLD_RADIUS_MAX - PLAYER_WORLD_RADIUS_MIN);
 }
 
-/** Bewegungstempo in Weltpixeln pro Sekunde — skaliert mit der Größe (Bildschirm-Tempo bleibt gleich). */
+/** Bewegungstempo in Weltpixeln pro Sekunde — skaliert mit der Größe (Bildschirm-Tempo bleibt gleich) und dem Bewegungs-Skill. */
+// Tempo-Faktor aus dem besten Bewegungs-Skill (BodySystem, data/body.ts
+// Abschnitt 1) — ohne Bewegungs-Skill 0: Der Blob kann sich nicht bewegen.
 export function calcPlayerSpeed(player: PlayerState): number {
-  return calcPlayerWorldRadius(player) * PLAYER_SPEED_PER_WORLD_RADIUS;
+  return calcPlayerWorldRadius(player) * PLAYER_SPEED_PER_WORLD_RADIUS * getMoveSpeedFactor(player);
 }
 
 /**
@@ -88,6 +91,10 @@ export function getEffectValue(skillId: string, e: SkillEffect, progress: number
     case "damage_mult":    return evalSkillValue(e.formula, progress); // derzeit von keinem Skill genutzt
     case "dexterity":      return resolveDexterity({ [skillId]: progress });
     case "strength":       return resolveStrength({ [skillId]: progress });
+    case "move_speed":
+    case "sight_range":
+    case "color_vision":
+    case "red_vision":     return bestOfEffect({ [skillId]: progress }, e.effectType).value;
     case "inject_venom":   return venomBiteChance(e, progress);
     default:               return evalSkillValue(e.formula, progress); // ohne eigene Kampffunktion
   }
@@ -115,7 +122,11 @@ export function describeEffect(skillId: string, e: SkillEffect, progress: number
     case "reflect_damage": return `↩️ Rückschlag ${num(v)} HP`;
     case "damage_mult":    return `💪 ${v >= 1 ? "+" : "−"}${pct(Math.abs(v - 1))} Schaden`;
     case "dexterity":      return `🎯 Geschick +${num(v)}`;
-    case "strength":       return `💪 Stärke +${num(v)}`;
+    case "strength":       return `💪 Stärke +${num(v)} (vor Größenbonus)`;
+    case "move_speed":     return `💨 Tempo ×${num(v, 2)} (${num(v * PLAYER_SPEED_PER_WORLD_RADIUS, 1)} Körperradien/s)`;
+    case "sight_range":    return `👁️ Sichtweite ${num(v)} Körperradien`;
+    case "color_vision":   return `🎨 Farbe ${pct(v)} (ohne Rot)`;
+    case "red_vision":     return `🔴 Rot ${pct(v)}`;
     case "inject_venom": {
       const when = ALL_SKILLS.get(skillId)?.activation === "active" ? "beim Stich" : "je Treffer";
       return `☠️ ${pct(v)} Chance auf ${num(venomDoseMilli(e, progress) / MILLI)} HP Gift ${when}`;
@@ -154,8 +165,16 @@ function sources(progress: Record<string, number>, type: SkillEffect["effectType
 }
 
 export interface CharacterStats {
-  /** Stärke-Punkte aus den eingeschalteten Passiv-Skills (wie im Kampf) */
+  /** Stärke: Summe der Stärke-Effekte der eingeschalteten Passiv-Skills × Größenfaktor (wie im Kampf) */
   strength: number;
+  /** Stärke ohne Größenbonus */
+  strengthBase: number;
+  /** Faktor der Körpergröße auf die Stärke */
+  sizeStrengthMult: number;
+  /** Faktor des Grundtempos (0 = keine Bewegung) und der Skill, der ihn liefert */
+  moveFactor: number;
+  moveSkill?: string;
+  vision: Vision;
   strengthSources: string[];
   /** Geschick aus allen Skills (wie im Kampf, beim Verteidigen) */
   dexterity: number;
@@ -191,7 +210,12 @@ export function getCharacterStats(player: PlayerState, hpRegen: number, mpRegen:
   const all = getPlayerAllSkillProgress(player);
   const def = (t: DamageType) => resolveDefenderEffects(passive, t);
   return {
-    strength: resolveStrength(passive),
+    strength: getPlayerStrength(player, passive),
+    strengthBase: resolveStrength(passive),
+    sizeStrengthMult: getSizeStrengthMult(player),
+    moveFactor: getMoveSpeedFactor(player),
+    moveSkill: getActiveMoveSkill(player),
+    vision: getPlayerVision(player),
     strengthSources: sources(passive, "strength"),
     dexterity: resolveDexterity(all),
     dexteritySources: sources(all, "dexterity"),

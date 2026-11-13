@@ -10,6 +10,8 @@
 // Maps ignoriert.
 // ============================================================
 
+import { naturXp, getLearningEffort } from "./ProgressionSystem";
+import { createSkillProgress } from "../types/Skill";
 import { bodyMassFromLifetimeXp } from "./GrowSystem";
 import type { PlayerState } from "../types/GameState";
 import type { SkillInstance } from "../types/Skill";
@@ -18,7 +20,7 @@ import { calcMaxHp, calcMaxMp } from "./SkillSystem";
 
 export const NUM_SAVE_SLOTS = 3;
 const SAVE_PREFIX    = "accognita_save_";
-const SAVE_VERSION   = 4;
+const SAVE_VERSION   = 5;
 
 // -----------------------------------------------------------
 // SAVE-METADATEN — Vorschau ohne komplettes Deserialize
@@ -190,7 +192,28 @@ const MIGRATIONS: Record<number, (data: SaveData) => void> = {
   3: (data) => {
     data.player.bodyMass = bodyMassFromLifetimeXp(data.player.lifetimeXp ?? 0);
   },
+  // v4 → v5: Bewegung und Sehen sind Skills (GDD-09). Alte Spielstände
+  // konnten sich schon bewegen und farbig sehen — sie bekommen Kriechen,
+  // Krabbeln, Lichtsinn, Facettenauge und Hauptaugen auf Natur, damit
+  // niemand plötzlich langsamer wird oder schlechter sieht.
+  4: (data) => {
+    const now = Date.now();
+    const playtime = data.player.playtimeSeconds ?? 0;
+    const known = new Set(data.player.discoveredSkills.map(([id]) => id));
+    for (const id of LEGACY_BODY_SKILLS) {
+      if (known.has(id)) continue;
+      const xp = naturXp(getLearningEffort(id));
+      data.player.discoveredSkills.push([id, {
+        ...createSkillProgress(now, playtime),
+        xp, peakXp: xp, totalXpEarned: xp,
+        definitionId: id, discoveredAt: now, isEnabled: true,
+      }]);
+    }
+  },
 };
+
+/** Skills, die alte Spielstände bei der Umstellung auf GDD-09 geschenkt bekommen. */
+const LEGACY_BODY_SKILLS = ["crawl", "scuttle", "light_sense", "compound_eye", "principal_eyes"];
 
 /** Bringt einen Spielstand auf SAVE_VERSION. null wenn keine Migration existiert. */
 function migrate(data: SaveData): SaveData | null {

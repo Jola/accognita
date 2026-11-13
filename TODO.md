@@ -17,6 +17,12 @@ Format:
 
 ## Features & Ideen
 
+- `[FEATURE]` **Laufen** (Konzept, GDD-09 Abschnitt 2.4): schnellster Bewegungs-Skill, braucht neue Wirbeltiere mit Beinen (Maus, Eidechse …).
+
+- `[FEATURE]` **Wärmesicht** (Konzept, GDD-09 Abschnitt 4.2): von der Schlange, Lebewesen leuchten auch im Dunkeln.
+
+- `[POLISH]` **Dunkelheit und Farbfilter im Browser prüfen** (GDD-09 Abschnitt 4): ungetestet im Browser, besonders auf älteren Handys ohne WebGL.
+
 - `[FEATURE]` **Schwärme schwacher Gegner gefährlich halten** — heute macht ein paar Chitin-Level ganze Schwärme fast harmlos (10 Ameisen: 40 HP/s ohne Chitin, 4,3 HP/s mit Chitin 3, 1,6 HP/s mit Chitin 5). Drei Wege, einzeln oder kombiniert (GDD-08 Abschnitt 19.2):
   1. Flat-Block auf einen Anteil des Treffers begrenzen (z. B. höchstens 50–70 % eines Treffers blockbar), damit jeder Treffer etwas durchbringt.
   2. Rüstung nach `x/(x+K)` statt als feste Abzüge. Mit K = 7 blieben 10 Ameisen bei rund 16–20 HP/s.

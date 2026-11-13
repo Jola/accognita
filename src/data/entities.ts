@@ -54,6 +54,60 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
   },
 
   // ==========================================================
+  // WEICHTIERE UND WÜRMER — Level 1 (neutral, passiv, harmlos)
+  // Vorgabe (Entwickler, 13. November 2026): Wurm und Schnecke geben
+  //   Kriechen; an ihnen lernt der Blob im Erwachen Bewegen und Sehen
+  //   (GDD-09). Ein Paar liegt fest am Startpunkt (Nest, BiomeDefinitions).
+  // Begründung (Vorschlag Claude, übernommen): Sie greifen nie an
+  //   (behavior passive), respawnen schnell und haben hohe Fundchancen,
+  //   damit das Erwachen nicht hängen bleibt — ein blinder, unbeweglicher
+  //   Blob erreicht nur, was direkt neben ihm liegt. Zahlen VORLÄUFIG.
+  // ==========================================================
+
+  {
+    id: "earthworm",
+    name: "Regenwurm",
+    icon: "🪱",
+    behavior: "passive",
+    disposition: "neutral",
+    category: "creature",
+    rarity: "common",
+    level: 1,
+    skillDrops: [
+      // Lichtempfindliche Hautzellen, keine Augen — der erste Lichtsinn
+      { skillId: "light_sense", chance: 0.50 },
+      // Kriecht mit Wellen von Muskelkontraktionen
+      { skillId: "crawl",       chance: 0.35 },
+    ],
+    materialDrops: [],
+    hp: 4_000, speed: 4,
+    respawnTime: 10,
+    interactRadius: 35,
+    worldSize: 4,
+  },
+  {
+    id: "snail",
+    name: "Schnecke",
+    icon: "🐌",
+    behavior: "passive",
+    disposition: "neutral",
+    category: "creature",
+    rarity: "common",
+    level: 1,
+    skillDrops: [
+      // Gleitet auf einem Schleimfilm — die Fortbewegung, die dem Blob am nächsten ist
+      { skillId: "crawl",       chance: 0.50 },
+      // Einfache Augen auf den Fühlern, farbenblind
+      { skillId: "light_sense", chance: 0.35 },
+    ],
+    materialDrops: [],
+    hp: 5_000, speed: 3,
+    respawnTime: 10,
+    interactRadius: 35,
+    worldSize: 4,
+  },
+
+  // ==========================================================
   // INSEKTEN — Level 1 (neutral, defensiv)
   // ==========================================================
 
@@ -70,6 +124,8 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
       { skillId: "bite",          chance: 0.12 }, // Direkter Angriffsbiss
       { skillId: "chitin_armor",  chance: 0.15 }, // Hartes Exoskelett
       { skillId: "superstrength", chance: 0.10 }, // 50x Körpergewicht
+      { skillId: "scuttle",       chance: 0.15 }, // Sechs Beine (GDD-09, VORLÄUFIG)
+      { skillId: "compound_eye",  chance: 0.10 }, // Facettenaugen
     ],
     materialDrops: [],
     hp: 8_000, speed: 15,          // worldSize 3 × 5 = 15
@@ -95,7 +151,9 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     rarity: "common",
     level: 1,
     skillDrops: [
-      { skillId: "hemolymph", chance: 0.15 }, // Defensivgift bei Treffer
+      { skillId: "hemolymph",    chance: 0.15 }, // Defensivgift bei Treffer
+      { skillId: "scuttle",      chance: 0.15 }, // Sechs Beine (GDD-09, VORLÄUFIG)
+      { skillId: "compound_eye", chance: 0.12 }, // Facettenaugen
     ],
     materialDrops: [],
     hp: 6_000, speed: 20,          // worldSize 4 × 5 = 20
@@ -126,6 +184,8 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
       { skillId: "bite",         chance: 0.15 }, // Biss-Angriff
       { skillId: "jump",         chance: 0.20 }, // Charakteristischer Sprung
       { skillId: "chitin_armor", chance: 0.10 }, // Exoskelett (stärker als Ameise)
+      { skillId: "scuttle",        chance: 0.15 }, // Acht Beine (GDD-09, VORLÄUFIG)
+      { skillId: "principal_eyes", chance: 0.12 }, // Die schärfsten Augen der Kleintiere
     ],
     materialDrops: [],
     hp: 18_000, speed: 30,         // worldSize 6 × 5 = 30
@@ -151,6 +211,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
       { skillId: "bite",         chance: 0.15 }, // Biss-Angriff (kombiniert sich mit Venom)
       { skillId: "venom",        chance: 0.20 }, // Giftbiss
       { skillId: "chitin_armor", chance: 0.08 }, // Exoskelett
+      { skillId: "scuttle", chance: 0.15 }, // Acht Beine (GDD-09, VORLÄUFIG)
     ],
     materialDrops: [],
     hp: 15_000, speed: 30,         // worldSize 6 × 5 = 30
@@ -181,6 +242,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
       { skillId: "chitin_armor", chance: 0.25 }, // Skorpion-Panzer
       { skillId: "venom_sting",  chance: 0.25 }, // Giftstachel (vorher: Venom)
       { skillId: "pincer",       chance: 0.10 }, // Scheren (vorher: Biss)
+      { skillId: "scuttle", chance: 0.12 }, // Acht Beine (GDD-09, VORLÄUFIG)
     ],
     materialDrops: [],
     hp: 30_000, speed: 35,         // worldSize 7 × 5 = 35
@@ -215,6 +277,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
       { skillId: "chitin_armor", chance: 0.30 }, // Massiver Panzer
       { skillId: "venom_sting",  chance: 0.30 }, // Starker Giftstachel (vorher: Venom)
       { skillId: "pincer",       chance: 0.15 }, // Scheren (vorher: Biss)
+      { skillId: "scuttle", chance: 0.12 }, // Acht Beine (GDD-09, VORLÄUFIG)
     ],
     materialDrops: [],
     hp: 55_000, speed: 50,         // worldSize 10 × 5 = 50

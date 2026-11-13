@@ -22,7 +22,13 @@ import { getEffectValue } from "../systems/StatsSystem.js";
 import { BIOME_SPAWNS } from "../world/BiomeDefinitions.js";
 import { calcGrowFibersPerMinute, calcGrowthFromMass } from "../systems/GrowSystem.js";
 import { GROW_FIBERS_PER_MINUTE, GROWTH_FIBER_SCALE } from "../data/grow.js";
-import { HP_PER_GROWTH, MP_PER_GROWTH } from "../data/balance.js";
+import {
+  HP_PER_GROWTH, MP_PER_GROWTH, BASE_HP, BASE_MP, PLAYER_SIZE_GROWTH_MAX, PLAYER_SPEED_PER_WORLD_RADIUS,
+  PLAYER_WORLD_RADIUS_MIN, PLAYER_WORLD_RADIUS_MAX, PLAYER_REACH_FACTOR,
+} from "../data/balance.js";
+import { SIZE_STRENGTH_BONUS_MAX, MOVE_XP_PER_BODY_RADIUS, SIGHT_XP_PER_SECOND, SIGHT_EDGE_FRACTION } from "../data/body.js";
+import { calcSizeStrengthBonus, maxEffectOverSkills } from "../systems/BodySystem.js";
+import { MP_REGEN_MILLI_PER_SECOND } from "../systems/CombatSystem.js";
 import { SKILL_RANKS, NATUR_PROGRESS, LEVEL_AT_NATUR } from "../data/progression.js";
 import { xpForProgress, getEntitySkillProgress, rankNameForProgress, levelFromProgress } from "../systems/ProgressionSystem.js";
 import {
@@ -57,6 +63,7 @@ const EFFECT_DE: Record<EffectType, string> = {
   heal_flat: "Heilung", heal_percent: "Heilung %", apply_status: "Status-Chance", inject_venom: "Gift-Chance", reflect_damage: "Rückschlag",
   damage_mult: "Schadens-Multiplikator", speed_mod: "Tempo-Multiplikator", grant_penetration: "Penetration",
   dexterity: "Geschick", strength: "Stärke",
+  move_speed: "Tempo-Faktor", sight_range: "Sichtweite", color_vision: "Farbsehen (ohne Rot)", red_vision: "Rot sehen",
 };
 const ATTRIBUTE_DE: Record<Attribute, string> = { strength: "Stärke", dexterity: "Geschick" };
 const ATTRIBUTE_ICON: Record<Attribute, string> = { strength: "💪", dexterity: "🎯" };
@@ -87,6 +94,8 @@ function formatEffectValue(type: EffectType, value: number): string {
   if (ABSOLUTE_EFFECTS.includes(type)) return `${num(value)} HP`;
   if (PERCENT_EFFECTS.includes(type)) return pct(value);
   if (type === "dexterity" || type === "strength") return `+${num(value)}`;
+  if (type === "sight_range") return `${num(value, 1)} Körperradien`;
+  if (type === "color_vision" || type === "red_vision") return pct(value);
   return factor(value);
 }
 
@@ -106,6 +115,8 @@ function effectFormula(type: EffectType, v: SkillValue): string {
   if (ABSOLUTE_EFFECTS.includes(type)) return valueFormula(v, (x) => `${num(x)} HP`);
   if (PERCENT_EFFECTS.includes(type)) return valueFormula(v, pct);
   if (type === "dexterity" || type === "strength") return valueFormula(v, (x) => num(x));
+  if (type === "sight_range") return valueFormula(v, (x) => `${num(x)} Körperradien`);
+  if (type === "color_vision" || type === "red_vision") return valueFormula(v, pct);
   return `×(${valueFormula(v, (x) => num(x))})`;
 }
 
@@ -132,6 +143,8 @@ function formatCondition(e: SkillEffect): string {
 // ── HTML-Bausteine ─────────────────────────────────────────
 const skillChip = (s: SkillDefinition, suffix = "") =>
   `<button class="idx-chip" data-skill="${s.id}">${s.icon} ${s.name}${suffix}</button>`;
+const ATTR_CHIP: Record<string, string> = { strength: "💪 Stärke", dexterity: "🎯 Geschick", speed: "💨 Tempo", sight: "👁️ Sicht", growth: "📏 Größe und Wachstum", vitals: "❤️ HP und MP" };
+const attrChip = (id: string) => `<button class="idx-chip" data-attr="${id}">${ATTR_CHIP[id]}</button>`;
 const entityChip = (e: EntityDefinition, suffix = "") =>
   `<button class="idx-chip" data-entity="${e.id}">${e.icon} ${e.name}${suffix}</button>`;
 
@@ -250,6 +263,13 @@ function skillDetail(s: SkillDefinition): string {
     ["Lernaufwand", String(s.learningEffort)],
     ["XP ab Rang", SKILL_RANKS.map((r) => `${r.name} ${Math.round(xpForProgress(r.fromProgress, s.learningEffort))}`).join(" · ")],
   ];
+  const effTypes = new Set((s.effects ?? []).map((e) => e.effectType));
+  if (effTypes.has("move_speed")) p.push(["Erfahrung", `${num(MOVE_XP_PER_BODY_RADIUS)} XP je zurückgelegtem Körperradius, solange dies der schnellste Bewegungs-Skill ist · ${attrChip("speed")}`]);
+  if (effTypes.has("sight_range")) p.push(["Erfahrung", `${num(SIGHT_XP_PER_SECOND)} XP je Sekunde, solange eingeschaltet · ${attrChip("sight")}`]);
+  if (effTypes.has("strength") || effTypes.has("dexterity")) {
+    p.push(["Eigenschaften", [effTypes.has("strength") ? attrChip("strength") : "", effTypes.has("dexterity") ? attrChip("dexterity") : ""].join("")]);
+  }
+  if (s.id === "grow") p.push(["Grundwert", attrChip("growth")]);
   if (s.mpCost !== undefined) p.push(["MP-Kosten", `${hp(s.mpCost)} MP`]);
   if (s.cooldownMs !== undefined) p.push(["Cooldown", seconds(s.cooldownMs)]);
   if (s.attackType) p.push(["Angriffsart", s.attackType]);
@@ -373,7 +393,8 @@ function skillDetail(s: SkillDefinition): string {
         format: (v) => `${num(v, 1)} HP`,
         formula: `${num(baseNatur, 1)} HP × (1 + ${pct(x.perPoint)} × ${ATTRIBUTE_DE[attr]})`,
         unit: ATTRIBUTE_DE[attr],
-        maxPoints: maxAttributePoints(attr),
+        // Stärke: inklusive Größenbonus bis zur vollen Größe (GDD-09); Natur-Marke ohne Größe
+        maxPoints: maxAttributePoints(attr) * (attr === "strength" ? 1 + SIZE_STRENGTH_BONUS_MAX : 1),
         naturPoints: maxAttributePoints(attr, NATUR_PROGRESS),
       });
       return `<div class="idx-effect">
@@ -545,6 +566,152 @@ function entityDetail(e: EntityDefinition): string {
   ].join("");
 }
 
+// ── Grundwerte (GDD-09) ────────────────────────────────────
+// Vorgabe (Entwickler, 13. November 2026): Alle Eigenschaften, Skalen,
+// Formeln und Beschreibungen stehen im INDEX. Jede Zahl kommt aus den
+// Daten und denselben Funktionen, die das Spiel aufruft.
+
+/** Skills mit einem passiven Effekt dieses Typs, als Tabellenzeilen Start / Natur / Max */
+function effectSourceRows(type: EffectType, fmt: (v: number) => string): string[][] {
+  return ALL_SKILL_LIST.flatMap((s) => (s.effects ?? [])
+    .filter((e) => e.trigger === "passive" && e.effectType === type)
+    .map((e) => [skillChip(s), fmt(evalSkillValue(e.formula, 0)), fmt(evalSkillValue(e.formula, NATUR_PROGRESS)), fmt(evalSkillValue(e.formula, 1))]));
+}
+const sourceTable = (type: EffectType, fmt: (v: number) => string) => {
+  const rows = effectSourceRows(type, fmt);
+  return rows.length ? dataTable(["Skill", "Start", "Natur", "Max"], rows) : `<p class="idx-reason">Noch kein Skill.</p>`;
+};
+const formulaBox = (f: string) => `<div class="idx-effect"><div class="idx-formula">${f}</div></div>`;
+const reason = (t: string) => `<p class="idx-reason">${t}</p>`;
+
+interface AttributePage { id: string; icon: string; name: string; sub: string; html: () => string }
+
+const ATTRIBUTE_PAGES: AttributePage[] = [
+  {
+    id: "strength", icon: "💪", name: "Stärke", sub: "verstärkt Angriffe, die mit Stärke skalieren",
+    html: () => {
+      const sumMax = maxAttributePoints("strength");
+      const total = sumMax * (1 + SIZE_STRENGTH_BONUS_MAX);
+      const boosted = ALL_SKILL_LIST.flatMap((t) => {
+        const sc = t.scaling?.find((x) => x.attribute === "strength");
+        return sc ? [skillChip(t, ` +${pct(sc.perPoint)}/Punkt`)] : [];
+      }).join("");
+      return [
+        `<p class="idx-desc">Muskelkraft des Blobs. Sie kommt aus Skills (Bewegung, Superstrength); die Körpergröße verstärkt sie prozentual.</p>`,
+        params([
+          ["Skala", `0 → ${num(sumMax)} aus Skills, × bis ${factor(1 + SIZE_STRENGTH_BONUS_MAX)} durch Größe → höchstens ${num(total)}`],
+          ["Wirkung", `Schaden × (1 + Bonus je Punkt × Stärke), Bonus steht am Angriff`],
+        ]),
+        section("Formel", formulaBox(`Stärke = (Σ Stärke-Effekte der eingeschalteten Passiv-Skills) × (1 + ${pct(SIZE_STRENGTH_BONUS_MAX)} × min(1, Wachstum / ${PLAYER_SIZE_GROWTH_MAX}))`)),
+        section("Quellen", sourceTable("strength", (v) => num(v, 1))),
+        section("Größenfaktor", pointsChart({
+          label: "Faktor der Körpergröße auf die Stärke über das Wachstum", unit: "Wachstum", maxPoints: PLAYER_SIZE_GROWTH_MAX,
+          value: (g) => 1 + calcSizeStrengthBonus(g), format: (v) => factor(v),
+          formula: `1 + ${pct(SIZE_STRENGTH_BONUS_MAX)} × min(1, Wachstum / ${PLAYER_SIZE_GROWTH_MAX})`,
+        })),
+        section("Verstärkt", boosted ? `<div>${boosted}</div>` : ""),
+        reason("Vorgabe (Entwickler): Bewegung gibt Stärke; die Körpergröße erhöht die Stärke prozentual. " +
+          "Begründung (Vorschlag Claude, übernommen): Ein größerer Körper hat mehr Muskelmasse; Bewegung trainiert Kraft. " +
+          "Gegner haben kein Wachstum, bei ihnen zählt nur die Summe der Skills."),
+      ].join("");
+    },
+  },
+  {
+    id: "dexterity", icon: "🎯", name: "Geschick", sub: "Präzision: bessere Treffer-Stufen",
+    html: () => [
+      `<p class="idx-desc">Körperbeherrschung. Geschick macht Treffer präziser — mehr schwere und kritische, weniger leichte und verfehlte — und lässt Gegner seltener gut treffen. Es erhöht keinen Schaden.</p>`,
+      params([
+        ["Skala", `0 → ${num(maxAttributePoints("dexterity"))} (Summe der Höchstwerte aller Skills)`],
+        ["Wirkung", "Kippt die Treffer-Stufen jedes Angriffs (HitSystem)"],
+      ]),
+      section("Formel", formulaBox(`Geschick = Σ Geschick-Effekte aller bekannten Skills (beim Angriff ohne den Beitrag des eingesetzten Skills)<br>` +
+        `kipp = ${num(HIT_TILT_MAX)} · tanh(${num(HIT_TILT_PER_SKILL_LEVEL)} · (Stufe − 1) + ${num(HIT_TILT_PER_DEX)} · (Geschick − Geschick Ziel)); p_Stufe ∝ Grund · e^(kipp · Stufe)`)),
+      section("Quellen", sourceTable("dexterity", (v) => num(v, 1))),
+      section("Präzision (Biss bei Natur, Ziel ohne Geschick)", pointsChart({
+        label: "Schwere + kritische Treffer über Geschick", unit: "Geschick", maxPoints: maxAttributePoints("dexterity"),
+        naturPoints: maxAttributePoints("dexterity", NATUR_PROGRESS), format: pct,
+        value: (d) => { const c = calcHitChances(ALL_SKILLS.get("bite")?.hitProfile ?? DEFAULT_HIT_PROFILE, NATUR_PROGRESS, d, 0); return c.heavy + c.crit; },
+      })),
+      reason("Vorgabe (Entwickler): Geschick erhöht die Präzision, nicht den Schaden. Begründung (Entwickler): Geschick ermöglicht, " +
+        "bei Schlägen und Stichen besser zu treffen, nicht fester zuzuschlagen."),
+    ].join(""),
+  },
+  {
+    id: "speed", icon: "💨", name: "Tempo", sub: "Bewegung — der beste Bewegungs-Skill zählt",
+    html: () => [
+      `<p class="idx-desc">Wie schnell sich der Blob bewegt. Ohne Bewegungs-Skill kann er sich gar nicht bewegen. Es zählt der beste eingeschaltete Bewegungs-Skill; er bekommt auch die Erfahrung.</p>`,
+      params([
+        ["Grundtempo", `${num(PLAYER_SPEED_PER_WORLD_RADIUS)} Körperradien/s bei Faktor ×1`],
+        ["Skala", `Faktor 0 (keine Bewegung) → ${factor(maxEffectOverSkills("move_speed"))}`],
+        ["Erfahrung", `${num(MOVE_XP_PER_BODY_RADIUS)} XP je zurückgelegtem Körperradius für den aktiven Bewegungs-Skill`],
+      ]),
+      section("Formel", formulaBox(`Tempo = Körperradius × ${num(PLAYER_SPEED_PER_WORLD_RADIUS)} × bester Tempo-Faktor (px/s) — auf dem Bildschirm bei jeder Größe gleich schnell`)),
+      section("Quellen", sourceTable("move_speed", (v) => `${factor(v)} · ${num(v * PLAYER_SPEED_PER_WORLD_RADIUS, 1)} R/s`)),
+      reason("Vorgabe (Entwickler): Das Tempo steigt mit dem Skill — am Anfang langsam, nach kurzer Zeit annehmbar schnell. " +
+        "Wurm und Schnecke geben Kriechen, Insekten Krabbeln, später kommt Laufen. " +
+        "Begründung (Vorschlag Claude, übernommen): Der beste Skill zählt, nicht die Summe — wer laufen kann, kriecht nicht zusätzlich."),
+    ].join(""),
+  },
+  {
+    id: "sight", icon: "👁️", name: "Sicht", sub: "Sichtweite, Farbe, Rot",
+    html: () => [
+      `<p class="idx-desc">Was der Blob sieht. Ohne Seh-Skill ist alles schwarz. Lichtsinn zeigt Graustufen, Facettenaugen bringen Farbe ohne Rot, die Hauptaugen der Springspinne volle Farbe. Außerhalb der Sichtweite wird es weich dunkel.</p>`,
+      params([
+        ["Sichtweite", `0 (blind) → ${num(maxEffectOverSkills("sight_range"))} Körperradien, der beste Seh-Skill zählt`],
+        ["Farbe", "0 % = Graustufen → 100 % = Farbe (ohne Rot)"],
+        ["Rot", "0 % = Rot erscheint dunkel → 100 % = volle Farbe"],
+        ["Erfahrung", `${num(SIGHT_XP_PER_SECOND)} XP je Sekunde für jeden eingeschalteten Seh-Skill`],
+        ["Weicher Rand", `äußere ${pct(SIGHT_EDGE_FRACTION)} der Sichtweite`],
+      ]),
+      section("Formel", formulaBox("Sichtweite = bester Effekt „Sichtweite“ · Farbe = bester Effekt „Farbsehen“ · Rot = bester Effekt „Rot sehen“<br>" +
+        "Bild = lerp(Graustufen, lerp(ohne Rot, volle Farbe, Rot), Farbe)")),
+      section("Sichtweite", sourceTable("sight_range", (v) => `${num(v, 1)} R`)),
+      section("Farbe", sourceTable("color_vision", pct)),
+      section("Rot", sourceTable("red_vision", pct)),
+      reason("Vorgabe (Entwickler): Sehen wird erst gelernt, mit dem Übergang von Schwarz über Schwarz-Weiß zu Farbe. " +
+        "Begründung (Vorschlag Claude, übernommen): Farbsehen braucht mehrere Sorten Lichtsinneszellen; mit einer Sorte sieht man nur hell und dunkel. " +
+        "Insekten sehen UV, Blau und Grün, aber kaum Rot; Springspinnen haben die schärfsten Augen der Kleintiere."),
+    ].join(""),
+  },
+  {
+    id: "growth", icon: "📏", name: "Größe und Wachstum", sub: "aus verdauten Pflanzenfasern (Wachsen)",
+    html: () => [
+      `<p class="idx-desc">Der Körper wächst nur durch den Skill Wachsen: Verdaute Pflanzenfasern werden Körpermasse. Das Wachstum bestimmt Größe, Reichweite, MaxHP, MaxMP und den Größenbonus auf die Stärke.</p>`,
+      params([
+        ["Wachstum", `log₂(1 + Körpermasse / ${num(GROWTH_FIBER_SCALE)})`],
+        ["Radius", `${num(PLAYER_WORLD_RADIUS_MIN)} → ${num(PLAYER_WORLD_RADIUS_MAX)} px, linear bis Wachstum ${PLAYER_SIZE_GROWTH_MAX}`],
+        ["Reichweite", `${num(PLAYER_REACH_FACTOR)} × Radius, bis zum Rand des Ziels`],
+      ]),
+      growthHtml(),
+      reason("Vorgabe (Entwickler): Wachsen verbraucht Pflanzenfasern, wirkt passiv über die Zeit und ersetzt die Erfahrung als Quelle des Wachstums."),
+    ].join(""),
+  },
+  {
+    id: "vitals", icon: "❤️", name: "HP und MP", sub: "Lebens- und Magiepunkte aus dem Wachstum",
+    html: () => [
+      `<p class="idx-desc">Lebenspunkte und Magiepunkte wachsen mit dem Körper.</p>`,
+      params([
+        ["MaxHP", `${hp(BASE_HP)} + Wachstum × ${hp(HP_PER_GROWTH)}`],
+        ["MaxMP", `${hp(BASE_MP)} + Wachstum × ${hp(MP_PER_GROWTH)}`],
+        ["MP-Regeneration", `${hp(MP_REGEN_MILLI_PER_SECOND)} MP/s, konstant`],
+        ["HP-Regeneration", `nur durch Photosynthese (${valueFormula(PHOTOSYNTHESIS_HEAL_HP_PER_S, (x) => `${num(x)} HP/s`)})`],
+      ]),
+      reason("Startwerte und Zuwachs: Begründung offen (GDD-03 Abschnitt 3)."),
+    ].join(""),
+  },
+];
+
+function attributeList(query: string): string {
+  const rows = ATTRIBUTE_PAGES.filter((a) => matches(query, a.name, a.id))
+    .map((a) => row(`data-attr="${a.id}"`, a.icon, a.name, a.sub));
+  return rows.length ? `<div class="idx-group">Grundwerte des Blobs</div>${rows.join("")}` : `<p class="empty-hint">Kein Grundwert gefunden.</p>`;
+}
+
+function attributeDetail(id: string): string {
+  const a = ATTRIBUTE_PAGES.find((x) => x.id === id)!;
+  return titleBlock(a.icon, a.name, a.sub) + a.html();
+}
+
 // ── Styles ─────────────────────────────────────────────────
 function injectStyles() {
   if (document.getElementById("indexview-styles")) return;
@@ -619,12 +786,12 @@ function injectStyles() {
 }
 
 // ── Ansicht ────────────────────────────────────────────────
-type Page = { kind: "skill" | "entity"; id: string };
+type Page = { kind: "skill" | "entity" | "attr"; id: string };
 
 export function createIndexView(root: HTMLElement): void {
   injectStyles();
 
-  let tab: "skills" | "entities" = "skills";
+  let tab: "skills" | "entities" | "attrs" = "skills";
   let query = "";
   const stack: Page[] = [];
 
@@ -634,6 +801,7 @@ export function createIndexView(root: HTMLElement): void {
       <div class="idx-seg">
         <button data-sec="skills">Skills (${ALL_SKILL_LIST.length})</button>
         <button data-sec="entities">Einheiten (${ENTITY_DEFINITIONS.length})</button>
+        <button data-sec="attrs">Grundwerte</button>
       </div>
       <input class="idx-search" type="search" placeholder="Suchen…" autocomplete="off" />
     </div>
@@ -649,18 +817,18 @@ export function createIndexView(root: HTMLElement): void {
 
     const page = stack[stack.length - 1];
     if (!page) {
-      body.innerHTML = tab === "skills" ? skillList(query) : entityList(query);
+      body.innerHTML = tab === "skills" ? skillList(query) : tab === "entities" ? entityList(query) : attributeList(query);
     } else {
-      const detail = page.kind === "skill"
-        ? skillDetail(ALL_SKILLS.get(page.id)!)
-        : entityDetail(ENTITY_MAP.get(page.id)!);
+      const detail = page.kind === "skill" ? skillDetail(ALL_SKILLS.get(page.id)!)
+        : page.kind === "entity" ? entityDetail(ENTITY_MAP.get(page.id)!)
+        : attributeDetail(page.id);
       body.innerHTML = `<button class="idx-back">← Zurück</button>${detail}`;
     }
     root.closest(".gm-body")?.scrollTo(0, 0);
   }
 
   root.addEventListener("click", (ev) => {
-    const t = (ev.target as HTMLElement).closest<HTMLElement>("[data-sec],[data-skill],[data-entity],.idx-back");
+    const t = (ev.target as HTMLElement).closest<HTMLElement>("[data-sec],[data-skill],[data-entity],[data-attr],.idx-back");
     if (!t) return;
     if (t.dataset.sec) {
       tab = t.dataset.sec as typeof tab;
@@ -669,6 +837,8 @@ export function createIndexView(root: HTMLElement): void {
       stack.push({ kind: "skill", id: t.dataset.skill });
     } else if (t.dataset.entity) {
       stack.push({ kind: "entity", id: t.dataset.entity });
+    } else if (t.dataset.attr) {
+      stack.push({ kind: "attr", id: t.dataset.attr });
     } else {
       stack.pop();
     }

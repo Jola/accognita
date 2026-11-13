@@ -13,6 +13,7 @@
 // Schadenspipeline (DamageSystem) mit Effekten aus SkillEffectSystem.
 // ============================================================
 
+import { getPlayerStrength } from "./BodySystem";
 import type { PlayerState } from "../types/GameState";
 import type { EntityDefinition, EntityInstance } from "../types/Entity";
 import type { AttackResult, DamageType, HitGrade, HitProfile, StatusEffect } from "../types/Combat";
@@ -126,13 +127,13 @@ function resolveHit(
 
 // attackSkillId: nur beim Angreifer — der Geschick-Beitrag des eingesetzten
 // Skills wird abgezogen (siehe resolveDexterity). Verteidiger: volles Geschick.
-// Stärke: eingeschaltete Passiv-Skills (wie die übrigen Kampf-Effekte).
+// Stärke: eingeschaltete Passiv-Skills × Größenfaktor (BodySystem, GDD-09).
 function playerCombatant(player: PlayerState, attackSkillId?: string): Combatant {
   const effects = getPlayerPassiveSkillProgress(player);
   return {
     effects,
     dex: resolveDexterity(getPlayerAllSkillProgress(player), attackSkillId),
-    str: resolveStrength(effects),
+    str: getPlayerStrength(player, effects),
   };
 }
 

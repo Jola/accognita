@@ -60,7 +60,11 @@ export type EffectType =
   | "speed_mod"          // Geschwindigkeits-Modifikator (formula: Faktor)
   | "grant_penetration"  // Ignoriert X HP Flat-Block beim Angriff (formula: HP)
   | "dexterity"          // Geschick-Punkte: bessere Treffer-Stufen, Ausweichen (formula: Punkte)
-  | "strength";          // Stärke-Punkte: verstärkt Angriffe, die mit Stärke skalieren (formula: Punkte)
+  | "strength"           // Stärke-Punkte: verstärkt Angriffe, die mit Stärke skalieren (formula: Punkte)
+  | "move_speed"         // Bewegungstempo als Faktor des Grundtempos (formula: Faktor; der beste Skill zählt)
+  | "sight_range"        // Sichtweite in Körperradien (formula: Radien; der beste Skill zählt)
+  | "color_vision"       // Farbsehen ohne Rot, 0–1 (formula: Anteil; der beste Skill zählt)
+  | "red_vision";        // Rot sehen, 0–1 (formula: Anteil; der beste Skill zählt)
 
 /**
  * Charakter-Eigenschaften. Sie kommen nur aus Skills (GDD-02 Abschnitt 8.1):

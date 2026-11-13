@@ -68,10 +68,14 @@ export const BIOME_SPAWNS: Record<BiomeId, BiomeSpawnEntry[]> = {
     { id: "ant",     weight: 10 },
     { id: "ladybug", weight: 10 },
     { id: "grass",   weight: 15, count: GRASS_COUNT },
+    { id: "earthworm", weight: 6 },   // GDD-09, VORLÄUFIG
+    { id: "snail",     weight: 6 },
   ],
   swamp:    [
     { id: "poison_spider", weight: 10 },
     { id: "grass",         weight: 10, count: GRASS_COUNT },
+    { id: "snail",         weight: 8 },   // GDD-09, VORLÄUFIG — feucht, Schneckenland
+    { id: "earthworm",     weight: 4 },
   ],
   highland: [
     { id: "jumping_spider", weight: 10 },
@@ -110,3 +114,23 @@ export function getTileIndex(biome: BiomeId, height: number): number {
   const offset = BIOME_TILE_OFFSET[biome] ?? 0;
   return offset + Math.min(3, Math.max(0, height));
 }
+
+// ────────────────────────────────────────
+// Nest am Startpunkt (GDD-09 Abschnitt 5)
+//
+// Vorgabe (Entwickler, 13. November 2026): Der Blob erwacht blind und ohne
+// Bewegung; die Einheiten, an denen er Sehen und Bewegen lernt, müssen in
+// seiner Nähe sein. Deshalb liegen in Chunk (0, 0) fest neben dem Startpunkt
+// ein Regenwurm und eine Schnecke in Reichweite eines frischen Blobs
+// (Radius 2, Reichweite 2,5 Radien bis zum Rand), dazu Gras etwas weiter
+// weg — erreichbar, sobald er kriechen kann.
+// Lokale Koordinaten im Chunk; Startpunkt (400, 300) = createInitialGameState.
+// ────────────────────────────────────────
+export const START_NEST_CHUNK = { cx: 0, cy: 0 };
+export const START_NEST_SPAWNS: { id: string; localX: number; localY: number }[] = [
+  { id: "earthworm", localX: 405, localY: 300 },
+  { id: "snail",     localX: 396, localY: 304 },
+  { id: "grass",     localX: 422, localY: 288 },
+  { id: "grass",     localX: 378, localY: 320 },
+  { id: "grass",     localX: 430, localY: 322 },
+];

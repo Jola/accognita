@@ -55,9 +55,12 @@ function statsHtml(p: PlayerState): string {
   ];
 
   const attributes: [string, string, string?][] = [
-    ["💪 Stärke", num(s.strength, 2), `verstärkt ${scaledBy("strength")} · ${from(s.strengthSources)}`],
+    ["💪 Stärke", num(s.strength, 2), `${num(s.strengthBase, 2)} aus Skills × ${num(s.sizeStrengthMult, 2)} Körpergröße · verstärkt ${scaledBy("strength")} · ${from(s.strengthSources)}`],
     ["🎯 Geschick", num(s.dexterity, 2), `Präzision: mehr schwere und kritische, weniger leichte und verfehlte Treffer; Gegner treffen seltener gut · ${from(s.dexteritySources)}`],
-    ["💨 Geschwindigkeit", `${num(s.speed, 0)} px/s`, "wächst mit der Größe"],
+    ["💨 Geschwindigkeit", s.moveFactor > 0 ? `${num(s.speed, 1)} px/s` : "keine Bewegung",
+      s.moveFactor > 0 ? `×${num(s.moveFactor, 2)} Grundtempo aus ${ALL_SKILLS.get(s.moveSkill!)?.name ?? "?"} (bester Bewegungs-Skill), wächst mit der Größe` : "noch kein Bewegungs-Skill (Regenwurm, Schnecke)"],
+    ["👁️ Sicht", s.vision.range > 0 ? `${num(s.vision.range, 1)} Körperradien` : "blind",
+      s.vision.range > 0 ? `${s.vision.red > 0 ? `Farbe ${pct(s.vision.color)}, Rot ${pct(s.vision.red)}` : s.vision.color > 0 ? `Farbe ${pct(s.vision.color)}, ohne Rot` : "Graustufen"}` : "noch kein Seh-Skill (Regenwurm, Schnecke)"],
     ["📐 Reichweite", `${num(s.reach)} px`, "Nahkampf, Absorb, Analyze — bis zum Rand des Ziels"],
   ];
 

@@ -9,7 +9,7 @@
 import type { ChunkDef, HeightLevel, SpawnDef } from "./Chunk.js";
 import { TILES_PER_CHUNK, CHUNK_PX } from "./Chunk.js";
 import type { BiomeSpawnEntry } from "./BiomeDefinitions.js";
-import { getBiomeAt, BIOME_SPAWNS, getTileIndex } from "./BiomeDefinitions.js";
+import { getBiomeAt, BIOME_SPAWNS, getTileIndex, START_NEST_CHUNK, START_NEST_SPAWNS } from "./BiomeDefinitions.js";
 
 // ────────────────────────────────────────
 // Deterministisches seeded LCG
@@ -138,6 +138,10 @@ export function generateChunk(cx: number, cy: number, worldSeed: number): ChunkD
   );
 
   const spawns = generateSpawns(biome, rng);
+  // Nest am Startpunkt (GDD-09): feste Spawns zuerst, die Zufallsverteilung bleibt unverändert
+  if (cx === START_NEST_CHUNK.cx && cy === START_NEST_CHUNK.cy) {
+    spawns.unshift(...START_NEST_SPAWNS.map((s) => ({ defId: s.id, localX: s.localX, localY: s.localY })));
+  }
 
   return { cx, cy, biome, tileIndices, heightMap, spawns };
 }

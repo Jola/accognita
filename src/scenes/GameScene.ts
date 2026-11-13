@@ -9,6 +9,9 @@
 // Phaser wird als globales `Phaser` aus dem CDN geladen.
 declare const Phaser: any;
 
+import { getPlayerVision, visionColorMatrix, getActiveMoveSkill, getActiveSightSkills, calcMoveXp } from "../systems/BodySystem";
+import { getIntroStep, INTRO_TEXT, type IntroStep } from "../systems/IntroSystem";
+import { SIGHT_EDGE_FRACTION, SIGHT_XP_PER_SECOND } from "../data/body";
 import { processGrow, getPlayerGrowth } from "../systems/GrowSystem";
 import { GROW_XP_PER_FIBER } from "../data/grow";
 import { createInitialGameState } from "../types/GameState.js";
@@ -135,6 +138,14 @@ export class GameScene extends Phaser.Scene {
   private joy!: JoystickState;
 
   private lastNearbyId: string | null = null;
+  // Sehen (GDD-09): Dunkelheit außerhalb der Sichtweite, Farbfilter der Kamera
+  private darkness!: any;      // schwarze Flächen außerhalb des Sichtkreises
+  private visionHole!: any;    // Bild mit weichem, durchsichtigem Kreis in der Mitte
+  private colorFx: any = null;
+  private lastVisionKey = "";
+  // Erwachen: Hinweistext, solange der Blob blind oder unbeweglich ist
+  private introEl: HTMLElement | null = null;
+  private introStep: IntroStep | null = null;
   private gamePaused = false;
   private pauseReasons = new Set<"fullscreen" | "ui">();
   private hpBarGraphics!: any;
@@ -163,6 +174,7 @@ export class GameScene extends Phaser.Scene {
 
     // HP-Bar-Layer über allem (depth: 10)
     this.hpBarGraphics = this.add.graphics().setDepth(10);
+    this.setupVision();
 
     // Passive Skills als permanente StatusEffekte initialisieren
     syncPassiveEffects(this.gameState.player);
@@ -180,7 +192,106 @@ export class GameScene extends Phaser.Scene {
 
     updateUI(this.gameState);
     addLog("Du erwachst als Blob…", "system");
-    addLog("Joystick bewegen · ABSORB + ANALYZE tippen", "system");
+    this.updateIntro();
+  }
+
+  // ----------------------------------------------------------
+  // SEHEN (GDD-09 Abschnitt 3) — Werte aus BodySystem, hier nur Darstellung
+  // ----------------------------------------------------------
+  private setupVision() {
+    // Dunkelheit über der Welt, der Blob selbst bleibt sichtbar (er spürt sich).
+    // Textur: schwarzes Quadrat mit weichem Loch (Rand = SIGHT_EDGE_FRACTION),
+    // drumherum schwarze Rechtecke bis über den Bildschirmrand.
+    const size = 256, half = size / 2;
+    const tex = this.textures.createCanvas("vision-hole", size, size);
+    const ctx = tex.getContext();
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, size, size);
+    ctx.globalCompositeOperation = "destination-out";
+    const grad = ctx.createRadialGradient(half, half, half * (1 - SIGHT_EDGE_FRACTION), half, half, half);
+    grad.addColorStop(0, "rgba(0,0,0,1)");
+    grad.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(half, half, half, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalCompositeOperation = "source-over";
+    tex.refresh();
+    this.visionHole = this.add.image(0, 0, "vision-hole").setDepth(20);
+    this.darkness = this.add.graphics().setDepth(20);
+    this.blobGraphic.setDepth(21);
+    // Farbfilter: nur mit WebGL verfügbar; ohne bleibt das Bild farbig, die Sichtweite gilt trotzdem
+    const cam = this.cameras.main as any;
+    this.colorFx = cam.postFX?.addColorMatrix?.() ?? null;
+  }
+
+  private updateVision() {
+    const player = this.gameState.player;
+    const vision = getPlayerVision(player);
+    const cam = this.cameras.main;
+    const zoom = cam.zoom;
+    const radius = this.calcPlayerWorldRadius();
+    const r = vision.range * radius;                         // Sichtweite in Weltpixeln
+    const far = Math.hypot(cam.width, cam.height) / zoom;    // reicht über den ganzen Bildschirm
+    const g = this.darkness;
+    const { x, y } = player;
+    g.clear();
+    if (r <= 0) {
+      this.visionHole.setVisible(false);
+      g.fillStyle(0x000000, 1);
+      g.fillRect(x - far, y - far, far * 2, far * 2);
+    } else if (r < far) {
+      // Quadrat 2r × 2r mit weichem Loch, außen vier schwarze Rechtecke
+      this.visionHole.setVisible(true).setPosition(x, y).setDisplaySize(r * 2, r * 2);
+      g.fillStyle(0x000000, 1);
+      g.fillRect(x - far, y - far, far * 2, far - r);       // oben
+      g.fillRect(x - far, y + r, far * 2, far - r);         // unten
+      g.fillRect(x - far, y - r, far - r, r * 2);           // links
+      g.fillRect(x + r, y - r, far - r, r * 2);             // rechts
+    } else {
+      this.visionHole.setVisible(false);                    // Sichtweite größer als der Bildschirm
+    }
+    // Farbe nur nachführen, wenn sie sich spürbar ändert
+    const key = `${vision.color.toFixed(2)}|${vision.red.toFixed(2)}`;
+    if (this.colorFx && key !== this.lastVisionKey) {
+      this.lastVisionKey = key;
+      this.colorFx.set(visionColorMatrix(vision));
+    }
+  }
+
+  // ----------------------------------------------------------
+  // ERWACHEN (GDD-09 Abschnitt 5) — Schritt aus IntroSystem
+  // ----------------------------------------------------------
+  private updateIntro() {
+    const step = getIntroStep(this.gameState.player);
+    if (step === this.introStep) return;
+    const first = this.introStep === null;
+    this.introStep = step;
+    this.lastNearbyId = null; // Nearby-Anzeige neu zeichnen (blind ↔ sehend)
+    if (!this.introEl) {
+      this.introEl = document.createElement("div");
+      this.introEl.id = "intro-text";
+      Object.assign(this.introEl.style, {
+        position: "absolute", left: "50%", top: "18%", transform: "translateX(-50%)",
+        width: "min(86vw, 420px)", padding: "12px 16px", borderRadius: "10px",
+        background: "rgba(5,8,14,.78)", border: "1px solid rgba(74,240,200,.25)",
+        color: "#cfe", font: "italic .82rem/1.5 Georgia, serif", textAlign: "center",
+        pointerEvents: "none", zIndex: "40", transition: "opacity .6s",
+      });
+      (document.getElementById("canvas-wrap") ?? document.body).appendChild(this.introEl);
+    }
+    if (step === "awake") {
+      // Ein geladener, längst wacher Blob braucht keinen Hinweis
+      if (first) { this.introEl.style.opacity = "0"; return; }
+      this.introEl.textContent = INTRO_TEXT.awake;
+      this.introEl.style.opacity = "1";
+      addLog(INTRO_TEXT.awake, "system");
+      this.time.delayedCall(9000, () => { if (this.introStep === "awake" && this.introEl) this.introEl.style.opacity = "0"; });
+      return;
+    }
+    this.introEl.textContent = INTRO_TEXT[step];
+    this.introEl.style.opacity = "1";
+    if (!first) addLog(INTRO_TEXT[step], "system");
   }
 
   // ----------------------------------------------------------
@@ -462,6 +573,10 @@ export class GameScene extends Phaser.Scene {
     // Kamera-Zoom an die gespeicherte Größe anpassen
     this.updateCameraZoom();
 
+    // Erwachen: Hinweis passend zum geladenen Stand (ein wacher Blob bekommt keinen)
+    this.introStep = null;
+    this.updateIntro();
+
     // Passive Effekte neu aufbauen
     syncPassiveEffects(this.gameState.player);
 
@@ -534,17 +649,39 @@ export class GameScene extends Phaser.Scene {
         this.afterProgressChange();
       }
     }
+    const prevX = this.gameState.player.x, prevY = this.gameState.player.y;
     this.handleMovement();
     this.syncPlayerPosition();
+    this.gainBodyXp(prevX, prevY, delta);
     this.chunkManager.tick(this.gameState.player.x, this.gameState.player.y, Date.now());
     this.processEntityAi(delta);
     this.processEntityLeveling(delta);
     this.processCombatEffects(delta);
     this.updateEntityVisuals();
     this.updateBlobWobble(_time);
+    this.updateVision();
     this.checkNearbyEntity();
     this.checkPlayerDeath();
     processRespawns(this.gameState.world);
+  }
+
+  // Bewegen und Sehen lernt man durch Tun (data/body.ts): Strecke für den
+  // aktiven Bewegungs-Skill, Spielzeit für jeden eingeschalteten Seh-Skill.
+  // Stufenlos jeden Frame; Werte werden einmal pro Sekunde nachgeführt.
+  private gainBodyXp(prevX: number, prevY: number, delta: number) {
+    const player = this.gameState.player;
+    const moveSkill = getActiveMoveSkill(player);
+    const dist = Math.hypot(player.x - prevX, player.y - prevY);
+    if (moveSkill && dist > 0) {
+      const gain = gainSkillXp(player, moveSkill, calcMoveXp(dist, this.calcPlayerWorldRadius()));
+      this.logProgressionEvents(gain.events);
+      this.progressDirty = true;
+    }
+    for (const id of getActiveSightSkills(player)) {
+      const gain = gainSkillXp(player, id, SIGHT_XP_PER_SECOND * delta / 1000);
+      this.logProgressionEvents(gain.events);
+      this.progressDirty = true;
+    }
   }
 
   // Einmal pro Spielsekunde: Ruhe nach Übertraining (Echtzeit) und
@@ -919,6 +1056,7 @@ export class GameScene extends Phaser.Scene {
     refreshPassiveEffectValues(this.gameState.player);
     updatePlayerGrowth(this.gameState.player);
     this.updateCameraZoom(); // Welt schrumpft optisch, während der Blob wächst
+    this.updateIntro();
     updateUI(this.gameState);
   }
 
@@ -1174,6 +1312,7 @@ export class GameScene extends Phaser.Scene {
     if (!inst) return;
     inst.isEnabled = inst.isEnabled === false ? true : false;
     syncPassiveEffects(this.gameState.player);
+    this.updateIntro();
     updateUI(this.gameState);
     const state = inst.isEnabled ? "aktiviert" : "deaktiviert";
     showToast(`${ALL_SKILLS.get(skillId)?.name ?? skillId} ${state}`, "system");
@@ -1376,6 +1515,24 @@ function updateNearbyPanel(
     return;
   }
 
+  // Blind (kein Seh-Skill, GDD-09): Der Blob spürt nur, dass etwas da ist — kein Name, kein Bild, keine Werte
+  if (getPlayerVision(state.player).range <= 0) {
+    panel.innerHTML = `
+      <div class="nearby-entity">
+        <span class="nearby-icon">❓</span>
+        <div style="flex:1;min-width:0">
+          <span class="nearby-name">Etwas</span>
+          <div style="font-size:.68em;color:var(--muted)">Du spürst etwas direkt neben dir — weich, feucht, lebendig.</div>
+        </div>
+      </div>
+      <div class="nearby-actions">
+        <button onclick="window.gameScene.doAbsorb()" class="btn-absorb">💥 Absorb</button>
+        <button onclick="window.gameScene.doAnalyze()" class="btn-analyze">🔍 Analyze</button>
+      </div>
+    `;
+    return;
+  }
+
   const bonusLv      = instance?.bonusLevel ?? 0;
   const effectiveLv  = entityDef.level + bonusLv;
   // Gleiche Rechnung wie EntitySystem.absorbEntity/analyzeEntity: dort zählt die
@@ -1445,8 +1602,17 @@ function updateNearbyPanel(
   `;
 }
 
+const ENTITY_DEFINITIONS_BY_NAME = new Map([...ENTITY_MAP.values()].map((d) => [d.name, d]));
+
 function showInteractionResult(result: any, state: GameState) {
   const type = result.method as "absorb" | "analyze";
+
+  // Blind (GDD-09): Name und Bild des Wesens sind unbekannt — „Etwas“
+  if (getPlayerVision(state.player).range <= 0 && result.entityName) {
+    const def = ENTITY_DEFINITIONS_BY_NAME.get(result.entityName);
+    const hide = (msg: string) => msg.split(def ? `${def.icon} ${result.entityName}` : result.entityName).join("❓ Etwas");
+    result = { ...result, message: hide(result.message), entityName: "Etwas" };
+  }
 
   if (!result.success) {
     const logType = result.aggroTriggered ? "aggro" : "system";
