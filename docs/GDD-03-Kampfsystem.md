@@ -61,7 +61,11 @@ Spieler HP ≤ 0 → Checkpoint (HP/MP voll, Spawn-Position, kein Verlust)
 Alle Werte intern in Milli-Einheiten ([GDD-05 Abschnitt 3.4](GDD-05-Kampfmathematik.md)).
 > Begründung offen — Startwerte (80 HP / 40 MP), Zuwachs pro Level bzw. Wachstum (+15 / +8) und MP-Regeneration 1 MP/s.
 
-**Basis-Nahkampfschaden:**
+**Kein Angriff ohne Skill (13. November 2026):** Der Blob kann nur mit einem Angriffs-Skill (Biss, Klaue, Feueratem …) angreifen. Ohne einen solchen Skill hat er keinen Angriff.
+**Vorgabe (Entwickler):** Ein Angriff ohne Skill soll nicht möglich sein.
+**Begründung (Entwickler):** Das Konzept des Spiels ist, dass man so gut wie alles lernen muss.
+
+**Basis-Nahkampfschaden — [VERWORFEN, 13. November 2026]:** war im Code vorhanden, aber nie über Button oder Taste erreichbar; entfernt nach der Vorgabe oben.
 ```
 baseDmg = 3 + absorb.level × 1.5              (HP, Schadenstyp Wucht)
 effDmg  = baseDmg × calcDamageMult(player.statusEffects)   [VERWORFEN — jetzt Schadenspipeline mit Treffer-Stufe, GDD-05]
@@ -252,7 +256,7 @@ Der Multiplikator greift vor der Rüstung (Pipeline-Schritt 1b in [GDD-05](GDD-0
 
 | Angriff | Verfehlt | Leicht | Normal | Schwer | Kritisch | Charakter |
 |---------|---------|--------|--------|--------|----------|-----------|
-| Unbewaffnet (Standard) | 4 % | 24 % | 50 % | 19 % | 3 % | Körperstoß |
+| ~~Unbewaffnet (Standard)~~ [VERWORFEN — kein Angriff ohne Skill, Abschnitt 3] | 4 % | 24 % | 50 % | 19 % | 3 % | Körperstoß — Verteilung bleibt als Grundverteilung für Angriffs-Skills ohne eigenes `hitProfile` |
 | Biss | 3 % | 17 % | 52 % | 24 % | 4 % | präzise |
 | Klauenhieb | 5 % | 15 % | 45 % | 32 % | 3 % | wuchtig, öfter daneben |
 | Feueratem | 2 % | 25 % | 55 % | 16 % | 2 % | trifft fast immer, selten Schwachstelle |
@@ -264,7 +268,7 @@ kipp  = 0,4 · tanh(x)
 p_i  ∝ grund_i · e^(kipp · stufe_i)      stufe = −2 (verfehlt) … +2 (kritisch)
 ```
 Die tanh-Begrenzung hält Ränder klein: kritisch höchstens ≈ 2,2× Grundwert, verfehlt mindestens ≈ 0,45× — in der Praxis Krit ≤ ~8 %, Verfehlen ≤ ~11 %.
-Skill-Level: beim unbewaffneten Angriff zählt das Absorb-Level; bei Gegnern das Level ihres Angriffsskills (bite/claw/fire_breath), ohne Angriffsskill ihr Entity-Level.
+Skill-Level: ~~beim unbewaffneten Angriff zählt das Absorb-Level~~ [VERWORFEN]; beim Blob das Level des eingesetzten Skills; bei Gegnern das Level ihres Angriffsskills (bite/claw/fire_breath), ohne Angriffsskill ihr Entity-Level.
 Geschick kommt aus `dexterity`-Effekten aller bekannten Skills (derzeit Jump; Springspinne hat Jump Lv2).
 **Eigener Beitrag zählt nicht:** Beim Angriff wird das Geschick ohne den Beitrag des eingesetzten Skills gerechnet — z.B. 10 Geschick gesamt, der Skill liefert davon 2 → für die Treffer-Stufen zählen 8. Der Verteidiger setzt keinen Skill ein und rechnet mit vollem Geschick.
 **Vorgabe (Entwickler):** Das Geschick wird gegen den eigenen Beitrag des Skills gerechnet.
@@ -445,4 +449,4 @@ scenes/GameScene.ts                ← verdrahtet alle Systeme, Phaser-Rendering
 
 ---
 
-*Letzte Aktualisierung: 2026-11-01 — Hinweis auf das allgemeine Schema (Fortschritt 0–100 %, v0.6); Treffer-Reichweite ab Rand des Gegners (Icon-Größe), Blob-Reichweite erhöht; Balancing: Photosynthese, Skorpione, Schlange schwächer; 2026-10-31 — Gelegentlicher Angriff (Skorpion-Stachelstich); Regeneration (Photosynthesis) stufenlos; Venom-DoT durch Giftlast ersetzt (Verweis auf GDD-05 Abschnitt 12); Hinweis „Übungsgrad statt Skill-Level“ ergänzt, HP/MP wachsen mit dem Wachstum statt pro Level; 2026-10-25 — Größen- und levelabhängiges Aggro als Konzept (Abschnitt 4); 2026-10-24 — Geschick ohne Beitrag des eingesetzten Skills; Begründungen ergänzt bzw. als offen markiert, veraltete Werte (Spieler-Wachstum, Entity-Tabelle, Passiv-Effekte) als VERWORFEN gekennzeichnet; Treffer-Stufen und Geschick; Venom-Chance mit 100-%-Deckel*
+*Letzte Aktualisierung: 2026-11-13 — Kein Angriff ohne Skill, unbewaffneter Nahkampf verworfen (Abschnitte 3 und 6); 2026-11-01 — Hinweis auf das allgemeine Schema (Fortschritt 0–100 %, v0.6); Treffer-Reichweite ab Rand des Gegners (Icon-Größe), Blob-Reichweite erhöht; Balancing: Photosynthese, Skorpione, Schlange schwächer; 2026-10-31 — Gelegentlicher Angriff (Skorpion-Stachelstich); Regeneration (Photosynthesis) stufenlos; Venom-DoT durch Giftlast ersetzt (Verweis auf GDD-05 Abschnitt 12); Hinweis „Übungsgrad statt Skill-Level“ ergänzt, HP/MP wachsen mit dem Wachstum statt pro Level; 2026-10-25 — Größen- und levelabhängiges Aggro als Konzept (Abschnitt 4); 2026-10-24 — Geschick ohne Beitrag des eingesetzten Skills; Begründungen ergänzt bzw. als offen markiert, veraltete Werte (Spieler-Wachstum, Entity-Tabelle, Passiv-Effekte) als VERWORFEN gekennzeichnet; Treffer-Stufen und Geschick; Venom-Chance mit 100-%-Deckel*

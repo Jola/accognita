@@ -236,7 +236,7 @@ export const SKILL_DEFENSE_BASE_MULTIPLIER = 1.0;
 // beide bleiben selten.
 // -----------------------------------------------------------
 
-/** Grundverteilung für Angriffe ohne eigenes hitProfile (z.B. unbewaffneter Blob) */
+/** Grundverteilung für Angriffs-Skills ohne eigenes hitProfile */
 export const DEFAULT_HIT_PROFILE: HitProfile = { miss: 0.04, light: 0.24, normal: 0.50, heavy: 0.19, crit: 0.03 };
 
 /** Schadens-Multiplikator je Treffer-Stufe — für alle Skills gleich */

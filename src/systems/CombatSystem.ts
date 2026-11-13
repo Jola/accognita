@@ -16,11 +16,10 @@
 import type { PlayerState } from "../types/GameState";
 import type { EntityDefinition, EntityInstance } from "../types/Entity";
 import type { AttackResult, DamageType, HitGrade, HitProfile, StatusEffect } from "../types/Combat";
-import type { SkillValue } from "../types/Skill";
 import { ALL_SKILLS } from "../data/skills";
 import { ENTITY_MAP } from "../data/entities";
 import { DEFAULT_HIT_PROFILE, HIT_DAMAGE_MULT, MIN_SKILL_DAMAGE, MILLI, toDisplayHp } from "../data/balance";
-import { getCoreProgress, getSkillProgress, getEntitySkillProgress, progressFromLevel } from "./ProgressionSystem";
+import { getSkillProgress, getEntitySkillProgress, progressFromLevel } from "./ProgressionSystem";
 import { getScaledDamage, getEntityRangedDamage, getEntityMeleeSkillId } from "./EntityLevelingSystem";
 import { calcFinalDamage, DAMAGE_TYPE_DE } from "./DamageSystem";
 import { calcHitChances, rollHitGrade, HIT_GRADE_DE } from "./HitSystem";
@@ -31,16 +30,13 @@ import {
   resolveDexterity,
   getPlayerPassiveSkillProgress,
   getPlayerAllSkillProgress,
-  evalSkillValue,
 } from "./SkillEffectSystem";
 import { calcJumpDistance, calcSkillAttackDamage } from "./SkillEffects";
 import { rollVenomDose, clearVenom } from "./VenomSystem";
 
-// Basis-Nahkampf des unausgerüsteten Blobs: Schaden in HP, läuft mit dem
-// Fortschritt von Absorb. 1 → 20 HP, bei Natur 18 HP (wie bisher).
-// [VERWORFEN, 1. November 2026] 3 HP + 1,5 HP × Übungsgrad u von Absorb.
-const UNARMED_DAMAGE: SkillValue = { start: 1, max: 20 };
-const UNARMED_DAMAGE_TYPE: DamageType = "blunt";  // Körpermasse = Wucht
+// [VERWORFEN, 13. November 2026] Unbewaffneter Nahkampf des Blobs (Absorb-
+// Fortschritt, 1 → 20 HP Wucht). Vorgabe (Entwickler): Ohne Skill ist kein
+// Angriff möglich — der Blob muss so gut wie alles lernen. Siehe GDD-03 Abschnitt 3.
 
 // -----------------------------------------------------------
 // Hilfsfunktionen: Angriffsskill und Schadenstyp einer Entity
@@ -193,49 +189,35 @@ const hp = toDisplayHp;
 // -----------------------------------------------------------
 // SPIELER-ANGRIFF
 //
-// skillId = undefined → unausgerüsteter Nahkampf (Blob-Körper)
+// Ohne Skill kein Angriff (Vorgabe Entwickler, GDD-03 Abschnitt 3).
 // skillId = "jump"    → Dash (kein Schaden, nur Positionsverschiebung)
 // Gibt AttackResult zurück — GameScene wendet HP-Änderungen an.
 // -----------------------------------------------------------
 export function playerAttack(
   player: PlayerState,
   targetInst: EntityInstance,
-  skillId?: string
+  skillId: string
 ): AttackResult {
   const def = ENTITY_MAP.get(targetInst.definitionId);
   if (!def) {
     return missResult("Unbekannte Entity.");
   }
 
+  const skillDef = ALL_SKILLS.get(skillId);
+
   // Dash-Skills: kein Schaden, nur Bewegung
-  if (skillId) {
-    const skillDef = ALL_SKILLS.get(skillId);
-    if (skillDef?.attackType === "dash") {
-      return dashResult(player, skillId);
-    }
+  if (skillDef?.attackType === "dash") {
+    return dashResult(player, skillId);
   }
 
   // --- Basisschaden, Schadenstyp, Treffer-Profil ---
-  let baseDmg: number;
-  let damageType: DamageType;
-  let profile: HitProfile = DEFAULT_HIT_PROFILE;
-  let progress: number;
-
-  if (!skillId) {
-    // Unbewaffnet: Fortschritt von Absorb bestimmt Schaden und Treffer-Güte
-    progress = getCoreProgress(player, "absorb");
-    baseDmg = evalSkillValue(UNARMED_DAMAGE, progress) * MILLI;
-    damageType = UNARMED_DAMAGE_TYPE;
-  } else {
-    const skillDef = ALL_SKILLS.get(skillId);
-    if (!skillDef || !skillDef.damage) {
-      return missResult(`Skill ${skillId} hat keinen Schadenswert.`);
-    }
-    progress = getSkillProgress(player, skillId);
-    baseDmg = calcSkillAttackDamage(skillId, progress);
-    damageType = skillDef.damageType ?? "blunt";
-    profile = skillDef.hitProfile ?? DEFAULT_HIT_PROFILE;
+  if (!skillDef || !skillDef.damage) {
+    return missResult(`Skill ${skillId} hat keinen Schadenswert.`);
   }
+  const progress = getSkillProgress(player, skillId);
+  const baseDmg = calcSkillAttackDamage(skillId, progress);
+  const damageType: DamageType = skillDef.damageType ?? "blunt";
+  const profile: HitProfile = skillDef.hitProfile ?? DEFAULT_HIT_PROFILE;
 
   const attacker = playerCombatant(player, skillId);
   const outcome = resolveHit(baseDmg, damageType, profile, progress, attacker, entityCombatant(def));
@@ -249,7 +231,7 @@ export function playerAttack(
 
   // Angreifer-seitige On-Hit-Effekte: Status-Effekte und Gift (VenomSystem)
   const appliedEffects: StatusEffect[] = resolveOnHitStatusEffects(attacker.effects);
-  const venomDose = rollVenomDose(attacker.effects, skillId ? { skillId, progress } : undefined);
+  const venomDose = rollVenomDose(attacker.effects, { skillId, progress });
 
   const msg = `${def.icon} ${def.name}: ${hp(outcome.dmg)} Schaden${gradeSuffix(outcome.grade)}` +
     (venomDose.total > 0 ? ` + ${hp(venomDose.total)} Gift!` : ".");

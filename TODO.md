@@ -11,8 +11,6 @@ Format:
 
 ## Bugs
 
-- `[BUG]` **Unbewaffneter Angriff ist nicht erreichbar** — `playerAttack` kann ohne Skill angreifen (3 HP + 1,5 je Übungsgrad Absorb, Wucht; GDD-03 Abschnitte 3 und 6), aber kein Button und keine Taste ruft das auf. Ein Blob ohne Biss/Klaue kann nicht angreifen. Offen: eigener Angriffs-Button oder bewusst weglassen (dann GDD anpassen)?
-
 - `[BUG]` **Superstrength verstärkt auch Feueratem** — GDD-02/03 und die Skill-Beschreibung sagen „Nahkampf“, der Effekt (`on_hit_enemy`, `damage_mult`) gilt im Code für jeden Angriff des Blobs. Offen: auf Nahkampf begrenzen oder Beschreibung ändern?
 
 - `[BUG]` **Photosynthesis heilt auch im Kampf** — GDD-02 Abschnitt 3.2: „außerhalb des Kampfes“, Skill-Beschreibung: „solange der Blob sich nicht kämpfend fortbewegt“. Im Code heilt sie immer. Offen: Was zählt als Kampf (Aggro eines Gegners in der Nähe, Treffer in den letzten N Sekunden)?
@@ -42,6 +40,8 @@ Format:
 ---
 
 ## Erledigt
+
+- `[BUG]` **Unbewaffneter Angriff war nicht erreichbar** — Entscheidung Entwickler: Ohne Skill ist kein Angriff möglich, weil man so gut wie alles lernen muss. Den unbewaffneten Pfad in `playerAttack` habe ich entfernt, GDD-03 Abschnitt 3 ist angepasst (13. November 2026).
 
 - `[BUG]` **Absorb/Analyze und Skill-Funde blieben bei 1 XP stehen** (Ameise, Marienkäfer, Gras) — `scaleXp` rundete ab; mit stetigem Übungsgrad ergab der Multiplikator gegen Stufe-1-Wesen nach dem ersten Punkt < 1, abgerundet 0. Fix: Bruchteile zählen (31. Oktober 2026).
 

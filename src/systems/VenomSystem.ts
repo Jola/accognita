@@ -51,7 +51,7 @@ export function venomDoseMilli(effect: SkillEffect, progress: number): number {
  * Würfelt für jeden Skill mit "inject_venom"-Effekt die Bisschance und
  * gibt die eingespritzten Dosen zurück (milli-HP; total 0 = trocken).
  * skillProgress: { skillId → Fortschritt } des Angreifers.
- * attack: der Skill, mit dem gerade getroffen wurde (fehlt = unbewaffnet).
+ * attack: der Skill, mit dem gerade getroffen wurde (fehlt = Gegner ohne Angriffs-Skill).
  *
  * Passive Skills (Venom) spritzen bei jedem Treffer. Aktive Skills
  * (Stachelstich) nur, wenn genau sie getroffen haben — das Gift sitzt im

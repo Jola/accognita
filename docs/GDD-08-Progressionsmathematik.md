@@ -331,7 +331,7 @@ Der Spieler spürt zwei Dinge: **wie lange** ein Level-Up dauert (Teil 1) und **
 |--------------|--------|-----:|-----:|------:|------:|------:|----:|----:|
 | Angriffsskills (Effektivität) | `1 + 0,1·(L−1) + 0,15 ab L≥3` | ×1,00 | ×1,55 | ×2,05 | ×3,05 | ×6,05 | +4,9 | +3,3 |
 | Biss (7 HP Basis) | 7 × Effektivität | 7,0 | 10,9 | 14,4 | 21,4 | 42,4 | +4,9 | +3,3 |
-| Unbewaffnet (Absorb-Level, max 20) | `3 + 1,5·L` | 4,5 | 10,5 | 18,0 | 33,0 | — | +8,3 | — |
+| ~~Unbewaffnet (Absorb-Level, max 20)~~ [VERWORFEN, 13. November 2026 — kein Angriff ohne Skill, GDD-03 Abschnitt 3] | `3 + 1,5·L` | 4,5 | 10,5 | 18,0 | 33,0 | — | +8,3 | — |
 | Superstrength | `×(1,30 + 0,05·(L−1))` | ×1,30 | ×1,50 | ×1,75 | ×2,25 | ×3,75 | +2,9 | +2,2 |
 | Venom-Chance | `min(1; 0,30 + 0,10·√(L−1))` | 30 % | 50 % | 60 % | 74 % | 100 % | — | — |
 | Venom-Schaden | `2 + 0,5·(L−1)` HP/s, 4 s | 2,0 | 4,0 | 6,5 | 11,5 | 26,5 | +7,7 | +4,3 |
@@ -502,7 +502,7 @@ Dazu kommt die Erfolgschance `min(1, Fähigkeits-Level / Entity-Level)`. Bei 50 
 
 | Größe | wirkt auf |
 |-------|-----------|
-| **Absorb-Level** | Erfolgschance Absorb · unbewaffneter Schaden (`3 + 1,5·L`) · Trefferstufen-Kippung beim unbewaffneten Angriff · Nenner des XP-Multiplikators |
+| **Absorb-Level** | Erfolgschance Absorb · ~~unbewaffneter Schaden (`3 + 1,5·L`) · Trefferstufen-Kippung beim unbewaffneten Angriff~~ [VERWORFEN, kein Angriff ohne Skill] · Nenner des XP-Multiplikators |
 | **Skill-Level eines Angriffs** | Effektivität (Schaden) · Trefferstufen-Kippung · XP-Multiplikator |
 | **Jump-Level** | Sprungweite · **Geschick** → Trefferstufen **aller anderen** Angriffe und Verteidigung gegen alle Gegner |
 | **Spieler-Level** | HP, MP · Größe des Blobs → Geschwindigkeit, Kamera, Absorb-Grenze (GDD-02 1.4) |
@@ -1085,4 +1085,4 @@ Für Vergleiche mit den Wesen-Stufen (Absorb/Analyze-Chance `min(1, Stufe / Wese
 
 ---
 
-*Letzte Aktualisierung: v0.6 — Abschnitt 25: allgemeines Schema (Fortschritt 0–100 %, Werte start → max, Ränge in Prozent, Kapazität = entdeckte Skills bis 90 %), Abschnitt 22 verworfen (1. November 2026); davor v0.5 — Abschnitt 23: Kapazität sättigt, Verlernen verteilt (1. November 2026); Gift-Befunde in 12.3 und 19.2 als behoben markiert (Giftlast, 31. Oktober 2026); davor Teil 6 ergänzt (Erfahrung statt Level umgesetzt: Kurve, Kapazität, Übertraining; Status-Hinweis oben aktualisiert, 30. Oktober 2026); davor Teil 5 ergänzt (Skill-Kapazität und Verlernen nach Überlegung des Entwicklers, Gruppen schwacher Gegner, Weltstufen); davor Teil 4 ergänzt (Überlegung Entwickler: nur Verhältnisse zählen; feste Level-Grenze vs. Max-Level-Erhöhung; Level abschaffen; Synthese unbegrenzte Übung / begrenzte Stärke); davor Teil 3 ergänzt (Vorschlag Entwickler: unendliches Leveln, lineare Skala, Anzeige in %); davor Teil 2 ergänzt (Wirkungskurven, Trefferstufen, Gift-Chance und Gift-Takt-Fehler, Skill-Fund-Wahrscheinlichkeiten, Geschick, Stapelregeln, Schwellen); davor: Datei neu angelegt: Analyse der Leveling-Modelle (proportionale Erfahrung, Level-Differenz-Multiplikator, Kurvenfamilien, Integer-Grenzen, Vergleich mit anderen Spielen), Vorschlag Zwei-Exponenten-Modell (Oktober 2026)*
+*Letzte Aktualisierung: v0.6 — Unbewaffneter Schaden verworfen, kein Angriff ohne Skill (13. November 2026); Abschnitt 25: allgemeines Schema (Fortschritt 0–100 %, Werte start → max, Ränge in Prozent, Kapazität = entdeckte Skills bis 90 %), Abschnitt 22 verworfen (1. November 2026); davor v0.5 — Abschnitt 23: Kapazität sättigt, Verlernen verteilt (1. November 2026); Gift-Befunde in 12.3 und 19.2 als behoben markiert (Giftlast, 31. Oktober 2026); davor Teil 6 ergänzt (Erfahrung statt Level umgesetzt: Kurve, Kapazität, Übertraining; Status-Hinweis oben aktualisiert, 30. Oktober 2026); davor Teil 5 ergänzt (Skill-Kapazität und Verlernen nach Überlegung des Entwicklers, Gruppen schwacher Gegner, Weltstufen); davor Teil 4 ergänzt (Überlegung Entwickler: nur Verhältnisse zählen; feste Level-Grenze vs. Max-Level-Erhöhung; Level abschaffen; Synthese unbegrenzte Übung / begrenzte Stärke); davor Teil 3 ergänzt (Vorschlag Entwickler: unendliches Leveln, lineare Skala, Anzeige in %); davor Teil 2 ergänzt (Wirkungskurven, Trefferstufen, Gift-Chance und Gift-Takt-Fehler, Skill-Fund-Wahrscheinlichkeiten, Geschick, Stapelregeln, Schwellen); davor: Datei neu angelegt: Analyse der Leveling-Modelle (proportionale Erfahrung, Level-Differenz-Multiplikator, Kurvenfamilien, Integer-Grenzen, Vergleich mit anderen Spielen), Vorschlag Zwei-Exponenten-Modell (Oktober 2026)*
