@@ -73,7 +73,7 @@ Die heutige Formel `min(1, Fähigkeits-Level / Entitäts-Level)` senkt die Chanc
 ## 2. Material-System
 
 > ~~**Status: Konzept** — Noch nicht implementiert.~~ [VERWORFEN]
-> **Status: Teilweise implementiert (v0.3)** — `MaterialSystem.ts` und `materials.ts` (7 Materialien) existieren, Absorb legt Materialien ins Inventar, der INVENTAR-Tab zeigt sie. Bisher liefert nur Gras Material (Pflanzenfasern); die einzige Verwendung (`grow`) ist nicht erreichbar, weil der Skill fehlt (Abschnitt 8.10).
+> **Status: Teilweise implementiert (v0.3)** — `MaterialSystem.ts` und `materials.ts` (7 Materialien) existieren, Absorb legt Materialien ins Inventar, der INVENTAR-Tab zeigt sie. Bisher liefert nur Gras Material (Pflanzenfasern). ~~Die einzige Verwendung (`grow`) ist nicht erreichbar, weil der Skill fehlt.~~ [VERWORFEN, 13. November 2026] Seit v0.6.9 verdaut der Skill Wachsen (Grow) die Pflanzenfasern zu Körpermasse (Abschnitt 8.10).
 
 ### 2.1 Materialgewinnung
 
@@ -88,7 +88,7 @@ Welche Materialien und in welcher Menge eine Entität liefert, wird pro Entität
 
 ### 2.2 Material-Verwendung
 
-Materialien sind eine Ressource für aktive Fähigkeiten. Erste definierte Verwendung: `grow` (siehe Abschnitt 3.2).
+~~Materialien sind eine Ressource für aktive Fähigkeiten. Erste definierte Verwendung: `grow` (siehe Abschnitt 3.2).~~ [VERWORFEN, 13. November 2026] Materialien sind Ressourcen für Skills. Erste Verwendung: Wachsen (Grow) verdaut passiv Pflanzenfasern (Abschnitt 8.10).
 Weitere Verwendungsmöglichkeiten folgen mit Ausbau des Systems.
 
 ---
@@ -141,13 +141,14 @@ Weitere Einheiten (Skorpione, Schlange, Drache) und alle aktuellen Werte: im Spi
 
 | Skill-ID | Name | Typ | Dropp-Chance | Quelle | Beschreibung |
 |----------|------|-----|--------------|--------|--------------|
+| grow | Wachsen | passiv | 20% | Gras | Verdaut über die Zeit Pflanzenfasern zu Körpermasse, der Blob wird größer (Abschnitt 8.10) |
 | photosynthesis | Photosynthesis | passiv | 12% | Gras | Regeneriert HP passiv, immer — auch im Kampf (~~außerhalb des Kampfes~~ [VERWORFEN, 13. November 2026]; **Vorgabe (Entwickler):** Photosynthese wirkt immer. > Begründung offen) |
 
 #### Entitäten (Pflanzen)
 
 | Entität | Level | Respawn | Drops |
 |---------|-------|---------|-------|
-| Gras | 1 | 60 Sek | Pflanzenfasern (100%), Photosynthesis (12%) |
+| Gras | 1 | 60 Sek | Pflanzenfasern (100%), Photosynthesis (12%), Wachsen (20%) |
 
 ---
 
@@ -528,7 +529,8 @@ Zwischen Treffer 100 und 150 ist die Erfahrung auch durch die Kapazitätsgrenze 
 | Fortschritt → Wert | `skills.ts` (`{ start, max }`) | `SkillEffectSystem.evalSkillValue` |
 | Ränge | `progression.ts` Abschnitt 2 (`SKILL_RANKS`) | `getRankInfo`, `rankNameForProgress` |
 | Vergleichsstufe | `progression.ts` Abschnitt 2b | `levelFromProgress` |
-| Kapazität, Wachstum | `progression.ts` Abschnitt 3 | `calcCapacity`, `calcGrowth`, `enforceHardLimit` |
+| Kapazität | `progression.ts` Abschnitt 3 | `calcCapacity`, `enforceHardLimit` (~~`calcGrowth`~~ [VERWORFEN]) |
+| Wachstum (Grow) | `grow.ts` | `GrowSystem.processGrow`, `getPlayerGrowth` |
 | Überdehnung | `progression.ts` Abschnitt 4 | `tickProgression` |
 | Verlernen, Wiedererlernen | `progression.ts` Abschnitt 5 | `forgetLeastPracticed`, `applyRelearnBonus` |
 | Übertraining, Ruhe | `progression.ts` Abschnitt 6 | `immediateShare`, `recover` |
@@ -545,13 +547,15 @@ Zwischen Treffer 100 und 150 ist die Erfahrung auch durch die Kapazitätsgrenze 
 - **Zahlenwerte:** NaturXP-Faktor 40,5, +20 %, Halbwertszeiten, Übertrainings-Schwelle.
 - **Ranknamen:** Biologie oder Handwerk endgültig? (Abschnitt 8.2)
 - **Gegner:** Ihre Stärke (`level`) bleibt vorerst eine Zahl für Erfolgschance und XP-Skalierung. Soll auch sie entfallen? Dazu kommt das Gegner-Aufleveln (Abschnitt 8.6).
-- **HP und MP:** Sie folgen vorerst dem Wachstum. Sollen sie nach der Vorgabe „Attribute nur aus Skills“ auch aus Skills kommen?
+- **HP und MP:** Sie folgen vorerst dem Wachstum. Sollen sie nach der Vorgabe „Attribute nur aus Skills“ auch aus Skills kommen? → Teilweise beantwortet (13. November 2026): Das Wachstum kommt jetzt aus dem Skill Wachsen (Abschnitt 8.10), HP und MP folgen also einem Skill.
 - **Verlernen:** Soll es auf 0 gehen dürfen, oder bleibt ein Rest?
 - **Übertraining je Skill oder gesamt:** Je Skill belohnt Abwechslung. Gesamt bremst direkt das „zu viel Spielen“.
 
-### 8.10 Idee (Entwickler): Grow / Wachsen — für später
+### 8.10 Grow / Wachsen (implementiert, 13. November 2026)
 
-> Status: Idee, nicht umsetzen ohne Anweisung.
+> ~~Status: Idee, nicht umsetzen ohne Anweisung.~~ [VERWORFEN] → **Status: Implementiert (v0.6.9).** Stellschrauben mit Begründung: [`src/data/grow.ts`](../src/data/grow.ts), Logik: [`src/systems/GrowSystem.ts`](../src/systems/GrowSystem.ts).
+
+Ursprüngliche Idee (Entwickler):
 
 Der Blob bekommt den Skill **Wachsen** (Grow). Mit ihm wächst er über die Zeit und wird größer, wobei er Ressourcen wie Pflanzenfasern oder Zellmaterial verbraucht. „Zeit“ meint Spielzeit.
 
@@ -559,6 +563,39 @@ Bezug zum Code:
 - `MaterialSystem.useGrow` gibt es schon: sofort +HP gegen 5 Pflanzenfasern.
 - Der Skill `grow` fehlt in `skills.ts`, deshalb ist das bisher nicht erreichbar.
 - Passt zu „Kapazität wächst mit dem Blob“ (Abschnitt 8.4): Wachsen könnte der Weg sein, auf dem Größe und Kapazität steigen.
+
+(Die beiden ersten Punkte sind seit der Umsetzung [VERWORFEN]: `useGrow` ist entfernt, der Skill existiert.)
+
+**Vorgabe (Entwickler, 13. November 2026):**
+- Wachsen verbraucht Ressourcen, derzeit Pflanzenfasern.
+- Grow wirkt **passiv über die Spielzeit**, nicht per Knopf.
+- Grow **ersetzt die Erfahrung** als Quelle des Wachstums: Der Körper (Größe, MaxHP, MaxMP) wächst nur noch durch Grow.
+- Grow lernt man **von Gras** (Absorb/Analyze), wie Photosynthese.
+- Gras wird doppelt so häufig platziert, überall wo es vorkommt.
+> Begründung offen — für „ersetzt die Erfahrung“ und „passiv“ (naheliegend: Ein Körper wächst durch Nahrung, nicht durch Wissen; Physarum wächst, solange es Nahrung hat. Bitte bestätigen).
+
+**Ablauf:** Solange Wachsen eingeschaltet ist, verdaut der Blob Pflanzenfasern aus seinem Lager. Jede verdaute Faser wird Körpermasse. Ohne Fasern ruht Wachsen. Angesparte Verdauungszeit verfällt, höchstens eine Faser wartet. Ausschalten (AN/AUS am Skill) hebt die Fasern auf.
+
+**Formeln** (Zahlen: Vorschlag Claude, offen; Begründungen in `grow.ts`):
+```
+Verdauung   = 2 → 30 Fasern/min mit dem Fortschritt von Wachsen (Natur 27,2)
+Erfahrung   = 1 XP je verdaute Faser (Lernaufwand 15 → Natur bei ≈ 600 Fasern)
+Wachstum    = log₂(1 + Körpermasse / 20)        Körpermasse = je verdaute Fasern, schrumpft nie
+MaxHP/MaxMP = 80 / 40 + Wachstum × 15 / 8       (wie bisher, GDD-03 Abschnitt 3)
+```
+| verdaute Fasern | 20 | 60 | 140 | 300 | 620 |
+|---|---:|---:|---:|---:|---:|
+| Wachstum | 1 | 2 | 3 | 4 | 5 |
+
+**Fundchance 20 %** (Gras). **Begründung (Vorschlag Claude, offen):** etwas häufiger als Photosynthese (12 %), weil Wachsen die einzige Art ist, größer zu werden.
+
+**Alte Spielstände:** Körpermasse = Lebenserfahrung ÷ 10. Das ergibt genau das bisherige Wachstum, niemand schrumpft (Spielstand-Version 4).
+
+**Mehr Gras:** Gras-Einträge der Spawn-Tabellen haben `count: 2`. Jeder Gras-Treffer setzt zwei Halme an eigenen Positionen, die anderen Wesen bleiben gleich häufig (`BiomeDefinitions.ts`, `WorldGenerator.ts`).
+
+**Anzeige:** Die Skill-Ansicht zeigt das Verdauungstempo. Der WERTE-Tab zeigt Wachstum und verdaute Fasern. Im INDEX zeigt Wachsen eine Kurve für das Verdauungstempo sowie Tabelle und Kurven für Wachstum und MaxHP über die verdauten Fasern.
+
+**[VERWORFEN, 13. November 2026]** Wachstum = log₂(1 + Lebenserfahrung / 200) (Abschnitt 8.4 und progression.ts). Grund: Vorgabe oben.
 
 ### 8.11 Eigenschaften und Skalierung der Angriffe (implementiert, 13. November 2026)
 
@@ -605,4 +642,4 @@ Das wirkt in Schritt [2] der Schadenspipeline (GDD-05 Abschnitt 3.1), also vor R
 
 ---
 
-*Letzte Aktualisierung: v0.6 — Photosynthese wirkt immer, auch im Kampf (Abschnitt 3.2, 13. November 2026); Geschick = Präzision, nicht Schaden, mit Begründung des Entwicklers (Abschnitt 8.11, 13. November 2026); Eigenschaften Stärke/Geschick und Skalierung der Angriffe (Abschnitt 8.11, 13. November 2026); Unbewaffneter Schaden verworfen, kein Angriff ohne Skill (Abschnitt 8, 13. November 2026); Effektive Werte an allen Skills (Abschnitt 6, 1. November 2026); Tatsächlicher Schaden in Skill-Ansicht und Skill-Menü (Abschnitt 6, 1. November 2026); Ameise: Biss-Erfahrung 65,5 XP → 5 Schaden (Abschnitt 8.3, 1. November 2026); Allgemeines Schema: Fortschritt 0–100 %, jeder Wert läuft vom Startwert zum Höchstwert, Ränge in Prozent, Kapazität = entdeckte Skills bis 90 % (Abschnitte 8.2–8.4, 1. November 2026); davor v0.5 — Balancing: Kapazität sättigt bei 4200, Verlernen verteilt statt reihum, Photosynthese-XP ×0,25, Stachelstich-Dosis gesenkt (1. November 2026); XP-Skalierung Absorb/Analyze: kein Abrunden mehr (31. Oktober 2026); Skorpione: Zangengriff und Stachelstich (31. Oktober 2026); Venom: Giftlast statt DoT (31. Oktober 2026); davor Abgleich mit dem Code: Material-System als teilweise implementiert (Abschnitt 2), Biss in den Quellen-Skills der Insekten ergänzt und `maxLevel` als verworfen markiert (Abschnitt 3.1) (31. Oktober 2026); davor Rangnamen: Biologie-Reihe aktiv, Handwerk-Reihe als Alternative (Abschnitt 8.2, 31. Oktober 2026); davor Erfahrung statt Level umgesetzt (Abschnitt 8: Ränge, fließende Wirkung, Kapazität, Überdehnung, Wiedererlernen, gleiche Skills für Blob und Gegner, Übertraining, Idee Grow); alte Level-Regeln in 1.2, 4, 6, 7.1 als [VERWORFEN] markiert (30. Oktober 2026). Davor: Skill-Kapazität und Verlernen als Überlegung des Entwicklers (Abschnitt 7.1); Verweis auf GDD-08 (Progressionsmathematik) in Abschnitt 4; Größe beim Absorbieren/Analysieren als Konzept (Abschnitt 1.4); XP-Skalierung (Absorb/Analyze und Kampf-XP nach Gegner-Level) mit Begründungen dokumentiert, Erfolgsformel als vorläufig vermerkt, Superstrength-Beschreibung korrigiert (Oktober 2026)*
+*Letzte Aktualisierung: v0.6 — Wachsen (Grow) umgesetzt, Wachstum nur noch aus Körpermasse, mehr Gras (Abschnitte 2, 3, 8.10, 13. November 2026); Photosynthese wirkt immer, auch im Kampf (Abschnitt 3.2, 13. November 2026); Geschick = Präzision, nicht Schaden, mit Begründung des Entwicklers (Abschnitt 8.11, 13. November 2026); Eigenschaften Stärke/Geschick und Skalierung der Angriffe (Abschnitt 8.11, 13. November 2026); Unbewaffneter Schaden verworfen, kein Angriff ohne Skill (Abschnitt 8, 13. November 2026); Effektive Werte an allen Skills (Abschnitt 6, 1. November 2026); Tatsächlicher Schaden in Skill-Ansicht und Skill-Menü (Abschnitt 6, 1. November 2026); Ameise: Biss-Erfahrung 65,5 XP → 5 Schaden (Abschnitt 8.3, 1. November 2026); Allgemeines Schema: Fortschritt 0–100 %, jeder Wert läuft vom Startwert zum Höchstwert, Ränge in Prozent, Kapazität = entdeckte Skills bis 90 % (Abschnitte 8.2–8.4, 1. November 2026); davor v0.5 — Balancing: Kapazität sättigt bei 4200, Verlernen verteilt statt reihum, Photosynthese-XP ×0,25, Stachelstich-Dosis gesenkt (1. November 2026); XP-Skalierung Absorb/Analyze: kein Abrunden mehr (31. Oktober 2026); Skorpione: Zangengriff und Stachelstich (31. Oktober 2026); Venom: Giftlast statt DoT (31. Oktober 2026); davor Abgleich mit dem Code: Material-System als teilweise implementiert (Abschnitt 2), Biss in den Quellen-Skills der Insekten ergänzt und `maxLevel` als verworfen markiert (Abschnitt 3.1) (31. Oktober 2026); davor Rangnamen: Biologie-Reihe aktiv, Handwerk-Reihe als Alternative (Abschnitt 8.2, 31. Oktober 2026); davor Erfahrung statt Level umgesetzt (Abschnitt 8: Ränge, fließende Wirkung, Kapazität, Überdehnung, Wiedererlernen, gleiche Skills für Blob und Gegner, Übertraining, Idee Grow); alte Level-Regeln in 1.2, 4, 6, 7.1 als [VERWORFEN] markiert (30. Oktober 2026). Davor: Skill-Kapazität und Verlernen als Überlegung des Entwicklers (Abschnitt 7.1); Verweis auf GDD-08 (Progressionsmathematik) in Abschnitt 4; Größe beim Absorbieren/Analysieren als Konzept (Abschnitt 1.4); XP-Skalierung (Absorb/Analyze und Kampf-XP nach Gegner-Level) mit Begründungen dokumentiert, Erfolgsformel als vorläufig vermerkt, Superstrength-Beschreibung korrigiert (Oktober 2026)*

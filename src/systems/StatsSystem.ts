@@ -39,7 +39,8 @@ import {
   getPlayerAllSkillProgress,
 } from "./SkillEffectSystem";
 import { venomBiteChance, venomDoseMilli } from "./VenomSystem";
-import { calcGrowth, getSkillProgress } from "./ProgressionSystem";
+import { getSkillProgress } from "./ProgressionSystem";
+import { getPlayerGrowth, calcGrowFibersPerMinute, isGrowActive } from "./GrowSystem";
 import { calcJumpDistance, calcPhotosynthesisHeal } from "./SkillEffects";
 import { DAMAGE_TYPE_DE } from "./DamageSystem";
 
@@ -49,7 +50,7 @@ import { DAMAGE_TYPE_DE } from "./DamageSystem";
 
 /** Radius des Blobs in Weltpixeln — wächst linear mit dem Wachstum bis PLAYER_SIZE_GROWTH_MAX. */
 export function calcPlayerWorldRadius(player: PlayerState): number {
-  const t = Math.min(calcGrowth(player.lifetimeXp) / PLAYER_SIZE_GROWTH_MAX, 1.0);
+  const t = Math.min(getPlayerGrowth(player) / PLAYER_SIZE_GROWTH_MAX, 1.0);
   return PLAYER_WORLD_RADIUS_MIN + t * (PLAYER_WORLD_RADIUS_MAX - PLAYER_WORLD_RADIUS_MIN);
 }
 
@@ -136,6 +137,7 @@ export function describePlayerSkillValues(player: PlayerState, skillId: string):
     .map((e) => describeEffect(skillId, e, p))
     .filter((l): l is string => l !== null);
   if (skillId === "jump") lines.unshift(`🦘 Sprungweite ${num(calcJumpDistance(p), 0)} px`);
+  if (skillId === "grow") lines.push(`🌱 Verdaut ${num(calcGrowFibersPerMinute(p))} Pflanzenfasern/min`);
   if (skillId === "photosynthesis") lines.push(`💚 Heilung ${num(calcPhotosynthesisHeal(p) / MILLI, 2)} HP/s`);
   return lines;
 }
@@ -164,6 +166,9 @@ export interface CharacterStats {
   reach: number;
   radius: number;
   growth: number;
+  /** verdaute Pflanzenfasern (Grow) */
+  bodyMass: number;
+  growActive: boolean;
   /** milli-HP pro Sekunde */
   hpRegen: number;
   /** milli-MP pro Sekunde */
@@ -193,7 +198,9 @@ export function getCharacterStats(player: PlayerState, hpRegen: number, mpRegen:
     speed: calcPlayerSpeed(player),
     reach: calcPlayerReach(player),
     radius: calcPlayerWorldRadius(player),
-    growth: calcGrowth(player.lifetimeXp),
+    growth: getPlayerGrowth(player),
+    bodyMass: player.bodyMass ?? 0,
+    growActive: isGrowActive(player),
     hpRegen,
     mpRegen,
     reflect: resolveDefenderEffects(passive).reflectDamage,

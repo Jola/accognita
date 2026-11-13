@@ -10,6 +10,7 @@
 // Maps ignoriert.
 // ============================================================
 
+import { bodyMassFromLifetimeXp } from "./GrowSystem";
 import type { PlayerState } from "../types/GameState";
 import type { SkillInstance } from "../types/Skill";
 import { GAME_VERSION } from "../data/version";
@@ -17,7 +18,7 @@ import { calcMaxHp, calcMaxMp } from "./SkillSystem";
 
 export const NUM_SAVE_SLOTS = 3;
 const SAVE_PREFIX    = "accognita_save_";
-const SAVE_VERSION   = 3;
+const SAVE_VERSION   = 4;
 
 // -----------------------------------------------------------
 // SAVE-METADATEN — Vorschau ohne komplettes Deserialize
@@ -44,6 +45,7 @@ interface SerializedPlayer {
   hp: number; maxHp: number;
   mp: number; maxMp: number;
   lifetimeXp: number;
+  bodyMass: number;
   level?: number; totalExp?: number;   // [VERWORFEN] nur vor v3, Migration 2 → 3
   spawnX: number; spawnY: number;
   coreAbilities: PlayerState["coreAbilities"];
@@ -76,6 +78,7 @@ function serializePlayer(player: PlayerState, skillBarSlots?: (string | null)[])
     mp: player.mp,
     maxMp: player.maxMp,
     lifetimeXp: player.lifetimeXp,
+    bodyMass: player.bodyMass,
     spawnX: player.spawnX,
     spawnY: player.spawnY,
     coreAbilities: player.coreAbilities,
@@ -102,6 +105,7 @@ function deserializePlayer(data: SerializedPlayer): PlayerState {
     mp: data.mp,
     maxMp: data.maxMp,
     lifetimeXp: data.lifetimeXp ?? 0,
+    bodyMass: data.bodyMass ?? 0,
     spawnX: data.spawnX ?? 400,
     spawnY: data.spawnY ?? 300,
     coreAbilities: data.coreAbilities,
@@ -179,6 +183,12 @@ const MIGRATIONS: Record<number, (data: SaveData) => void> = {
     delete p.level;
     delete p.totalExp;
     delete data.meta.playerLevel;
+  },
+  // v3 → v4: Wachstum kommt aus der Körpermasse (Grow) statt aus der
+  // Lebenserfahrung. Körpermasse so, dass das Wachstum gleich bleibt —
+  // niemand schrumpft durch die Umstellung (data/grow.ts Abschnitt 4).
+  3: (data) => {
+    data.player.bodyMass = bodyMassFromLifetimeXp(data.player.lifetimeXp ?? 0);
   },
 };
 

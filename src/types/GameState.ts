@@ -32,9 +32,15 @@ export interface PlayerState {
   maxMp: number;
 
   // Progression — kein Charakter-Level (progression.ts)
-  // Lebenserfahrung: alle je gutgeschriebene Erfahrung, auch später verlernte.
-  // Bestimmt das Wachstum des Blobs (Größe, HP, MP, Kapazität).
+  // Lebenserfahrung: alle je gutgeschriebene Erfahrung, auch später verlernte (Statistik).
+  // [VERWORFEN, 13. November 2026] bestimmte das Wachstum — jetzt bodyMass (Grow).
   lifetimeXp: number;
+
+  // Körpermasse: alle je durch Grow verdauten Pflanzenfasern, schrumpft nie.
+  // Bestimmt das Wachstum des Blobs (Größe, HP, MP) — GrowSystem, data/grow.ts.
+  bodyMass: number;
+  // Angefangene Verdauung (Bruchteil einer Faser, 0–1) — nicht gespeichert
+  growDigest?: number;
 
   // Kern-Fähigkeiten — immer vorhanden, werden durch Nutzung besser
   // Erfahrung bestimmt Erfolgswahrscheinlichkeit bei Analyze/Absorb
@@ -100,6 +106,7 @@ export function createInitialGameState(): GameState {
       mp: 40_000,
       maxMp: 40_000,
       lifetimeXp: 0,
+      bodyMass: 0,
       coreAbilities: {
         analyze: createSkillProgress(Date.now(), 0),
         absorb: createSkillProgress(Date.now(), 0),

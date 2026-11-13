@@ -43,7 +43,6 @@ import {
   SKILL_RANKS,
   LEVEL_AT_NATUR,
   FORGET_AGE_FLOOR_SECONDS,
-  GROWTH_XP_SCALE,
   OVERSTRETCH_MAX_FRACTION,
   OVERSTRETCH_HALF_LIFE_PLAY_SECONDS,
   RELEARN_MULTIPLIER,
@@ -198,10 +197,8 @@ export function getRankInfo(progress: SkillProgress, learningEffort: number): Ra
 // 3. KAPAZITÄT
 // -----------------------------------------------------------
 
-/** Wachstum des Blobs — stetig, schrumpft nie (Platzhalter, siehe progression.ts). */
-export function calcGrowth(lifetimeXp: number): number {
-  return Math.log2(1 + Math.max(0, lifetimeXp) / GROWTH_XP_SCALE);
-}
+// [VERWORFEN, 13. November 2026] calcGrowth(lifetimeXp) = log2(1 + XP / 200).
+// Das Wachstum kommt jetzt aus der Körpermasse (GrowSystem.getPlayerGrowth).
 
 /**
  * Kapazität: so viel Erfahrung können alle Skills zusammen dauerhaft halten —

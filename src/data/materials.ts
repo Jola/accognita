@@ -14,7 +14,7 @@ export const MATERIAL_DEFINITIONS: MaterialDefinition[] = [
     id: "plant_fiber",
     name: "Pflanzenfaser",
     icon: "🌿",
-    description: "Faserige Struktur aus Pflanzen. Grundmaterial für Grow.",
+    description: "Faserige Struktur aus Pflanzen. Nahrung für Wachsen (Grow): wird zu Körpermasse verdaut.",
   },
   {
     id: "wood",

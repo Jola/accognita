@@ -69,7 +69,7 @@ export const PHOTOSYNTHESIS_XP_PER_HP = 0.25;
 // SPIELER-VITALWERTE-SKALIERUNG
 // maxHp(growth) = BASE_HP + growth * HP_PER_GROWTH
 // maxMp(growth) = BASE_MP + growth * MP_PER_GROWTH
-// growth = stetiges Wachstum des Blobs (ProgressionSystem.calcGrowth);
+// growth = stetiges Wachstum des Blobs aus der Körpermasse (GrowSystem.getPlayerGrowth, data/grow.ts);
 // growth 1 entspricht genau einem alten Charakter-Level.
 // -----------------------------------------------------------
 
@@ -261,7 +261,7 @@ export const ANALYZE_CHANCE_MODIFIER = 0.7;
 // -----------------------------------------------------------
 // SPIELER-WACHSTUM / KAMERA-ZOOM
 //
-// Der Blob wächst stetig (Wachstum, ProgressionSystem.calcGrowth). Seine Weltgröße
+// Der Blob wächst stetig (Wachstum aus Körpermasse, GrowSystem.getPlayerGrowth). Seine Weltgröße
 // skaliert von PLAYER_WORLD_RADIUS_MIN (Wachstum 0) bis PLAYER_WORLD_RADIUS_MAX
 // (Wachstum PLAYER_SIZE_GROWTH_MAX+). Wachstum 0 / 19 ≙ früher Level 1 / 20.
 // Der Kamera-Zoom wird so angepasst, dass der Blob auf dem Bildschirm

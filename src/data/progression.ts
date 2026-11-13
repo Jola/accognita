@@ -197,6 +197,11 @@ export const LEVEL_AT_NATUR = 10;
 //   klein (Lebenserfahrung 10 000 → 1050), schon wenige Skills verdrängten
 //   sich gegenseitig.
 //
+// [VERWORFEN, 13. November 2026] Wachstum aus Lebenserfahrung — ersetzt
+// durch Wachstum aus Körpermasse (Grow, src/data/grow.ts). Vorgabe
+// (Entwickler): Der Körper wächst nur noch durch Grow. GROWTH_XP_SCALE
+// bleibt nur für die Migration alter Spielstände (SaveSystem 3 → 4).
+// Bisheriger Text:
 // Wachstum des Körpers (Größe, HP, MP) — weiter Platzhalter, Vorschlag
 // Claude (offen):
 //   Wachstum  = log2(1 + Lebenserfahrung / GROWTH_XP_SCALE)

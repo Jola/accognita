@@ -435,6 +435,22 @@ export const PLANT_SKILLS: SkillDefinition[] = [
       "Passiv: Regeneriert langsam HP — immer, auch im Kampf. " +
       "Wirkt automatisch nach Entdeckung. 0,1 → 1,2 HP/s mit der Übung.",
   },
+  {
+    id: "grow",
+    name: "Wachsen",
+    element: "nature",
+    icon: "🌱",
+    category: "basic",
+    activation: "passive",
+    // Begründung (Vorschlag Claude, offen): wie Photosynthese — ein
+    // Körpervorgang, der passiv mitläuft; Natur bei ≈ 600 verdauten Fasern.
+    learningEffort: 15,
+    description:
+      "Passiv: Der Blob verdaut über die Zeit Pflanzenfasern aus seinem Lager und wird daraus größer — " +
+      "mehr Körpermasse heißt mehr Größe, MaxHP und MaxMP. Verdaut 2 → 30 Fasern pro Minute mit der Übung. " +
+      "Ausschalten, um Fasern aufzuheben. Quelle: Gras.",
+    // Werte und Begründungen: src/data/grow.ts (Vorgabe Entwickler, 13. November 2026)
+  },
 ];
 
 // -----------------------------------------------------------

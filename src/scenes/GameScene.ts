@@ -9,6 +9,8 @@
 // Phaser wird als globales `Phaser` aus dem CDN geladen.
 declare const Phaser: any;
 
+import { processGrow, getPlayerGrowth } from "../systems/GrowSystem";
+import { GROW_XP_PER_FIBER } from "../data/grow";
 import { createInitialGameState } from "../types/GameState.js";
 import type { GameState } from "../types/GameState.js";
 import { ALL_SKILLS } from "../data/skills.js";
@@ -28,7 +30,6 @@ import {
   settleAfterLoad,
   getRankInfo,
   getCapacityInfo,
-  calcGrowth,
   getLearningEffort,
   getCoreProgress,
   levelFromProgress,
@@ -45,7 +46,6 @@ import {
   calcSuccessChance,
 } from "../systems/EntitySystem.js";
 import {
-  useGrow,
   getMaterialList,
 } from "../systems/MaterialSystem.js";
 import type { EntityInstance } from "../types/Entity.js";
@@ -452,8 +452,8 @@ export class GameScene extends Phaser.Scene {
     // und die Kapazitätsgrenze herstellen (alte Spielstände können darüber liegen)
     this.logProgressionEvents(settleAfterLoad(this.gameState.player, Date.now()));
 
-    // maxHp/maxMp aus dem Wachstum neu berechnen (migriert alte Saves)
-    const growth = calcGrowth(this.gameState.player.lifetimeXp);
+    // maxHp/maxMp aus dem Wachstum (Körpermasse) neu berechnen (migriert alte Saves)
+    const growth = getPlayerGrowth(this.gameState.player);
     this.gameState.player.maxHp = calcMaxHp(growth);
     this.gameState.player.maxMp = calcMaxMp(growth);
     this.gameState.player.hp = Math.min(this.gameState.player.hp, this.gameState.player.maxHp);
@@ -505,7 +505,6 @@ export class GameScene extends Phaser.Scene {
   private setupGlobalFunctions() {
     (window as any).touchAbsorb  = () => this.doAbsorb();
     (window as any).touchAnalyze = () => this.doAnalyze();
-    (window as any).doGrow       = () => this.doGrow();
     (window as any).togglePassiveSkill = (skillId: string) => this.togglePassiveSkill(skillId);
     (window as any).resumeFromPause = () => {
       if (fullscreenSupported()) {
@@ -827,6 +826,12 @@ export class GameScene extends Phaser.Scene {
       this.logProgressionEvents(gain.events);
       this.progressDirty = true;
       updateVitalsUI(this.gameState.player);
+    }
+
+    // Wachsen (Grow): verdaut Pflanzenfasern über die Spielzeit → Körpermasse → Wachstum
+    const digested = processGrow(this.gameState.player, delta);
+    if (digested > 0) {
+      this.afterXpGain(gainSkillXp(this.gameState.player, "grow", digested * GROW_XP_PER_FIBER));
     }
 
     // Gift auf dem Spieler: stufenlos, keine Zahl (die kam beim Biss)
@@ -1164,12 +1169,6 @@ export class GameScene extends Phaser.Scene {
     this.afterProgressChange();
   }
 
-  doGrow() {
-    const result = useGrow(this.gameState.player);
-    showToast(result.message, result.success ? "absorb" : "system");
-    if (result.success) updateUI(this.gameState);
-  }
-
   togglePassiveSkill(skillId: string) {
     const inst = this.gameState.player.discoveredSkills.get(skillId);
     if (!inst) return;
@@ -1265,7 +1264,6 @@ function renderSkillList(state: GameState) {
       if (!def) return "";
       const info = getRankInfo(inst, getLearningEffort(def.id));
       const isPassive = def.activation === "passive";
-      const hasGrow = def.id === "grow";
 
       const enabled = inst.isEnabled !== false;
       const damage = formatPlayerSkillDamage(state.player, def.id);
@@ -1284,7 +1282,6 @@ function renderSkillList(state: GameState) {
           ${damage ? `<div class="skill-dmg">${damage}, vor Rüstung des Ziels</div>` : ""}
           ${describePlayerSkillValues(state.player, def.id).map((v) => `<div class="skill-dmg">${v}</div>`).join("")}
           <div class="skill-desc">${def.description}</div>
-          ${hasGrow ? `<button class="btn-grow" onclick="window.doGrow()">🌱 Grow anwenden (−5 Pflanzenfaser)</button>` : ""}
         </div>
       `;
     })

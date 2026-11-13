@@ -20,6 +20,9 @@ import { calcHitChances, HIT_GRADES, HIT_GRADE_DE } from "../systems/HitSystem.j
 import { DAMAGE_TYPE_DE } from "../systems/DamageSystem.js";
 import { getEffectValue } from "../systems/StatsSystem.js";
 import { BIOME_SPAWNS } from "../world/BiomeDefinitions.js";
+import { calcGrowFibersPerMinute, calcGrowthFromMass } from "../systems/GrowSystem.js";
+import { GROW_FIBERS_PER_MINUTE, GROWTH_FIBER_SCALE } from "../data/grow.js";
+import { HP_PER_GROWTH, MP_PER_GROWTH } from "../data/balance.js";
 import { SKILL_RANKS, NATUR_PROGRESS, LEVEL_AT_NATUR } from "../data/progression.js";
 import { xpForProgress, getEntitySkillProgress, rankNameForProgress, levelFromProgress } from "../systems/ProgressionSystem.js";
 import {
@@ -183,8 +186,10 @@ function biomeShares(id: string): { name: string; share: number }[] {
   return Object.entries(BIOME_SPAWNS).flatMap(([biome, entries]) => {
     const entry = entries.find((x) => x.id === id);
     if (!entry) return [];
-    const total = entries.reduce((sum, x) => sum + x.weight, 0);
-    return [{ name: BIOME_DE[biome] ?? biome, share: entry.weight / total }];
+    // Anteil an allen Exemplaren: Gewicht × Exemplare je Treffer (count)
+    const n = (x: { weight: number; count?: number }) => x.weight * (x.count ?? 1);
+    const total = entries.reduce((sum, x) => sum + n(x), 0);
+    return [{ name: BIOME_DE[biome] ?? biome, share: n(entry) / total }];
   });
 }
 
@@ -311,6 +316,11 @@ function skillDetail(s: SkillDefinition): string {
     derived.push(["Sprungweite (px)", LEVELS.map((l) => num(calcJumpDistance(l), 0))]);
     derivedSeries.push({ label: "Sprungweite", value: calcJumpDistance, format: (v) => `${num(v, 0)} px`, formula: valueFormula(JUMP_DISTANCE_PX, (x) => `${num(x)} px`) });
   }
+  if (s.id === "grow") {
+    // Verdauungstempo — dieselbe Funktion wie im Spiel (GrowSystem)
+    derived.push(["Verdauung (Fasern/min)", LEVELS.map((l) => num(calcGrowFibersPerMinute(l), 1))]);
+    derivedSeries.push({ label: "Verdaute Pflanzenfasern pro Minute", value: calcGrowFibersPerMinute, format: (v) => `${num(v, 1)}/min`, formula: valueFormula(GROW_FIBERS_PER_MINUTE, (x) => `${num(x)}/min`) });
+  }
   if (s.id === "photosynthesis") {
     derived.push(["Heilung (HP/s)", LEVELS.map((l) => hp(calcPhotosynthesisHeal(l)))]);
     derivedSeries.push({ label: "Heilung", value: (x) => calcPhotosynthesisHeal(x) / MILLI, format: (v) => `${num(v, 2)} HP/s`, formula: valueFormula(PHOTOSYNTHESIS_HEAL_HP_PER_S, (x) => `${num(x)} HP/s`) });
@@ -401,6 +411,7 @@ function skillDetail(s: SkillDefinition): string {
     params(p),
     section("Effekte", effects),
     section("Verstärkt Angriffe", boostsHtml),
+    section("Wachstum aus Körpermasse", s.id === "grow" ? growthHtml() : ""),
     section("Skaliert mit Eigenschaften", scalingHtml),
     section("Werte zu Rangbeginn (dazwischen fließend)", derived.length ? levelTable(derived) + charts(derivedSeries) : ""),
     section("Treffer-Stufen (ohne Geschick)", s.damage
@@ -409,6 +420,21 @@ function skillDetail(s: SkillDefinition): string {
     section("Entdeckbar bei", sources.length ? dataTable(["Einheit", "Level", "Absorb", "Analyze"], sources) : ""),
     section("Von Einheiten genutzt", users ? `<div>${users}</div>` : ""),
   ].join("");
+}
+
+/** Grow: Wachstum, MaxHP und MaxMP über die verdauten Fasern (GrowSystem, data/grow.ts Abschnitt 4) */
+function growthHtml(): string {
+  const maxFibers = GROWTH_FIBER_SCALE * (2 ** 5 - 1); // bis Wachstum 5
+  const formula = `log₂(1 + Fasern / ${num(GROWTH_FIBER_SCALE)})`;
+  const base = { unit: "Fasern", maxPoints: maxFibers };
+  const rows: string[][] = [1, 2, 3, 4, 5].map((g) => {
+    const fibers = GROWTH_FIBER_SCALE * (2 ** g - 1);
+    return [num(fibers, 0), num(g), `+${hp(g * HP_PER_GROWTH)}`, `+${hp(g * MP_PER_GROWTH)}`];
+  });
+  return `<p class="idx-reason">Jede verdaute Faser wird Körpermasse; sie schrumpft nie. Allein die Körpermasse bestimmt Größe, MaxHP und MaxMP.</p>` +
+    dataTable(["verdaute Fasern", "Wachstum", "MaxHP", "MaxMP"], rows) +
+    pointsChart({ ...base, label: "Wachstum über verdaute Pflanzenfasern", value: calcGrowthFromMass, format: (v) => num(v, 2), formula }) +
+    pointsChart({ ...base, label: "Zusätzliche MaxHP über verdaute Pflanzenfasern", value: (m) => calcGrowthFromMass(m) * HP_PER_GROWTH / MILLI, format: (v) => `+${num(v, 1)} HP`, formula: `${hp(HP_PER_GROWTH)} HP × ${formula}` });
 }
 
 // ── Einheiten-Detail ───────────────────────────────────────

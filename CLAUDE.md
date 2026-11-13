@@ -33,6 +33,8 @@ Current state: **v0.6** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/systems/ProgressionSystem.ts` | How experience is booked: relearn bonus, overtraining/rest, capacity and forgetting, ranks; same progress conversion for player and entities |
 | `src/systems/EntitySystem.ts` | Absorb/Analyze/Respawn logic |
 | `src/systems/StatusEffectSystem.ts` | DoT/HoT/Aura processing, continuous regeneration (HoT as rate per frame), passive skill sync |
+| `src/data/grow.ts` | Grow knobs with rationale: food material, digestion rate, XP per fiber, growth from body mass |
+| `src/systems/GrowSystem.ts` | Grow feature, isolated: digest plant fibers over time → body mass → growth (size, HP, MP) |
 | `src/data/venom.ts` | Venom knobs with rationale: dose, stacking venom load, half-life, minimum rate |
 | `src/systems/VenomSystem.ts` | Venom feature, isolated: roll dose, venom load, continuous decay (= damage) |
 | `src/systems/StatsSystem.ts` | Effective values per skill and character stats, computed with the same functions the game uses; player size, speed, reach |

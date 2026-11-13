@@ -51,17 +51,27 @@ export function getBiomeAt(cx: number, cy: number): BiomeId {
 export interface BiomeSpawnEntry {
   id: string;
   weight: number;
+  /**
+   * Exemplare je Treffer (Standard 1). 2 = doppelt so viele, ohne die
+   * anderen Wesen seltener zu machen (jedes an eigener Position).
+   */
+  count?: number;
 }
+
+// Vorgabe (Entwickler, 13. November 2026): Gras doppelt so häufig
+// platzieren, überall wo es vorkommt — Pflanzenfasern sind die Nahrung
+// für Wachsen (Grow). > Begründung offen (naheliegend: genug Nahrung).
+const GRASS_COUNT = 2;
 
 export const BIOME_SPAWNS: Record<BiomeId, BiomeSpawnEntry[]> = {
   forest:   [
     { id: "ant",     weight: 10 },
     { id: "ladybug", weight: 10 },
-    { id: "grass",   weight: 15 },
+    { id: "grass",   weight: 15, count: GRASS_COUNT },
   ],
   swamp:    [
     { id: "poison_spider", weight: 10 },
-    { id: "grass",         weight: 10 },
+    { id: "grass",         weight: 10, count: GRASS_COUNT },
   ],
   highland: [
     { id: "jumping_spider", weight: 10 },

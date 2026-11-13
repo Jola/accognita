@@ -92,7 +92,7 @@ function weightedPick(table: BiomeSpawnEntry[], rng: () => number): string {
 // Spawn-Generierung
 // ────────────────────────────────────────
 
-/** 64–112 Spawns pro Chunk, gewichtet nach Biom-Spawn-Tabelle */
+/** 64–112 Ziehungen pro Chunk, gewichtet nach Biom-Spawn-Tabelle; Einträge mit count setzen mehrere Exemplare */
 function generateSpawns(
   biome: string,
   rng: () => number
@@ -104,10 +104,14 @@ function generateSpawns(
 
   for (let i = 0; i < count; i++) {
     const defId = weightedPick(spawnTable, rng);
-    // Position: nicht zu nah am Chunk-Rand (mindestens 48px Abstand)
-    const localX = 48 + (rng() * (CHUNK_PX - 96)) | 0;
-    const localY = 48 + (rng() * (CHUNK_PX - 96)) | 0;
-    spawns.push({ defId, localX, localY });
+    // count: Exemplare je Treffer (z. B. Gras doppelt), jedes an eigener Position
+    const copies = spawnTable.find((e) => e.id === defId)?.count ?? 1;
+    for (let c = 0; c < copies; c++) {
+      // Position: nicht zu nah am Chunk-Rand (mindestens 48px Abstand)
+      const localX = 48 + (rng() * (CHUNK_PX - 96)) | 0;
+      const localY = 48 + (rng() * (CHUNK_PX - 96)) | 0;
+      spawns.push({ defId, localX, localY });
+    }
   }
 
   return spawns;

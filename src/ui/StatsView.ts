@@ -47,7 +47,8 @@ function statsHtml(p: PlayerState): string {
   const body: [string, string, string?][] = [
     ["❤️ HP", `${hp(p.hp, 0)} / ${hp(p.maxHp, 0)}`, s.hpRegen ? `+${hp(s.hpRegen, 2)} HP/s Regeneration` : "keine Regeneration"],
     ["💧 MP", `${hp(p.mp, 0)} / ${hp(p.maxMp, 0)}`, `+${hp(s.mpRegen, 2)} MP/s`],
-    ["📏 Größe", `${num(s.radius)} px Radius`, `Wachstum ${num(s.growth, 2)}`],
+    ["📏 Größe", `${num(s.radius)} px Radius`, `Wachstum ${num(s.growth, 2)} aus ${num(s.bodyMass, 0)} verdauten Pflanzenfasern` +
+      (p.discoveredSkills.has("grow") ? (s.growActive ? " · Wachsen läuft" : " · Wachsen ausgeschaltet") : " · Wachsen noch nicht gelernt (Gras)")],
     ["🧠 Kapazität", `${num(cap.used, 0)} / ${num(cap.capacity, 0)} XP`,
       cap.overstretch > 0 ? `überdehnt um ${num(cap.overstretch, 0)} XP (Grenze ${num(cap.limit, 0)})` : `Grenze mit Überdehnung ${num(cap.limit, 0)}`],
     ["✨ Lebenserfahrung", `${num(p.lifetimeXp, 0)} XP`],

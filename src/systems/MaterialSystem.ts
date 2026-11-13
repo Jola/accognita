@@ -7,10 +7,6 @@
 import type { PlayerState } from "../types/GameState";
 import type { MaterialStack } from "../types/Material";
 import { MATERIAL_MAP } from "../data/materials";
-import { ALL_SKILLS } from "../data/skills";
-import type { SkillValue } from "../types/Skill";
-import { getSkillProgress } from "./ProgressionSystem";
-import { evalSkillValue } from "./SkillEffectSystem";
 
 // -----------------------------------------------------------
 // ZAHLENFORMATIERUNG
@@ -99,65 +95,8 @@ export function getMaterialList(
 }
 
 // -----------------------------------------------------------
-// GROW-FÄHIGKEIT
-// Verbraucht Materialien, erhöht MaxHP dauerhaft
+// GROW-FÄHIGKEIT — [VERWORFEN, 13. November 2026]
+// Früher: useGrow() per Knopf, −5 Pflanzenfasern, +1 → 25 MaxHP (GROW_HP).
+// Jetzt: Grow wirkt passiv über die Zeit und verdaut Fasern zu Körpermasse
+// (src/systems/GrowSystem.ts, src/data/grow.ts). Vorgabe (Entwickler).
 // -----------------------------------------------------------
-
-// HP-Gewinn je Wachstum: läuft mit dem Fortschritt von Grow (Skill gibt es
-// noch nicht, TODO.md). 1 → 25 HP, bei Natur 23 HP (wie bisher).
-// [VERWORFEN, 1. November 2026] 5 HP + 2 HP × (Übungsgrad u − 1).
-const GROW_HP: SkillValue = { start: 1, max: 25 };
-
-export interface GrowResult {
-  success: boolean;
-  hpGained: number;
-  missingMaterials?: MaterialStack[];
-  message: string;
-}
-
-export function useGrow(player: PlayerState): GrowResult {
-  const skill = player.discoveredSkills.get("grow");
-  if (!skill) {
-    return { success: false, hpGained: 0, message: "Grow nicht gelernt." };
-  }
-
-  const growDef = ALL_SKILLS.get("grow");
-  if (!growDef?.materialCost) {
-    return { success: false, hpGained: 0, message: "Kein Materialkosteneintrag für Grow." };
-  }
-
-  // Fehlende Materialien ermitteln
-  const missing: MaterialStack[] = growDef.materialCost.filter(
-    ({ materialId, amount }) =>
-      getMaterialAmount(player, materialId) < amount
-  );
-
-  if (missing.length > 0) {
-    const details = missing
-      .map(({ materialId, amount }) => {
-        const def = MATERIAL_MAP.get(materialId);
-        return `${def?.icon ?? "?"} ${def?.name ?? materialId} ×${amount}`;
-      })
-      .join(", ");
-    return {
-      success: false,
-      hpGained: 0,
-      missingMaterials: missing,
-      message: `Nicht genug Materialien: ${details}`,
-    };
-  }
-
-  // Kosten abziehen
-  deductMaterials(player, growDef.materialCost);
-
-  // HP erhöhen
-  const hpGained = Math.round(evalSkillValue(GROW_HP, getSkillProgress(player, "grow")));
-  player.maxHp += hpGained;
-  player.hp += hpGained;
-
-  return {
-    success: true,
-    hpGained,
-    message: `🌱 Gewachsen! +${hpGained} MaxHP (jetzt: ${player.maxHp})`,
-  };
-}

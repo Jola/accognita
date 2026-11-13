@@ -40,6 +40,10 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     level: 1,
     skillDrops: [
       { skillId: "photosynthesis", chance: 0.12 }, // Selten — besonderer Fund
+      // Vorgabe (Entwickler, 13. November 2026): Grow lernt man von Gras.
+      // 20 % (Vorschlag Claude, offen): etwas häufiger als Photosynthese,
+      // weil Wachsen die einzige Art ist, größer zu werden.
+      { skillId: "grow", chance: 0.20 },
     ],
     materialDrops: [
       { materialId: "plant_fiber", amountMin: 1, amountMax: 3, chance: 1.00 },

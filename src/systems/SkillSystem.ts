@@ -28,8 +28,8 @@ import {
   getCoreProgress,
   getSkillProgress,
   levelFromProgress,
-  calcGrowth,
 } from "./ProgressionSystem";
+import { getPlayerGrowth } from "./GrowSystem";
 import type { GainResult } from "./ProgressionSystem";
 
 // Skills haben keine Level, nur Erfahrung. Wie Erfahrung verbucht wird
@@ -213,8 +213,9 @@ export function gainSkillXp(
 // WACHSTUM DES BLOBS (statt Charakter-Level)
 //
 // Vorgabe (Entwickler): kein Charakter-Level. Größe, HP und MP folgen dem
-// stetigen Wachstum (ProgressionSystem.calcGrowth, Platzhalter bis Jörn
-// festlegt, wie der Blob wächst). Bei gleicher Lebenserfahrung dieselben
+// stetigen Wachstum aus der Körpermasse (GrowSystem.getPlayerGrowth,
+// Vorgabe Entwickler 13. November 2026: Der Körper wächst nur durch Grow).
+// [VERWORFEN] Wachstum aus Lebenserfahrung (ProgressionSystem.calcGrowth). Bei gleicher Lebenserfahrung dieselben
 // Werte wie mit dem alten Level, nur ohne Sprünge.
 // -----------------------------------------------------------
 
@@ -233,7 +234,7 @@ export function calcMaxMp(growth: number): number {
  * aktuellen HP/MP zugute (wie früher beim Level-Up).
  */
 export function updatePlayerGrowth(player: PlayerState): void {
-  const growth = calcGrowth(player.lifetimeXp);
+  const growth = getPlayerGrowth(player);
   const newMaxHp = calcMaxHp(growth);
   const newMaxMp = calcMaxMp(growth);
   if (newMaxHp > player.maxHp) player.hp = Math.min(player.hp + (newMaxHp - player.maxHp), newMaxHp);

@@ -25,8 +25,6 @@ Format:
 
 - `[FEATURE]` **Gegner-Aufleveln an die Erfahrungsregeln anpassen** — `EntityLevelingSystem` skaliert HP/Schaden/Tempo pauschal ×1,25 je Bonus-Level. Das widerspricht der Vorgabe „gleicher Skill, gleiche Erfahrung, gleiche Wirkung“ (GDD-02 Abschnitt 8.6). Vorschlag: Siege geben dem Gegner Skill-Erfahrung nach denselben Regeln wie beim Blob.
 
-- `[FEATURE]` **Idee: Grow / Wachsen** (für später, nicht umsetzen ohne Anweisung) — Skill, mit dem der Blob über Spielzeit und unter Verbrauch von Ressourcen (Pflanzenfasern, Zellmaterial …) größer wird. `MaterialSystem.useGrow` gibt es schon, der Skill `grow` fehlt in skills.ts. GDD-02 Abschnitt 8.10.
-
 - `[FEATURE]` **Idee: Körpergröße verstärkt Skills** (für später) — z. B. mit wachsender Größe prozentual mehr Stärke; eine „Synergie mit dem Körper“. GDD-02 Abschnitt 8.6.
 
 - `[FEATURE]` **Gegner-XP an das allgemeine Schema anpassen?** — Seit v0.6 starten alle Skill-Werte bei ≈ 1 (Fortschritt 0 %). Die `skillXp` der Gegner sind unverändert, deshalb sind schwache Gegner viel schwächer geworden (Ameise Biss 7 → 1 HP — inzwischen auf 5 HP angehoben, Vorgabe Entwickler; Giftspinne 44 % auf 12 HP Gift → 8 % auf 4 HP), der Drache ist auf die Höchstwerte begrenzt (Klaue 24 → 18). Offen: Gegner-XP anheben, damit z. B. Ameisen bei Übung liegen? GDD-02 Abschnitt 8.3.
@@ -36,6 +34,8 @@ Format:
 ---
 
 ## Erledigt
+
+- `[FEATURE]` **Grow / Wachsen**: passiv, verdaut Pflanzenfasern zu Körpermasse, das Wachstum kommt nur noch daraus. Wird von Gras gelernt, Gras gibt es doppelt so oft (GDD-02 Abschnitt 8.10, 13. November 2026).
 
 - `[BUG]` **Photosynthesis heilt auch im Kampf**: kein Bug. Vorgabe Entwickler: Photosynthese wirkt immer. GDD und Skill-Beschreibung sind angepasst, der Code bleibt unverändert (13. November 2026).
 
