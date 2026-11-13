@@ -55,7 +55,7 @@ function statsHtml(p: PlayerState): string {
 
   const attributes: [string, string, string?][] = [
     ["💪 Stärke", num(s.strength, 2), `verstärkt ${scaledBy("strength")} · ${from(s.strengthSources)}`],
-    ["🎯 Geschick", num(s.dexterity, 2), `bessere Treffer, Gegner treffen seltener gut; verstärkt ${scaledBy("dexterity")} · ${from(s.dexteritySources)}`],
+    ["🎯 Geschick", num(s.dexterity, 2), `Präzision: mehr schwere und kritische, weniger leichte und verfehlte Treffer; Gegner treffen seltener gut · ${from(s.dexteritySources)}`],
     ["💨 Geschwindigkeit", `${num(s.speed, 0)} px/s`, "wächst mit der Größe"],
     ["📐 Reichweite", `${num(s.reach)} px`, "Nahkampf, Absorb, Analyze — bis zum Rand des Ziels"],
   ];

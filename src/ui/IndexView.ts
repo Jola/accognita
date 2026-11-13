@@ -12,7 +12,10 @@ import type { DamageType, HitProfile } from "../types/Combat";
 import { CORE_SKILLS, BASE_SKILLS, PLANT_SKILLS, COMBO_SKILLS, ALL_SKILLS } from "../data/skills.js";
 import { ENTITY_DEFINITIONS, ENTITY_MAP } from "../data/entities.js";
 import { MATERIAL_MAP } from "../data/materials.js";
-import { ANALYZE_CHANCE_MODIFIER, MILLI, DEFAULT_HIT_PROFILE, HIT_DAMAGE_MULT } from "../data/balance.js";
+import {
+  ANALYZE_CHANCE_MODIFIER, MILLI, DEFAULT_HIT_PROFILE, HIT_DAMAGE_MULT,
+  HIT_TILT_MAX, HIT_TILT_PER_SKILL_LEVEL, HIT_TILT_PER_DEX,
+} from "../data/balance.js";
 import { calcHitChances, HIT_GRADES, HIT_GRADE_DE } from "../systems/HitSystem.js";
 import { DAMAGE_TYPE_DE } from "../systems/DamageSystem.js";
 import { getEffectValue } from "../systems/StatsSystem.js";
@@ -324,6 +327,29 @@ function skillDetail(s: SkillDefinition): string {
 
   // Eigenschafts-Skalierung (GDD-02 Abschnitt 8.11): Formel, Begründung, Kurve je Eigenschaft
   let scalingHtml = "";
+  const dexGivers = ALL_SKILL_LIST.filter((g) => g.effects?.some((e) => e.trigger === "passive" && e.effectType === "dexterity"));
+  const giverChips = (list: SkillDefinition[]) => (list.length ? list.map((g) => skillChip(g)).join(" ") : "— (noch kein Skill)");
+  if (s.damage) {
+    // Präzision: Geschick kippt die Treffer-Stufen (HitSystem) — bei jedem Angriff, nicht am Schaden
+    // Vorgabe (Entwickler, 13. November 2026): Geschick erhöht die Präzision, nicht den Schaden.
+    const profile = s.hitProfile ?? DEFAULT_HIT_PROFILE;
+    const level = levelFromProgress(NATUR_PROGRESS);
+    const chancesAt = (dex: number) => calcHitChances(profile, NATUR_PROGRESS, dex, 0); // dieselbe Funktion wie im Kampf
+    const maxDex = maxAttributePoints("dexterity");
+    const good = (dex: number) => { const c = chancesAt(dex); return c.heavy + c.crit; };
+    const bad = (dex: number) => { const c = chancesAt(dex); return c.light + c.miss; };
+    const tiltFormula = `kipp = ${num(HIT_TILT_MAX)} · tanh(${num(HIT_TILT_PER_SKILL_LEVEL)} · (Stufe − 1) + ${num(HIT_TILT_PER_DEX)} · (Geschick − Geschick Ziel)); ` +
+      `p_Stufe ∝ Grund · e^(kipp · Stufe), Stufe −2 verfehlt … +2 kritisch`;
+    const chartOpts = { unit: "Geschick", maxPoints: maxDex, naturPoints: maxAttributePoints("dexterity", NATUR_PROGRESS), format: pct, formula: tiltFormula };
+    scalingHtml += `<div class="idx-effect">
+      <div><b>🎯 Geschick → Präzision</b> (nicht Schaden)</div>
+      <div class="idx-formula">Punkte aus ${giverChips(dexGivers)} · Mehr schwere und kritische, weniger leichte und verfehlte Treffer.
+        Bei Natur (Stufe ${num(level, 1)}), Ziel ohne Geschick: schwer + kritisch ${pct(good(0))} → ${pct(good(maxDex))},
+        leicht + verfehlt ${pct(bad(0))} → ${pct(bad(maxDex))} (0 → ${num(maxDex)} Geschick)</div>
+      ${pointsChart({ ...chartOpts, label: "Schwere + kritische Treffer bei Natur über Geschick", value: good })}
+      ${pointsChart({ ...chartOpts, label: "Leichte + verfehlte Treffer bei Natur über Geschick", value: bad })}
+    </div>`;
+  }
   if (s.scaling?.length && s.damage) {
     const terms = s.scaling.map((x) => `${pct(x.perPoint)} × ${ATTRIBUTE_DE[x.attribute]}`).join(" + ");
     const baseNatur = calcSkillAttackDamage(s.id, NATUR_PROGRESS) / MILLI;
@@ -342,12 +368,12 @@ function skillDetail(s: SkillDefinition): string {
       });
       return `<div class="idx-effect">
         <div><b>${ATTRIBUTE_ICON[attr]} ${ATTRIBUTE_DE[attr]}</b> · +${pct(x.perPoint)} Schaden je Punkt</div>
-        <div class="idx-formula">Punkte aus ${givers.length ? givers.map((g) => skillChip(g)).join(" ") : "— (noch kein Skill)"}</div>
+        <div class="idx-formula">Punkte aus ${giverChips(givers)}</div>
         ${chart}
         <div class="idx-reason">${x.reasoning}</div>
       </div>`;
     }).join("");
-    scalingHtml = `<div class="idx-formula">Schaden = Grundschaden × (1 + ${terms})</div>${items}`;
+    scalingHtml = `<div class="idx-formula">Schaden = Grundschaden × (1 + ${terms})</div>${items}` + scalingHtml;
   }
 
   // Skills, die eine Eigenschaft geben: welche Angriffe sie verstärken
@@ -357,7 +383,9 @@ function skillDetail(s: SkillDefinition): string {
       const sc = t.scaling?.find((x) => x.attribute === attr);
       return sc ? [skillChip(t, ` +${pct(sc.perPoint)}/Punkt`)] : [];
     });
-    return `<div>${ATTRIBUTE_ICON[attr]} ${ATTRIBUTE_DE[attr]} verstärkt: ${boosted.length ? boosted.join("") : "noch keinen Angriff"}</div>`;
+    const precision = attr === "dexterity" ? " Präzision aller Angriffe (Treffer-Stufen)" : "";
+    const dmg = boosted.length ? `${precision ? " · Schaden von " : ""}${boosted.join("")}` : (precision ? "" : "noch keinen Angriff");
+    return `<div>${ATTRIBUTE_ICON[attr]} ${ATTRIBUTE_DE[attr]} verstärkt:${precision} ${dmg}</div>`;
   }).join("");
 
   const sources = ENTITY_DEFINITIONS.flatMap((e) =>

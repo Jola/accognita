@@ -69,10 +69,13 @@ export type EffectType =
 export type Attribute = "strength" | "dexterity";
 
 /**
- * Wie ein Angriffs-Skill mit einer Eigenschaft skaliert (GDD-02 Abschnitt 8.11):
+ * Wie der SCHADEN eines Angriffs-Skills mit einer Eigenschaft skaliert (GDD-02 Abschnitt 8.11):
  * Schaden × (1 + Σ perPoint × Punkte der Eigenschaft).
  * Vorgabe (Entwickler, 13. November 2026): An den Skills steht, mit welcher
  * Eigenschaft sie wie skalieren; ein Skill kann mit mehreren skalieren.
+ * Vorgabe (Entwickler, 13. November 2026): Geschick erhöht die Präzision
+ * (Treffer-Stufen, HitSystem), nicht den Schaden — zumindest bei Schlägen
+ * und Bissen. Präzision gilt für jeden Angriff und steht nicht hier.
  */
 export interface AttributeScaling {
   attribute: Attribute;

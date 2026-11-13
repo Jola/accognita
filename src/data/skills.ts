@@ -284,17 +284,12 @@ export const BASE_SKILLS: SkillDefinition[] = [
     hitProfile: { miss: 0.05, light: 0.15, normal: 0.45, heavy: 0.32, crit: 0.03 },
     scaling: [
       {
-        attribute: "strength", perPoint: 0.06,
+        attribute: "strength", perPoint: 0.08,
         reasoning:
-          "Vorgabe (Entwickler): Stärke verstärkt Schläge. +6 % je Punkt (Vorschlag Claude, offen): " +
-          "weniger als beim Biss, weil ein Teil der Wirkung aus der Körperbeherrschung kommt.",
-      },
-      {
-        attribute: "dexterity", perPoint: 0.05,
-        reasoning:
-          "Vorschlag Claude, offen: Ein weit ausholender Hieb braucht Kraft und Körperbeherrschung — " +
-          "Beispiel für einen Skill mit zwei Eigenschaften. +5 % je Punkt Geschick (Natur-Geschick 4 → +20 %); " +
-          "zusammen mit Stärke bei Natur ≈ +74 %, nah am bisherigen +75 %.",
+          "Vorgabe (Entwickler): Stärke verstärkt Schläge. +8 % je Punkt wie beim Biss (Vorschlag Claude, offen): " +
+          "bei Natur-Stärke 9 rund +72 %, nah am bisherigen Superstrength-Bonus (+75 %). " +
+          "[VERWORFEN, 13. November 2026] +6 % je Punkt Stärke und +5 % je Punkt Geschick — Vorgabe (Entwickler): " +
+          "Geschick erhöht die Präzision, nicht den Schaden, zumindest bei Schlägen und Bissen.",
       },
     ],
   },
