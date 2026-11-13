@@ -253,10 +253,27 @@ export class GameScene extends Phaser.Scene {
     }
     // Farbe nur nachführen, wenn sie sich spürbar ändert
     this.layoutIntro(r * zoom);
+    this.fixCameraFxSize();
     const key = `${vision.color.toFixed(2)}|${vision.red.toFixed(2)}`;
     if (this.colorFx && key !== this.lastVisionKey) {
       this.lastVisionKey = key;
       this.colorFx.set(visionColorMatrix(vision));
+    }
+  }
+
+  // Phaser 3.70: Die Bildfläche (Render Target) des Kamera-Farbfilters
+  // behält die Größe vom Start — bootFX setzt nur autoResize = true, ohne
+  // sich für Größenänderungen des Renderers anzumelden. Nach Vollbild oder
+  // Drehen ins Querformat wird das Bild dann verzerrt. Deshalb hier selbst
+  // nachziehen, sobald die Größe nicht mehr passt.
+  private fixCameraFxSize() {
+    if (!this.colorFx) return;
+    const renderer = this.game.renderer as any;
+    const w = renderer.width, h = renderer.height;
+    for (const pipeline of ((this.cameras.main as any).postPipelines ?? [])) {
+      for (const target of pipeline.renderTargets ?? []) {
+        if (target.width !== w || target.height !== h) target.resize(w, h);
+      }
     }
   }
 

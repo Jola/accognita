@@ -41,6 +41,8 @@ Format:
 
 ## Erledigt
 
+- `[BUG]` **Sichtkreis im Querformat verzerrt**: Fehler in Phaser 3.70. Die Bildfläche des Kamera-Farbfilters behielt die Startgröße. Fix: `GameScene.fixCameraFxSize` passt sie an, sobald sich die Spielfläche ändert (v0.7.2, 13. November 2026).
+
 - `[FEATURE]` **Grow / Wachsen**: passiv, verdaut Pflanzenfasern zu Körpermasse, das Wachstum kommt nur noch daraus. Wird von Gras gelernt, Gras gibt es doppelt so oft (GDD-02 Abschnitt 8.10, 13. November 2026).
 
 - `[BUG]` **Photosynthesis heilt auch im Kampf**: kein Bug. Vorgabe Entwickler: Photosynthese wirkt immer. GDD und Skill-Beschreibung sind angepasst, der Code bleibt unverändert (13. November 2026).
