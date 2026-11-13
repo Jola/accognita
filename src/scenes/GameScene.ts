@@ -252,10 +252,47 @@ export class GameScene extends Phaser.Scene {
       this.visionHole.setVisible(false);                    // Sichtweite größer als der Bildschirm
     }
     // Farbe nur nachführen, wenn sie sich spürbar ändert
+    this.layoutIntro(r * zoom);
     const key = `${vision.color.toFixed(2)}|${vision.red.toFixed(2)}`;
     if (this.colorFx && key !== this.lastVisionKey) {
       this.lastVisionKey = key;
       this.colorFx.set(visionColorMatrix(vision));
+    }
+  }
+
+  // Hinweistext nie über den Sichtkreis legen (im Querformat ist die
+  // Spielfläche flach — oben ist dort kein Platz): über dem Kreis, wenn er
+  // dort hinpasst, sonst links daneben, notfalls schmal am oberen Rand.
+  private introLayoutKey = "";
+  private layoutIntro(sightScreenRadius: number) {
+    const el = this.introEl;
+    if (!el || el.style.opacity === "0") return;
+    const cam = this.cameras.main;
+    const W = cam.width, H = cam.height, gap = 10;
+    const rs = Math.min(sightScreenRadius, Math.hypot(W, H));
+    const width = Math.min(W * 0.86, 420);
+    let mode: "top" | "side" | "edge";
+    if (H / 2 - rs - gap >= el.offsetHeight + gap) mode = "top";
+    else if (W / 2 - rs - 2 * gap >= 170) mode = "side";
+    else mode = "edge";
+    const key = `${mode}|${Math.round(rs)}|${W}|${H}`;
+    if (key === this.introLayoutKey) return;
+    this.introLayoutKey = key;
+    if (mode === "top") {
+      Object.assign(el.style, {
+        left: "50%", width: `${width}px`, fontSize: ".82rem",
+        top: `${Math.max(gap, (H / 2 - rs - el.offsetHeight) / 2)}px`, transform: "translateX(-50%)",
+      });
+    } else if (mode === "side") {
+      Object.assign(el.style, {
+        left: `${gap}px`, width: `${Math.min(W / 2 - rs - 2 * gap, 320)}px`, fontSize: ".74rem",
+        top: "50%", transform: "translateY(-50%)",
+      });
+    } else {
+      Object.assign(el.style, {
+        left: "50%", width: `${width}px`, fontSize: ".68rem",
+        top: `${gap / 2}px`, transform: "translateX(-50%)",
+      });
     }
   }
 
@@ -272,8 +309,8 @@ export class GameScene extends Phaser.Scene {
       this.introEl = document.createElement("div");
       this.introEl.id = "intro-text";
       Object.assign(this.introEl.style, {
-        position: "absolute", left: "50%", top: "18%", transform: "translateX(-50%)",
-        width: "min(86vw, 420px)", padding: "12px 16px", borderRadius: "10px",
+        position: "absolute", left: "50%", top: "10px", transform: "translateX(-50%)",
+        width: "min(86vw, 420px)", padding: "10px 14px", borderRadius: "10px", boxSizing: "border-box",
         background: "rgba(5,8,14,.78)", border: "1px solid rgba(74,240,200,.25)",
         color: "#cfe", font: "italic .82rem/1.5 Georgia, serif", textAlign: "center",
         pointerEvents: "none", zIndex: "40", transition: "opacity .6s",
@@ -285,12 +322,14 @@ export class GameScene extends Phaser.Scene {
       if (first) { this.introEl.style.opacity = "0"; return; }
       this.introEl.textContent = INTRO_TEXT.awake;
       this.introEl.style.opacity = "1";
+      this.introLayoutKey = "";
       addLog(INTRO_TEXT.awake, "system");
       this.time.delayedCall(9000, () => { if (this.introStep === "awake" && this.introEl) this.introEl.style.opacity = "0"; });
       return;
     }
     this.introEl.textContent = INTRO_TEXT[step];
     this.introEl.style.opacity = "1";
+    this.introLayoutKey = ""; // neuer Text, neue Höhe
     if (!first) addLog(INTRO_TEXT[step], "system");
   }
 
