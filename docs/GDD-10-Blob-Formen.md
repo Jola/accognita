@@ -44,6 +44,8 @@
 - Wird der reisende Blob besiegt, **vertrocknet** er an Ort und Stelle. Das Bewusstsein springt zum nächstgelegenen niedergelassenen Blob.
 - Wer den vertrockneten Blob wieder aufsucht und sich mit ihm verbindet, bekommt dessen Erfahrung, Skills und Ressourcen zurück.
 
+Dieses Verbinden mit einem vertrockneten Blob heißt jetzt **Verschmelzen** (Abschnitt 4.5, Vorgabe Entwickler, 14. November 2026).
+
 **Begründung (Entwickler):** Das entspricht den Fähigkeiten des biologischen Vorbilds *Physarum polycephalum*. Es kann sich teilen, Teile verschmelzen wieder, und bei Gefahr trocknet es zu einer Dauerform ein, statt zu sterben.
 
 ---
@@ -90,7 +92,9 @@
 
 ~~Begründung offen. Vorschlag Claude: Das Nest ist der feste Anker des Spiels. Zu ihm kann man immer springen, und es kann immer abspalten (Abschnitt 7.1). So sitzt niemand fest, und Regel 1 gilt von selbst.~~ [VERWORFEN, 14. November 2026] Ersetzt durch die Begründung des Entwicklers.
 
-Folgen: Das Nest kann auch nicht eingezogen werden (4.4). Sollten Gegner später niedergelassene Blobs angreifen können (Abschnitt 15, „Später“), bleibt das Nest davon ausgenommen.
+~~Folgen: Das Nest kann auch nicht eingezogen werden (4.4).~~ [VERWORFEN, 14. November 2026] Beim Verschmelzen geht jetzt der Reisende im niedergelassenen Blob auf, nicht umgekehrt (4.5). Das Nest bleibt also auch dabei bestehen.
+
+Folgen: Sollten Gegner später niedergelassene Blobs angreifen können (Abschnitt 15, „Später“), bleibt das Nest davon ausgenommen.
 
 ---
 
@@ -107,7 +111,7 @@ Diese Fähigkeiten sind keine Skills: keine Erfahrung, kein Rang, keine Kapazit�
 **Niederlassen**
 - Sichtbar beim Reisenden.
 - Nur wenn seit 5 s kein Gegner Aggro auf ihn hat.
-- Ausnahme: Berührt der Reisende einen niedergelassenen Blob, kann er sich unter Aggro in ihn **zurückziehen** (Verbinden und sofort Bewusstsein dort). Ob das erlaubt sein soll, ist offen (Abschnitt 15).
+- ~~Ausnahme: Berührt der Reisende einen niedergelassenen Blob, kann er sich unter Aggro in ihn **zurückziehen** (Verbinden und sofort Bewusstsein dort). Ob das erlaubt sein soll, ist offen (Abschnitt 15).~~ [VERWORFEN, 14. November 2026] Dieses Zurückziehen ist jetzt das Verschmelzen (4.5). Ob es unter Aggro geht, steht dort.
 - Begründung (Vorschlag Claude, offen): Ein niedergelassener Blob ist unverwundbar. Ohne diese Sperre wäre Niederlassen ein Notausgang aus jedem Kampf.
 
 **Abspalten**
@@ -116,8 +120,12 @@ Diese Fähigkeiten sind keine Skills: keine Erfahrung, kein Rang, keine Kapazit�
 - Begründung (Vorschlag Claude, offen): Folgt aus der Vorgabe zum Spielstart: Mit Bewegen kommt das Reisen (Abschnitt 12).
 
 **Verbinden**
-- Sichtbar, wenn der Reisende einen niedergelassenen oder vertrockneten Blob berührt.
+- Sichtbar, wenn der Reisende einen niedergelassenen Blob berührt. Mit einem vertrockneten Blob gibt es nur Verschmelzen (4.5).
 - Berühren heißt: Abstand zwischen der Mitte des Reisenden und dem Kern des anderen höchstens Reichweite des Reisenden plus Kernradius.
+
+**Verschmelzen** (Vorgabe Entwickler, Abschnitt 4.5)
+- Sichtbar, wenn der Reisende einen niedergelassenen oder vertrockneten Blob berührt, neben Verbinden.
+- Grundfähigkeit wie Verbinden, denn es ist eine Form des Verbindens (Vorgabe Entwickler oben).
 
 **Bewusstsein wechseln**
 - Sichtbar bei einem niedergelassenen Blob mit Bewusstsein.
@@ -135,8 +143,10 @@ Diese Fähigkeiten sind keine Skills: keine Erfahrung, kein Rang, keine Kapazit�
 - **Niedergelassen → Abspalten →** neuer Reisender; das Bewusstsein geht auf ihn über.
 - **Niedergelassen → Bewusstsein wechseln →** anderer niedergelassener Blob.
 - **Niedergelassen → Erheben →** derselbe Blob wird zum Reisenden; das Bewusstsein bleibt bei ihm. Nicht beim Nest (4.7).
-- **Reisend + niedergelassen → Verbinden →** beide bleiben, beide haben dasselbe Wissen. Oder **Einziehen:** Der niedergelassene Blob geht im Reisenden auf (nicht beim Nest, 4.4).
-- **Reisend + vertrocknet → Verbinden →** der vertrocknete Blob geht im Reisenden auf.
+- **Reisend + niedergelassen → Verbinden →** beide bleiben, beide haben dasselbe Wissen (4.4).
+- **Reisend + niedergelassen → Verschmelzen →** der Reisende geht im niedergelassenen Blob auf; das Bewusstsein ist danach dort (4.5).
+- **Reisend + vertrocknet → Verschmelzen →** der Reisende geht im vertrockneten Blob auf; daraus wird ein niedergelassener Blob mit dem Bewusstsein (4.5).
+- ~~Reisend + niedergelassen → Einziehen → der niedergelassene Blob geht im Reisenden auf (nicht beim Nest). Reisend + vertrocknet → Verbinden → der vertrocknete Blob geht im Reisenden auf.~~ [VERWORFEN, 14. November 2026] Umgekehrte Richtung, siehe 4.5.
 - **Reisend, HP ≤ 0 →** vertrocknet; das Bewusstsein springt zum nächstgelegenen niedergelassenen Blob.
 
 ### 4.1 Niederlassen
@@ -168,37 +178,76 @@ Niederlassen sichert also den ganzen Fortschritt des Reisenden. Darauf weist das
 
 **Achtung, Verbinden kann Erfahrung auch senken.** Hat der Reisende einen Skill verlernt, gilt das Verlernen danach auch für den niedergelassenen Blob (Abschnitt 6.5). Der Dialog zeigt deshalb vorher an, welche Skills sich wie ändern.
 
-**Einziehen** (Arbeitsname, siehe unten)
+**Einziehen** → heißt jetzt **Verschmelzen**, mit umgekehrter Richtung (Abschnitt 4.5).
 
-**Vorgabe (Entwickler, 14. November 2026):** Der Reisende muss sich mit einem niedergelassenen Blob so verbinden können, dass dieser ganz in ihm aufgeht. Nicht beim Nest (Abschnitt 2).
+Die folgende Fassung ist überholt und bleibt nur zum Nachlesen stehen:
 
-**Begründung (Entwickler):** Damit man die Anzahl der niedergelassenen Blobs verringern kann.
+> **[VERWORFEN, 14. November 2026]** Richtung und Name geändert durch Vorgabe des Entwicklers (4.5). Gültig bleiben daraus die Vorgabe, dass sich der Reisende mit einem niedergelassenen Blob so verbinden kann, dass einer von beiden aufgeht, und die Begründung des Entwicklers dazu.
+>
+> **Einziehen** (Arbeitsname, siehe unten)
+>
+> **Vorgabe (Entwickler, 14. November 2026):** Der Reisende muss sich mit einem niedergelassenen Blob so verbinden können, dass dieser ganz in ihm aufgeht. Nicht beim Nest (Abschnitt 2).
+>
+> **Begründung (Entwickler):** Damit man die Anzahl der niedergelassenen Blobs verringern kann.
+>
+> Ablauf (Vorschlag Claude, offen): wie beim Verbinden mit einem vertrockneten Blob (4.5).
+> 1. Der niedergelassene Blob wird bis jetzt nachgerechnet (Abschnitt 8).
+> 2. Das Wissen wird zusammengeführt (Abschnitt 6).
+> 3. Alle Ressourcen und die zurückgehaltene Erfahrung gehen an den Reisenden, ohne Dialog.
+> 4. Der niedergelassene Blob verschwindet, mit ihm eine Markierung auf ihm.
+>
+> Im Verbinden-Dialog wählt man zwischen **Verteilen** (beide bleiben) und **Einziehen** (der niedergelassene Blob geht auf).
+>
+> ~~Vorschlag Claude (offen): Einziehen geht auch nicht beim letzten niedergelassenen Blob (Regel 1).~~ [VERWORFEN, 14. November 2026] Überflüssig, weil das Nest immer bleibt und nicht eingezogen werden kann. Bisherige Begründung (Vorschlag Claude): Ohne Einziehen gäbe es nur immer mehr niedergelassene Blobs, und die Karte würde voll. Sie ist jetzt durch die Begründung des Entwicklers ersetzt.
+>
+> **Name offen.** Vorschläge Claude:
+> - **Verschmelzen:** So heißt es beim Vorbild. Zwei Plasmodien von *Physarum* verschmelzen zu einem. Dann hieße auch das Aufnehmen eines vertrockneten Blobs (4.5) Verschmelzen, denn es ist derselbe Vorgang.
+> - **Aufnehmen:** schlicht und sofort verständlich.
+> - **Einziehen:** der bisherige Arbeitsname.
 
-Ablauf (Vorschlag Claude, offen): wie beim Verbinden mit einem vertrockneten Blob (4.5).
-1. Der niedergelassene Blob wird bis jetzt nachgerechnet (Abschnitt 8).
+### 4.5 Verschmelzen (mit einem niedergelassenen oder vertrockneten Blob)
+
+**Vorgabe (Entwickler, 14. November 2026):**
+- Der Reisende muss sich mit einem niedergelassenen Blob so verbinden können, dass nur einer übrig bleibt. Das heißt **Verschmelzen**.
+- Dabei geht der **Reisende in den niedergelassenen Blob** hinein.
+- Auch mit einem vertrockneten Blob heißt es Verschmelzen. Das Ergebnis ist ebenfalls ein **niedergelassener Blob**.
+
+**Begründung (Entwickler):**
+- Verschmelzen muss es geben, damit man die Anzahl der niedergelassenen Blobs verringern kann.
+- Dass der Reisende hineingeht und immer ein niedergelassener Blob herauskommt, ist konsistent, und man hat nicht zu viele unterschiedliche Aktionen und Ergebnisse.
+
+Der Name stammt vom Vorbild: Zwei Plasmodien von *Physarum* verschmelzen zu einem (Vorschlag Claude, übernommen).
+
+**Ablauf (Vorschlag Claude, offen):**
+1. Reihenfolge wie in 4.6. Ein niedergelassener Blob wird vorher bis jetzt nachgerechnet (Abschnitt 8).
 2. Das Wissen wird zusammengeführt (Abschnitt 6).
-3. Alle Ressourcen und die zurückgehaltene Erfahrung gehen an den Reisenden, ohne Dialog.
-4. Der niedergelassene Blob verschwindet, mit ihm eine Markierung auf ihm.
+3. Alle Ressourcen, die Körpermasse und die zurückgehaltene Erfahrung des Reisenden gehen in den anderen Blob, ohne Dialog.
+4. Der Reisende verschwindet. Der andere Blob behält seine ID und seinen Platz. Die Spalte des Reisenden bleibt in der Wissenstabelle stehen, wie bei jedem verschwundenen Blob (Abschnitt 6.7).
+5. Ein **vertrockneter** Blob wird dabei niedergelassen: Er bekommt eine Tätigkeit (Ruhen), „berechnet bis“ = jetzt und seine Quellen (8.3).
+6. Das Bewusstsein ist danach beim niedergelassenen Blob. Eine Markierung auf ihm entfällt, denn man ist ja selbst dort (11.2).
+7. **HP und MP** (gemerkt fürs Erheben, 4.7): Ein niedergelassener Blob behält seine eigenen. Ein vertrockneter hat keine; er bekommt die des Reisenden.
 
-Im Verbinden-Dialog wählt man zwischen **Verteilen** (beide bleiben) und **Einziehen** (der niedergelassene Blob geht auf).
+**Begründung (Vorschlag Claude, offen):**
+- Punkt 3: Der Reisende hört auf zu bestehen, also muss alles, was er trägt, im anderen Blob landen. Ein Dialog wäre überflüssig, denn es gibt nichts aufzuteilen.
+- Punkt 7: Der aufnehmende Körper bleibt, was er ist. Ein vertrockneter Blob hat keine lebenden HP; die bringt nur der Reisende mit.
+- **Anzahl verringern:** Man erhebt sich mit einem niedergelassenen Blob (4.7), reist zu einem anderen und verschmilzt mit ihm. Danach gibt es einen niedergelassenen Blob weniger.
+- **Vertrockneten Blob einsammeln kostet nichts extra:** Nach dem Verschmelzen ist man niedergelassen. Weiter geht es kostenlos mit Erheben (4.7) oder, mit Kosten, durch Abspalten.
 
-~~Vorschlag Claude (offen): Einziehen geht auch nicht beim letzten niedergelassenen Blob (Regel 1).~~ [VERWORFEN, 14. November 2026] Überflüssig, weil das Nest immer bleibt und nicht eingezogen werden kann. Bisherige Begründung (Vorschlag Claude): Ohne Einziehen gäbe es nur immer mehr niedergelassene Blobs, und die Karte würde voll. Sie ist jetzt durch die Begründung des Entwicklers ersetzt.
+**Folgefragen (Vorschlag Claude, offen):**
+- **Mit dem Nest verschmelzen geht.** Das Nest bleibt dabei bestehen, denn der Reisende geht in ihm auf. Das bisherige „nicht beim Nest“ folgte nur aus der alten Richtung.
+- **Nicht unter Aggro,** wie beim Niederlassen (seit 5 s keine Aggro, Abschnitt 3). Begründung: Verschmelzen endet niedergelassen, also unverwundbar. Sonst wäre es ein Notausgang aus jedem Kampf, und mit sofortigem Erheben auch ein Trick, um Gegner abzuschütteln. Das ersetzt die Frage nach dem Zurückziehen unter Aggro (Abschnitt 15, Punkt 3).
+- **Vertrockneter Blob zu nah an einem niedergelassenen oder über der Höchstzahl** (8.3, Abschnitt 15 Punkt 5): Verschmelzen geht trotzdem, denn niemand darf vom Einsammeln seines vertrockneten Blobs ausgeschlossen sein. Der neue niedergelassene Blob arbeitet dann nicht selbsttätig, bis man sich mit ihm erhebt; das Spiel weist darauf hin.
 
-**Name offen.** Vorschläge Claude:
-- **Verschmelzen:** So heißt es beim Vorbild. Zwei Plasmodien von *Physarum* verschmelzen zu einem. Dann hieße auch das Aufnehmen eines vertrockneten Blobs (4.5) Verschmelzen, denn es ist derselbe Vorgang.
-- **Aufnehmen:** schlicht und sofort verständlich.
-- **Einziehen:** der bisherige Arbeitsname.
+~~**Verbinden mit einem vertrockneten Blob**~~ [VERWORFEN, 14. November 2026] Ersetzt durch Verschmelzen oben: Jetzt geht der Reisende im vertrockneten Blob auf, nicht umgekehrt. Bisherige Fassung:
+1. ~~Das Wissen wird zusammengeführt (Abschnitt 6).~~
+2. ~~Der vertrocknete Blob geht ganz im Reisenden auf und verschwindet.~~
+3. ~~Seine Ressourcen gehen vollständig an den Reisenden, ohne Dialog. Ebenso seine zurückgehaltene Erfahrung (Übertraining, Abschnitt 5).~~
 
-### 4.5 Verbinden mit einem vertrockneten Blob
-1. Das Wissen wird zusammengeführt (Abschnitt 6).
-2. Der vertrocknete Blob geht ganz im Reisenden auf und verschwindet.
-3. Seine Ressourcen gehen vollständig an den Reisenden, ohne Dialog. Ebenso seine zurückgehaltene Erfahrung (Übertraining, Abschnitt 5).
-
-Begründung (Vorschlag Claude, offen): Ein vertrockneter Blob kann allein nichts mehr anfangen. Bliebe er stehen, füllte er nur die Karte mit leeren Hüllen.
+~~Begründung (Vorschlag Claude, offen): Ein vertrockneter Blob kann allein nichts mehr anfangen. Bliebe er stehen, füllte er nur die Karte mit leeren Hüllen.~~ Bleibt sinngemäß gültig: Auch jetzt bleibt keine leere Hülle zurück, denn aus dem vertrockneten Blob wird ein niedergelassener.
 
 ### 4.6 Reihenfolge bei jedem Formwechsel
 
-Bei Verbinden, Abspalten, Bewusstsein wechseln, Niederlassen, Erheben, Vertrocknen und Speichern gilt immer diese Reihenfolge. Schritte, die nicht passen, entfallen (beim Speichern z. B. 2–4).
+Bei Verbinden, Verschmelzen, Abspalten, Bewusstsein wechseln, Niederlassen, Erheben, Vertrocknen und Speichern gilt immer diese Reihenfolge. Schritte, die nicht passen, entfallen (beim Speichern z. B. 2–4).
 1. Arbeitskopie zurückschreiben (Abschnitt 13.2)
 2. Den anderen Blob nachrechnen (Abschnitt 8)
 3. Wissen zusammenführen (Abschnitt 6)
@@ -250,7 +299,7 @@ Ablauf (Vorschlag Claude, übernommen 14. November 2026):
 **Begründungen (Vorschlag Claude, offen):**
 - **Körpermasse wie Ressourcen:** Masse ist echte Substanz. Teilt sich ein Körper, teilt sich seine Masse. Würde sie kopiert, könnte man sie durch Abspalten und Verbinden vermehren. Weil das Wachstum logarithmisch steigt (`log2(1 + Masse/20)`, GDD-02 Abschnitt 8.10), kostet die halbe Masse höchstens 1 Wachstum, bei wenig Masse weniger. Weniger Masse heißt aber weniger maxHP und weniger Stärke (Größenbonus, GDD-09 Abschnitt 3). Der Dialog zeigt das an.
 - **Ermüdung gehört zum Bewusstsein, nicht zum Körper:** Es ist immer nur ein Körper aktiv. Hätte jeder Körper seine eigene Ermüdung, könnte man sie umgehen: müde niederlassen, zu einem ausgeruhten Blob springen, frisch weitertrainieren. Die Vorgabe in GDD-02 Abschnitt 8.7 (Spieler sollen vom zu vielen Spielen gehemmt werden) zielt auf den Spieler, also auf das Bewusstsein. Ermüdung erzeugt keine Erfahrung, daher kann eine gemeinsame Ermüdung nichts verdoppeln.
-- **Zurückgehaltene Erfahrung wird nicht kopiert:** Sie wird dem Körper gutgeschrieben, der sie verdient hat, sobald sie nachkommt, und erreicht andere Blobs mit der nächsten Verbindung. So zählt sie genau einmal. Geht ein vertrockneter Blob im Reisenden auf, wandert sie mit (Abschnitt 4.5), damit nichts verloren geht.
+- **Zurückgehaltene Erfahrung wird nicht kopiert:** Sie wird dem Körper gutgeschrieben, der sie verdient hat, sobald sie nachkommt, und erreicht andere Blobs mit der nächsten Verbindung. So zählt sie genau einmal. Geht der Reisende beim Verschmelzen in einem anderen Blob auf, wandert seine zurückgehaltene Erfahrung mit (Abschnitt 4.5), damit nichts verloren geht.
 - **Skill-Leiste lokal:** Ein niedergelassener Blob braucht andere Knöpfe als ein Reisender.
 
 ---
@@ -377,7 +426,8 @@ Vorschlag:
 - Ohne Kosten gäbe es nach dem Vertrocknen keinen Grund, vorsichtig zu sein.
 - Punkt 2 und 3: Niemand darf festsitzen. Das Nest kann immer abspalten, und zum Nest kann man immer springen. Wäre jedes leere Lager kostenlos, könnte man nach einmal „Alles mitnehmen“ für immer umsonst abspalten, und das Vertrocknen kostete nur noch den Weg.
 - Punkt 4: Grow verdaut 2–30 Fasern pro Minute. Ohne Reserve wäre das Lager fast immer leer, und Abspalten würde praktisch immer mit Körpermasse bezahlt.
-- Das Nest kann nicht eingezogen werden und sich nicht erheben (Vorgabe Entwickler, Abschnitt 2 und 4.4). So bleibt es immer da.
+- ~~Das Nest kann nicht eingezogen werden und sich nicht erheben (Vorgabe Entwickler, Abschnitt 2 und 4.4).~~ [VERWORFEN, 14. November 2026] Einziehen gibt es nicht mehr (4.5).
+- Das Nest kann sich nicht erheben, und beim Verschmelzen geht immer der Reisende auf (Vorgabe Entwickler, Abschnitt 2 und 4.5). So bleibt es immer da.
 
 ### 7.2 Verteilen (Dialog)
 
@@ -409,7 +459,7 @@ Körpermasse      40 ─●─ 40
 
 Jeder niedergelassene Blob merkt sich, bis zu welcher Spielzeit sein Stand berechnet ist. Nachgerechnet wird nur bei einem Anlass:
 - Das Bewusstsein springt zu ihm.
-- Ein Reisender verbindet sich mit ihm.
+- Ein Reisender verbindet oder verschmilzt sich mit ihm.
 - Die Karte zeigt seine Werte (nur zur Anzeige, ohne zu speichern).
 
 **Solange das Bewusstsein bei ihm ist, ruht die selbsttätige Arbeit.** Man absorbiert und analysiert dann von Hand, mit der **Arbeitsreichweite** als Reichweite und nur an friedlichen Wesen (8.3). Begründung (Vorschlag Claude, offen): Sonst würden dieselben Wesen doppelt geerntet, einmal gerechnet und einmal echt. Mit der normalen Reichweite eines kleinen Blobs erreichte man das Gras im Nest nicht. Und von Hand Wölfe zu absorbieren, ohne angreifbar zu sein, wäre derselbe Freifahrtschein wie in 8.3.
@@ -489,6 +539,8 @@ Skill-Fund =
 
 **Vorgabe (Entwickler):** Der Blob stirbt nicht. Wird er besiegt, vertrocknet er an Ort und Stelle. Ressourcen und Erfahrung bleiben erhalten. Das Bewusstsein springt zum nächstgelegenen niedergelassenen Blob. Von dort kann man sich erneut abspalten, den vertrockneten Blob aufsuchen und sich mit ihm verbinden, um seine Erfahrung und Skills einzusammeln.
 
+Dieses Verbinden heißt jetzt Verschmelzen; aus dem vertrockneten Blob wird dabei ein niedergelassener (Abschnitt 4.5, Vorgabe Entwickler, 14. November 2026).
+
 Ablauf:
 1. HP ≤ 0: Ein offener Dialog wird geschlossen. Der Reisende wird zum vertrockneten Blob. Sein Stand wird eingefroren: Wissen, Ressourcen, zurückgehaltene Erfahrung. Gift und Status-Effekte verfallen.
 2. Gegner verlieren ihre Aggro (wie bisher `resetAi`).
@@ -563,7 +615,8 @@ Alle Einzelheiten unten sind Vorschlag Claude (offen).
 - Für jeden markierten Blob außerhalb des Bildschirms zeigt am Rand ein Pfeil zu ihm, mit Name und Entfernung.
 - Pfeile zu vertrockneten Blobs sind braun, zu niedergelassenen grün. So hält man zwei Pfeile auseinander.
 - Ist der Blob auf dem Bildschirm, verschwindet sein Pfeil, und über ihm erscheint eine kleine Markierung.
-- Verbindet man sich mit einem markierten vertrockneten Blob, verschwindet er und mit ihm die Markierung.
+- ~~Verbindet man sich mit einem markierten vertrockneten Blob, verschwindet er und mit ihm die Markierung.~~ [VERWORFEN, 14. November 2026] Neue Richtung beim Verschmelzen (4.5).
+- Verschmilzt man mit einem markierten Blob, entfällt die Markierung, denn man ist selbst dort. Aus einem vertrockneten Blob wird dabei ein niedergelassener; sein Marker auf der Karte wird grün.
 - Die Pfeile liegen als HTML über dem Spielfeld. Ihre Lage wird in jedem Frame aus zwei Positionen berechnet; das kostet fast nichts.
 
 ---
@@ -670,7 +723,7 @@ Eine Spielzeit für alle Blobs: `world.playtimeSeconds`. Sonst ließen sich „z
 
 ### 13.5 Was sich in bestehenden Teilen ändert
 - **Gegner (`AiSystem`):** Ist das Bewusstsein bei einem niedergelassenen Blob, gibt es kein Ziel; Gegner greifen nicht an.
-- **Steuerung je Form:** Joystick nur beim Reisenden. Die Skill-Leiste zeigt beim niedergelassenen Blob Absorb, Analyze, Abspalten, Wechseln, Tätigkeit und, außer beim Nest, Erheben.
+- **Steuerung je Form:** Joystick nur beim Reisenden. Berührt er einen anderen Blob, erscheinen Verbinden (nur niedergelassen) und Verschmelzen. Die Skill-Leiste zeigt beim niedergelassenen Blob Absorb, Analyze, Abspalten, Wechseln, Tätigkeit und, außer beim Nest, Erheben.
 - **WERTE-Reiter:** beim niedergelassenen Blob Tätigkeit, Quellen, Ertrag pro Stunde statt Tempo und Angriffen.
 - **INDEX-Reiter:** neue Regeln und Formeln eintragen (Verrechnung, Kosten, Nachrechnen).
 - **Speichermenü:** zeigt den Namen des Blobs mit Bewusstsein.
@@ -689,7 +742,7 @@ Jeder Schritt ist für sich spielbar und bekommt eine eigene Version.
    - Dateien: `types/Blob.ts`, `data/blobs.ts` (Stellschrauben mit Begründungen), `systems/KnowledgeSystem.ts`
 2. **Datenmodell ohne neue Spielregeln:** Spielstand v6, Arbeitskopie, Weltuhr. Es gibt nur einen Blob. Das Spiel muss sich genau wie vorher spielen.
    - Dateien: `GameState.ts`, `SaveSystem.ts`, `GameScene.ts`
-3. **Abläufe:** Niederlassen, Abspalten, Verbinden, Erheben, Vertrocknen, Wechseln (als Liste), Start im Nest (unzerstörbar), Gegner ohne Ziel, Steuerung je Form. Verteilen erst fest halbe-halbe. Einfache Platzhalter-Grafik und ein Richtungspfeil zum vertrockneten Blob. `executeCheckpoint` entfällt.
+3. **Abläufe:** Niederlassen, Abspalten, Verbinden, Verschmelzen, Erheben, Vertrocknen, Wechseln (als Liste), Start im Nest (unzerstörbar), Gegner ohne Ziel, Steuerung je Form. Verteilen erst fest halbe-halbe. Einfache Platzhalter-Grafik und ein Richtungspfeil zum vertrockneten Blob. `executeCheckpoint` entfällt.
    - Dateien: `systems/BlobSystem.ts`, `AiSystem.ts`, `IntroSystem.ts`, `BiomeDefinitions.ts`, `GameScene.ts`, `SkillBar.ts`
 4. **Verteilen-Dialog** — `ui/TransferDialog.ts`
 5. **Darstellung:** Adernetz mit Pulsieren, vertrocknete Kruste — `GameScene.ts` oder eigene Datei im Ordner `scenes/`
@@ -705,10 +758,10 @@ Zu jedem Schritt werden GDD, INDEX und TODO.md nachgezogen: GDD-01 Abschnitt 10,
 **Entscheidungen des Entwicklers** (jeweils mit Begründung):
 1. Wasser zum Wiederbeleben ganz gestrichen? (Abschnitt 9)
 2. Kosten fürs Abspalten: 10 Fasern, Rest mit Körpermasse, nur das Nest notfalls kostenlos, Grow lässt 10 Fasern Reserve? (7.1, 12)
-3. Niederlassen nur ohne Aggro? Darf man sich unter Aggro in einen berührten niedergelassenen Blob zurückziehen? (3)
+3. Niederlassen nur ohne Aggro? ~~Darf man sich unter Aggro in einen berührten niedergelassenen Blob zurückziehen? (3)~~ → Zurückziehen ist jetzt Verschmelzen; Vorschlag: auch nur ohne Aggro (4.5).
 4. Spielzeit oder auch echte Zeit bei geschlossenem Spiel? (8.2)
 5. Höchstzahl niedergelassener Blobs (Vorschlag 5) oder Unterhalt, z. B. Fasern je Stunde? (8.5)
-6. ~~Einziehen erlauben (4.4)? Und soll ein niedergelassener Blob auch selbst wieder aufbrechen können, also ohne Abspalten wieder zum Reisenden werden?~~ → Aufbrechen entschieden 14. November 2026: **Erheben**, nicht beim Nest (Vorgabe Entwickler, 4.7). Ablauf des Erhebens übernommen (4.7). Einziehen entschieden: muss möglich sein, nicht beim Nest (Vorgabe Entwickler, 4.4). **Noch offen:** der Name fürs Einziehen (Vorschläge: Verschmelzen, Aufnehmen, Einziehen) und der Ablauf (wie beim vertrockneten Blob, 4.4).
+6. ~~Einziehen erlauben (4.4)? Und soll ein niedergelassener Blob auch selbst wieder aufbrechen können, also ohne Abspalten wieder zum Reisenden werden?~~ → Aufbrechen entschieden 14. November 2026: **Erheben**, nicht beim Nest (Vorgabe Entwickler, 4.7). Ablauf des Erhebens übernommen (4.7). Einziehen entschieden: muss möglich sein, nicht beim Nest (Vorgabe Entwickler, 4.4). Name und Richtung entschieden 14. November 2026: **Verschmelzen**, der Reisende geht im anderen Blob auf, auch beim vertrockneten; Ergebnis immer ein niedergelassener Blob (Vorgabe Entwickler, 4.5). **Noch offen:** der Ablauf im Einzelnen und die Folgefragen in 4.5: Verschmelzen mit dem Nest erlaubt, nicht unter Aggro, Verschmelzen mit einem vertrockneten Blob auch bei zu kleinem Abstand oder über der Höchstzahl.
 7. Nur friedliche Wesen für niedergelassene Blobs? (8.3)
 8. Selbsttätige Arbeit ruht, solange man selbst dort ist? (8.1)
 9. Lernen Kern-Fähigkeiten beim Nachrechnen nicht? (8.5)
@@ -737,4 +790,4 @@ Zu jedem Schritt werden GDD, INDEX und TODO.md nachgezogen: GDD-01 Abschnitt 10,
 
 ---
 
-*Letzte Aktualisierung: 14. November 2026 — Begründung des Entwicklers fürs Nest (Unsterblichkeit), Ablauf des Erhebens übernommen, Einziehen als Vorgabe mit Begründung des Entwicklers (Name offen), Regel 4 bestätigt; davor 14. November 2026 — erste Entscheidungen des Entwicklers: Nest unzerstörbar, ortsfest und ohne Erheben (Abschnitt 2, 12); Erheben übernommen, nicht beim Nest (3, 4.7, Ablauf als Vorschlag); Bewusstsein nur zwischen niedergelassenen Blobs, höchstens ein Reisender, mit Begründung des Entwicklers (2); offene Punkte 6 und 14 teilweise entschieden; davor 14. November 2026 — zweite Prüfrunde eingearbeitet: Ermüdung gehört zum Bewusstsein, eigene Gutschrift beim Nachrechnen, Reichweite und Ziele vor Ort, Kosten nur im Nest notfalls frei, Grow-Reserve, Grenze nach dem Verbinden, Verbinden kann Erfahrung senken, Mindestabstand, Ausgangswert beim Zurückschreiben, Basis abziehen statt Falten, Beispiel 6.4 Schritt 6 berichtigt, Kennzeichnungen ergänzt; davor überarbeitet nach Konzept- und Doku-Prüfung: Verlernen als eine gemeinsame Zahl (kein doppeltes Verlernen, nie negativ), Ersatzkosten gegen Festsitzen, Ermüdung kopieren, Reihenfolge, Speicherbedarf, Nachrechnen ohne Übertraining und ohne Kern-Fähigkeiten, Arbeit ruht vor Ort, Einziehen, Nest-Umbau, Umsetzung in 7 Schritten, handytaugliche Gliederung; davor Erstfassung mit mehreren Markierungen (Vorgabe Entwickler)*
+*Letzte Aktualisierung: 14. November 2026 — Verschmelzen statt Einziehen (Vorgabe Entwickler): der Reisende geht im niedergelassenen oder vertrockneten Blob auf, Ergebnis immer niedergelassen; Ablauf und Folgefragen als Vorschlag (4.5); Abschnitte 1, 2, 3, 4, 5, 7.1, 8.1, 9, 11.2, 13.5, 14, 15 angepasst; davor 14. November 2026 — Begründung des Entwicklers fürs Nest (Unsterblichkeit), Ablauf des Erhebens übernommen, Einziehen als Vorgabe mit Begründung des Entwicklers (Name offen), Regel 4 bestätigt; davor 14. November 2026 — erste Entscheidungen des Entwicklers: Nest unzerstörbar, ortsfest und ohne Erheben (Abschnitt 2, 12); Erheben übernommen, nicht beim Nest (3, 4.7, Ablauf als Vorschlag); Bewusstsein nur zwischen niedergelassenen Blobs, höchstens ein Reisender, mit Begründung des Entwicklers (2); offene Punkte 6 und 14 teilweise entschieden; davor 14. November 2026 — zweite Prüfrunde eingearbeitet: Ermüdung gehört zum Bewusstsein, eigene Gutschrift beim Nachrechnen, Reichweite und Ziele vor Ort, Kosten nur im Nest notfalls frei, Grow-Reserve, Grenze nach dem Verbinden, Verbinden kann Erfahrung senken, Mindestabstand, Ausgangswert beim Zurückschreiben, Basis abziehen statt Falten, Beispiel 6.4 Schritt 6 berichtigt, Kennzeichnungen ergänzt; davor überarbeitet nach Konzept- und Doku-Prüfung: Verlernen als eine gemeinsame Zahl (kein doppeltes Verlernen, nie negativ), Ersatzkosten gegen Festsitzen, Ermüdung kopieren, Reihenfolge, Speicherbedarf, Nachrechnen ohne Übertraining und ohne Kern-Fähigkeiten, Arbeit ruht vor Ort, Einziehen, Nest-Umbau, Umsetzung in 7 Schritten, handytaugliche Gliederung; davor Erstfassung mit mehreren Markierungen (Vorgabe Entwickler)*
