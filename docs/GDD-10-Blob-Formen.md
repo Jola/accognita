@@ -70,7 +70,7 @@
 1. Es gibt immer mindestens einen niedergelassenen Blob: das Nest, das nie verschwindet (siehe unten).
 2. Der reisende Blob existiert **genau dann, wenn** das Bewusstsein bei ihm ist. Es gibt also höchstens einen.
 3. Ist das Bewusstsein nicht beim Reisenden, ist es bei einem niedergelassenen Blob, nie bei einem vertrockneten.
-4. Vertrocknete Blobs kann es beliebig viele geben.
+4. Vertrocknete Blobs kann es beliebig viele geben. **Vorgabe (Entwickler, 14. November 2026):** bestätigt.
 
 **Vorgabe (Entwickler, 14. November 2026):** Zu einem anderen Blob springt man, nachdem sich der Reisende niedergelassen hat. Man bekommt dann eine Liste aller niedergelassenen Blobs, springt zu einem und kann sich von dort wieder abspalten.
 
@@ -86,7 +86,9 @@
 
 **Vorgabe (Entwickler, 14. November 2026):** Das Spiel startet mit einem niedergelassenen Blob, dem Nest. Das Nest kann nicht zerstört werden, bleibt immer an seiner Stelle und kann sich nicht erheben (Abschnitt 4.7).
 
-> Begründung offen. Vorschlag Claude: Das Nest ist der feste Anker des Spiels. Zu ihm kann man immer springen, und es kann immer abspalten (Abschnitt 7.1). So sitzt niemand fest, und Regel 1 gilt von selbst.
+**Begründung (Entwickler):** So ist die Unsterblichkeit des Blobs sichergestellt. Könnte man sich mit dem ersten Blob erheben und dann vertrocknen, gäbe es keinen Ort mehr, an den das Bewusstsein springen kann.
+
+~~Begründung offen. Vorschlag Claude: Das Nest ist der feste Anker des Spiels. Zu ihm kann man immer springen, und es kann immer abspalten (Abschnitt 7.1). So sitzt niemand fest, und Regel 1 gilt von selbst.~~ [VERWORFEN, 14. November 2026] Ersetzt durch die Begründung des Entwicklers.
 
 Folgen: Das Nest kann auch nicht eingezogen werden (4.4). Sollten Gegner später niedergelassene Blobs angreifen können (Abschnitt 15, „Später“), bleibt das Nest davon ausgenommen.
 
@@ -123,7 +125,7 @@ Diese Fähigkeiten sind keine Skills: keine Erfahrung, kein Rang, keine Kapazit�
 
 **Erheben** (Vorgabe Entwickler, Abschnitt 4.7)
 - Sichtbar bei einem niedergelassenen Blob mit Bewusstsein, **nicht beim Nest**.
-- Vorschlag Claude (offen): nur wenn ein Bewegungs-Skill bekannt ist, wie beim Abspalten.
+- Nur wenn ein Bewegungs-Skill bekannt ist, wie beim Abspalten (Vorschlag Claude, übernommen).
 
 ---
 
@@ -133,7 +135,7 @@ Diese Fähigkeiten sind keine Skills: keine Erfahrung, kein Rang, keine Kapazit�
 - **Niedergelassen → Abspalten →** neuer Reisender; das Bewusstsein geht auf ihn über.
 - **Niedergelassen → Bewusstsein wechseln →** anderer niedergelassener Blob.
 - **Niedergelassen → Erheben →** derselbe Blob wird zum Reisenden; das Bewusstsein bleibt bei ihm. Nicht beim Nest (4.7).
-- **Reisend + niedergelassen → Verbinden →** beide bleiben, beide haben dasselbe Wissen.
+- **Reisend + niedergelassen → Verbinden →** beide bleiben, beide haben dasselbe Wissen. Oder **Einziehen:** Der niedergelassene Blob geht im Reisenden auf (nicht beim Nest, 4.4).
 - **Reisend + vertrocknet → Verbinden →** der vertrocknete Blob geht im Reisenden auf.
 - **Reisend, HP ≤ 0 →** vertrocknet; das Bewusstsein springt zum nächstgelegenen niedergelassenen Blob.
 
@@ -166,9 +168,26 @@ Niederlassen sichert also den ganzen Fortschritt des Reisenden. Darauf weist das
 
 **Achtung, Verbinden kann Erfahrung auch senken.** Hat der Reisende einen Skill verlernt, gilt das Verlernen danach auch für den niedergelassenen Blob (Abschnitt 6.5). Der Dialog zeigt deshalb vorher an, welche Skills sich wie ändern.
 
-**Einziehen** (Vorschlag Claude, offen): Statt zu verteilen kann der Reisende einen niedergelassenen Blob ganz in sich aufnehmen, wie einen vertrockneten. Das geht nicht beim Nest und nicht beim letzten niedergelassenen Blob (Regel 1). Begründung (Vorschlag Claude, offen): Ohne Einziehen gäbe es nur immer mehr niedergelassene Blobs, und die Karte würde voll.
+**Einziehen** (Arbeitsname, siehe unten)
 
-**Offen seit dem Erheben (4.7):** Wird Einziehen noch gebraucht? Auch Erheben entfernt niedergelassene Blobs. Der Unterschied: Einziehen holt einen *anderen* niedergelassenen Blob in den Reisenden, Erheben macht den Blob, bei dem man ist, selbst zum Reisenden. Ohne Einziehen räumt man also auf, indem man zum Blob springt, sich erhebt und zum nächsten Blob läuft, um sich mit ihm zu verbinden oder sich dort niederzulassen.
+**Vorgabe (Entwickler, 14. November 2026):** Der Reisende muss sich mit einem niedergelassenen Blob so verbinden können, dass dieser ganz in ihm aufgeht. Nicht beim Nest (Abschnitt 2).
+
+**Begründung (Entwickler):** Damit man die Anzahl der niedergelassenen Blobs verringern kann.
+
+Ablauf (Vorschlag Claude, offen): wie beim Verbinden mit einem vertrockneten Blob (4.5).
+1. Der niedergelassene Blob wird bis jetzt nachgerechnet (Abschnitt 8).
+2. Das Wissen wird zusammengeführt (Abschnitt 6).
+3. Alle Ressourcen und die zurückgehaltene Erfahrung gehen an den Reisenden, ohne Dialog.
+4. Der niedergelassene Blob verschwindet, mit ihm eine Markierung auf ihm.
+
+Im Verbinden-Dialog wählt man zwischen **Verteilen** (beide bleiben) und **Einziehen** (der niedergelassene Blob geht auf).
+
+~~Vorschlag Claude (offen): Einziehen geht auch nicht beim letzten niedergelassenen Blob (Regel 1).~~ [VERWORFEN, 14. November 2026] Überflüssig, weil das Nest immer bleibt und nicht eingezogen werden kann. Bisherige Begründung (Vorschlag Claude): Ohne Einziehen gäbe es nur immer mehr niedergelassene Blobs, und die Karte würde voll. Sie ist jetzt durch die Begründung des Entwicklers ersetzt.
+
+**Name offen.** Vorschläge Claude:
+- **Verschmelzen:** So heißt es beim Vorbild. Zwei Plasmodien von *Physarum* verschmelzen zu einem. Dann hieße auch das Aufnehmen eines vertrockneten Blobs (4.5) Verschmelzen, denn es ist derselbe Vorgang.
+- **Aufnehmen:** schlicht und sofort verständlich.
+- **Einziehen:** der bisherige Arbeitsname.
 
 ### 4.5 Verbinden mit einem vertrockneten Blob
 1. Das Wissen wird zusammengeführt (Abschnitt 6).
@@ -194,14 +213,14 @@ Verlässt das Bewusstsein einen niedergelassenen Blob, wird bei ihm „berechnet
 
 **Begründung (Entwickler):** Damit niedergelassene Blobs auch wieder entfernt werden können.
 
-Ablauf (Vorschlag Claude, offen):
+Ablauf (Vorschlag Claude, übernommen 14. November 2026):
 1. Nur mit Bewusstsein dort und mit einem Bewegungs-Skill (wie Abspalten).
 2. Reihenfolge wie in 4.6; die selbsttätige Arbeit endet.
 3. **Derselbe Blob** (gleiche ID, gleiche Spalte in der Wissenstabelle) wird reisend. Er behält sein ganzes Wissen und alle Ressourcen. Kein Dialog, keine Kosten.
 4. **HP und MP:** so, wie sie beim Niederlassen waren, plus die Regeneration über die Zeit, in der er niedergelassen war (MP 1 MP/s, Photosynthese), höchstens bis voll.
 5. Sein Platz wird frei: Er zählt nicht mehr für den Mindestabstand (8.3). Eine Markierung auf ihm entfällt, denn man ist ja selbst dort.
 
-**Begründung (Vorschlag Claude, offen):**
+**Begründung (Vorschlag Claude, übernommen):**
 - Erheben ist die Umkehrung von Niederlassen. Es entsteht kein neuer Blob, deshalb kostet es nichts, anders als Abspalten (7.1).
 - Punkt 4: Mit voller HP beim Erheben wäre „5 s ohne Aggro niederlassen, dann erheben“ eine kostenlose Vollheilung. Mit den gemerkten Werten und der Regeneration über die Zeit hat man genau das, was man auch beim Warten als Reisender hätte.
 
@@ -358,7 +377,7 @@ Vorschlag:
 - Ohne Kosten gäbe es nach dem Vertrocknen keinen Grund, vorsichtig zu sein.
 - Punkt 2 und 3: Niemand darf festsitzen. Das Nest kann immer abspalten, und zum Nest kann man immer springen. Wäre jedes leere Lager kostenlos, könnte man nach einmal „Alles mitnehmen“ für immer umsonst abspalten, und das Vertrocknen kostete nur noch den Weg.
 - Punkt 4: Grow verdaut 2–30 Fasern pro Minute. Ohne Reserve wäre das Lager fast immer leer, und Abspalten würde praktisch immer mit Körpermasse bezahlt.
-- Das Nest kann deshalb nicht eingezogen werden (Abschnitt 4.4).
+- Das Nest kann nicht eingezogen werden und sich nicht erheben (Vorgabe Entwickler, Abschnitt 2 und 4.4). So bleibt es immer da.
 
 ### 7.2 Verteilen (Dialog)
 
@@ -689,7 +708,7 @@ Zu jedem Schritt werden GDD, INDEX und TODO.md nachgezogen: GDD-01 Abschnitt 10,
 3. Niederlassen nur ohne Aggro? Darf man sich unter Aggro in einen berührten niedergelassenen Blob zurückziehen? (3)
 4. Spielzeit oder auch echte Zeit bei geschlossenem Spiel? (8.2)
 5. Höchstzahl niedergelassener Blobs (Vorschlag 5) oder Unterhalt, z. B. Fasern je Stunde? (8.5)
-6. ~~Einziehen erlauben (4.4)? Und soll ein niedergelassener Blob auch selbst wieder aufbrechen können, also ohne Abspalten wieder zum Reisenden werden?~~ → Aufbrechen entschieden 14. November 2026: **Erheben**, nicht beim Nest (Vorgabe Entwickler, 4.7). **Noch offen:** Wird Einziehen neben dem Erheben noch gebraucht (4.4)? Und der Ablauf des Erhebens: Bewegungs-Skill nötig, kostenlos, HP/MP wie beim Niederlassen plus Regeneration (4.7)?
+6. ~~Einziehen erlauben (4.4)? Und soll ein niedergelassener Blob auch selbst wieder aufbrechen können, also ohne Abspalten wieder zum Reisenden werden?~~ → Aufbrechen entschieden 14. November 2026: **Erheben**, nicht beim Nest (Vorgabe Entwickler, 4.7). Ablauf des Erhebens übernommen (4.7). Einziehen entschieden: muss möglich sein, nicht beim Nest (Vorgabe Entwickler, 4.4). **Noch offen:** der Name fürs Einziehen (Vorschläge: Verschmelzen, Aufnehmen, Einziehen) und der Ablauf (wie beim vertrockneten Blob, 4.4).
 7. Nur friedliche Wesen für niedergelassene Blobs? (8.3)
 8. Selbsttätige Arbeit ruht, solange man selbst dort ist? (8.1)
 9. Lernen Kern-Fähigkeiten beim Nachrechnen nicht? (8.5)
@@ -697,7 +716,7 @@ Zu jedem Schritt werden GDD, INDEX und TODO.md nachgezogen: GDD-01 Abschnitt 10,
 11. Reicht der Preis fürs Vertrocknen, oder verderben Materialien im vertrockneten Blob teilweise? Vertrocknete Blobs sind sonst unverwundbare Lager. (9)
 12. Die Verrechnung mit Herkunftszählern (6.2) und Verlernen als eine gemeinsame Zahl je Skill (6.5)?
 13. Niederlassen als Grundfähigkeit? (3)
-14. ~~Die festen Regeln aus Abschnitt 2.~~ → Regeln 1–3 entschieden 14. November 2026: Bewusstsein nur zwischen niedergelassenen Blobs, höchstens ein Reisender; das Nest ist unzerstörbar (Vorgaben Entwickler, Abschnitt 2). **Noch offen:** Regel 4 (beliebig viele vertrocknete Blobs) und die Begründung, warum das Nest unzerstörbar ist (Vorschlag in Abschnitt 2).
+14. ~~Die festen Regeln aus Abschnitt 2.~~ → Regeln 1–3 entschieden 14. November 2026: Bewusstsein nur zwischen niedergelassenen Blobs, höchstens ein Reisender; das Nest ist unzerstörbar (Vorgaben Entwickler, Abschnitt 2). Regel 4 und die Begründung des Entwicklers fürs Nest ebenfalls entschieden (14. November 2026). Erledigt.
 15. Nebel auf der Karte? (11.1)
 16. Ein Symbol über den Blobs zusätzlich zum Pulsieren? (10)
 17. Sichtbares „Abweiden“ durch niedergelassene Blobs? (10)
@@ -718,4 +737,4 @@ Zu jedem Schritt werden GDD, INDEX und TODO.md nachgezogen: GDD-01 Abschnitt 10,
 
 ---
 
-*Letzte Aktualisierung: 14. November 2026 — erste Entscheidungen des Entwicklers: Nest unzerstörbar, ortsfest und ohne Erheben (Abschnitt 2, 12); Erheben übernommen, nicht beim Nest (3, 4.7, Ablauf als Vorschlag); Bewusstsein nur zwischen niedergelassenen Blobs, höchstens ein Reisender, mit Begründung des Entwicklers (2); offene Punkte 6 und 14 teilweise entschieden; davor 14. November 2026 — zweite Prüfrunde eingearbeitet: Ermüdung gehört zum Bewusstsein, eigene Gutschrift beim Nachrechnen, Reichweite und Ziele vor Ort, Kosten nur im Nest notfalls frei, Grow-Reserve, Grenze nach dem Verbinden, Verbinden kann Erfahrung senken, Mindestabstand, Ausgangswert beim Zurückschreiben, Basis abziehen statt Falten, Beispiel 6.4 Schritt 6 berichtigt, Kennzeichnungen ergänzt; davor überarbeitet nach Konzept- und Doku-Prüfung: Verlernen als eine gemeinsame Zahl (kein doppeltes Verlernen, nie negativ), Ersatzkosten gegen Festsitzen, Ermüdung kopieren, Reihenfolge, Speicherbedarf, Nachrechnen ohne Übertraining und ohne Kern-Fähigkeiten, Arbeit ruht vor Ort, Einziehen, Nest-Umbau, Umsetzung in 7 Schritten, handytaugliche Gliederung; davor Erstfassung mit mehreren Markierungen (Vorgabe Entwickler)*
+*Letzte Aktualisierung: 14. November 2026 — Begründung des Entwicklers fürs Nest (Unsterblichkeit), Ablauf des Erhebens übernommen, Einziehen als Vorgabe mit Begründung des Entwicklers (Name offen), Regel 4 bestätigt; davor 14. November 2026 — erste Entscheidungen des Entwicklers: Nest unzerstörbar, ortsfest und ohne Erheben (Abschnitt 2, 12); Erheben übernommen, nicht beim Nest (3, 4.7, Ablauf als Vorschlag); Bewusstsein nur zwischen niedergelassenen Blobs, höchstens ein Reisender, mit Begründung des Entwicklers (2); offene Punkte 6 und 14 teilweise entschieden; davor 14. November 2026 — zweite Prüfrunde eingearbeitet: Ermüdung gehört zum Bewusstsein, eigene Gutschrift beim Nachrechnen, Reichweite und Ziele vor Ort, Kosten nur im Nest notfalls frei, Grow-Reserve, Grenze nach dem Verbinden, Verbinden kann Erfahrung senken, Mindestabstand, Ausgangswert beim Zurückschreiben, Basis abziehen statt Falten, Beispiel 6.4 Schritt 6 berichtigt, Kennzeichnungen ergänzt; davor überarbeitet nach Konzept- und Doku-Prüfung: Verlernen als eine gemeinsame Zahl (kein doppeltes Verlernen, nie negativ), Ersatzkosten gegen Festsitzen, Ermüdung kopieren, Reihenfolge, Speicherbedarf, Nachrechnen ohne Übertraining und ohne Kern-Fähigkeiten, Arbeit ruht vor Ort, Einziehen, Nest-Umbau, Umsetzung in 7 Schritten, handytaugliche Gliederung; davor Erstfassung mit mehreren Markierungen (Vorgabe Entwickler)*
