@@ -41,7 +41,7 @@ Format:
 
 ## Erledigt
 
-- `[BUG]` **Sichtkreis im Querformat verzerrt**: Fehler in Phaser 3.70. Die Bildfläche des Kamera-Farbfilters behielt die Startgröße. Fix: `GameScene.fixCameraFxSize` passt sie an, sobald sich die Spielfläche ändert (v0.7.2, 13. November 2026).
+- `[BUG]` **Sichtkreis im Querformat verzerrt**: Fehler in Phaser 3.70. Die Bildfläche des Kamera-Farbfilters behielt die Startgröße. Fix: `GameScene.fixCameraFxSize` passt sie an, sobald sich die Spielfläche ändert (v0.7.2, 13. November 2026). Seit v0.7.3 nur beim Start und bei RESIZE (deckt auch Drehen ab) statt jeden Frame (14. November 2026).
 
 - `[FEATURE]` **Grow / Wachsen**: passiv, verdaut Pflanzenfasern zu Körpermasse, das Wachstum kommt nur noch daraus. Wird von Gras gelernt, Gras gibt es doppelt so oft (GDD-02 Abschnitt 8.10, 13. November 2026).
 

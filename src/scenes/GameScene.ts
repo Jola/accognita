@@ -223,6 +223,15 @@ export class GameScene extends Phaser.Scene {
     // Farbfilter: nur mit WebGL verfügbar; ohne bleibt das Bild farbig, die Sichtweite gilt trotzdem
     const cam = this.cameras.main as any;
     this.colorFx = cam.postFX?.addColorMatrix?.() ?? null;
+    if (this.colorFx) {
+      // Der Renderer meldet sich schon beim Spielstart für RESIZE an, läuft
+      // also vor diesem Listener — seine neue Größe steht dann schon fest.
+      this.fixCameraFxSize();
+      this.scale.on(Phaser.Scale.Events.RESIZE, this.fixCameraFxSize, this);
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+        this.scale.off(Phaser.Scale.Events.RESIZE, this.fixCameraFxSize, this);
+      });
+    }
   }
 
   private updateVision() {
@@ -253,7 +262,6 @@ export class GameScene extends Phaser.Scene {
     }
     // Farbe nur nachführen, wenn sie sich spürbar ändert
     this.layoutIntro(r * zoom);
-    this.fixCameraFxSize();
     const key = `${vision.color.toFixed(2)}|${vision.red.toFixed(2)}`;
     if (this.colorFx && key !== this.lastVisionKey) {
       this.lastVisionKey = key;
@@ -265,7 +273,7 @@ export class GameScene extends Phaser.Scene {
   // behält die Größe vom Start — bootFX setzt nur autoResize = true, ohne
   // sich für Größenänderungen des Renderers anzumelden. Nach Vollbild oder
   // Drehen ins Querformat wird das Bild dann verzerrt. Deshalb hier selbst
-  // nachziehen, sobald die Größe nicht mehr passt.
+  // nachziehen — beim Start und bei jedem RESIZE-Ereignis der Szene.
   private fixCameraFxSize() {
     if (!this.colorFx) return;
     const renderer = this.game.renderer as any;
