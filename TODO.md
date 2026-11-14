@@ -19,6 +19,8 @@ Format:
 
 - `[FEATURE]` **Laufen** (Konzept, GDD-09 Abschnitt 2.4): schnellster Bewegungs-Skill, braucht neue Wirbeltiere mit Beinen (Maus, Eidechse …).
 
+- `[FEATURE]` **Channeling für Absorb und Analyze** (Idee Entwickler, 14. November 2026, für später; GDD-02 Abschnitt 7): Beide sollen etwas Zeit in Anspruch nehmen und in dieser Zeit unterbrochen werden können.
+
 - `[FEATURE]` **Wärmesicht** (Konzept, GDD-09 Abschnitt 4.2): von der Schlange, Lebewesen leuchten auch im Dunkeln.
 
 - `[POLISH]` **Dunkelheit und Farbfilter im Browser prüfen** (GDD-09 Abschnitt 4): ungetestet im Browser, besonders auf älteren Handys ohne WebGL.
