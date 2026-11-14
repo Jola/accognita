@@ -20,6 +20,10 @@
 import type { EntityDefinition, EntityInstance } from "../types/Entity";
 import type { AiFrame } from "../types/Combat";
 import { canFight } from "./EntityLevelingSystem";
+import {
+  AGGRO_LOSS_FACTOR, CHASE_STOP_FACTOR, WANDER_RADIUS_PX, WANDER_SPEED_FACTOR,
+  WANDER_PAUSE_MIN_MS as WANDER_PAUSE_MIN, WANDER_PAUSE_MAX_MS as WANDER_PAUSE_MAX,
+} from "../data/balance";
 
 // -----------------------------------------------------------
 // Konstanten
@@ -28,24 +32,15 @@ import { canFight } from "./EntityLevelingSystem";
 // Entities weiter weg als diese Distanz bekommen keine AI-Berechnung
 const MAX_AI_DIST_SQ = 500 * 500;  // 500px, als Quadrat
 
-// Aggro-Verlust wenn Entity zu weit weg ist (Hysterese: 2.5× aggroRadius)
-const AGGRO_LOSS_FACTOR = 2.5;
-
 // Mindest-Update-Intervall pro Entity (ms)
 const AI_TICK_MS = 100;
 
-// Chase-Stop-Distanz: Entity hält an wenn sie näher als attackRange × CHASE_STOP_FACTOR ist.
-// Faktor 0.5 → stoppt mittig in der Angriffsreichweite, verhindert Durchlaufen.
-const CHASE_STOP_FACTOR = 0.5;
+// Balance-Werte der KI (Aggro-Verlust, Anhalten, Herumwandern) mit
+// Begründung: src/data/balance.ts Abschnitt „KI der Wesen“.
 
 // -----------------------------------------------------------
 // Wander-Konstanten
 // -----------------------------------------------------------
-const TILE_PX             = 32;
-const WANDER_RADIUS_PX    = 10 * TILE_PX;   // Max. 10 Kacheln von Spawnpunkt weg
-const WANDER_SPEED_FACTOR = 0.45;            // 45 % der Kampfgeschwindigkeit
-const WANDER_PAUSE_MIN    = 1500;            // ms Mindest-Pause nach Erreichen des Ziels
-const WANDER_PAUSE_MAX    = 4000;            // ms Maximal-Pause
 const WANDER_ARRIVE_SQ    = 10 * 10;         // Gilt als "angekommen" innerhalb 10px
 
 // -----------------------------------------------------------

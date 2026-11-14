@@ -64,7 +64,10 @@ export type EffectType =
   | "move_speed"         // Bewegungstempo als Faktor des Grundtempos (formula: Faktor; der beste Skill zählt)
   | "sight_range"        // Sichtweite in Körperradien (formula: Radien; der beste Skill zählt)
   | "color_vision"       // Farbsehen ohne Rot, 0–1 (formula: Anteil; der beste Skill zählt)
-  | "red_vision";        // Rot sehen, 0–1 (formula: Anteil; der beste Skill zählt)
+  | "red_vision"         // Rot sehen, 0–1 (formula: Anteil; der beste Skill zählt)
+  | "jump_distance"      // Sprungweite in Weltpixeln (formula: px; trigger on_activate)
+  | "regen_hp"           // HP-Regeneration, stufenlos (formula: HP pro Sekunde; StatusEffectSystem)
+  | "digest_rate";       // Verdauung: Nahrung pro Minute Spielzeit (formula: Fasern/min; GrowSystem)
 
 /**
  * Charakter-Eigenschaften. Sie kommen nur aus Skills (GDD-02 Abschnitt 8.1):
@@ -87,6 +90,27 @@ export interface AttributeScaling {
   /** Schadensbonus je Punkt, z. B. 0.08 = +8 % je Punkt */
   perPoint: number;
   reasoning: string;            // Pflichtfeld — Warum skaliert der Skill so?
+}
+
+/**
+ * Wodurch ein Skill außerhalb von Absorb/Analyze und Kampf Erfahrung bekommt
+ * (Übung durch Tun). Die Menge steht am Skill, damit jeder Skill einzeln
+ * balanciert werden kann.
+ * Vorgabe (Entwickler, 14. November 2026): Was zu einem Skill gehört, wird am
+ * Skill konfiguriert; allgemeine Regeln stehen in src/data/balance.ts.
+ *   body_radius_moved — je zurückgelegtem Körperradius (nur der Bewegungs-Skill,
+ *                       mit dem sich der Blob gerade bewegt: data/body.ts)
+ *   second_enabled    — je Sekunde Spielzeit, solange eingeschaltet
+ *   hp_healed         — je tatsächlich geheiltem HP
+ *   fiber_digested    — je verdauter Pflanzenfaser
+ */
+export type PracticeUnit = "body_radius_moved" | "second_enabled" | "hp_healed" | "fiber_digested";
+
+export interface SkillPractice {
+  unit: PracticeUnit;
+  /** Erfahrung je Einheit */
+  xpPer: number;
+  reasoning: string;            // Pflichtfeld — Warum lernt der Skill so schnell?
 }
 
 /**
@@ -168,6 +192,9 @@ export interface SkillDefinition {
 
   // Deklarative Effekt-Liste (GDD-05) — bevorzugt gegenüber hardcoded Logik
   effects?: SkillEffect[];
+
+  // Erfahrung durch Tun (Bewegen, Sehen, Heilen, Verdauen) — siehe SkillPractice
+  practice?: SkillPractice;
 
   // Materialkosten bei Aktivierung (z.B. grow)
   materialCost?: MaterialStack[];

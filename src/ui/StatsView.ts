@@ -12,9 +12,9 @@
 import type { PlayerState } from "../types/GameState.js";
 import type { Attribute } from "../types/Skill.js";
 import { ALL_SKILLS } from "../data/skills.js";
-import { MILLI, MAX_PERCENT_REDUCTION } from "../data/balance.js";
+import { MILLI, MAX_PERCENT_REDUCTION, MP_REGEN_MILLI_PER_SECOND } from "../data/balance.js";
 import { getCharacterStats, describePlayerSkillValues } from "../systems/StatsSystem.js";
-import { formatPlayerSkillDamage, MP_REGEN_MILLI_PER_SECOND } from "../systems/CombatSystem.js";
+import { formatPlayerSkillDamage } from "../systems/CombatSystem.js";
 import { getRegenerationRate } from "../systems/StatusEffectSystem.js";
 import {
   getCapacityInfo, getRankInfo, getLearningEffort, getCoreProgress, levelFromProgress,

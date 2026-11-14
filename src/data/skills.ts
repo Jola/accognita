@@ -10,6 +10,18 @@
 //   - Kern-Fähigkeiten: in CORE_SKILLS (nur Analyze + Absorb)
 //
 // BALANCING:
+//   Vorgabe (Entwickler, 14. November 2026): Alles, was zu einem Skill
+//     gehört, wird am Skill konfiguriert — wie viel Stärke, Geschick oder
+//     andere Eigenschaften er mit der Erfahrung gibt (effects), wie
+//     Eigenschaften auf ihn wirken (scaling), seine Werte wie Sprungweite,
+//     Heilung oder Verdauung (effects) und wodurch er Erfahrung bekommt
+//     (practice). Allgemeine Regeln (Treffer-Stufen, Präzision durch
+//     Geschick, Erfahrung, Schadensgrenzen …) stehen in src/data/balance.ts.
+//   Begründung (Vorschlag Claude, übernommen): Alles, was einen Skill
+//     ausmacht, steht an einem Ort — wer einen Skill balanciert, fasst nur
+//     eine Stelle an und sieht im INDEX alle Werte. Präzision gilt für jeden
+//     Angriff gleich und ist deshalb eine allgemeine Regel.
+//
 //   learningEffort = Lernaufwand. Skills haben keine Level, nur Erfahrung;
 //   daraus folgt fließend der Fortschritt p (0–100 %, src/data/progression.ts
 //   Abschnitt 1). NaturXP = 40,5 × learningEffort bringt einen Skill auf 90 %.
@@ -256,6 +268,15 @@ export const BASE_SKILLS: SkillDefinition[] = [
     attackType: "dash",
     effects: [
       {
+        trigger: "on_activate",
+        effectType: "jump_distance",
+        formula: { start: 40, max: 375 },
+        reasoning:
+          "Sprungweite in Weltpixeln: 40 → 375 px, bei Natur 342 px (bisher 340). Startwert (Vorschlag Claude, " +
+          "offen): ein kleiner Hüpfer — der Wert soll bei 0 XP sehr niedrig sein (Vorgabe Entwickler), ein Sprung " +
+          "von 1 px wäre aber keiner. [VERWORFEN, 1. November 2026] 160 + 20 × (u − 1) px.",
+      },
+      {
         trigger: "passive",
         effectType: "dexterity",
         formula: { start: 0, max: 4.4 },
@@ -302,7 +323,8 @@ export const BASE_SKILLS: SkillDefinition[] = [
   //   Bewegung gibt Stärke und Geschick, die mit dem Fortschritt wachsen;
   //   das Tempo steigt mit dem Skill. Wurm und Schnecke geben Kriechen,
   //   Insekten Krabbeln, später kommt Laufen. Sehen: Schwarz → Schwarz-Weiß
-  //   → Farbe. Regeln für „bester Skill zählt“ und Größe: src/data/body.ts.
+  //   → Farbe. Regel „bester Skill zählt“: src/data/body.ts; Stärke aus der
+//   Körpergröße: src/data/balance.ts. Erfahrung durch Tun: Feld practice.
   // Alle Zahlen VORLÄUFIG (Vorschlag Claude, Skala übernommen).
 
   {
@@ -318,6 +340,14 @@ export const BASE_SKILLS: SkillDefinition[] = [
       "Passiv: Der Blob schiebt sich wie Wurm und Schnecke über den Boden. Erst damit kann er sich " +
       "überhaupt bewegen. Tempo ×0,15 → ×0,6 des Grundtempos, Stärke 0 → 1, Geschick 0 → 1 mit der Übung. " +
       "Lernt durch Bewegen. Quelle: Regenwurm, Schnecke.",
+    practice: {
+      unit: "body_radius_moved", xpPer: 0.5,
+      reasoning:
+        "Begründung (Vorschlag Claude, übernommen): Bewegung lernt man durch Bewegen — in Körperradien, damit " +
+        "ein großer Blob nicht schneller lernt. 1 XP je 2 Körperradien (VORLÄUFIG): Kriechen ist damit nach " +
+        "rund 30 s Bewegung bei „Übung“ und nach rund zwei Minuten bei Natur („nach kurzer Zeit annehmbar " +
+        "schnell“, Vorgabe Entwickler).",
+    },
     effects: [
       {
         trigger: "passive", effectType: "move_speed", formula: { start: 0.15, max: 0.6 },
@@ -347,6 +377,12 @@ export const BASE_SKILLS: SkillDefinition[] = [
       "Passiv: Der Blob formt kleine Beinchen und krabbelt wie Insekten und Spinnen. Tempo ×0,4 → ×1,0 " +
       "des Grundtempos, Stärke 0 → 3, Geschick 0 → 3 mit der Übung. Lernt durch Bewegen. " +
       "Quelle: Ameise, Marienkäfer, Spinnen, Skorpione.",
+    practice: {
+      unit: "body_radius_moved", xpPer: 0.5,
+      reasoning:
+        "Begründung (Vorschlag Claude, übernommen): Bewegung lernt man durch Bewegen — in Körperradien, damit " +
+        "ein großer Blob nicht schneller lernt. 1 XP je 2 Körperradien (VORLÄUFIG); wie Kriechen.",
+    },
     effects: [
       {
         trigger: "passive", effectType: "move_speed", formula: { start: 0.4, max: 1.0 },
@@ -376,6 +412,13 @@ export const BASE_SKILLS: SkillDefinition[] = [
       "Passiv: Lichtempfindliche Zellen unterscheiden hell und dunkel. Der Blob sieht seine Umgebung " +
       "in Graustufen — Sichtweite 2 → 10 Körperradien mit der Übung. Lernt durch Sehen (Zeit mit Licht). " +
       "Quelle: Regenwurm, Schnecke.",
+    practice: {
+      unit: "second_enabled", xpPer: 0.5,
+      reasoning:
+        "Begründung (Vorschlag Claude, übernommen): Sehen lernt man durch Sehen — wie Photosynthese läuft es " +
+        "passiv mit. 0,5 XP je Sekunde (VORLÄUFIG): Lichtsinn ist nach rund einer Minute bei „Übung“ und nach gut " +
+        "zehn Minuten bei Natur.",
+    },
     effects: [
       {
         trigger: "passive", effectType: "sight_range", formula: { start: 2, max: 10 },
@@ -398,6 +441,12 @@ export const BASE_SKILLS: SkillDefinition[] = [
       "Passiv: Viele Einzelaugen sehen weiter und in Farbe — aber ohne Rot, Rot erscheint dunkel. " +
       "Sichtweite 6 → 25 Körperradien, Farbe 0 → 100 % mit der Übung. Lernt durch Sehen. " +
       "Quelle: Ameise, Marienkäfer.",
+    practice: {
+      unit: "second_enabled", xpPer: 0.5,
+      reasoning:
+        "Begründung (Vorschlag Claude, übernommen): Sehen lernt man durch Sehen — wie Photosynthese läuft es " +
+        "passiv mit. 0,5 XP je Sekunde (VORLÄUFIG); wie Lichtsinn.",
+    },
     effects: [
       {
         trigger: "passive", effectType: "sight_range", formula: { start: 6, max: 25 },
@@ -423,6 +472,12 @@ export const BASE_SKILLS: SkillDefinition[] = [
       "Passiv: Zwei große, scharfe Linsenaugen wie bei der Springspinne. Volle Farbe einschließlich Rot " +
       "und weiter Blick — Sichtweite 10 → 40 Körperradien, Rot 0 → 100 % mit der Übung. Lernt durch Sehen. " +
       "Quelle: Springspinne.",
+    practice: {
+      unit: "second_enabled", xpPer: 0.5,
+      reasoning:
+        "Begründung (Vorschlag Claude, übernommen): Sehen lernt man durch Sehen — wie Photosynthese läuft es " +
+        "passiv mit. 0,5 XP je Sekunde (VORLÄUFIG); wie Lichtsinn.",
+    },
     effects: [
       {
         trigger: "passive", effectType: "sight_range", formula: { start: 10, max: 40 },
@@ -581,6 +636,30 @@ export const PLANT_SKILLS: SkillDefinition[] = [
     description:
       "Passiv: Regeneriert langsam HP — immer, auch im Kampf. " +
       "Wirkt automatisch nach Entdeckung. 0,1 → 1,2 HP/s mit der Übung.",
+    effects: [
+      {
+        trigger: "passive",
+        effectType: "regen_hp",
+        formula: { start: 0.1, max: 1.2 },
+        reasoning:
+          "0,1 → 1,2 HP/s, bei Natur 1,09 HP/s (bisher 1,1); stufenlos, immer — auch im Kampf. " +
+          "Vorgabe (Entwickler): Die Regeneration ist viel zu stark. Begründung (Vorschlag Claude): Fotosynthese " +
+          "liefert einem Tier wenig Energie — Schnecken mit eingelagerten Chloroplasten (Elysia) überleben damit " +
+          "wochenlang, wachsen aber kaum. Ein Blob mit 80 HP braucht bei Natur rund eine Minute, um sich voll zu " +
+          "heilen. VORLÄUFIG. Startwert 0,1 HP/s: kleinster Wert, der noch etwas bewirkt. " +
+          "[VERWORFEN, 1. November 2026] 0,2 + 0,1 × (u − 1) HP/s (Schema-Umstellung). " +
+          "[VERWORFEN, 1. November 2026] 0,5 × u HP/s (u 10 → 5 HP/s).",
+      },
+    ],
+    practice: {
+      unit: "hp_healed", xpPer: 0.25,
+      reasoning:
+        "Vorgabe (Entwickler, 1. November 2026): Die Regeneration ist viel zu schnell auf dem höchsten Rang. " +
+        "Begründung (Vorschlag Claude): Photosynthese läuft passiv mit, ohne dass der Spieler etwas tut — sie " +
+        "soll langsamer lernen als Fähigkeiten, die man im Kampf einsetzen muss. 0,25 XP je geheiltem HP: mit " +
+        "der schwächeren Heilung grob eine Stunde Heilen bis Natur. VORLÄUFIG. [VERWORFEN] 1 XP je HP: Natur " +
+        "nach wenigen Minuten.",
+    },
   },
   {
     id: "grow",
@@ -596,7 +675,26 @@ export const PLANT_SKILLS: SkillDefinition[] = [
       "Passiv: Der Blob verdaut über die Zeit Pflanzenfasern aus seinem Lager und wird daraus größer — " +
       "mehr Körpermasse heißt mehr Größe, MaxHP und MaxMP. Verdaut 2 → 30 Fasern pro Minute mit der Übung. " +
       "Ausschalten, um Fasern aufzuheben. Quelle: Gras.",
-    // Werte und Begründungen: src/data/grow.ts (Vorgabe Entwickler, 13. November 2026)
+    // Allgemeine Regeln des Wachsens (Nahrung, Wachstum aus Körpermasse): src/data/grow.ts
+    effects: [
+      {
+        trigger: "passive",
+        effectType: "digest_rate",
+        formula: { start: 2, max: 30 },
+        reasoning:
+          "Verdaute Pflanzenfasern pro Minute Spielzeit: 2 → 30, bei Natur 27,2. Begründung (Vorschlag Claude, " +
+          "offen): Ein Grashalm bringt im Schnitt 2 Fasern. Am Anfang verdaut der Blob einen Halm pro Minute — " +
+          "Wachsen ist spürbar, aber langsam. Geübt schafft er einen Halm alle paar Sekunden, so schnell, wie man " +
+          "Gras sammeln kann; dann begrenzt die Nahrung, nicht die Verdauung.",
+      },
+    ],
+    practice: {
+      unit: "fiber_digested", xpPer: 1,
+      reasoning:
+        "Begründung (Vorschlag Claude, offen): Wie bei Photosynthese (XP je geheiltem HP) zählt, was der Skill " +
+        "tatsächlich bewirkt hat. 1 XP je verdauter Faser — mit Lernaufwand 15 liegt Natur bei rund 600 " +
+        "verdauten Fasern.",
+    },
   },
 ];
 

@@ -41,6 +41,8 @@ Format:
 
 ## Erledigt
 
+- `[POLISH]` **Balance-Werte aufgeräumt**: Was zu einem Skill gehört, steht am Skill (Sprungweite, Photosynthese-Heilung, Grow-Verdauung als Effekte; Erfahrung durch Bewegen, Sehen, Heilen, Verdauen im Feld `practice`). `balance.ts` enthält die allgemeinen Regeln und listet im Kopf, was wo steht. MP-Regeneration, KI-Werte und Gegner-Bonus-Level aus der Spiellogik dorthin geholt. `body.ts` als „nur Blob“ klargestellt. Spiel unverändert (v0.7.5, GDD-02 Abschnitt 8.8, 14. November 2026).
+
 - `[BUG]` **Sichtkreis im Querformat verzerrt**: Fehler in Phaser 3.70. Die Bildfläche des Kamera-Farbfilters behielt die Startgröße. Fix: `GameScene.fixCameraFxSize` passt sie an, sobald sich die Spielfläche ändert (v0.7.2, 13. November 2026). Seit v0.7.3 nur beim Start und bei RESIZE (deckt auch Drehen ab) statt jeden Frame (14. November 2026). v0.7.2/v0.7.3 halfen nicht: resize() wirkt nur mit autoResize. Eigentliche Ursache: Die Zwischenflächen der Utility-Pipeline (fullFrame/halfFrame) haben nie autoResize. Fix v0.7.4: autoResize einschalten und anpassen, beim Start und bei RESIZE (14. November 2026).
 
 - `[FEATURE]` **Grow / Wachsen**: passiv, verdaut Pflanzenfasern zu Körpermasse, das Wachstum kommt nur noch daraus. Wird von Gras gelernt, Gras gibt es doppelt so oft (GDD-02 Abschnitt 8.10, 13. November 2026).

@@ -4,16 +4,18 @@
 //
 // Stellschrauben und Begründungen: src/data/body.ts (gleiche
 // Abschnittsnummern). Keine Phaser-Abhängigkeit. Reine Logik.
-// Für Blob und Gegner gilt dieselbe Auswertung der Skill-Effekte
-// (bestOfEffect); nur der Blob hat Wachstum und damit Größenbonus.
+// Gilt nur für den Blob (body.ts): Gegner haben festes Tempo, keine Sicht
+// und keinen Größenbonus. bestOfEffect ist allgemein und wird auch für
+// Anzeigen einzelner Skills genutzt.
+// [VERWORFEN, 14. November 2026] „Für Blob und Gegner gilt dieselbe
+//   Auswertung“ — stimmte nicht, Gegner nutzen dieses Modul nicht.
 // ============================================================
 
 import type { PlayerState } from "../types/GameState";
 import type { EffectType } from "../types/Skill";
 import { ALL_SKILLS } from "../data/skills";
-import { PLAYER_SIZE_GROWTH_MAX } from "../data/balance";
-import { MOVE_XP_PER_BODY_RADIUS, SIZE_STRENGTH_BONUS_MAX } from "../data/body";
-import { evalSkillValue, resolveStrength, getPlayerPassiveSkillProgress } from "./SkillEffectSystem";
+import { PLAYER_SIZE_GROWTH_MAX, SIZE_STRENGTH_BONUS_MAX } from "../data/balance";
+import { evalSkillValue, resolveStrength, getPlayerPassiveSkillProgress, practiceXp } from "./SkillEffectSystem";
 import { getPlayerGrowth } from "./GrowSystem";
 
 // -----------------------------------------------------------
@@ -50,10 +52,10 @@ export function getActiveMoveSkill(player: PlayerState): string | undefined {
   return bestOfEffect(getPlayerPassiveSkillProgress(player), "move_speed").skillId;
 }
 
-/** Erfahrung für eine zurückgelegte Strecke (Weltpixel) bei Körperradius r. */
-export function calcMoveXp(distancePx: number, bodyRadiusPx: number): number {
+/** Erfahrung des Bewegungs-Skills für eine Strecke (Weltpixel) bei Körperradius r — Menge am Skill (practice). */
+export function calcMoveXp(skillId: string, distancePx: number, bodyRadiusPx: number): number {
   if (bodyRadiusPx <= 0) return 0;
-  return (distancePx / bodyRadiusPx) * MOVE_XP_PER_BODY_RADIUS;
+  return practiceXp(skillId, "body_radius_moved", distancePx / bodyRadiusPx);
 }
 
 // -----------------------------------------------------------
@@ -101,7 +103,7 @@ export function getPlayerVision(player: PlayerState): Vision {
   };
 }
 
-/** Eingeschaltete Seh-Skills (bekommen Erfahrung je Sekunde, body.ts Abschnitt 3). */
+/** Eingeschaltete Seh-Skills (bekommen Erfahrung je Sekunde, Menge am Skill: practice). */
 export function getActiveSightSkills(player: PlayerState): string[] {
   const p = getPlayerPassiveSkillProgress(player);
   return Object.keys(p).filter((id) => ALL_SKILLS.get(id)?.effects?.some((e) => e.effectType === "sight_range"));

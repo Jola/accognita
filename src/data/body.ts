@@ -2,11 +2,21 @@
 // BODY — Grundwerte des Blobs: Bewegung, Sinne, Stärke aus Größe
 // Absorb & Evolve
 //
-// DIESE DATEI IST DIE EINZIGE QUELLE FÜR die Stellschrauben der Grundwerte,
-// die nicht an einem einzelnen Skill hängen. Die Werte der Skills selbst
-// (Tempo, Stärke, Geschick, Sichtweite, Farbe je Skill) stehen in
-// src/data/skills.ts. Rechenregeln: src/systems/BodySystem.ts (gleiche
-// Abschnittsnummern). Herleitung: GDD-09.
+// Gilt NUR FÜR DEN BLOB. Gegner nutzen das nicht: Ihr Tempo steht fest in
+// src/data/entities.ts (speed), sie haben keine Sicht (sie bemerken den Blob
+// über ihren Aggro-Radius) und keinen Größenbonus. Gemeinsam mit Gegnern
+// sind nur Stärke und Geschick aus Skill-Effekten (SkillEffectSystem).
+//
+// Diese Datei beschreibt, wie der Körper des Blobs aus seinen Skills
+// zusammengesetzt wird („der beste Skill zählt“) und den weichen Sichtrand.
+// Die Werte der Skills selbst (Tempo, Stärke, Geschick, Sichtweite, Farbe
+// und die Erfahrung durch Bewegen und Sehen, Feld practice) stehen in
+// src/data/skills.ts. Stärke aus der Körpergröße: src/data/balance.ts.
+// Rechenregeln: src/systems/BodySystem.ts (gleiche Abschnittsnummern).
+// Herleitung: GDD-09.
+// [VERWORFEN, 14. November 2026] „Einzige Quelle für die Stellschrauben der
+//   Grundwerte“ — Vorgabe (Entwickler): Was zu einem Skill gehört, steht am
+//   Skill; allgemeine Regeln in balance.ts.
 //
 // Kennzeichnung der Herkunft (CLAUDE.md, Begründungspflicht):
 //   Vorgabe (Entwickler)                      — von Jörn entschieden
@@ -38,30 +48,19 @@
 //   bleibt Faktor, damit sich das Tempo auf dem Bildschirm bei jeder
 //   Körpergröße gleich anfühlt (balance.ts).
 //
-// Erfahrung: Der Skill, mit dem sich der Blob gerade bewegt (der schnellste),
-// bekommt Erfahrung je zurückgelegter Strecke, gemessen in Körperradien.
-// Begründung (Vorschlag Claude, übernommen): Bewegung lernt man durch
-//   Bewegen. In Körperradien, damit ein großer Blob nicht schneller lernt.
-// MOVE_XP_PER_BODY_RADIUS = 0,5 (1 XP je 2 Körperradien) — VORLÄUFIG:
-//   Kriechen (Lernaufwand 5) ist damit nach rund 30 s Bewegung bei „Übung“
-//   und nach rund zwei Minuten bei Natur („nach kurzer Zeit annehmbar
-//   schnell“, Vorgabe oben).
+// Erfahrung: Nur der Skill, mit dem sich der Blob gerade bewegt (der
+// schnellste), bekommt Erfahrung je zurückgelegter Strecke in Körperradien.
+// Wie viel, steht am Skill (practice: body_radius_moved).
+// [VERWORFEN, 14. November 2026] MOVE_XP_PER_BODY_RADIUS = 0,5 hier für alle
+//   Bewegungs-Skills — jetzt je Skill, Wert und Begründung unverändert.
 // -----------------------------------------------------------
-export const MOVE_XP_PER_BODY_RADIUS = 0.5;
 
 // -----------------------------------------------------------
-// 2. STÄRKE AUS DER KÖRPERGRÖSSE
+// 2. STÄRKE AUS DER KÖRPERGRÖSSE — steht in balance.ts
 //
-// Stärke = Summe der Stärke-Effekte × (1 + Größenbonus)
-// Größenbonus = SIZE_STRENGTH_BONUS_MAX × min(1, Wachstum / PLAYER_SIZE_GROWTH_MAX)
-//   — linear mit der Größe, bei voller Größe +100 %.
-// Vorgabe (Entwickler): Die Körpergröße erhöht die Stärke prozentual.
-// Begründung (Vorschlag Claude, übernommen): Ein größerer Körper hat mehr
-//   Muskelmasse. Ohne trainierte Muskeln (Bewegung, Superstrength) gibt es
-//   nichts, was die Größe verstärken könnte.
-// Gilt derzeit nur für den Blob: Gegner haben kein Wachstum.
+// Allgemeine Regel, deshalb jetzt in src/data/balance.ts
+// (SIZE_STRENGTH_BONUS_MAX, unverändert). Rechnung: BodySystem Abschnitt 2.
 // -----------------------------------------------------------
-export const SIZE_STRENGTH_BONUS_MAX = 1.0;
 
 // -----------------------------------------------------------
 // 3. SEHEN
@@ -82,11 +81,9 @@ export const SIZE_STRENGTH_BONUS_MAX = 1.0;
 // -----------------------------------------------------------
 export const SIGHT_EDGE_FRACTION = 0.35;
 
-// Erfahrung: Jeder eingeschaltete Seh-Skill bekommt SIGHT_XP_PER_SECOND je
-// Sekunde Spielzeit — Sehen lernt man durch Sehen.
-// Begründung (Vorschlag Claude, übernommen): Wie Photosynthese läuft Sehen
-//   passiv mit. 0,5 XP/s (VORLÄUFIG): Lichtsinn (Lernaufwand 8) ist nach
-//   rund einer Minute bei „Übung“ und nach gut zehn Minuten bei Natur.
-export const SIGHT_XP_PER_SECOND = 0.5;
+// Erfahrung: Jeder eingeschaltete Seh-Skill bekommt Erfahrung je Sekunde
+// Spielzeit — wie viel, steht am Skill (practice: second_enabled).
+// [VERWORFEN, 14. November 2026] SIGHT_XP_PER_SECOND = 0,5 hier für alle
+//   Seh-Skills — jetzt je Skill, Wert und Begründung unverändert.
 
-// Stand: 13. November 2026 — Erstfassung
+// Stand: 14. November 2026 — gilt nur für den Blob (klargestellt); Erfahrung an die Skills, Größenbonus nach balance.ts verschoben; davor 13. November 2026 — Erstfassung

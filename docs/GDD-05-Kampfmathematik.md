@@ -272,6 +272,9 @@ interface LinearFormula {
 | `damage_mult` | Multipliziert ausgehenden Schaden | Faktor |
 | `speed_mod` | Verändert Bewegungsgeschwindigkeit | Faktor |
 | `grant_penetration` | Ignoriert X Punkte Flat-Block beim Angriff | Punkte |
+| `jump_distance` | Sprungweite (Trigger `on_activate`, Jump). Implementiert 14. November 2026, vorher Konstante in `SkillEffects.ts` | Weltpixel |
+| `regen_hp` | Stufenlose HP-Regeneration (Trigger `passive`, Photosynthese); `StatusEffectSystem` macht daraus einen HoT. Implementiert 14. November 2026, vorher Sonderfall für Photosynthese | HP pro Sekunde |
+| `digest_rate` | Verdauung (Trigger `passive`, Grow) | Fasern pro Minute |
 | `dexterity` | Geschick (Trigger `passive`): verschiebt Treffer-Stufen beim Angriff nach oben, beim Verteidigen nach unten. Zählt auch bei aktiven Skills, solange sie bekannt sind (z.B. Jump). Beim Angriff zählt der Beitrag des eingesetzten Skills nicht mit (GDD-03, Treffer-Stufen) | Punkte |
 
 **Begründung `dexterity` (Vorschlag Claude, übernommen):** Geschick kommt über Skills — kein separates Attribut. Damit gilt die Grundregel dieses Dokuments: Eigenschaften ergeben sich deklarativ aus Skills, für Spieler und Gegner gleich. Geschick wirkt auch beim Verteidigen (Ausweichen), damit flinke Gegner seltener schwer getroffen werden.
@@ -470,7 +473,7 @@ Nichts anderes sollte verändert werden müssen um ein Skill zu rebalancen.
 
 ```typescript
 // Schadensskalierung
-export const SKILL_DAMAGE_BASE_MULTIPLIER = 1.0;   // globaler Schaden-Multiplikator
+// [VERWORFEN, 14. November 2026] SKILL_DAMAGE_BASE_MULTIPLIER = 1.0 — wurde nie ausgewertet
 export const SKILL_DEFENSE_BASE_MULTIPLIER = 1.0;  // globaler Verteidigungs-Multiplikator
 
 // Caps
@@ -493,6 +496,7 @@ export const MIN_RESISTANCE_MULT = 0.1;     // minimaler Resistenz-Multiplikator
   Folge: Biss Lv1 (7 HP Stich) gegen Chitin Lv3+ macht weiterhin nur 1 mHP pro Treffer (angezeigt als 1 HP); ein kritischer Treffer schlägt jedoch durch (z.B. ~10 HP gegen 7,24 HP Flat-Block).
 - `MAX_WEAKNESS_MULT = 3.0`, `MIN_RESISTANCE_MULT = 0.1` — **Begründung (rekonstruiert, bitte bestätigen):** Gestapelte Schwächen/Resistenzen sollen keine Ausreißer erzeugen (One-Shots bzw. Unverwundbarkeit durch Kombination).
 - `SKILL_DAMAGE_BASE_MULTIPLIER`, `SKILL_DEFENSE_BASE_MULTIPLIER` — globale Hebel, um alle Skills auf einmal stärker/schwächer zu machen, ohne Einzelwerte anzufassen. (Derzeit wird nur der Verteidigungs-Hebel im Code ausgewertet.)
+  [VERWORFEN, 14. November 2026] `SKILL_DAMAGE_BASE_MULTIPLIER` — aus `balance.ts` entfernt, weil der Code ihn nie ausgewertet hat. Der Verteidigungs-Hebel bleibt.
 
 ---
 
@@ -660,4 +664,4 @@ Eine reine Halbwertszeit endet nie. Unter ≈ 2,9 HP Restlast (wo λ·L unter 1 
 
 ---
 
-*Letzte Aktualisierung: v0.6 — Pipeline-Schritt [2]: Eigenschafts-Skalierung (13. November 2026); Formel-System SkillValue { start, max } statt LinearFormula, Angriffsschaden als damage-Wert (1. November 2026); davor v0.5 — Stachelstich-Dosis gesenkt (1. November 2026); Abschnitt 12: Gift aktiver Skills nur beim eigenen Treffer (Stachelstich), XP anteilig je Gift-Skill (31. Oktober 2026); Abschnitt 12 Gift: Giftlast, stufenloser Abbau mit Halbwertszeit, Mindestrate, Effekt-Typ `inject_venom` (31. Oktober 2026); davor Hinweis Übungsgrad statt Level in Abschnitt 5.4 (31. Oktober 2026); davor implementiert — DamageSystem (8-stufige Pipeline), SkillEffectSystem (deklarative Effekte), DamageType-System, Skill-Effekt-Deklaration für chitin_armor/superstrength/hemolymph/venom (Oktober 2026); LinearFormula.max, Treffer-Stufe 1b, dexterity; Milli-Einheiten (3.4) und Begründungen der Caps ergänzt; Mindestschaden 1 HP vor Effekten, HP-Anzeige immer aufgerundet; Begründungen für Milli-HP und Mindestschaden vom Entwickler; Geschick ohne eigenen Skill-Beitrag*
+*Letzte Aktualisierung: 14. November 2026 — Effekt-Typen jump_distance, regen_hp, digest_rate (Abschnitt 5.5); SKILL_DAMAGE_BASE_MULTIPLIER verworfen (Abschnitt 9.3); davor v0.6 — Pipeline-Schritt [2]: Eigenschafts-Skalierung (13. November 2026); Formel-System SkillValue { start, max } statt LinearFormula, Angriffsschaden als damage-Wert (1. November 2026); davor v0.5 — Stachelstich-Dosis gesenkt (1. November 2026); Abschnitt 12: Gift aktiver Skills nur beim eigenen Treffer (Stachelstich), XP anteilig je Gift-Skill (31. Oktober 2026); Abschnitt 12 Gift: Giftlast, stufenloser Abbau mit Halbwertszeit, Mindestrate, Effekt-Typ `inject_venom` (31. Oktober 2026); davor Hinweis Übungsgrad statt Level in Abschnitt 5.4 (31. Oktober 2026); davor implementiert — DamageSystem (8-stufige Pipeline), SkillEffectSystem (deklarative Effekte), DamageType-System, Skill-Effekt-Deklaration für chitin_armor/superstrength/hemolymph/venom (Oktober 2026); LinearFormula.max, Treffer-Stufe 1b, dexterity; Milli-Einheiten (3.4) und Begründungen der Caps ergänzt; Mindestschaden 1 HP vor Effekten, HP-Anzeige immer aufgerundet; Begründungen für Milli-HP und Mindestschaden vom Entwickler; Geschick ohne eigenen Skill-Beitrag*

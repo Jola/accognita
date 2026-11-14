@@ -40,9 +40,9 @@ import {
 } from "./SkillEffectSystem";
 import { venomBiteChance, venomDoseMilli } from "./VenomSystem";
 import { getSkillProgress } from "./ProgressionSystem";
-import { getPlayerGrowth, calcGrowFibersPerMinute, isGrowActive } from "./GrowSystem";
+import { getPlayerGrowth, isGrowActive } from "./GrowSystem";
 import { bestOfEffect, getMoveSpeedFactor, getActiveMoveSkill, getPlayerStrength, getSizeStrengthMult, getPlayerVision, type Vision } from "./BodySystem";
-import { calcJumpDistance, calcPhotosynthesisHeal } from "./SkillEffects";
+import { calcJumpDistance, calcRegenHp } from "./SkillEffects";
 import { DAMAGE_TYPE_DE } from "./DamageSystem";
 
 // -----------------------------------------------------------
@@ -96,6 +96,8 @@ export function getEffectValue(skillId: string, e: SkillEffect, progress: number
     case "color_vision":
     case "red_vision":     return bestOfEffect({ [skillId]: progress }, e.effectType).value;
     case "inject_venom":   return venomBiteChance(e, progress);
+    case "jump_distance":  return calcJumpDistance(progress, skillId);
+    case "regen_hp":       return calcRegenHp(skillId, progress) / MILLI;
     default:               return evalSkillValue(e.formula, progress); // ohne eigene Kampffunktion
   }
 }
@@ -127,6 +129,9 @@ export function describeEffect(skillId: string, e: SkillEffect, progress: number
     case "sight_range":    return `👁️ Sichtweite ${num(v)} Körperradien`;
     case "color_vision":   return `🎨 Farbe ${pct(v)} (ohne Rot)`;
     case "red_vision":     return `🔴 Rot ${pct(v)}`;
+    case "jump_distance":  return `🦘 Sprungweite ${num(v, 0)} px`;
+    case "regen_hp":       return `💚 Heilung ${num(v, 2)} HP/s`;
+    case "digest_rate":    return `🌱 Verdaut ${num(v)} Pflanzenfasern/min`;
     case "inject_venom": {
       const when = ALL_SKILLS.get(skillId)?.activation === "active" ? "beim Stich" : "je Treffer";
       return `☠️ ${pct(v)} Chance auf ${num(venomDoseMilli(e, progress) / MILLI)} HP Gift ${when}`;
@@ -147,9 +152,6 @@ export function describePlayerSkillValues(player: PlayerState, skillId: string):
   const lines = (def.effects ?? [])
     .map((e) => describeEffect(skillId, e, p))
     .filter((l): l is string => l !== null);
-  if (skillId === "jump") lines.unshift(`🦘 Sprungweite ${num(calcJumpDistance(p), 0)} px`);
-  if (skillId === "grow") lines.push(`🌱 Verdaut ${num(calcGrowFibersPerMinute(p))} Pflanzenfasern/min`);
-  if (skillId === "photosynthesis") lines.push(`💚 Heilung ${num(calcPhotosynthesisHeal(p) / MILLI, 2)} HP/s`);
   return lines;
 }
 

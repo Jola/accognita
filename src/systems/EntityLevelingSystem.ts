@@ -15,14 +15,18 @@
 import type { EntityDefinition, EntityInstance } from "../types/Entity";
 import { calcSkillAttackDamage } from "./SkillEffects";
 import { getEntitySkillProgress } from "./ProgressionSystem";
+import {
+  ENTITY_MAX_BONUS_LEVEL, ENTITY_WINS_PER_BONUS_LEVEL, ENTITY_HUNT_RADIUS_PX, ENTITY_BONUS_STAT_SCALE,
+} from "../data/balance";
 
 // -----------------------------------------------------------
 // Konstanten
 // -----------------------------------------------------------
-const MAX_BONUS_LEVEL    = 3;
-const SKILL_WINS_PER_LVL = 3;    // Siege bis zum nächsten bonusLevel
-const HUNT_RADIUS_PX     = 300;  // Suchradius für Beute (px)
-const STAT_SCALE         = 1.25; // Kampfwert-Faktor pro bonusLevel
+// Werte mit Begründung: src/data/balance.ts Abschnitt „Gegner untereinander“.
+const MAX_BONUS_LEVEL    = ENTITY_MAX_BONUS_LEVEL;
+const SKILL_WINS_PER_LVL = ENTITY_WINS_PER_BONUS_LEVEL;
+const HUNT_RADIUS_PX     = ENTITY_HUNT_RADIUS_PX;
+const STAT_SCALE         = ENTITY_BONUS_STAT_SCALE;
 
 // -----------------------------------------------------------
 // Kampffähigkeit prüfen

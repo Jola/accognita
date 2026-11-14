@@ -59,7 +59,7 @@ Spieler HP ≤ 0 → Checkpoint (HP/MP voll, Spawn-Position, kein Verlust)
 | MP-Regeneration | 1 MP/s | konstant, passiv |
 
 Alle Werte intern in Milli-Einheiten ([GDD-05 Abschnitt 3.4](GDD-05-Kampfmathematik.md)).
-> Begründung offen — Startwerte (80 HP / 40 MP), Zuwachs pro Level bzw. Wachstum (+15 / +8) und MP-Regeneration 1 MP/s.
+> Begründung offen — Startwerte (80 HP / 40 MP), Zuwachs pro Level bzw. Wachstum (+15 / +8) und MP-Regeneration 1 MP/s. Alle stehen in `balance.ts` (MP-Regeneration seit 14. November 2026, vorher im `CombatSystem`).
 
 **Kein Angriff ohne Skill (13. November 2026):** Der Blob kann nur mit einem Angriffs-Skill (Biss, Klaue, Feueratem …) angreifen. Ohne einen solchen Skill hat er keinen Angriff.
 **Vorgabe (Entwickler):** Ein Angriff ohne Skill soll nicht möglich sein.
@@ -112,7 +112,7 @@ Standard-Nahkampf: erster vorhandener Skill aus `bite`, `claw`, `pincer` (`ENTIT
 - **Performance**: AI wird alle 100 ms berechnet; Entities > 500 px werden übersprungen
 
 **Begründungen:**
-- Aggro-Verlust erst bei 2,5 × Aggro-Radius — **Begründung (rekonstruiert, bitte bestätigen):** Abstand zwischen „wird aggro" und „verliert Aggro" verhindert, dass ein Gegner am Rand des Radius ständig hin- und herschaltet; man muss sich wirklich absetzen.
+- Aggro-Verlust erst bei 2,5 × Aggro-Radius (`AGGRO_LOSS_FACTOR` in `balance.ts`, seit 14. November 2026 mit den übrigen KI-Werten dort) — **Begründung (rekonstruiert, bitte bestätigen):** Abstand zwischen „wird aggro" und „verliert Aggro" verhindert, dass ein Gegner am Rand des Radius ständig hin- und herschaltet; man muss sich wirklich absetzen.
 - 100 ms Takt, 500 px Grenze — **Begründung (rekonstruiert, bitte bestätigen):** Performance auf Mobilgeräten bei großer Welt mit vielen Einheiten.
 
 ### Größen- und levelabhängiges Aggro
@@ -386,6 +386,8 @@ Beute besiegt → skillWins++ (Skill wurde stärker)
 **Begründung des Systems (aus der bestehenden Einleitung, rekonstruiert, bitte bestätigen):** Die Welt soll lebendiger wirken, und der Spieler soll vom Beobachten und Ausnutzen von Levelunterschieden profitieren.
 > Begründung offen — Parameter: Beute 1–3 Level schwächer, Suchradius 300 px, 3 Siege pro Bonus-Level, maximal +3, Faktor 1,25 pro Bonus-Level, Bonus geht beim Respawn verloren.
 
+Die Werte stehen seit 14. November 2026 als allgemeine Regeln in `balance.ts` (Abschnitt „Gegner untereinander“), vorher ohne Begründung im `EntityLevelingSystem`.
+
 ### Visueller Hinweis
 
 - Gelevelete Entities (bonusLevel > 0): **goldener Tint** (0xffdd44)
@@ -453,4 +455,4 @@ scenes/GameScene.ts                ← verdrahtet alle Systeme, Phaser-Rendering
 
 ---
 
-*Letzte Aktualisierung: 2026-11-14 — Abschnitt 7 verweist auf GDD-10 (Blob-Formen); 2026-11-13 — Geschwindigkeit aus Bewegungs-Skills (Abschnitt 3, GDD-09); Photosynthese wirkt immer (Abschnitt 5); Geschick = Präzision (Abschnitt 6); Schaden-Multiplikator durch Eigenschafts-Skalierung ersetzt (Abschnitt 3); Kein Angriff ohne Skill, unbewaffneter Nahkampf verworfen (Abschnitte 3 und 6); 2026-11-01 — Hinweis auf das allgemeine Schema (Fortschritt 0–100 %, v0.6); Treffer-Reichweite ab Rand des Gegners (Icon-Größe), Blob-Reichweite erhöht; Balancing: Photosynthese, Skorpione, Schlange schwächer; 2026-10-31 — Gelegentlicher Angriff (Skorpion-Stachelstich); Regeneration (Photosynthesis) stufenlos; Venom-DoT durch Giftlast ersetzt (Verweis auf GDD-05 Abschnitt 12); Hinweis „Übungsgrad statt Skill-Level“ ergänzt, HP/MP wachsen mit dem Wachstum statt pro Level; 2026-10-25 — Größen- und levelabhängiges Aggro als Konzept (Abschnitt 4); 2026-10-24 — Geschick ohne Beitrag des eingesetzten Skills; Begründungen ergänzt bzw. als offen markiert, veraltete Werte (Spieler-Wachstum, Entity-Tabelle, Passiv-Effekte) als VERWORFEN gekennzeichnet; Treffer-Stufen und Geschick; Venom-Chance mit 100-%-Deckel*
+*Letzte Aktualisierung: 2026-11-14 — MP-Regeneration, KI-Werte und Gegner-Bonus-Level stehen in balance.ts (Werte unverändert); 2026-11-14 — Abschnitt 7 verweist auf GDD-10 (Blob-Formen); 2026-11-13 — Geschwindigkeit aus Bewegungs-Skills (Abschnitt 3, GDD-09); Photosynthese wirkt immer (Abschnitt 5); Geschick = Präzision (Abschnitt 6); Schaden-Multiplikator durch Eigenschafts-Skalierung ersetzt (Abschnitt 3); Kein Angriff ohne Skill, unbewaffneter Nahkampf verworfen (Abschnitte 3 und 6); 2026-11-01 — Hinweis auf das allgemeine Schema (Fortschritt 0–100 %, v0.6); Treffer-Reichweite ab Rand des Gegners (Icon-Größe), Blob-Reichweite erhöht; Balancing: Photosynthese, Skorpione, Schlange schwächer; 2026-10-31 — Gelegentlicher Angriff (Skorpion-Stachelstich); Regeneration (Photosynthesis) stufenlos; Venom-DoT durch Giftlast ersetzt (Verweis auf GDD-05 Abschnitt 12); Hinweis „Übungsgrad statt Skill-Level“ ergänzt, HP/MP wachsen mit dem Wachstum statt pro Level; 2026-10-25 — Größen- und levelabhängiges Aggro als Konzept (Abschnitt 4); 2026-10-24 — Geschick ohne Beitrag des eingesetzten Skills; Begründungen ergänzt bzw. als offen markiert, veraltete Werte (Spieler-Wachstum, Entity-Tabelle, Passiv-Effekte) als VERWORFEN gekennzeichnet; Treffer-Stufen und Geschick; Venom-Chance mit 100-%-Deckel*

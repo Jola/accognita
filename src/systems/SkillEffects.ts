@@ -2,6 +2,9 @@
 // SKILL EFFECTS
 // Absorb & Evolve — Skill-Formeln (zentrale Berechnungsquelle)
 //
+// Die Werte selbst stehen an den Skills (src/data/skills.ts); hier steht nur,
+// wie sie in Spielgrößen (milli-HP, px) umgerechnet werden.
+//
 // Jede Funktion berechnet einen Effektwert auf Basis des Fortschritts p (0–1, stetig aus Erfahrung).
 // Gilt für Spieler UND Entitäten gleichermaßen — ein Code, ein Wert.
 //
@@ -15,9 +18,8 @@
 // Keine Phaser-Abhängigkeit. Kein State. Rein funktional.
 // ============================================================
 
-import type { SkillValue } from "../types/Skill";
 import { getSkillEffectiveness } from "./SkillSystem";
-import { evalSkillValue } from "./SkillEffectSystem";
+import { evalSkillValue, evalSkillEffect } from "./SkillEffectSystem";
 import { ALL_SKILLS } from "../data/skills";
 import { MILLI } from "../data/balance";
 
@@ -87,16 +89,12 @@ export function calcFireBreathDamage(progress: number): number {
 // -----------------------------------------------------------
 // jump — Dash-Reichweite in Weltpixeln
 //
-// 40 → 375 px, bei Natur 342 px (bisher 340).
-// Startwert (Vorschlag Claude, offen): ein kleiner Hüpfer — der Wert soll
-// bei 0 XP sehr niedrig sein (Vorgabe Entwickler), ein Sprung von 1 px wäre
-// aber keiner.
-// [VERWORFEN, 1. November 2026] 160 + 20 × (u − 1) px.
+// Wert und Begründung am Skill (skills.ts, Effekt "jump_distance").
+// [VERWORFEN, 14. November 2026] Konstante JUMP_DISTANCE_PX hier —
+// Vorgabe (Entwickler): Was zu einem Skill gehört, steht am Skill.
 // -----------------------------------------------------------
-export const JUMP_DISTANCE_PX: SkillValue = { start: 40, max: 375 };
-
-export function calcJumpDistance(progress: number): number {
-  return evalSkillValue(JUMP_DISTANCE_PX, progress);
+export function calcJumpDistance(progress: number, skillId = "jump"): number {
+  return evalSkillEffect(skillId, "jump_distance", progress);
 }
 
 // -----------------------------------------------------------
@@ -119,19 +117,13 @@ export function calcSuperstrengthMult(practice: number): number {
 }
 
 // -----------------------------------------------------------
-// photosynthesis — HP-Regeneration pro Sekunde (stufenlos, HoT)
+// Regeneration — HP pro Sekunde (stufenlos, HoT), in milli-HP
 //
-// 0,1 → 1,2 HP/s, bei Natur 1,09 HP/s (bisher 1,1). Gespeichert in milli-HP.
-// [VERWORFEN, 1. November 2026] 0,2 + 0,1 × (u − 1) HP/s (Schema-Umstellung).
-// [VERWORFEN, 1. November 2026] 0,5 × u HP/s (u 10 → 5 HP/s).
-// Vorgabe (Entwickler): Die Regeneration ist viel zu stark.
-// Begründung (Vorschlag Claude): Fotosynthese liefert einem Tier wenig
-// Energie — Schnecken mit eingelagerten Chloroplasten (Elysia) überleben
-// damit wochenlang, wachsen aber kaum. Ein Blob mit 80 HP braucht bei u 10
-// bei Natur rund eine Minute, um sich voll zu heilen. VORLÄUFIG
+// Wert und Begründung am Skill (skills.ts, Effekt "regen_hp", derzeit nur
+// Photosynthese). [VERWORFEN, 14. November 2026] Konstante
+// PHOTOSYNTHESIS_HEAL_HP_PER_S hier — Vorgabe (Entwickler): Was zu einem
+// Skill gehört, steht am Skill.
 // -----------------------------------------------------------
-export const PHOTOSYNTHESIS_HEAL_HP_PER_S: SkillValue = { start: 0.1, max: 1.2 };
-
-export function calcPhotosynthesisHeal(progress: number): number {
-  return Math.round(evalSkillValue(PHOTOSYNTHESIS_HEAL_HP_PER_S, progress) * MILLI);
+export function calcRegenHp(skillId: string, progress: number): number {
+  return Math.round(evalSkillEffect(skillId, "regen_hp", progress) * MILLI);
 }

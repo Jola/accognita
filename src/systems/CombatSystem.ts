@@ -19,7 +19,7 @@ import type { EntityDefinition, EntityInstance } from "../types/Entity";
 import type { AttackResult, DamageType, HitGrade, HitProfile, StatusEffect } from "../types/Combat";
 import { ALL_SKILLS } from "../data/skills";
 import { ENTITY_MAP } from "../data/entities";
-import { DEFAULT_HIT_PROFILE, HIT_DAMAGE_MULT, MIN_SKILL_DAMAGE, MILLI, toDisplayHp } from "../data/balance";
+import { DEFAULT_HIT_PROFILE, HIT_DAMAGE_MULT, MIN_SKILL_DAMAGE, MILLI, MP_REGEN_MILLI_PER_SECOND, toDisplayHp } from "../data/balance";
 import { getSkillProgress, getEntitySkillProgress, progressFromLevel } from "./ProgressionSystem";
 import { getScaledDamage, getEntityRangedDamage, getEntityMeleeSkillId } from "./EntityLevelingSystem";
 import { calcFinalDamage, DAMAGE_TYPE_DE } from "./DamageSystem";
@@ -452,8 +452,7 @@ export function executeCheckpoint(player: PlayerState): void {
 // -----------------------------------------------------------
 // MP-REGENERATION — im Game Loop aufrufen (delta in ms)
 // -----------------------------------------------------------
-/** MP-Regeneration in milli-MP pro Sekunde (1 MP/s) — für Spiel und Anzeige. */
-export const MP_REGEN_MILLI_PER_SECOND = 1_000;
+// Wert und Begründung: MP_REGEN_MILLI_PER_SECOND in src/data/balance.ts
 
 export function regenMp(player: PlayerState, deltaMs: number): void {
   if (player.mp < player.maxMp) {

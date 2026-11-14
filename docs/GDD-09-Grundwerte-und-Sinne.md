@@ -2,7 +2,7 @@
 ## Datei 09: Grundwerte, Bewegung, Sinne und Erwachen
 
 > **Status: Implementiert (v0.7.0, 13. November 2026)** — außer Laufen (Abschnitt 2.4, Konzept).
-> Stellschrauben mit Begründung: [`src/data/body.ts`](../src/data/body.ts), Skill-Werte: [`src/data/skills.ts`](../src/data/skills.ts), Logik: [`src/systems/BodySystem.ts`](../src/systems/BodySystem.ts), [`src/systems/IntroSystem.ts`](../src/systems/IntroSystem.ts). Alle Werte, Skalen und Formeln stehen im Spiel unter 📋 → INDEX → **Grundwerte**.
+> Stellschrauben mit Begründung: [`src/data/body.ts`](../src/data/body.ts) (gilt nur für den Blob), Skill-Werte einschließlich Erfahrung durch Bewegen und Sehen (Feld `practice`): [`src/data/skills.ts`](../src/data/skills.ts), Stärke aus der Körpergröße: [`src/data/balance.ts`](../src/data/balance.ts), Logik: [`src/systems/BodySystem.ts`](../src/systems/BodySystem.ts), [`src/systems/IntroSystem.ts`](../src/systems/IntroSystem.ts). Alle Werte, Skalen und Formeln stehen im Spiel unter 📋 → INDEX → **Grundwerte**.
 
 **Vorgabe (Entwickler, 13. November 2026):** Alle Eigenschaften, Skalen, Formeln und Beschreibungen werden im INDEX vermerkt.
 
@@ -36,7 +36,8 @@ Alle Grundwerte kommen aus Skills (GDD-02 Abschnitt 8.1). Der Körper (Wachsen, 
 Tempo     = Körperradius × 10 × bester Tempo-Faktor        (px/s; ohne Bewegungs-Skill 0)
 Stärke    = Σ Stärke-Effekte × Größenfaktor                (Abschnitt 3)
 Geschick  = Σ Geschick-Effekte                             (wie bisher)
-Erfahrung = 0,5 XP je zurückgelegtem Körperradius, für den aktiven (schnellsten) Bewegungs-Skill
+Erfahrung = XP je zurückgelegtem Körperradius, für den aktiven (schnellsten) Bewegungs-Skill
+            (Menge am Skill, Feld practice; derzeit 0,5 bei Kriechen und Krabbeln)
 ```
 **Begründung (Vorschlag Claude, übernommen):**
 - Beim Tempo zählt der beste Skill, nicht die Summe. Wer laufen kann, kriecht nicht zusätzlich.
@@ -77,7 +78,7 @@ Laufen wäre der schnellste Bewegungs-Skill, zum Beispiel Tempo ×0,7 → ×1,5,
 ```
 Stärke = (Σ Stärke-Effekte der eingeschalteten Passiv-Skills) × (1 + 100 % × min(1, Wachstum / 19))
 ```
-Wachstum 19 entspricht der vollen Größe (balance.ts). Der Bonus gilt nur für den Blob, denn Gegner haben kein Wachstum.
+Wachstum 19 entspricht der vollen Größe (balance.ts). Der Bonus gilt nur für den Blob, denn Gegner haben kein Wachstum. Die Regel steht als allgemeine Regel in `balance.ts` (`SIZE_STRENGTH_BONUS_MAX`, bis 14. November 2026 in `body.ts`).
 
 **Stärke-Skala:** Kriechen 1 + Krabbeln 3 + Superstrength 10 = 14 aus Skills, bei voller Größe × 2 = 28.
 Daraus folgt der Bonus je Punkt bei Biss, Klauenhieb und Zangengriff: **+4 %** (VORLÄUFIG). [VERWORFEN, 13. November 2026] +8 % bei Stärke 0–10 (GDD-02 Abschnitt 8.11).
@@ -96,7 +97,8 @@ Sichtweite = bester Effekt „Sichtweite“ (Körperradien; ohne Seh-Skill 0 →
 Farbe      = bester Effekt „Farbsehen“  (0 = Graustufen, 1 = Farbe ohne Rot)
 Rot        = bester Effekt „Rot sehen“  (0 = Rot erscheint dunkel, 1 = volle Farbe)
 Bild       = lerp(Graustufen, lerp(ohne Rot, volle Farbe, Rot), Farbe)   — Farbmatrix auf der Kamera
-Erfahrung  = 0,5 XP je Sekunde für jeden eingeschalteten Seh-Skill
+Erfahrung  = XP je Sekunde für jeden eingeschalteten Seh-Skill
+             (Menge am Skill, Feld practice; derzeit 0,5 bei allen Seh-Skills)
 ```
 Außerhalb der Sichtweite ist es schwarz, der äußere Rand (35 %) geht weich über. Der Blob selbst bleibt sichtbar, denn er spürt sich. Der Farbfilter braucht WebGL. Ohne WebGL gilt nur die Sichtweite.
 
@@ -160,4 +162,4 @@ Spielstand-Version 5: Wer schon spielte, konnte sich bewegen und farbig sehen. D
 
 ---
 
-*Letzte Aktualisierung: 14. November 2026 — Abschnitt 5 verweist auf die geplante Änderung in GDD-10 Abschnitt 12; 13. November 2026 — Datei neu angelegt: Grundwerte, Bewegung (Kriechen, Krabbeln), Stärke aus Größe, Sehen (Lichtsinn, Facettenauge, Hauptaugen), Erwachen mit Nest*
+*Letzte Aktualisierung: 14. November 2026 — Erfahrung durch Bewegen und Sehen steht je Skill (Feld practice), Größenbonus in balance.ts, body.ts gilt nur für den Blob (Werte unverändert); davor 14. November 2026 — Abschnitt 5 verweist auf die geplante Änderung in GDD-10 Abschnitt 12; 13. November 2026 — Datei neu angelegt: Grundwerte, Bewegung (Kriechen, Krabbeln), Stärke aus Größe, Sehen (Lichtsinn, Facettenauge, Hauptaugen), Erwachen mit Nest*

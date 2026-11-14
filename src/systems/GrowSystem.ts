@@ -7,21 +7,19 @@
 // ============================================================
 
 import type { PlayerState } from "../types/GameState";
-import {
-  GROW_FOOD_MATERIAL_ID, GROW_FIBERS_PER_MINUTE, GROWTH_FIBER_SCALE,
-} from "../data/grow";
+import { GROW_FOOD_MATERIAL_ID, GROWTH_FIBER_SCALE } from "../data/grow";
 import { GROWTH_XP_SCALE } from "../data/progression";
 import { getSkillProgress } from "./ProgressionSystem";
-import { evalSkillValue } from "./SkillEffectSystem";
+import { evalSkillEffect } from "./SkillEffectSystem";
 import { getMaterialAmount } from "./MaterialSystem";
 
 // -----------------------------------------------------------
 // 2. VERDAUUNGSTEMPO
 // -----------------------------------------------------------
 
-/** Fasern pro Minute beim Fortschritt p (0–1). */
+/** Fasern pro Minute beim Fortschritt p (0–1) — Wert am Skill (skills.ts, Effekt "digest_rate"). */
 export function calcGrowFibersPerMinute(progress: number): number {
-  return evalSkillValue(GROW_FIBERS_PER_MINUTE, progress);
+  return evalSkillEffect("grow", "digest_rate", progress);
 }
 
 /** true, wenn Grow bekannt und eingeschaltet ist. */

@@ -2,9 +2,11 @@
 // GROW — Wachsen: der Blob verdaut Pflanzenfasern und wird größer
 // Absorb & Evolve
 //
-// DIESE DATEI IST DIE EINZIGE QUELLE FÜR alle Stellschrauben des Wachsens.
-// Die Rechenregeln dazu stehen in src/systems/GrowSystem.ts (gleiche
-// Abschnittsnummern). Herleitung: GDD-02 Abschnitt 8.10.
+// Diese Datei enthält die allgemeinen Regeln des Wachsens (Nahrung,
+// Wachstum aus Körpermasse). Die Werte des Skills Grow selbst
+// (Verdauungstempo, Erfahrung je Faser) stehen am Skill in
+// src/data/skills.ts. Die Rechenregeln stehen in src/systems/GrowSystem.ts
+// (gleiche Abschnittsnummern). Herleitung: GDD-02 Abschnitt 8.10.
 //
 // Kennzeichnung der Herkunft (CLAUDE.md, Begründungspflicht):
 //   Vorgabe (Entwickler)                — von Jörn entschieden
@@ -25,8 +27,6 @@
 // > Begründung offen (Idee des Entwicklers, GDD-02 Abschnitt 8.10).
 // ============================================================
 
-import type { SkillValue } from "../types/Skill";
-
 // -----------------------------------------------------------
 // 1. NAHRUNG
 //
@@ -36,31 +36,23 @@ import type { SkillValue } from "../types/Skill";
 export const GROW_FOOD_MATERIAL_ID = "plant_fiber";
 
 // -----------------------------------------------------------
-// 2. VERDAUUNGSTEMPO
+// 2. VERDAUUNGSTEMPO — steht am Skill
 //
-// Fasern pro Minute Spielzeit, läuft mit dem Fortschritt von Grow
-// (allgemeines Schema start → max, progression.ts Abschnitt 1).
-// 2 → 30 Fasern/min, bei Natur 27,2.
-// Begründung (Vorschlag Claude, offen): Ein Grashalm bringt im Schnitt
-//   2 Fasern. Am Anfang verdaut der Blob einen Halm pro Minute — Wachsen
-//   ist spürbar, aber langsam. Geübt schafft er einen Halm alle paar
-//   Sekunden, so schnell, wie man Gras sammeln kann; dann begrenzt die
-//   Nahrung, nicht die Verdauung.
-// Ohne Fasern im Lager ruht Grow; angesparte Verdauungszeit verfällt
-// (höchstens eine Faser wartet), damit der Blob nach einer Pause nicht
-// schlagartig einen ganzen Vorrat verschlingt.
+// Fasern pro Minute: Effekt "digest_rate" an Grow (src/data/skills.ts),
+// mit Begründung. Allgemeine Regel, die hier bleibt: Ohne Fasern im Lager
+// ruht Grow; angesparte Verdauungszeit verfällt (höchstens eine Faser
+// wartet), damit der Blob nach einer Pause nicht schlagartig einen ganzen
+// Vorrat verschlingt (GrowSystem.processGrow).
+// [VERWORFEN, 14. November 2026] GROW_FIBERS_PER_MINUTE hier —
+//   Vorgabe (Entwickler): Was zu einem Skill gehört, steht am Skill.
 // -----------------------------------------------------------
-export const GROW_FIBERS_PER_MINUTE: SkillValue = { start: 2, max: 30 };
 
 // -----------------------------------------------------------
-// 3. ERFAHRUNG
+// 3. ERFAHRUNG — steht am Skill
 //
-// Grow lernt durch Verdauen: 1 XP je verdaute Faser.
-// Begründung (Vorschlag Claude, offen): Wie bei Photosynthese (XP je
-//   geheilter HP) zählt, was der Skill tatsächlich bewirkt hat. Mit
-//   Lernaufwand 15 liegt Natur bei rund 600 verdauten Fasern.
+// XP je verdauter Faser: Feld practice an Grow (src/data/skills.ts).
+// [VERWORFEN, 14. November 2026] GROW_XP_PER_FIBER hier — Grund wie oben.
 // -----------------------------------------------------------
-export const GROW_XP_PER_FIBER = 1;
 
 // -----------------------------------------------------------
 // 4. WACHSTUM AUS KÖRPERMASSE
@@ -81,4 +73,4 @@ export const GROW_XP_PER_FIBER = 1;
 // -----------------------------------------------------------
 export const GROWTH_FIBER_SCALE = 20;
 
-// Stand: 13. November 2026 — Erstfassung
+// Stand: 14. November 2026 — Verdauungstempo und Erfahrung an den Skill Grow verschoben; davor 13. November 2026 — Erstfassung

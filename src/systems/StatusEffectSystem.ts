@@ -18,9 +18,8 @@ import type { EntityInstance } from "../types/Entity";
 import type { StatusEffect } from "../types/Combat";
 import { makeStatusEffect } from "../types/Combat";
 import { ALL_SKILLS } from "../data/skills";
-import {
-  calcPhotosynthesisHeal,
-} from "./SkillEffects";
+import { calcRegenHp } from "./SkillEffects";
+import { getSkillEffect } from "./SkillEffectSystem";
 import { getSkillProgress } from "./ProgressionSystem";
 
 // Maximale gleichzeitig aktive Effekte pro Ziel (Performance-Grenze)
@@ -186,20 +185,17 @@ export function syncPassiveEffects(player: PlayerState): void {
     if (!def || def.activation !== "passive") continue;
     if (instance.isEnabled === false) continue;
 
-    // chitin_armor, superstrength, hemolymph, venom:
-    // → Vollständig deklarativ über SkillEffectSystem (effects[])
-    // → Kein StatusEffect auf dem Spieler nötig
-    switch (skillId) {
-      case "photosynthesis": {
-        // Stufenlos: kein Tick-Takt, Rate pro Sekunde (processRegeneration)
-        applyEffect(player, makeStatusEffect({
-          id: `passive_${skillId}`,
-          type: "hot",
-          sourceSkillId: skillId,
-          healPerSecond: calcPhotosynthesisHeal(getSkillProgress(player, skillId)),
-        }));
-        break;
-      }
+    // Schutz, Stärke, Gift usw. wirken deklarativ über SkillEffectSystem
+    // (effects[]) — kein StatusEffect nötig. Nur Regeneration (Effekt
+    // "regen_hp", z. B. Photosynthese) läuft als HoT: stufenlos, kein
+    // Tick-Takt, Rate pro Sekunde (processRegeneration).
+    if (getSkillEffect(skillId, "regen_hp")?.trigger === "passive") {
+      applyEffect(player, makeStatusEffect({
+        id: `passive_${skillId}`,
+        type: "hot",
+        sourceSkillId: skillId,
+        healPerSecond: calcRegenHp(skillId, getSkillProgress(player, skillId)),
+      }));
     }
   }
 
@@ -224,8 +220,9 @@ export function syncPassiveEffects(player: PlayerState): void {
 // -----------------------------------------------------------
 export function refreshPassiveEffectValues(player: PlayerState): void {
   for (const effect of player.statusEffects) {
-    if (effect.id === "passive_photosynthesis") {
-      effect.healPerSecond = calcPhotosynthesisHeal(getSkillProgress(player, "photosynthesis"));
+    const skillId = effect.sourceSkillId;
+    if (effect.type === "hot" && skillId && effect.id === `passive_${skillId}`) {
+      effect.healPerSecond = calcRegenHp(skillId, getSkillProgress(player, skillId));
     }
   }
 }

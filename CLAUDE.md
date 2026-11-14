@@ -23,20 +23,20 @@ Current state: **v0.7** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/types/GameState.ts` | Central game state interfaces |
 | `src/types/Combat.ts` | AttackType, StatusEffect, AttackResult, AiFrame interfaces |
 | `src/types/Material.ts` | Material and loot-drop interfaces |
-| `src/data/skills.ts` | All skill definitions and balancing values |
+| `src/data/skills.ts` | All skill definitions and everything that belongs to a skill: values start → max, attributes it gives, attribute scaling, jump distance, healing, digestion, XP from practice (`practice`) |
 | `src/data/entities.ts` | All entity definitions |
 | `src/data/materials.ts` | All material/loot definitions |
-| `src/data/balance.ts` | Central balancing constants (XP gains, damage, etc.) |
+| `src/data/balance.ts` | General game rules and central entry (header lists which rule lives in which file): XP per absorb/analyze/combat, success chance, hit grades and precision, damage caps, HP/MP, MP regen, size/reach/speed, strength from size, AI, entity bonus levels |
 | `src/data/progression.ts` | All progression knobs with rationale: experience → progress 0–100 % (general scheme: every skill value runs start → max), ranks in %, comparison level vs. entity levels, capacity (discovered skills up to 90 %), overstretch, relearning, overtraining (no levels) |
 | `src/data/version.ts` | `GAME_VERSION` — must match `package.json` (build.js aborts otherwise). Shown in save dialog and stored in each save. |
 | `src/systems/SkillSystem.ts` | Pure skill logic — what earns how much XP, discovery, combining, blob growth (HP/MP) |
 | `src/systems/ProgressionSystem.ts` | How experience is booked: relearn bonus, overtraining/rest, capacity and forgetting, ranks; same progress conversion for player and entities |
 | `src/systems/EntitySystem.ts` | Absorb/Analyze/Respawn logic |
 | `src/systems/StatusEffectSystem.ts` | DoT/HoT/Aura processing, continuous regeneration (HoT as rate per frame), passive skill sync |
-| `src/data/body.ts` | Body knobs with rationale: movement XP per distance, strength bonus from size, sight edge and sight XP |
+| `src/data/body.ts` | Blob only (not enemies): how the body combines skills ("best skill counts") and the soft sight edge |
 | `src/systems/BodySystem.ts` | Movement (best skill speed), strength incl. size bonus, vision (range, color, red) and color matrix |
 | `src/systems/IntroSystem.ts` | Awakening intro: step derived from skills (blind/immobile), hint texts |
-| `src/data/grow.ts` | Grow knobs with rationale: food material, digestion rate, XP per fiber, growth from body mass |
+| `src/data/grow.ts` | General grow rules with rationale: food material, growth from body mass (digestion rate and XP per fiber are on the Grow skill) |
 | `src/systems/GrowSystem.ts` | Grow feature, isolated: digest plant fibers over time → body mass → growth (size, HP, MP) |
 | `src/data/venom.ts` | Venom knobs with rationale: dose, stacking venom load, half-life, minimum rate |
 | `src/systems/VenomSystem.ts` | Venom feature, isolated: roll dose, venom load, continuous decay (= damage) |
@@ -44,7 +44,7 @@ Current state: **v0.7** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/systems/CombatSystem.ts` | Damage calculation, skill dispatch, checkpoint logic |
 | `src/systems/DamageSystem.ts` | Damage pipeline (GDD-05 section 3) |
 | `src/systems/SkillEffectSystem.ts` | Evaluates declarative skill effects (`evalSkillValue` = start + (max − start) × progress, attacker/defender effects, dexterity) |
-| `src/systems/SkillEffects.ts` | Skill formulas: attack damage (`damage` start → max), jump distance, photosynthesis (contains unused legacy formulas, see TODO.md) |
+| `src/systems/SkillEffects.ts` | Converts skill values into game units: attack damage (`damage` start → max), jump distance, regeneration (contains unused legacy formulas, see TODO.md) |
 | `src/systems/EntityLevelingSystem.ts` | Entities fight each other: bonus levels, scaled combat values |
 | `src/systems/HitSystem.ts` | Hit grades (miss/light/normal/heavy/crit): chances from skill profile, level and dexterity; dice roll |
 | `src/systems/AiSystem.ts` | Aggro, chase, attack-trigger (pure logic, no Phaser) |

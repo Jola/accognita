@@ -11,9 +11,9 @@ declare const Phaser: any;
 
 import { getPlayerVision, visionColorMatrix, getActiveMoveSkill, getActiveSightSkills, calcMoveXp } from "../systems/BodySystem";
 import { getIntroStep, INTRO_TEXT, type IntroStep } from "../systems/IntroSystem";
-import { SIGHT_EDGE_FRACTION, SIGHT_XP_PER_SECOND } from "../data/body";
+import { SIGHT_EDGE_FRACTION } from "../data/body";
 import { processGrow, getPlayerGrowth } from "../systems/GrowSystem";
-import { GROW_XP_PER_FIBER } from "../data/grow";
+import { practiceXp } from "../systems/SkillEffectSystem";
 import { createInitialGameState } from "../types/GameState.js";
 import type { GameState } from "../types/GameState.js";
 import { ALL_SKILLS } from "../data/skills.js";
@@ -99,7 +99,6 @@ import {
 import {
   PLAYER_WORLD_RADIUS_MIN,
   PLAYER_SCREEN_RADIUS,
-  PHOTOSYNTHESIS_XP_PER_HP,
   toDisplayHp,
 } from "../data/balance.js";
 import { calcPlayerWorldRadius, calcPlayerSpeed, calcPlayerReach, describePlayerSkillValues } from "../systems/StatsSystem.js";
@@ -742,20 +741,20 @@ export class GameScene extends Phaser.Scene {
     processRespawns(this.gameState.world);
   }
 
-  // Bewegen und Sehen lernt man durch Tun (data/body.ts): Strecke für den
-  // aktiven Bewegungs-Skill, Spielzeit für jeden eingeschalteten Seh-Skill.
+  // Bewegen und Sehen lernt man durch Tun (Menge am Skill: practice): Strecke
+  // für den aktiven Bewegungs-Skill, Spielzeit für jeden eingeschalteten Seh-Skill.
   // Stufenlos jeden Frame; Werte werden einmal pro Sekunde nachgeführt.
   private gainBodyXp(prevX: number, prevY: number, delta: number) {
     const player = this.gameState.player;
     const moveSkill = getActiveMoveSkill(player);
     const dist = Math.hypot(player.x - prevX, player.y - prevY);
     if (moveSkill && dist > 0) {
-      const gain = gainSkillXp(player, moveSkill, calcMoveXp(dist, this.calcPlayerWorldRadius()));
+      const gain = gainSkillXp(player, moveSkill, calcMoveXp(moveSkill, dist, this.calcPlayerWorldRadius()));
       this.logProgressionEvents(gain.events);
       this.progressDirty = true;
     }
     for (const id of getActiveSightSkills(player)) {
-      const gain = gainSkillXp(player, id, SIGHT_XP_PER_SECOND * delta / 1000);
+      const gain = gainSkillXp(player, id, practiceXp(id, "second_enabled", delta / 1000));
       this.logProgressionEvents(gain.events);
       this.progressDirty = true;
     }
@@ -1034,9 +1033,9 @@ export class GameScene extends Phaser.Scene {
     const healed = processRegeneration(this.gameState.player, delta);
     if (healed > 0) {
       this.gameState.player.hp += healed;
-      // Photosynthesis: XP = regenerierte HP × PHOTOSYNTHESIS_XP_PER_HP, stufenlos
+      // Photosynthesis: XP je geheiltem HP (Menge am Skill: practice), stufenlos
       // (÷1000: milli-HP → HP, kein Entity-Level)
-      const gain = gainSkillXp(this.gameState.player, "photosynthesis", (healed / 1000) * PHOTOSYNTHESIS_XP_PER_HP);
+      const gain = gainSkillXp(this.gameState.player, "photosynthesis", practiceXp("photosynthesis", "hp_healed", healed / 1000));
       this.logProgressionEvents(gain.events);
       this.progressDirty = true;
       updateVitalsUI(this.gameState.player);
@@ -1045,7 +1044,7 @@ export class GameScene extends Phaser.Scene {
     // Wachsen (Grow): verdaut Pflanzenfasern über die Spielzeit → Körpermasse → Wachstum
     const digested = processGrow(this.gameState.player, delta);
     if (digested > 0) {
-      this.afterXpGain(gainSkillXp(this.gameState.player, "grow", digested * GROW_XP_PER_FIBER));
+      this.afterXpGain(gainSkillXp(this.gameState.player, "grow", practiceXp("grow", "fiber_digested", digested)));
     }
 
     // Gift auf dem Spieler: stufenlos, keine Zahl (die kam beim Biss)

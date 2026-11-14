@@ -1,15 +1,40 @@
 // ============================================================
-// BALANCE — Alle Balancing-Konstanten und Skalierungsformeln
+// BALANCE — Allgemeine Spielregeln (zentraler Einstieg)
 // Absorb & Evolve
 //
-// DIESER ORT IST DIE EINZIGE QUELLE FÜR:
-//   - XP-Gewinne pro Interaktionsmethode
-//   - XP-Skalierung basierend auf Entity- vs. Skill-Level
-//   - Erfolgswahrscheinlichkeits-Formel
-//   - XP-Schwellen-Multiplikator pro Level-Up
-//   - Analyze-Chance-Modifikator
+// Vorgabe (Entwickler, 14. November 2026): Was zu einem Skill gehört, wird
+//   am Skill konfiguriert; allgemeine Regeln stehen hier.
+// Begründung (Vorschlag Claude, übernommen): Alles, was einen Skill
+//   ausmacht, steht an einem Ort — wer einen Skill balanciert, fasst nur eine
+//   Stelle an und sieht im INDEX alle Werte. Präzision gilt für jeden Angriff
+//   gleich und ist deshalb eine allgemeine Regel.
 //
-// Alle anderen Module IMPORTIEREN von hier, definieren nichts selbst.
+// WAS WO STEHT
+//   Diese Datei — allgemeine Regeln:
+//     Milli-Einheiten · Erfahrung je Absorb/Analyze/Kampf und ihre Kurven ·
+//     Erfolgschance · HP/MP aus dem Wachstum · MP-Regeneration ·
+//     Schadensgrenzen · Treffer-Stufen und Präzision (Geschick) ·
+//     Analyze-Fundchance · Größe, Reichweite, Tempo je Körpergröße ·
+//     Stärke aus der Körpergröße · KI (Aggro, Herumwandern) ·
+//     Gegner untereinander (Bonus-Level)
+//   src/data/progression.ts — allgemeine Regeln der Erfahrung: Fortschritt
+//     0–100 %, Ränge, Kapazität und Verlernen, Überdehnung, Wiedererlernen,
+//     Übertraining
+//   src/data/skills.ts — alles je Skill: Lernaufwand, Schaden, Treffer-
+//     Verteilung, MP, Abklingzeit, Eigenschaften, die er gibt (Stärke,
+//     Geschick, Tempo, Sicht …), Wirkung der Eigenschaften auf ihn (scaling),
+//     Sprungweite, Heilung, Verdauung, Gift-Chance und -Dosis, Erfahrung
+//     durch Tun (practice)
+//   src/data/body.ts — Körper des Blobs: „der beste Skill zählt“, Sichtrand
+//   src/data/grow.ts — Wachsen: Nahrung, Wachstum aus Körpermasse
+//   src/data/venom.ts — Gift: Giftlast, Halbwertszeit, Mindestrate
+//   src/data/entities.ts — alles je Wesen: Stufe, HP, Skill-Erfahrung,
+//     Funde, Respawn, Verhalten, Aggro-Radius, Tempo
+//   src/data/materials.ts — Materialien
+//   src/world/BiomeDefinitions.ts — Spawn-Tabellen der Biome
+//
+// [VERWORFEN, 14. November 2026] „Dieser Ort ist die einzige Quelle“ —
+//   stimmte schon länger nicht mehr; jetzt bewusst aufgeteilt (Vorgabe oben).
 // ============================================================
 
 import type { HitProfile } from "../types/Combat";
@@ -46,16 +71,8 @@ export const BASE_XP_ANALYZE = 1;
 /** XP die eine Kern-Fähigkeit (Analyze/Absorb) pro erfolgreichem Einsatz bekommt */
 export const BASE_XP_CORE = 1;
 
-/**
- * Photosynthesis: XP je geheiltem HP. VORLÄUFIG
- * Vorgabe (Entwickler, 1. November 2026): Die Regeneration ist viel zu
- * schnell auf dem höchsten Rang.
- * Begründung (Vorschlag Claude): Photosynthese läuft passiv mit, ohne dass
- * der Spieler etwas tut — sie soll langsamer lernen als Fähigkeiten, die man
- * im Kampf einsetzen muss. [VERWORFEN] 1 XP je HP: Natur nach wenigen
- * Minuten. Jetzt mit der schwächeren Heilung grob eine Stunde Heilen.
- */
-export const PHOTOSYNTHESIS_XP_PER_HP = 0.25;
+// [VERWORFEN, 14. November 2026] PHOTOSYNTHESIS_XP_PER_HP hier — steht jetzt
+// am Skill Photosynthese (practice: hp_healed), Wert und Begründung unverändert.
 
 // -----------------------------------------------------------
 // [VERWORFEN] LEVEL-UP SCHWELLEN und SPIELER-HAUPTLEVEL
@@ -81,6 +98,15 @@ export const HP_PER_GROWTH = 15_000;
 export const BASE_MP = 40_000;
 /** MP-Zuwachs pro Einheit Wachstum (milli-MP) */
 export const MP_PER_GROWTH = 8_000;
+
+/**
+ * MP-Regeneration in milli-MP pro Sekunde (1 MP/s), konstant und passiv —
+ * für Spiel (CombatSystem.regenMp) und Anzeige.
+ * Begründung (rekonstruiert, bitte bestätigen): entspricht dem Wert vor der
+ * Umstellung auf Milli-Einheiten (GDD-05). Warum 1 MP/s: Begründung offen
+ * (GDD-03 Abschnitt 3). Bis 14. November 2026 in CombatSystem.ts.
+ */
+export const MP_REGEN_MILLI_PER_SECOND = 1_000;
 
 // -----------------------------------------------------------
 // XP-SKALIERUNG: ENTITY-LEVEL vs. VERGLEICHSSTUFE DES SKILLS
@@ -217,8 +243,8 @@ export const MAX_WEAKNESS_MULT = 3.0;
 /** Minimaler Resistenz-Multiplikator */
 export const MIN_RESISTANCE_MULT = 0.1;
 
-/** Globaler Schadens-Multiplikator (Balancing-Hebel) */
-export const SKILL_DAMAGE_BASE_MULTIPLIER = 1.0;
+// [VERWORFEN, 14. November 2026] SKILL_DAMAGE_BASE_MULTIPLIER = 1.0 — wurde
+// nirgends ausgewertet (GDD-05 Abschnitt 13).
 
 /** Globaler Verteidigungs-Multiplikator (Balancing-Hebel) */
 export const SKILL_DEFENSE_BASE_MULTIPLIER = 1.0;
@@ -286,6 +312,22 @@ export const PLAYER_SIZE_GROWTH_MAX = 19;
 export const PLAYER_SCREEN_RADIUS = 16;
 
 // -----------------------------------------------------------
+// STÄRKE AUS DER KÖRPERGRÖSSE (nur Blob, GDD-09)
+//
+// Stärke = Summe der Stärke-Effekte × (1 + Größenbonus)
+// Größenbonus = SIZE_STRENGTH_BONUS_MAX × min(1, Wachstum / PLAYER_SIZE_GROWTH_MAX)
+//   — linear mit der Größe, bei voller Größe +100 %.
+// Vorgabe (Entwickler): Die Körpergröße erhöht die Stärke prozentual.
+// Begründung (Vorschlag Claude, übernommen): Ein größerer Körper hat mehr
+//   Muskelmasse. Ohne trainierte Muskeln (Bewegung, Superstrength) gibt es
+//   nichts, was die Größe verstärken könnte.
+// Gilt derzeit nur für den Blob: Gegner haben kein Wachstum.
+// Bis 14. November 2026 in src/data/body.ts — allgemeine Regel, hängt an
+// keinem Skill. Rechnung: BodySystem.calcSizeStrengthBonus.
+// -----------------------------------------------------------
+export const SIZE_STRENGTH_BONUS_MAX = 1.0;
+
+// -----------------------------------------------------------
 // TREFFER-REICHWEITE (Nahkampf, Absorb, Analyze)
 //
 // Vorgabe (Entwickler, 1. November 2026): Der Trefferradius der Fähigkeiten
@@ -327,3 +369,56 @@ export const PLAYER_SPEED_PER_WORLD_RADIUS = 10;
  * speed = worldSize × ENTITY_SPEED_PER_WORLD_SIZE = 5× eigene Größe/s.
  */
 export const ENTITY_SPEED_PER_WORLD_SIZE = 5;
+
+// -----------------------------------------------------------
+// KI DER WESEN (AiSystem)
+//
+// Bis 14. November 2026 ohne Begründung in AiSystem.ts. Rein technische
+// Werte (KI-Rechenabstand, Takt, „angekommen“) bleiben dort.
+// -----------------------------------------------------------
+
+/**
+ * Aggro geht verloren, wenn der Blob weiter als AGGRO_LOSS_FACTOR × Aggro-Radius
+ * entfernt ist.
+ * Begründung (rekonstruiert, bitte bestätigen): Hysterese — wer gerade die
+ * Aggro-Grenze überschreitet, soll nicht sofort wieder vergessen werden,
+ * sonst würden Gegner an der Grenze ständig an- und abschalten.
+ */
+export const AGGRO_LOSS_FACTOR = 2.5;
+
+/**
+ * Ein verfolgendes Wesen hält an, wenn es näher als Angriffsreichweite ×
+ * CHASE_STOP_FACTOR ist.
+ * Begründung (rekonstruiert, bitte bestätigen): stoppt mittig in der
+ * Angriffsreichweite und läuft nicht durch den Blob hindurch.
+ */
+export const CHASE_STOP_FACTOR = 0.5;
+
+/** Herumwandern: höchstens so weit vom Spawnpunkt (10 Kacheln). > Begründung offen */
+export const WANDER_RADIUS_PX = 10 * 32;
+/** Herumwandern: Anteil des Kampftempos. > Begründung offen */
+export const WANDER_SPEED_FACTOR = 0.45;
+/** Herumwandern: Pause nach Erreichen des Ziels, zufällig zwischen MIN und MAX (ms). > Begründung offen */
+export const WANDER_PAUSE_MIN_MS = 1500;
+export const WANDER_PAUSE_MAX_MS = 4000;
+
+// -----------------------------------------------------------
+// GEGNER UNTEREINANDER (EntityLevelingSystem, GDD-03 Abschnitt 8)
+//
+// Wesen mit Angriff jagen schwächere Wesen; Siege geben Bonus-Level, die
+// HP, Schaden und Tempo skalieren. Der Bonus geht beim Respawn verloren.
+// > Begründung offen (GDD-03): alle vier Werte. Offene Abweichung: Bonus-
+//   Level skalieren Werte unabhängig von den Skills (GDD-02 Abschnitt 8.6,
+//   TODO.md). Bis 14. November 2026 ohne Begründung in EntityLevelingSystem.ts.
+// -----------------------------------------------------------
+
+/** Höchstes Bonus-Level */
+export const ENTITY_MAX_BONUS_LEVEL = 3;
+/** Siege bis zum nächsten Bonus-Level */
+export const ENTITY_WINS_PER_BONUS_LEVEL = 3;
+/** Suchradius für Beute (px) */
+export const ENTITY_HUNT_RADIUS_PX = 300;
+/** Faktor auf HP, Schaden und Tempo je Bonus-Level */
+export const ENTITY_BONUS_STAT_SCALE = 1.25;
+
+// Stand: 14. November 2026 — allgemeine Regeln gesammelt, Skill-Werte an die Skills verschoben

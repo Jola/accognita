@@ -6,7 +6,7 @@
 // echten Systeme berechnet und sind daher immer aktuell.
 // ============================================================
 
-import type { SkillDefinition, SkillEffect, SkillValue, EffectType, Attribute } from "../types/Skill";
+import type { SkillDefinition, SkillEffect, SkillValue, EffectType, Attribute, PracticeUnit } from "../types/Skill";
 import type { EntityDefinition } from "../types/Entity";
 import type { DamageType, HitProfile } from "../types/Combat";
 import { CORE_SKILLS, BASE_SKILLS, PLANT_SKILLS, COMBO_SKILLS, ALL_SKILLS } from "../data/skills.js";
@@ -20,23 +20,23 @@ import { calcHitChances, HIT_GRADES, HIT_GRADE_DE } from "../systems/HitSystem.j
 import { DAMAGE_TYPE_DE } from "../systems/DamageSystem.js";
 import { getEffectValue } from "../systems/StatsSystem.js";
 import { BIOME_SPAWNS } from "../world/BiomeDefinitions.js";
-import { calcGrowFibersPerMinute, calcGrowthFromMass } from "../systems/GrowSystem.js";
-import { GROW_FIBERS_PER_MINUTE, GROWTH_FIBER_SCALE } from "../data/grow.js";
+import { calcGrowthFromMass } from "../systems/GrowSystem.js";
+import { GROWTH_FIBER_SCALE } from "../data/grow.js";
 import {
   HP_PER_GROWTH, MP_PER_GROWTH, BASE_HP, BASE_MP, PLAYER_SIZE_GROWTH_MAX, PLAYER_SPEED_PER_WORLD_RADIUS,
   PLAYER_WORLD_RADIUS_MIN, PLAYER_WORLD_RADIUS_MAX, PLAYER_REACH_FACTOR,
+  SIZE_STRENGTH_BONUS_MAX, MP_REGEN_MILLI_PER_SECOND,
 } from "../data/balance.js";
-import { SIZE_STRENGTH_BONUS_MAX, MOVE_XP_PER_BODY_RADIUS, SIGHT_XP_PER_SECOND, SIGHT_EDGE_FRACTION } from "../data/body.js";
+import { SIGHT_EDGE_FRACTION } from "../data/body.js";
 import { calcSizeStrengthBonus, maxEffectOverSkills } from "../systems/BodySystem.js";
-import { MP_REGEN_MILLI_PER_SECOND } from "../systems/CombatSystem.js";
 import { SKILL_RANKS, NATUR_PROGRESS, LEVEL_AT_NATUR } from "../data/progression.js";
 import { xpForProgress, getEntitySkillProgress, rankNameForProgress, levelFromProgress } from "../systems/ProgressionSystem.js";
 import {
   evalSkillValue, resolveDefenderEffects, resolveAttackerEffects, resolveDexterity, resolveStrength,
-  calcAttributeMult, maxAttributePoints,
+  calcAttributeMult, maxAttributePoints, getSkillEffect,
 } from "../systems/SkillEffectSystem.js";
 import {
-  calcSkillAttackDamage, calcJumpDistance, calcPhotosynthesisHeal, JUMP_DISTANCE_PX, PHOTOSYNTHESIS_HEAL_HP_PER_S,
+  calcSkillAttackDamage,
 } from "../systems/SkillEffects.js";
 import { venomDurationMs, venomBiteChance, venomDoseMilli } from "../systems/VenomSystem.js";
 import { valueChart, pointsChart, isConstant, attachChartHover, VALUE_CHART_CSS, type ChartSeries } from "./ValueChart.js";
@@ -64,6 +64,13 @@ const EFFECT_DE: Record<EffectType, string> = {
   damage_mult: "Schadens-Multiplikator", speed_mod: "Tempo-Multiplikator", grant_penetration: "Penetration",
   dexterity: "Geschick", strength: "Stärke",
   move_speed: "Tempo-Faktor", sight_range: "Sichtweite", color_vision: "Farbsehen (ohne Rot)", red_vision: "Rot sehen",
+  jump_distance: "Sprungweite", regen_hp: "Heilung", digest_rate: "Verdauung",
+};
+const PRACTICE_DE: Record<PracticeUnit, string> = {
+  body_radius_moved: "je zurückgelegtem Körperradius, solange dies der schnellste Bewegungs-Skill ist",
+  second_enabled: "je Sekunde, solange eingeschaltet",
+  hp_healed: "je geheiltem HP",
+  fiber_digested: "je verdauter Pflanzenfaser",
 };
 const ATTRIBUTE_DE: Record<Attribute, string> = { strength: "Stärke", dexterity: "Geschick" };
 const ATTRIBUTE_ICON: Record<Attribute, string> = { strength: "💪", dexterity: "🎯" };
@@ -96,6 +103,9 @@ function formatEffectValue(type: EffectType, value: number): string {
   if (type === "dexterity" || type === "strength") return `+${num(value)}`;
   if (type === "sight_range") return `${num(value, 1)} Körperradien`;
   if (type === "color_vision" || type === "red_vision") return pct(value);
+  if (type === "jump_distance") return `${num(value, 0)} px`;
+  if (type === "regen_hp") return `${num(value)} HP/s`;
+  if (type === "digest_rate") return `${num(value, 1)} Fasern/min`;
   return factor(value);
 }
 
@@ -117,6 +127,9 @@ function effectFormula(type: EffectType, v: SkillValue): string {
   if (type === "dexterity" || type === "strength") return valueFormula(v, (x) => num(x));
   if (type === "sight_range") return valueFormula(v, (x) => `${num(x)} Körperradien`);
   if (type === "color_vision" || type === "red_vision") return valueFormula(v, pct);
+  if (type === "jump_distance") return valueFormula(v, (x) => `${num(x)} px`);
+  if (type === "regen_hp") return valueFormula(v, (x) => `${num(x)} HP/s`);
+  if (type === "digest_rate") return valueFormula(v, (x) => `${num(x)} Fasern/min`);
   return `×(${valueFormula(v, (x) => num(x))})`;
 }
 
@@ -264,8 +277,10 @@ function skillDetail(s: SkillDefinition): string {
     ["XP ab Rang", SKILL_RANKS.map((r) => `${r.name} ${Math.round(xpForProgress(r.fromProgress, s.learningEffort))}`).join(" · ")],
   ];
   const effTypes = new Set((s.effects ?? []).map((e) => e.effectType));
-  if (effTypes.has("move_speed")) p.push(["Erfahrung", `${num(MOVE_XP_PER_BODY_RADIUS)} XP je zurückgelegtem Körperradius, solange dies der schnellste Bewegungs-Skill ist · ${attrChip("speed")}`]);
-  if (effTypes.has("sight_range")) p.push(["Erfahrung", `${num(SIGHT_XP_PER_SECOND)} XP je Sekunde, solange eingeschaltet · ${attrChip("sight")}`]);
+  if (s.practice) {
+    const chip = effTypes.has("move_speed") ? ` · ${attrChip("speed")}` : effTypes.has("sight_range") ? ` · ${attrChip("sight")}` : "";
+    p.push(["Erfahrung durch Tun", `${num(s.practice.xpPer)} XP ${PRACTICE_DE[s.practice.unit]}${chip}<div class="idx-reason">${s.practice.reasoning}</div>`]);
+  }
   if (effTypes.has("strength") || effTypes.has("dexterity")) {
     p.push(["Eigenschaften", [effTypes.has("strength") ? attrChip("strength") : "", effTypes.has("dexterity") ? attrChip("dexterity") : ""].join("")]);
   }
@@ -331,19 +346,6 @@ function skillDetail(s: SkillDefinition): string {
   if (s.damage) {
     derived.push(["Schaden (HP)", LEVELS.map((l) => hp(calcSkillAttackDamage(s.id, l)))]);
     derivedSeries.push({ label: "Schaden je Treffer (normal, vor Rüstung)", value: (x) => calcSkillAttackDamage(s.id, x) / MILLI, format: (v) => `${num(v, 1)} HP`, formula: valueFormula(s.damage, (x) => `${num(x)} HP`) });
-  }
-  if (s.id === "jump") {
-    derived.push(["Sprungweite (px)", LEVELS.map((l) => num(calcJumpDistance(l), 0))]);
-    derivedSeries.push({ label: "Sprungweite", value: calcJumpDistance, format: (v) => `${num(v, 0)} px`, formula: valueFormula(JUMP_DISTANCE_PX, (x) => `${num(x)} px`) });
-  }
-  if (s.id === "grow") {
-    // Verdauungstempo — dieselbe Funktion wie im Spiel (GrowSystem)
-    derived.push(["Verdauung (Fasern/min)", LEVELS.map((l) => num(calcGrowFibersPerMinute(l), 1))]);
-    derivedSeries.push({ label: "Verdaute Pflanzenfasern pro Minute", value: calcGrowFibersPerMinute, format: (v) => `${num(v, 1)}/min`, formula: valueFormula(GROW_FIBERS_PER_MINUTE, (x) => `${num(x)}/min`) });
-  }
-  if (s.id === "photosynthesis") {
-    derived.push(["Heilung (HP/s)", LEVELS.map((l) => hp(calcPhotosynthesisHeal(l)))]);
-    derivedSeries.push({ label: "Heilung", value: (x) => calcPhotosynthesisHeal(x) / MILLI, format: (v) => `${num(v, 2)} HP/s`, formula: valueFormula(PHOTOSYNTHESIS_HEAL_HP_PER_S, (x) => `${num(x)} HP/s`) });
   }
   if (s.id === "analyze" || s.id === "absorb") {
     // Erfolgschance = min(1, Vergleichsstufe / Stufe des Wesens) — sicher bis zur Vergleichsstufe
@@ -581,6 +583,14 @@ const sourceTable = (type: EffectType, fmt: (v: number) => string) => {
   const rows = effectSourceRows(type, fmt);
   return rows.length ? dataTable(["Skill", "Start", "Natur", "Max"], rows) : `<p class="idx-reason">Noch kein Skill.</p>`;
 };
+/** „Kriechen 0,5 XP · Krabbeln 0,5 XP“ — Erfahrung durch Tun aller Skills mit diesem Effekt */
+const practiceList = (type: EffectType) => ALL_SKILL_LIST
+  .filter((t) => t.practice && t.effects?.some((e) => e.effectType === type))
+  .map((t) => `${t.name} ${num(t.practice!.xpPer)} XP`).join(" · ") || "—";
+/** „Photosynthesis 0,1 HP/s + 1,1 HP/s × p“ — alle Skills mit Effekt regen_hp */
+const regenList = () => ALL_SKILL_LIST
+  .flatMap((t) => { const e = getSkillEffect(t.id, "regen_hp"); return e ? [`${t.name} (${valueFormula(e.formula, (x) => `${num(x)} HP/s`)})`] : []; })
+  .join(", ") || "—";
 const formulaBox = (f: string) => `<div class="idx-effect"><div class="idx-formula">${f}</div></div>`;
 const reason = (t: string) => `<p class="idx-reason">${t}</p>`;
 
@@ -643,7 +653,7 @@ const ATTRIBUTE_PAGES: AttributePage[] = [
       params([
         ["Grundtempo", `${num(PLAYER_SPEED_PER_WORLD_RADIUS)} Körperradien/s bei Faktor ×1`],
         ["Skala", `Faktor 0 (keine Bewegung) → ${factor(maxEffectOverSkills("move_speed"))}`],
-        ["Erfahrung", `${num(MOVE_XP_PER_BODY_RADIUS)} XP je zurückgelegtem Körperradius für den aktiven Bewegungs-Skill`],
+        ["Erfahrung", `nur der aktive Bewegungs-Skill, je zurückgelegtem Körperradius — Menge am Skill: ${practiceList("move_speed")}`],
       ]),
       section("Formel", formulaBox(`Tempo = Körperradius × ${num(PLAYER_SPEED_PER_WORLD_RADIUS)} × bester Tempo-Faktor (px/s) — auf dem Bildschirm bei jeder Größe gleich schnell`)),
       section("Quellen", sourceTable("move_speed", (v) => `${factor(v)} · ${num(v * PLAYER_SPEED_PER_WORLD_RADIUS, 1)} R/s`)),
@@ -660,7 +670,7 @@ const ATTRIBUTE_PAGES: AttributePage[] = [
         ["Sichtweite", `0 (blind) → ${num(maxEffectOverSkills("sight_range"))} Körperradien, der beste Seh-Skill zählt`],
         ["Farbe", "0 % = Graustufen → 100 % = Farbe (ohne Rot)"],
         ["Rot", "0 % = Rot erscheint dunkel → 100 % = volle Farbe"],
-        ["Erfahrung", `${num(SIGHT_XP_PER_SECOND)} XP je Sekunde für jeden eingeschalteten Seh-Skill`],
+        ["Erfahrung", `jeder eingeschaltete Seh-Skill, je Sekunde — Menge am Skill: ${practiceList("sight_range")}`],
         ["Weicher Rand", `äußere ${pct(SIGHT_EDGE_FRACTION)} der Sichtweite`],
       ]),
       section("Formel", formulaBox("Sichtweite = bester Effekt „Sichtweite“ · Farbe = bester Effekt „Farbsehen“ · Rot = bester Effekt „Rot sehen“<br>" +
@@ -694,7 +704,7 @@ const ATTRIBUTE_PAGES: AttributePage[] = [
         ["MaxHP", `${hp(BASE_HP)} + Wachstum × ${hp(HP_PER_GROWTH)}`],
         ["MaxMP", `${hp(BASE_MP)} + Wachstum × ${hp(MP_PER_GROWTH)}`],
         ["MP-Regeneration", `${hp(MP_REGEN_MILLI_PER_SECOND)} MP/s, konstant`],
-        ["HP-Regeneration", `nur durch Photosynthese (${valueFormula(PHOTOSYNTHESIS_HEAL_HP_PER_S, (x) => `${num(x)} HP/s`)})`],
+        ["HP-Regeneration", `nur durch Skills mit Heilung: ${regenList()}`],
       ]),
       reason("Startwerte und Zuwachs: Begründung offen (GDD-03 Abschnitt 3)."),
     ].join(""),

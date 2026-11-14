@@ -10,7 +10,7 @@
 
 import type { PlayerState } from "../types/GameState";
 import type { DamageType, StatusEffect } from "../types/Combat";
-import type { SkillValue, SkillEffect, Attribute } from "../types/Skill";
+import type { SkillValue, SkillEffect, Attribute, EffectType, PracticeUnit } from "../types/Skill";
 import { ALL_SKILLS } from "../data/skills";
 import { MILLI, SKILL_DEFENSE_BASE_MULTIPLIER } from "../data/balance";
 import { makeStatusEffect } from "../types/Combat";
@@ -29,6 +29,34 @@ import { getSkillProgress } from "./ProgressionSystem";
 // Gleiche Auswertung für Blob und Gegner: gleiche Erfahrung, gleicher Wert.
 export function evalSkillValue(value: SkillValue, progress: number): number {
   return value.start + (value.max - value.start) * progress;
+}
+
+// -----------------------------------------------------------
+// Einzelwerte eines Skills (Sprungweite, Heilung, Verdauung …)
+//
+// Vorgabe (Entwickler, 14. November 2026): Was zu einem Skill gehört, steht
+// am Skill (src/data/skills.ts). Systeme lesen den Wert hier aus, statt eine
+// eigene Konstante zu führen.
+// -----------------------------------------------------------
+
+/** Erster Effekt dieses Typs am Skill (undefined: Skill hat ihn nicht). */
+export function getSkillEffect(skillId: string, type: EffectType): SkillEffect | undefined {
+  return ALL_SKILLS.get(skillId)?.effects?.find((e) => e.effectType === type);
+}
+
+/** Wert des Effekts beim Fortschritt p (0, wenn der Skill ihn nicht hat). */
+export function evalSkillEffect(skillId: string, type: EffectType, progress: number): number {
+  const e = getSkillEffect(skillId, type);
+  return e ? evalSkillValue(e.formula, progress) : 0;
+}
+
+/**
+ * Erfahrung durch Tun: amount Einheiten × xpPer des Skills (Feld practice).
+ * 0, wenn der Skill nicht auf diese Weise lernt.
+ */
+export function practiceXp(skillId: string, unit: PracticeUnit, amount: number): number {
+  const pr = ALL_SKILLS.get(skillId)?.practice;
+  return pr && pr.unit === unit && amount > 0 ? amount * pr.xpPer : 0;
 }
 
 // -----------------------------------------------------------
