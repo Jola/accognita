@@ -175,7 +175,7 @@ Unabhängig vom Ursprung gilt für die ersten Minuten des Spiels:
 ## 10. Blob-Teilung & Respawn-System
 
 > Status: Konzept — noch nicht implementiert
-> **Präzisiert in [GDD-10 Blob-Formen](GDD-10-Blob-Formen.md) (14. November 2026).** Dort gelten die neuen Begriffe: *niedergelassener Blob* statt Hauptblob, *reisender Blob* statt Reise-Blob. Wissen wird mit Herkunftszählern verrechnet. Wo dieser Abschnitt GDD-10 widerspricht, gilt GDD-10.
+> **Präzisiert in [GDD-10 Blob-Formen](GDD-10-Blob-Formen.md) (14. November 2026).** Dort gelten die neuen Begriffe: *niedergelassener Blob* statt Hauptblob, *reisender Blob* statt Reise-Blob. Beim Verbinden gilt je Skill der höchste Erfahrungswert. Wo dieser Abschnitt GDD-10 widerspricht, gilt GDD-10.
 
 ### Grundprinzip
 
@@ -242,4 +242,4 @@ Alle Skills und XP des vertrockneten Blobs übertragen
 
 ---
 
-*Letzte Aktualisierung: 14. November 2026 — Abschnitt 10 verweist auf GDD-10 (Blob-Formen), Wasser-Wiederbelebung vorläufig als VERWORFEN markiert (bitte bestätigen); davor v0.4 — Level-Bezüge an „Erfahrung statt Level“ angepasst (Abschnitte 2, 3, 5, 10), GDD-07 und GDD-08 in den Referenzen ergänzt (31. Oktober 2026); davor Startsequenz (Abschnitt 9) und Blob-Teilungs-Respawn-System (Abschnitt 10) als Konzepte ergänzt (März 2026)*
+*Letzte Aktualisierung: 14. November 2026 — Verweis auf GDD-10: Höchstwert je Skill statt Herkunftszählern; davor 14. November 2026 — Abschnitt 10 verweist auf GDD-10 (Blob-Formen), Wasser-Wiederbelebung vorläufig als VERWORFEN markiert (bitte bestätigen); davor v0.4 — Level-Bezüge an „Erfahrung statt Level“ angepasst (Abschnitte 2, 3, 5, 10), GDD-07 und GDD-08 in den Referenzen ergänzt (31. Oktober 2026); davor Startsequenz (Abschnitt 9) und Blob-Teilungs-Respawn-System (Abschnitt 10) als Konzepte ergänzt (März 2026)*

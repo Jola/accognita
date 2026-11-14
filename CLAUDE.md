@@ -76,7 +76,7 @@ Current state: **v0.7** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `docs/GDD-07-Bestiarium.md` | Draft: ~100 units from forest to city, size classes, skill ideas (Status: Diskussion; Teil 6 = implemented XP model). |
 | `docs/GDD-09-Grundwerte-und-Sinne.md` | Base stats (strength, dexterity, speed, sight), movement skills, strength from size, vision black → gray → color, awakening intro with nest. |
 | `docs/GDD-08-Progressionsmathematik.md` | Math of leveling (curve families, XP models, integer limits, other games) and of effects (power per level, hit/effect probabilities, skill interactions) (Status: Diskussion; Teil 6 = implemented XP model). |
-| `docs/GDD-10-Blob-Formen.md` | Concept (in discussion): blob forms settled/traveling/dried, split, connect, consciousness switch, knowledge merge via per-origin counters, resource split, map and direction arrows. |
+| `docs/GDD-10-Blob-Formen.md` | Concept (in discussion): blob forms settled/traveling/dried, split, connect, consciousness switch, settling, rising up, merging, knowledge merge (highest value per skill), split cost (a fully grown body), resource split, map and direction arrows. |
 
 ---
 
