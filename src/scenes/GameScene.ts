@@ -269,18 +269,31 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  // Phaser 3.70: Die Bildfläche (Render Target) des Kamera-Farbfilters
-  // behält die Größe vom Start — bootFX setzt nur autoResize = true, ohne
-  // sich für Größenänderungen des Renderers anzumelden. Nach Vollbild oder
-  // Drehen ins Querformat wird das Bild dann verzerrt. Deshalb hier selbst
-  // nachziehen — beim Start und bei jedem RESIZE-Ereignis der Szene.
+  // Phaser 3.70: Der Kamera-Farbfilter zeichnet über Zwischenflächen
+  // (Render Targets). Zwei davon behalten die Größe vom Spielstart:
+  //  - die Flächen der Utility-Pipeline (fullFrame1/2, halfFrame1/2), in die
+  //    der Farbfilter das gefilterte Bild schreibt — Phaser legt sie ohne
+  //    autoResize an und schaltet es nie ein; ihr resize() tut dann nichts,
+  //  - die Fläche der Farbfilter-Pipeline selbst (bootFX setzt autoResize
+  //    erst beim ersten Zeichnen).
+  // Nach Drehen ins Querformat wird dann nur ein Teil der alten Fläche neu
+  // beschrieben, der Rest bleibt stehen und wird verzerrt gestreckt.
+  // [VERWORFEN, v0.7.2] nur target.resize() — wirkungslos, solange
+  // autoResize aus ist.
+  // Deshalb: autoResize einschalten und sofort auf die Renderer-Größe
+  // bringen — beim Start und bei jedem RESIZE (deckt Drehen ab).
   private fixCameraFxSize() {
     if (!this.colorFx) return;
     const renderer = this.game.renderer as any;
     const w = renderer.width, h = renderer.height;
-    for (const pipeline of ((this.cameras.main as any).postPipelines ?? [])) {
-      for (const target of pipeline.renderTargets ?? []) {
-        if (target.width !== w || target.height !== h) target.resize(w, h);
+    const pipelines = [
+      renderer.pipelines?.UTILITY_PIPELINE,
+      ...((this.cameras.main as any).postPipelines ?? []),
+    ];
+    for (const pipeline of pipelines) {
+      for (const target of pipeline?.renderTargets ?? []) {
+        target.autoResize = true;
+        target.resize(w, h);   // berücksichtigt target.scale (halfFrame = 0,5)
       }
     }
   }

@@ -1,6 +1,6 @@
 {
   "name": "absorb-and-evolve",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "private": true,
   "scripts": {
     "build": "node build.js",
