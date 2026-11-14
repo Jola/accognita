@@ -187,7 +187,7 @@ export const BASE_SKILLS: SkillDefinition[] = [
     id: "venom",
     name: "Venom",
     element: "poison",
-    icon: "🕷️",
+    icon: "☠",
     category: "basic",
     activation: "passive",
     learningEffort: 15,
