@@ -254,7 +254,7 @@ Der Name stammt vom Vorbild: Zwei Plasmodien von *Physarum* verschmelzen zu eine
 - **Mit dem Nest verschmelzen geht** (übernommen 14. November 2026). Begründung (Vorschlag Claude, übernommen): Das Nest bleibt dabei bestehen, denn der Reisende geht in ihm auf. Das bisherige „nicht beim Nest“ folgte nur aus der alten Richtung.
 - **Nicht unter Aggro,** wie beim Niederlassen (seit 5 s keine Aggro, Abschnitt 3; übernommen 14. November 2026). Begründung (Vorschlag Claude, übernommen): Verschmelzen endet niedergelassen, also unverwundbar. Sonst wäre es ein Notausgang aus jedem Kampf, und mit sofortigem Erheben auch ein Trick, um Gegner abzuschütteln. Das ersetzt die Frage nach dem Zurückziehen unter Aggro (Abschnitt 15, Punkt 3).
 - ~~**Vertrockneter Blob zu nah an einem niedergelassenen oder über der Höchstzahl** (8.3, Abschnitt 15 Punkt 5; Vorschlag Claude, offen): Verschmelzen geht trotzdem, denn niemand darf vom Einsammeln seines vertrockneten Blobs ausgeschlossen sein. Der neue niedergelassene Blob arbeitet dann nicht selbsttätig, bis man sich mit ihm erhebt; das Spiel weist darauf hin.~~ [VERWORFEN, 14. November 2026] Mindestabstand und Höchstzahl gibt es nicht mehr (Vorgabe Entwickler, 8.3 und 8.5). Verschmelzen mit einem vertrockneten Blob geht also immer.
-- **Ein vertrockneter Blob, der nicht ausgewachsen war,** wird beim Verschmelzen ein nicht ausgewachsener niedergelassener Blob. Er kann sich nur erheben (7.1). ~~… bis er mit Grow aus seinem Lager ausgewachsen ist~~ [VERWORFEN, 14. November 2026] Niedergelassene Blobs wachsen nicht (7.1, „Größe beim Niederlassen“).
+- **Ein vertrockneter Blob, der nicht ausgewachsen war,** wird beim Verschmelzen ein nicht ausgewachsener niedergelassener Blob. Er kann sich nur erheben, bis er mit Grow aus seinem Lager ausgewachsen ist (7.1).
 
 ~~**Verbinden mit einem vertrockneten Blob**~~ [VERWORFEN, 14. November 2026] Ersetzt durch Verschmelzen oben: Jetzt geht der Reisende im vertrockneten Blob auf, nicht umgekehrt. Bisherige Fassung:
 1. ~~Das Wissen wird zusammengeführt (Abschnitt 6).~~
@@ -284,7 +284,7 @@ Ablauf (Vorschlag Claude, übernommen 14. November 2026):
 1. Nur mit Bewusstsein dort und mit einem Bewegungs-Skill (wie Abspalten).
 2. Reihenfolge wie in 4.6; die selbsttätige Arbeit endet.
 3. **Derselbe Blob** (gleiche ID) wird reisend. Er behält sein ganzes Wissen, alle Ressourcen und seine Größe. Kein Dialog, keine Kosten.
-4. **Größe:** genau die beim Niederlassen gespeicherte Größe. Fasern im Lager werden nicht in Größe umgewandelt (Vorgabe Entwickler, 7.1).
+4. **Größe:** seine eigene Körpermasse, wie sie beim Niederlassen war, plus was Grow seither verdaut hat. Die übrigen Fasern im Lager werden nicht in Größe umgewandelt (Vorgabe Entwickler, 7.1).
 5. **HP und MP:** so, wie sie beim Niederlassen waren, plus die Regeneration über die Zeit, in der er niedergelassen war (MP 1 MP/s, Photosynthese), höchstens bis voll.
 6. ~~Sein Platz wird frei: Er zählt nicht mehr für den Mindestabstand (8.3).~~ [VERWORFEN, 14. November 2026] Kein Mindestabstand mehr. Seine Wesen in der Arbeitsreichweite erntet jetzt der nächste andere niedergelassene Blob (8.3). Eine Markierung auf ihm entfällt, denn man ist ja selbst dort.
 
@@ -496,7 +496,7 @@ Die bisherige „bekannte Eigenheit“ (zwei Zweige lernen getrennt doppelt schn
 - **Abspalten:** Körpermasse des neuen Reisenden = Pflanzenfasern im Lager, höchstens bis ausgewachsen. Diese Fasern sind verbraucht. Der niedergelassene Blob behält seine eigene Größe.
 - **Verschmelzen:** Die Körpermasse des Reisenden kommt als Pflanzenfasern ins Lager des anderen Blobs. Der behält seine eigene Größe.
 - **Kein Verlust hin und zurück:** Abspalten und Verschmelzen heben sich genau auf. Teuer ist, die Fasern erst einmal zu haben.
-- ~~**Nachwachsen:** Ein nicht ausgewachsener niedergelassener Blob wächst mit Grow aus seinem Lager weiter (8.4). Ist er ausgewachsen, kann er abspalten.~~ [VERWORFEN, 14. November 2026] Ersetzt durch die Vorgabe „Größe beim Niederlassen“ unten: Niedergelassene Blobs wachsen nicht.
+- **Nachwachsen:** Ein nicht ausgewachsener niedergelassener Blob wächst mit Grow aus seinem Lager weiter, im normalen Verdauungstempo (8.4). Ist er ausgewachsen, kann er abspalten. Bestätigt durch den Entwickler: „Niedergelassene Blobs dürfen gerne auch wachsen“ (14. November 2026).
 - Ein ausgewachsener Blob verdaut nicht weiter; die Fasern bleiben im Lager.
 - **Das Nest kann immer abspalten,** auch wenn es nicht ausgewachsen ist (**Vorgabe Entwickler, 14. November 2026**). Der Reisende ist dann so groß, wie die Fasern reichen, notfalls so klein wie beim Erwachen. Begründung (Vorschlag Claude, übernommen): Zum Nest springt das Bewusstsein nach dem Vertrocknen, und es kann sich nicht erheben. Ohne diese Ausnahme säße man dort fest, gleich zu Beginn des Spiels sogar sicher.
 
@@ -520,17 +520,18 @@ Die bisherige „bekannte Eigenheit“ (zwei Zweige lernen getrennt doppelt schn
 
 ~~**Zu klären 1: Was heißt „ausgewachsen“?** Vorschlag Höchstmasse an Grow 20 → 620 Fasern (Wachstum 1 → 5); Alternative: feste Höchstmasse in `balance.ts`.~~ [VERWORFEN, 14. November 2026] Entschieden wie oben, Zahlen neu nach der Vorgabe 120 kg.
 
-**Größe beim Niederlassen**
+**Größe beim Erheben**
 
-**Vorgabe (Entwickler, 14. November 2026):** Beim Niederlassen wird die aktuelle Größe als höchste Größe gespeichert. Beim Erheben wandelt der Blob nicht einfach die vorhandenen Fasern in Größe um.
+**Vorgabe (Entwickler, 14. November 2026):** Beim Erheben werden nicht einfach alle vorhandenen Fasern in Körpermasse umgewandelt. Niedergelassene Blobs dürfen aber wachsen.
 
 **Begründung (Entwickler):** Sonst könnte man Wachstumssprünge erzeugen: viele Pflanzenfasern sammeln, niederlassen und wieder erheben.
 
-Was daraus folgt (Vorschlag Claude, offen):
-- **Niedergelassene Blobs wachsen nicht.** Grow verdaut in ihnen nicht; Fasern bleiben im Lager. Grow-Erfahrung durch Verdauen gibt es nur beim Reisenden.
-- Wie bei HP und MP (4.7): Man erhebt sich mit genau dem Körper, mit dem man sich niedergelassen hat.
-- **Abspalten erlaubt, wenn der Blob beim Niederlassen ausgewachsen war.** Es wird also beim Niederlassen mit vermerkt. Begründung: Steigt Grow später, steigt die Höchstmasse. Ohne diesen Vermerk könnte danach kein niedergelassener Blob mehr abspalten, und weil er nicht wächst, müsste man jeden einmal erheben und neu niederlassen.
-- Der neue Reisende wird trotzdem so groß, wie die Fasern reichen, bis zur heutigen Höchstmasse.
+So gefasst (Vorschlag Claude, offen):
+- Die Körpermasse eines niedergelassenen Blobs wächst nur durch Grow, im normalen Verdauungstempo, wie beim Reisenden. Beim Erheben behält er diese Körpermasse; die übrigen Fasern bleiben im Lager.
+- Wartet man niedergelassen, wächst man also genau so viel, wie man auch als Reisender beim Warten gewachsen wäre. Das passt zur Regel für HP und MP (4.7).
+- Ob ein niedergelassener Blob abspalten darf, richtet sich nach seiner jetzigen Körpermasse und der jetzigen Höchstmasse. Steigt Grow, wächst er aus seinem Lager nach.
+
+~~Vorgabe (Entwickler): Beim Niederlassen wird die aktuelle Größe als höchste Größe gespeichert.~~ [VERWORFEN, 14. November 2026] Präzisiert durch den Entwickler: Es ging nur darum, dass beim Erheben nicht alle Fasern in Masse umgewandelt werden; niedergelassene Blobs dürfen wachsen. Damit sind auch diese Folgerungen von Claude hinfällig: ~~Niedergelassene Blobs wachsen nicht; Grow-Erfahrung durch Verdauen nur beim Reisenden. Abspalten erlaubt, wenn der Blob beim Niederlassen ausgewachsen war (Vermerk).~~
 
 **Niedergelassen, aber nicht ausgewachsen**
 
@@ -616,11 +617,11 @@ Hinweis für die Umsetzung: Das Nachwachsen der Wesen in der echten Welt läuft 
 **Doppeltes Ernten: der nächste Blob erntet** (Vorschlag Claude, übernommen 14. November 2026; der Entwickler hat um einen Vorschlag gebeten)
 - Jedes Wesen in der Welt hat einen festen Entstehungsort (`generateChunk`, Seed). Es gehört dem niedergelassenen Blob, der diesem Ort am nächsten liegt, sofern es in dessen Arbeitsreichweite liegt.
 - Nur dieser Blob erntet es. Überlappen sich zwei Arbeitsreichweiten, teilt die Mittellinie zwischen beiden das Gebiet.
-- **Wann neu verteilt wird:** Wenn ein Blob niedergelassen wird, sich erhebt oder durch Verschmelzen entsteht. (Seine Reichweite wächst nicht, denn niedergelassene Blobs wachsen nicht, 7.1.) Vorher werden die Nachbarn in Reichweite bis jetzt nachgerechnet, damit die vergangene Zeit noch mit der alten Verteilung zählt.
+- **Wann neu verteilt wird:** Wenn ein Blob niedergelassen wird, sich erhebt oder durch Verschmelzen entsteht. Ebenso, wenn seine Reichweite durch Wachsen größer wird. Vorher werden die Nachbarn in Reichweite bis jetzt nachgerechnet, damit die vergangene Zeit noch mit der alten Verteilung zählt.
 - Begründung (Vorschlag Claude, übernommen): Nichts wird doppelt geerntet, und es braucht keine Verbotsregel. Zwei Blobs dicht nebeneinander bringen zusammen nicht mehr als einer, das Zusammenrücken lohnt sich also nicht. Der Aufwand ist klein, weil nur bei diesen seltenen Anlässen neu verteilt wird.
 - Erntet ein Reisender von Hand neben einem niedergelassenen Blob, zählt das weiterhin doppelt. Das wird hingenommen, weil Ernte von Hand langsam ist.
 
-Welche Wesen in dieser Reichweite vorkommen, lässt sich ohne geladene Welt bestimmen. Die Welt entsteht immer gleich aus ihrem Startwert (`generateChunk`, Seed). Gespeichert wird eine kleine Liste: Wesen-Art, Anzahl, Respawn-Zeit. ~~Wächst die Reichweite (mehr Körpermasse), wird die Liste beim nächsten Nachrechnen neu bestimmt.~~ [VERWORFEN, 14. November 2026] Niedergelassene Blobs wachsen nicht (7.1).
+Welche Wesen in dieser Reichweite vorkommen, lässt sich ohne geladene Welt bestimmen. Die Welt entsteht immer gleich aus ihrem Startwert (`generateChunk`, Seed). Gespeichert wird eine kleine Liste: Wesen-Art, Anzahl, Respawn-Zeit. Wächst die Reichweite (mehr Körpermasse), wird die Liste beim nächsten Nachrechnen neu bestimmt.
 
 Erreichbar sind nur Wesen, die sich nicht wehren (`behavior: passive`): Gras, Würmer, Schnecken …
 
@@ -633,7 +634,7 @@ Am niedergelassenen Blob stellt man eine Tätigkeit ein:
 - **Analysieren:** Erfahrung, keine Materialien.
 - **Absorbieren:** Erfahrung und Materialien.
 
-Passive Skills laufen mit: Sehen sammelt Erfahrung. ~~Grow verdaut Fasern aus seinem Lager.~~ [VERWORFEN, 14. November 2026] Niedergelassene Blobs wachsen nicht (7.1).
+Passive Skills laufen mit: Grow verdaut Fasern aus seinem Lager bis ausgewachsen, Sehen sammelt Erfahrung.
 
 Begründung (Vorschlag Claude, offen): Das sind dieselben Möglichkeiten wie beim Reisenden, nur ohne Kampf. Herstellen kommt später dazu (Abschnitt 15).
 
@@ -806,7 +807,6 @@ interface BlobState {
     Record<string, KnowledgeEntry>;
   materials: Record<string, number>;
   bodyMass: number;
-  // niedergelassen: eingefroren (7.1)
   pending: Record<string, {
     pendingXp: number;
     updatedAtMs: number; }>;
@@ -823,9 +823,6 @@ interface BlobState {
     count: number;
     respawnSeconds: number }[];
   carry?: Record<string, number>;
-  grownWhenSettled?: true;
-  // war beim Niederlassen
-  // ausgewachsen (7.1)
   nest?: true;
   // das Nest: unzerstörbar,
   // kann sich nicht erheben
@@ -877,7 +874,7 @@ Eine Spielzeit für alle Blobs: `world.playtimeSeconds`. Sonst ließen sich „z
 - **Speichermenü:** zeigt den Namen des Blobs mit Bewusstsein.
 - **Erwachen (`IntroSystem`):** „kann sich bewegen“ heißt beim niedergelassenen Blob „kann abspalten“.
 - **Körpermasse:** „schrumpft nie“ (GDD-02 Abschnitt 8.10, Kommentar in `GameState.ts`) gilt nicht mehr. Beim Verschmelzen wird sie wieder zu Pflanzenfasern (7.1). ~~Sie wird verteilt und kann als Ersatzkosten fürs Abspalten verbraucht werden.~~ [VERWORFEN, 14. November 2026]
-- **Grow:** verdaut nur bis ausgewachsen (Höchstmasse, 7.1) und nur beim Reisenden. Neuer Effekt Höchstmasse am Skill (`src/data/skills.ts`).
+- **Grow:** verdaut nur bis ausgewachsen (Höchstmasse, 7.1), auch im niedergelassenen Blob. Neuer Effekt Höchstmasse am Skill (`src/data/skills.ts`).
 - **Größe (`balance.ts`):** `PLAYER_SIZE_GROWTH_MAX` ≈ 5,9 statt 19, damit 120 kg die größte Größe ist (7.1). ~~Lässt 10 Fasern als Reserve im Lager.~~ [VERWORFEN, 14. November 2026] Kosten jetzt nach 7.1.
 
 ---
@@ -907,7 +904,7 @@ Zu jedem Schritt werden GDD, INDEX und TODO.md nachgezogen: GDD-01 Abschnitt 10,
 
 **Entscheidungen des Entwicklers** (jeweils mit Begründung):
 1. Wasser zum Wiederbeleben ganz gestrichen? (Abschnitt 9)
-2. ~~Kosten fürs Abspalten: 10 Fasern, Rest mit Körpermasse, nur das Nest notfalls kostenlos, Grow lässt 10 Fasern Reserve? (7.1, 12)~~ → Entschieden 14. November 2026: Fasern für einen ausgewachsenen Körper, sonst kleiner; Gutschrift beim Verschmelzen (Vorgabe Entwickler, 7.1). Niederlassen auch nicht ausgewachsen, dann nur Erheben: entschieden 14. November 2026 (Vorgabe Entwickler, Begründung offen). Höchstmasse an Grow, Kugel mit höchstens 120 kg und 61 cm, Nest kann immer abspalten, Größe beim Niederlassen speichern: entschieden 14. November 2026 (Vorgaben Entwickler). **Noch offen:** Umrechnung (1 Faser = 0,1 kg, 2 → 120 kg), niedergelassene Blobs wachsen nicht, Abspalten nach Vermerk „beim Niederlassen ausgewachsen“ (7.1); Begründung für 120 kg und 61 cm.
+2. ~~Kosten fürs Abspalten: 10 Fasern, Rest mit Körpermasse, nur das Nest notfalls kostenlos, Grow lässt 10 Fasern Reserve? (7.1, 12)~~ → Entschieden 14. November 2026: Fasern für einen ausgewachsenen Körper, sonst kleiner; Gutschrift beim Verschmelzen (Vorgabe Entwickler, 7.1). Niederlassen auch nicht ausgewachsen, dann nur Erheben: entschieden 14. November 2026 (Vorgabe Entwickler, Begründung offen). Höchstmasse an Grow, Kugel mit höchstens 120 kg und 61 cm, Nest kann immer abspalten, beim Erheben keine Fasern in Masse umwandeln, niedergelassene Blobs dürfen wachsen: entschieden 14. November 2026 (Vorgaben Entwickler). **Noch offen:** Umrechnung (1 Faser = 0,1 kg, 2 → 120 kg) (7.1); Begründung für 120 kg und 61 cm.
 3. Niederlassen nur ohne Aggro? ~~Darf man sich unter Aggro in einen berührten niedergelassenen Blob zurückziehen? (3)~~ → Zurückziehen ist jetzt Verschmelzen, auch nur ohne Aggro (übernommen 14. November 2026, 4.5).
 4. Spielzeit oder auch echte Zeit bei geschlossenem Spiel? (8.2)
 5. ~~Höchstzahl niedergelassener Blobs (Vorschlag 5) oder Unterhalt, z. B. Fasern je Stunde? (8.5)~~ → Entschieden 14. November 2026: keine Höchstzahl; teures Abspalten statt dessen (Vorgabe Entwickler, 7.1, 8.5).
@@ -942,4 +939,4 @@ Zu jedem Schritt werden GDD, INDEX und TODO.md nachgezogen: GDD-01 Abschnitt 10,
 
 ---
 
-*Letzte Aktualisierung: 14. November 2026 — Größte Größe: Kugel mit 120 kg und 61 cm statt 80 kg und 90 cm (Vorgabe Entwickler, 7.1); davor 14. November 2026 — Vorgaben des Entwicklers: Höchstmasse an Grow, höchstens 80 kg und 90 cm, Form wandeln später; Nest kann immer abspalten; Größe beim Niederlassen speichern (gegen Wachstumssprünge); der nächste Blob erntet übernommen; Umrechnung und Folgen als Vorschlag (7.1, 4.7, 8.3, 8.4, 13, 15); davor 14. November 2026 — Verbinden gestrichen, Verschmelzen reicht (Vorgabe Entwickler, 4.4); Niederlassen auch nicht ausgewachsen, dann nur Erheben (Vorgabe Entwickler, 7.1); davor 14. November 2026 — Vorgaben des Entwicklers: je Skill nur der Höchstwert statt Herkunftszählern (6); Abspalten kostet Fasern für einen ausgewachsenen Körper, sonst kleiner, Gutschrift beim Verschmelzen (7.1); Mindestabstand und Höchstzahl weggelassen (8.3, 8.5); Vorschläge: Höchstmasse an Grow, Niederlassen nur ausgewachsen, Nest kann immer abspalten, der nächste Blob erntet; Abschnitte 3, 4, 5, 7.2, 12, 13, 14, 15 angepasst; davor 14. November 2026 — Verschmelzen mit dem Nest erlaubt und nur ohne Aggro übernommen; davor 14. November 2026 — Verschmelzen statt Einziehen (Vorgabe Entwickler): der Reisende geht im niedergelassenen oder vertrockneten Blob auf, Ergebnis immer niedergelassen; Ablauf und Folgefragen als Vorschlag (4.5); Abschnitte 1, 2, 3, 4, 5, 7.1, 8.1, 9, 11.2, 13.5, 14, 15 angepasst; davor 14. November 2026 — Begründung des Entwicklers fürs Nest (Unsterblichkeit), Ablauf des Erhebens übernommen, Einziehen als Vorgabe mit Begründung des Entwicklers (Name offen), Regel 4 bestätigt; davor 14. November 2026 — erste Entscheidungen des Entwicklers: Nest unzerstörbar, ortsfest und ohne Erheben (Abschnitt 2, 12); Erheben übernommen, nicht beim Nest (3, 4.7, Ablauf als Vorschlag); Bewusstsein nur zwischen niedergelassenen Blobs, höchstens ein Reisender, mit Begründung des Entwicklers (2); offene Punkte 6 und 14 teilweise entschieden; davor 14. November 2026 — zweite Prüfrunde eingearbeitet: Ermüdung gehört zum Bewusstsein, eigene Gutschrift beim Nachrechnen, Reichweite und Ziele vor Ort, Kosten nur im Nest notfalls frei, Grow-Reserve, Grenze nach dem Verbinden, Verbinden kann Erfahrung senken, Mindestabstand, Ausgangswert beim Zurückschreiben, Basis abziehen statt Falten, Beispiel 6.4 Schritt 6 berichtigt, Kennzeichnungen ergänzt; davor überarbeitet nach Konzept- und Doku-Prüfung: Verlernen als eine gemeinsame Zahl (kein doppeltes Verlernen, nie negativ), Ersatzkosten gegen Festsitzen, Ermüdung kopieren, Reihenfolge, Speicherbedarf, Nachrechnen ohne Übertraining und ohne Kern-Fähigkeiten, Arbeit ruht vor Ort, Einziehen, Nest-Umbau, Umsetzung in 7 Schritten, handytaugliche Gliederung; davor Erstfassung mit mehreren Markierungen (Vorgabe Entwickler)*
+*Letzte Aktualisierung: 14. November 2026 — Präzisiert (Vorgabe Entwickler): niedergelassene Blobs dürfen wachsen, nur beim Erheben werden die Fasern nicht in Masse umgewandelt (4.7, 7.1, 8.3, 8.4, 13); davor 14. November 2026 — Größte Größe: Kugel mit 120 kg und 61 cm statt 80 kg und 90 cm (Vorgabe Entwickler, 7.1); davor 14. November 2026 — Vorgaben des Entwicklers: Höchstmasse an Grow, höchstens 80 kg und 90 cm, Form wandeln später; Nest kann immer abspalten; Größe beim Niederlassen speichern (gegen Wachstumssprünge); der nächste Blob erntet übernommen; Umrechnung und Folgen als Vorschlag (7.1, 4.7, 8.3, 8.4, 13, 15); davor 14. November 2026 — Verbinden gestrichen, Verschmelzen reicht (Vorgabe Entwickler, 4.4); Niederlassen auch nicht ausgewachsen, dann nur Erheben (Vorgabe Entwickler, 7.1); davor 14. November 2026 — Vorgaben des Entwicklers: je Skill nur der Höchstwert statt Herkunftszählern (6); Abspalten kostet Fasern für einen ausgewachsenen Körper, sonst kleiner, Gutschrift beim Verschmelzen (7.1); Mindestabstand und Höchstzahl weggelassen (8.3, 8.5); Vorschläge: Höchstmasse an Grow, Niederlassen nur ausgewachsen, Nest kann immer abspalten, der nächste Blob erntet; Abschnitte 3, 4, 5, 7.2, 12, 13, 14, 15 angepasst; davor 14. November 2026 — Verschmelzen mit dem Nest erlaubt und nur ohne Aggro übernommen; davor 14. November 2026 — Verschmelzen statt Einziehen (Vorgabe Entwickler): der Reisende geht im niedergelassenen oder vertrockneten Blob auf, Ergebnis immer niedergelassen; Ablauf und Folgefragen als Vorschlag (4.5); Abschnitte 1, 2, 3, 4, 5, 7.1, 8.1, 9, 11.2, 13.5, 14, 15 angepasst; davor 14. November 2026 — Begründung des Entwicklers fürs Nest (Unsterblichkeit), Ablauf des Erhebens übernommen, Einziehen als Vorgabe mit Begründung des Entwicklers (Name offen), Regel 4 bestätigt; davor 14. November 2026 — erste Entscheidungen des Entwicklers: Nest unzerstörbar, ortsfest und ohne Erheben (Abschnitt 2, 12); Erheben übernommen, nicht beim Nest (3, 4.7, Ablauf als Vorschlag); Bewusstsein nur zwischen niedergelassenen Blobs, höchstens ein Reisender, mit Begründung des Entwicklers (2); offene Punkte 6 und 14 teilweise entschieden; davor 14. November 2026 — zweite Prüfrunde eingearbeitet: Ermüdung gehört zum Bewusstsein, eigene Gutschrift beim Nachrechnen, Reichweite und Ziele vor Ort, Kosten nur im Nest notfalls frei, Grow-Reserve, Grenze nach dem Verbinden, Verbinden kann Erfahrung senken, Mindestabstand, Ausgangswert beim Zurückschreiben, Basis abziehen statt Falten, Beispiel 6.4 Schritt 6 berichtigt, Kennzeichnungen ergänzt; davor überarbeitet nach Konzept- und Doku-Prüfung: Verlernen als eine gemeinsame Zahl (kein doppeltes Verlernen, nie negativ), Ersatzkosten gegen Festsitzen, Ermüdung kopieren, Reihenfolge, Speicherbedarf, Nachrechnen ohne Übertraining und ohne Kern-Fähigkeiten, Arbeit ruht vor Ort, Einziehen, Nest-Umbau, Umsetzung in 7 Schritten, handytaugliche Gliederung; davor Erstfassung mit mehreren Markierungen (Vorgabe Entwickler)*
