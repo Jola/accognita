@@ -76,6 +76,7 @@ Current state: **v0.7** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `docs/GDD-07-Bestiarium.md` | Draft: ~100 units from forest to city, size classes, skill ideas (Status: Diskussion; Teil 6 = implemented XP model). |
 | `docs/GDD-09-Grundwerte-und-Sinne.md` | Base stats (strength, dexterity, speed, sight), movement skills, strength from size, vision black → gray → color, awakening intro with nest. |
 | `docs/GDD-08-Progressionsmathematik.md` | Math of leveling (curve families, XP models, integer limits, other games) and of effects (power per level, hit/effect probabilities, skill interactions) (Status: Diskussion; Teil 6 = implemented XP model). |
+| `docs/GDD-10-Blob-Formen.md` | Concept (in discussion): blob forms settled/traveling/dried, split, connect, consciousness switch, knowledge merge via per-origin counters, resource split, map and direction arrows. |
 
 ---
 
@@ -169,7 +170,7 @@ Bugs, Feature-Ideen und kleine Verbesserungen werden in **`TODO.md`** im Projekt
 
 ## Open Decisions (ask developer before implementing)
 
-- Tod-Mechanik: Soft Death vs. Checkpoint vs. Rogue-like?
+- Tod-Mechanik: Soft Death vs. Checkpoint vs. Rogue-like? → concept in discussion: GDD-10 (drying out, settled blobs as checkpoints)
 - ~~Skill-Limit: Obergrenze für aktive Skills?~~ → decided: skill capacity (sum of experience), see GDD-02 section 8. Still open: how capacity grows, all numbers, rank names
 - Kombinations-Rezepte: Sollen sie versteckt werden?
 - Mobile Tap: Direkt Absorb/Analyze, oder erst Kontextmenü?

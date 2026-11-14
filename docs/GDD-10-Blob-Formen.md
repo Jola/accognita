@@ -1,0 +1,676 @@
+# Absorb & Evolve — Game Design Document
+## Datei 10: Blob-Formen — Niederlassen, Abspalten, Verbinden, Vertrocknen
+
+> Status: Konzept — in Diskussion, noch nicht implementiert (14. November 2026)
+> Ersetzt nach der Umsetzung das einfache Checkpoint-System (GDD-03 Abschnitt 7) und präzisiert GDD-01 Abschnitt 10.
+
+**Der Kern in einem Satz:** Jeder Blob hat seinen eigenen Stand. Nur wenn sich zwei Blobs verbinden, gleichen sie ihr Wissen ab. Wissen wird dabei geteilt, Ressourcen wechseln den Besitzer.
+
+**Begriffe**
+- **Wissen** = die entdeckten Skills und die Erfahrung je Skill, dazu die Kern-Fähigkeiten Analyze und Absorb.
+- **Ressourcen** = Materialien im Lager (z. B. Pflanzenfasern) und die Körpermasse.
+- **Bewusstsein** = der Blob, den der Spieler gerade steuert.
+
+**Kennzeichnung:** Was nicht ausdrücklich als *Vorgabe (Entwickler)* markiert ist, ist **Vorschlag Claude (offen)** und muss noch bestätigt werden. Alle Zahlen sind VORLÄUFIG.
+
+---
+
+## Inhalt
+
+1. Überblick
+2. Die drei Formen
+3. Grundfähigkeiten
+4. Abläufe
+5. Was jeder Blob für sich hat und was geteilt wird
+6. Wissen verrechnen
+7. Ressourcen verteilen
+8. Tätigkeit niedergelassener Blobs
+9. Vertrocknen (Tod)
+10. Darstellung
+11. Karte und Richtungspfeile
+12. Spielstart im Nest
+13. Datenmodell und Speichern
+14. Umsetzung in Schritten
+15. Offene Punkte
+
+---
+
+## 1. Überblick
+
+**Vorgabe (Entwickler, 14. November 2026):**
+- Der Blob kann sich niederlassen. Ein niedergelassener Blob steht fest an einem Ort, kann aber weiter absorbieren und analysieren und so Erfahrung und Ressourcen sammeln, wie eine kleine Fabrik.
+- Er ist zugleich Checkpoint und kann vorerst nicht angegriffen werden.
+- Von ihm spaltet sich ein **reisender Blob** ab, mit dem man die Welt erkundet.
+- Wird der reisende Blob besiegt, **vertrocknet** er an Ort und Stelle. Das Bewusstsein springt zum nächstgelegenen niedergelassenen Blob.
+- Wer den vertrockneten Blob wieder aufsucht und sich mit ihm verbindet, bekommt dessen Erfahrung, Skills und Ressourcen zurück.
+
+**Begründung (Entwickler):** Das entspricht den Fähigkeiten des biologischen Vorbilds *Physarum polycephalum*. Es kann sich teilen, Teile verschmelzen wieder, und bei Gefahr trocknet es zu einer Dauerform ein, statt zu sterben.
+
+---
+
+## 2. Die drei Formen
+
+**Niedergelassen**
+- Bewegt sich nicht, steht an einem festen Ort.
+- Absorbiert und analysiert in seiner Arbeitsreichweite und arbeitet über die Zeit allein weiter (Abschnitt 8).
+- Kann vorerst nicht angegriffen werden.
+- Bild: zerflossenes Adernetz, pulsiert.
+
+**Reisend**
+- Bewegt sich mit einem Bewegungs-Skill und kann alles wie bisher: Kampf, Absorb, Analyze.
+- Kann angegriffen werden.
+- Bild: runder Blob wie bisher.
+
+**Vertrocknet**
+- Tut nichts, ruht. Kann vorerst nicht angegriffen werden.
+- Bild: braune, rissige Kruste, still.
+
+### Feste Regeln
+
+1. Es gibt immer mindestens einen niedergelassenen Blob.
+2. Der reisende Blob existiert **genau dann, wenn** das Bewusstsein bei ihm ist. Es gibt also höchstens einen.
+3. Ist das Bewusstsein nicht beim Reisenden, ist es bei einem niedergelassenen Blob, nie bei einem vertrockneten.
+4. Vertrocknete Blobs kann es beliebig viele geben.
+
+**Vorgabe (Entwickler, 14. November 2026):** Zu einem anderen Blob springt man, nachdem sich der Reisende niedergelassen hat. Man bekommt dann eine Liste aller niedergelassenen Blobs, springt zu einem und kann sich von dort wieder abspalten.
+
+**Begründung (Vorschlag Claude, offen):** Regel 2 folgt aus dieser Vorgabe. Den Reisenden verlässt man nur durch Niederlassen oder Vertrocknen. Niemand muss mehrere Figuren gleichzeitig verwalten, und kein Blob läuft unbeaufsichtigt herum. Weil niedergelassene Blobs vorerst nicht angegriffen werden, brauchen sie keine HP und MP. Ist man bei ihnen, gelten sie als voll.
+
+---
+
+## 3. Grundfähigkeiten
+
+**Vorgabe (Entwickler):** Abspalten, Verbinden, Vertrocknen und der Wissenstransfer sind Grundfähigkeiten, die nicht erlernt werden müssen.
+
+**Begründung (Entwickler):** Das entspricht den Fähigkeiten des biologischen Vorbilds.
+
+**Vorschlag Claude (offen):** Niederlassen gehört ebenfalls dazu, denn auch das kann das Vorbild von Natur aus.
+
+Diese Fähigkeiten sind keine Skills: keine Erfahrung, kein Rang, keine Kapazität. Sie erscheinen als Knöpfe, je nach Lage.
+
+**Niederlassen**
+- Sichtbar beim Reisenden.
+- Nur wenn seit 5 s kein Gegner Aggro auf ihn hat.
+- Ausnahme: Berührt der Reisende einen niedergelassenen Blob, kann er sich unter Aggro in ihn **zurückziehen** (Verbinden und sofort Bewusstsein dort). Ob das erlaubt sein soll, ist offen (Abschnitt 15).
+- Begründung (Vorschlag Claude, offen): Ein niedergelassener Blob ist unverwundbar. Ohne diese Sperre wäre Niederlassen ein Notausgang aus jedem Kampf.
+
+**Abspalten**
+- Sichtbar bei einem niedergelassenen Blob mit Bewusstsein.
+- Nur wenn ein Bewegungs-Skill bekannt ist. Kosten siehe Abschnitt 7.1.
+- Begründung (Vorschlag Claude, offen): Folgt aus der Vorgabe zum Spielstart: Mit Bewegen kommt das Reisen (Abschnitt 12).
+
+**Verbinden**
+- Sichtbar, wenn der Reisende einen niedergelassenen oder vertrockneten Blob berührt.
+- Berühren heißt: Abstand zwischen der Mitte des Reisenden und dem Kern des anderen höchstens Reichweite des Reisenden plus Kernradius.
+
+**Bewusstsein wechseln**
+- Sichtbar bei einem niedergelassenen Blob mit Bewusstsein.
+- Ziel ist ein anderer niedergelassener Blob (Liste bzw. Karte, Abschnitt 11).
+
+---
+
+## 4. Abläufe
+
+- **Reisend → Niederlassen →** niedergelassen; das Bewusstsein bleibt bei ihm.
+- **Niedergelassen → Abspalten →** neuer Reisender; das Bewusstsein geht auf ihn über.
+- **Niedergelassen → Bewusstsein wechseln →** anderer niedergelassener Blob.
+- **Reisend + niedergelassen → Verbinden →** beide bleiben, beide haben dasselbe Wissen.
+- **Reisend + vertrocknet → Verbinden →** der vertrocknete Blob geht im Reisenden auf.
+- **Reisend, HP ≤ 0 →** vertrocknet; das Bewusstsein springt zum nächstgelegenen niedergelassenen Blob.
+
+### 4.1 Niederlassen
+1. Der Reisende wird an seiner Stelle niedergelassen und behält Wissen und Ressourcen.
+2. Das Bewusstsein bleibt bei ihm.
+
+Niederlassen sichert also den ganzen Fortschritt des Reisenden. Darauf weist das Spiel hin (Abschnitt 9).
+
+### 4.2 Bewusstsein wechseln
+1. Die Liste bzw. Karte (Abschnitt 11) zeigt alle niedergelassenen Blobs; ein Tipp springt hin.
+2. Liegt das Ziel in einem nicht geladenen Teil der Welt, wird dieser zuerst geladen.
+3. Man hat danach **nur den Stand des Ziels**.
+
+**Vorgabe (Entwickler):** Springt man zurück zu einem niedergelassenen Blob, hat man nur dessen Erfahrung und Skills, nicht den Fortschritt des Reisenden.
+
+### 4.3 Abspalten
+1. Der niedergelassene Blob zahlt die Kosten (Abschnitt 7.1).
+2. Ein Dialog verteilt die übrigen Ressourcen (Abschnitt 7.2).
+3. Der neue Reisende erscheint neben ihm, mit voller HP und MP und einer **Kopie des Wissens**.
+4. Das Bewusstsein geht auf ihn über.
+
+### 4.4 Verbinden mit einem niedergelassenen Blob
+1. Der niedergelassene Blob wird bis jetzt nachgerechnet (Abschnitt 8).
+2. Das Wissen wird zusammengeführt (Abschnitt 6). Beide haben danach **denselben Stand**.
+3. Der Dialog verteilt die Ressourcen, vorgeschlagen ist halbe-halbe (Abschnitt 7.2).
+4. Beide bleiben bestehen, das Bewusstsein bleibt beim Reisenden.
+
+**Vorgabe (Entwickler):** Erfahrung wird bei jeder Verbindung mit beiden Blobs geteilt, beide haben danach dieselbe. Ressourcen werden nicht dupliziert, sondern aufgeteilt, standardmäßig 50/50. Man soll einstellen können, wie viel der Reisende mitnimmt.
+
+**Achtung, Verbinden kann Erfahrung auch senken.** Hat der Reisende einen Skill verlernt, gilt das Verlernen danach auch für den niedergelassenen Blob (Abschnitt 6.5). Der Dialog zeigt deshalb vorher an, welche Skills sich wie ändern.
+
+**Einziehen** (Vorschlag Claude, offen): Statt zu verteilen kann der Reisende einen niedergelassenen Blob ganz in sich aufnehmen, wie einen vertrockneten. Das geht nicht beim Nest und nicht beim letzten niedergelassenen Blob (Regel 1). Begründung (Vorschlag Claude, offen): Ohne Einziehen gäbe es nur immer mehr niedergelassene Blobs, und die Karte würde voll.
+
+### 4.5 Verbinden mit einem vertrockneten Blob
+1. Das Wissen wird zusammengeführt (Abschnitt 6).
+2. Der vertrocknete Blob geht ganz im Reisenden auf und verschwindet.
+3. Seine Ressourcen gehen vollständig an den Reisenden, ohne Dialog. Ebenso seine zurückgehaltene Erfahrung (Übertraining, Abschnitt 5).
+
+Begründung (Vorschlag Claude, offen): Ein vertrockneter Blob kann allein nichts mehr anfangen. Bliebe er stehen, füllte er nur die Karte mit leeren Hüllen.
+
+### 4.6 Reihenfolge bei jedem Formwechsel
+
+Bei Verbinden, Abspalten, Bewusstsein wechseln, Niederlassen, Vertrocknen und Speichern gilt immer diese Reihenfolge. Schritte, die nicht passen, entfallen (beim Speichern z. B. 2–4).
+1. Arbeitskopie zurückschreiben (Abschnitt 13.2)
+2. Den anderen Blob nachrechnen (Abschnitt 8)
+3. Wissen zusammenführen (Abschnitt 6)
+4. Kapazität einmal prüfen (Abschnitt 6.5)
+5. Arbeitskopie neu anlegen
+
+Verlässt das Bewusstsein einen niedergelassenen Blob, wird bei ihm „berechnet bis“ auf jetzt gesetzt. Sonst würde die Zeit, in der man selbst dort war, später noch einmal nachgerechnet.
+
+---
+
+## 5. Was jeder Blob für sich hat und was geteilt wird
+
+**Vorgabe (Entwickler):** Ressourcen und Erfahrung sind grundsätzlich lokal für jeden Blob. Skills werden genauso behandelt wie Erfahrung.
+
+**Wird beim Verbinden geteilt (beide danach gleich), beim Abspalten kopiert:**
+- Erfahrung je Skill und der Kern-Fähigkeiten (Abschnitt 6)
+- entdeckte Skills: Was einer kennt, kennen danach beide
+- Höchststand je Skill (für das Wiedererlernen)
+
+**Wird verteilt (Summe bleibt gleich, außer den Kosten fürs Abspalten, 7.1):**
+- Materialien
+- Körpermasse
+
+**Bleibt beim jeweiligen Körper:**
+- HP, MP, Gift, Status-Effekte, Cooldowns
+- zurückgehaltene Erfahrung (Übertraining, GDD-02 Abschnitt 8.7)
+- Skill-Leiste, ein- und ausgeschaltete Passive
+
+**Gehört zum Bewusstsein (eine für alle Blobs):**
+- Ermüdung (Übertraining, GDD-02 Abschnitt 8.7)
+
+**Begründungen (Vorschlag Claude, offen):**
+- **Körpermasse wie Ressourcen:** Masse ist echte Substanz. Teilt sich ein Körper, teilt sich seine Masse. Würde sie kopiert, könnte man sie durch Abspalten und Verbinden vermehren. Weil das Wachstum logarithmisch steigt (`log2(1 + Masse/20)`, GDD-02 Abschnitt 8.10), kostet die halbe Masse höchstens 1 Wachstum, bei wenig Masse weniger. Weniger Masse heißt aber weniger maxHP und weniger Stärke (Größenbonus, GDD-09 Abschnitt 3). Der Dialog zeigt das an.
+- **Ermüdung gehört zum Bewusstsein, nicht zum Körper:** Es ist immer nur ein Körper aktiv. Hätte jeder Körper seine eigene Ermüdung, könnte man sie umgehen: müde niederlassen, zu einem ausgeruhten Blob springen, frisch weitertrainieren. Die Vorgabe in GDD-02 Abschnitt 8.7 (Spieler sollen vom zu vielen Spielen gehemmt werden) zielt auf den Spieler, also auf das Bewusstsein. Ermüdung erzeugt keine Erfahrung, daher kann eine gemeinsame Ermüdung nichts verdoppeln.
+- **Zurückgehaltene Erfahrung wird nicht kopiert:** Sie wird dem Körper gutgeschrieben, der sie verdient hat, sobald sie nachkommt, und erreicht andere Blobs mit der nächsten Verbindung. So zählt sie genau einmal. Geht ein vertrockneter Blob im Reisenden auf, wandert sie mit (Abschnitt 4.5), damit nichts verloren geht.
+- **Skill-Leiste lokal:** Ein niedergelassener Blob braucht andere Knöpfe als ein Reisender.
+
+---
+
+## 6. Wissen verrechnen
+
+### 6.1 Das Problem
+
+**Vorgabe (Entwickler):** Bei einer Wiedervereinigung darf Erfahrung nicht einfach addiert werden. Sonst könnte man sie verdoppeln, indem man sich abspaltet und wieder verbindet. Erfahrung, die beide Blobs unabhängig voneinander gesammelt haben, soll aber zählen.
+
+**Vorgabe (Entwickler) — Idee zur Umsetzung:** Beim Abspalten wird ein Schnappschuss gemacht. Beim Verbinden weiß man dann, was die gemeinsame Basis war, und zählt nur, was beide Seiten seither dazugewonnen haben.
+
+### 6.2 Vorschlag: Herkunftszähler (wer hat was beigetragen)
+
+Jeder Blob merkt sich je Skill nicht nur eine Zahl, sondern eine kleine Tabelle, die **Herkunftszähler**:
+
+- **Verdient:** wie viel Erfahrung jeder einzelne Blob beigetragen hat, eine Spalte je Blob.
+- **Verlernt:** eine einzige Zahl, wie viel insgesamt verlernt wurde.
+
+```
+Erfahrung =
+  Summe „verdient“
+  − „verlernt“
+```
+
+Regeln:
+- Gewinnt Blob X Erfahrung, erhöht er **nur seine eigene Spalte**.
+- Alle Zahlen wachsen nur, keine wird je kleiner.
+- **Verbinden:** In jeder Spalte gilt der größere der beiden Werte, ebenso bei „verlernt“. Danach haben beide Blobs dieselbe Tabelle.
+- **Abspalten:** Der neue Blob bekommt eine Kopie der Tabelle und eine neue, leere eigene Spalte.
+
+Jede Spalte schreibt nur ein einziger Blob, und ihre Werte wachsen nur. Darum ist der größere Wert immer der neuere. Dieselbe Erfahrung kann nie doppelt zählen, egal über wie viele Umwege sie kommt und wie oft man sich verbindet.
+
+Das ist die Idee des Entwicklers, nur genauer gefasst: Die Tabelle wirkt wie ein Schnappschuss, der für **jeden** möglichen Partner zugleich gilt, auch für Blobs, die sich nie direkt getrennt haben.
+
+*Für Programmierer:* „Verdient“ ist ein G-Counter, „verlernt“ ein Max-Register (beides CRDTs, Datenstrukturen für Kopien, die getrennt weiterarbeiten und sich später abgleichen).
+
+### 6.3 Das Beispiel des Entwicklers
+
+Der niedergelassene Blob N hat 100 XP Photosynthese und spaltet R ab. N analysiert weiter Gras und gewinnt +30. R gewinnt unterwegs +50.
+
+- N: N 130 = **130**
+- R: N 100 · R 50 = **150**
+- Verbinden, je Spalte der größere Wert: N 130 · R 50 = **180** (= 100 + 30 + 50)
+
+Beide haben danach 180 XP. Verbinden sie sich gleich noch einmal, ändert sich nichts. Abspalten und Wiederverbinden bringt also keine Erfahrung.
+
+### 6.4 Warum ein Schnappschuss je Paar nicht reicht
+
+Für **zwei** Blobs ist der Schnappschuss genau richtig. Bei **drei oder mehr** kann Wissen über Umwege wandern. Für das Beispiel spielt es keine Rolle, wer zu wem läuft, nur wer sich mit wem verbindet.
+
+**Mit Schnappschüssen je Paar:**
+1. A hat 100 XP und spaltet B ab → A 100, B 100
+2. A spaltet C ab, C gewinnt +30 → C 130
+3. C verbindet sich mit B (Basis 100) → B 130, C 130
+4. B gewinnt +20 und spaltet D ab → B 150, D 150
+5. D verbindet sich mit A (Basis von B geerbt: 100) → A 150, D 150
+6. C verbindet sich mit A (Schnappschuss A–C: 100) → 100 + 50 + 30 = **180** ✗, A und C haben dann 180
+
+Richtig wären 150, denn verdient wurden nur 100 + 30 + 20. Die 30 XP von C sind auf zwei Wegen zu A gelangt, über B und D und direkt, und zählen doppelt. Schon in Schritt 3 und 5 ist außerdem unklar, welche Basis gilt, weil sich diese Blobs nie direkt getrennt haben.
+
+**Mit der Tabelle** (Spalten A, B, C):
+1. A: A 100. B: A 100
+2. C: A 100 · C 30 = 130
+3. B und C: A 100 · C 30 = 130
+4. B: A 100 · B 20 · C 30 = 150. D erhält dieselbe Tabelle: 150
+5. A und D: A 100 · B 20 · C 30 = **150**
+6. C ↔ A: C 30 steht schon bei A. A bleibt bei 150, C bekommt B 20 dazu → beide **150** ✓
+
+### 6.5 Verlernen und Kapazität
+
+Verlernen entsteht durch die Kapazität und die Überdehnung (GDD-02 Abschnitt 8). Es trifft zuerst die am längsten nicht geübten Skills.
+
+**Warum „verlernt“ nur eine Zahl ist und nicht eine Spalte je Blob:** Nach einer Verbindung haben beide Blobs dasselbe alte Wissen. Verlernen beide danach getrennt, trifft es meist **dasselbe** alte Wissen. Würde man das wie Verdientes je Blob aufaddieren, zählte es doppelt.
+
+Beispiel: Skill X hat 80 XP, beide Blobs verlernen davon je 80.
+- Je Blob addiert: 80 − 80 − 80 = **−80** ✗
+- Als eine Zahl, der größere Wert gilt: 80 − 80 = **0** ✓
+
+Eine Erfahrung unter 0 ist so unmöglich. Jeder Blob hat höchstens so viel verlernt, wie in seiner Tabelle als verdient steht, und nach dem Verbinden ist das Verdiente mindestens so groß wie bei jedem einzelnen Blob.
+
+Verlernen beide Blobs verschiedenes Wissen desselben Skills, zählt nur das größere Verlernen. Dann kann die Summe über der Kapazität liegen. Deshalb wird nach jedem Zusammenführen **einmal** die Kapazität geprüft und notfalls verlernt, nach den bestehenden Regeln (GDD-02 Abschnitt 8.4), ohne einen Skill zu schonen. Das Verlernte kommt zu „verlernt“, und beide Blobs übernehmen dieses Ergebnis. Zu viel Erfahrung kann so nie entstehen.
+
+**Grenze nach dem Verbinden:** Die Summe wird auf das Größere aus Kapazität, Summe von A vorher und Summe von B vorher gekappt, nicht auf die Obergrenze der Überdehnung (Kapazität × 1,2). Begründung (Vorschlag Claude, offen): Sonst säßen nach jedem Verbinden beide Blobs in der Überdehnung (GDD-02 Abschnitt 8.5), obwohl keiner von beiden dort war. Überdehnung soll man sich durch Training verdienen.
+
+**Verbinden kann Erfahrung senken.** Beispiel: Das Nest hat Photosynthese 100 und gewinnt +30. Der Reisende hat die alten 100 inzwischen verlernt. Nach dem Verbinden: 100 + 30 − 100 = **30**. Das ist folgerichtig, denn das Verlernen des Reisenden gilt für das gemeinsame Wissen. Das Nest ist also keine Sicherung gegen Verlernen. Der Dialog zeigt vor dem Verbinden an, welche Skills sich wie ändern (Abschnitt 4.4). Ob das so bleiben soll, ist offen (Abschnitt 15).
+
+### 6.6 Übrige Werte je Skill
+
+- **Entdeckt:** Was einer kennt, kennen beide. Kein Skill wird je „unentdeckt“.
+- **Entdeckt am:** der frühere Zeitpunkt.
+- **Höchststand** (bis dahin doppelt schnell wiedererlernen): der größte Wert aus Höchststand A, Höchststand B und der neuen Erfahrung. Begründung: Die neue Erfahrung kann über beiden alten Höchstständen liegen (180 im Beispiel 6.3).
+- **Zuletzt geübt** (wer am längsten ungeübt ist, verlernt zuerst): der spätere Zeitpunkt. Begründung (Vorschlag Claude, offen): Geübt wurde der Skill, egal von wem.
+- **Zurückgehaltene Erfahrung:** bleibt beim Körper; Ermüdung gehört zum Bewusstsein (Abschnitt 5).
+- **Ein/aus bei Passiven:** bleibt beim Blob. Neu dazugekommene Skills sind eingeschaltet.
+
+**Bekannte Eigenheit:** Liegt ein Skill unter seinem Höchststand, lernen beide Zweige getrennt doppelt schnell nach. Eine Lücke von 200 XP kann so in zwei Zweigen zusammen 400 statt 300 XP Gewinn bringen. Das wird hingenommen: Die Kapazität begrenzt die Summe, und Verbinden kostet einen Weg.
+
+### 6.7 Speicherbedarf
+
+Jeder Blob hat seine eigene Tabelle, und jedes Abspalten bringt eine neue Spalte. Bei 20 Blobs, 40 Skills und 50 beitragenden Blobs wären das bis zu 40 000 Zahlen. Das passt noch in den Browser-Speicher (etwa 5 MB), ist aber unnötig viel.
+
+**Sparen:**
+- Gespeichert werden nur Einträge, die nicht 0 sind. Die meisten Blobs tragen nur zu wenigen Skills bei.
+- **Basis abziehen:** Je Spalte wird der kleinste Wert über alle Blobs in eine gemeinsame Basis verschoben, bei allen Blobs zugleich. Das ändert kein Ergebnis, denn der größere von (Basis + a) und (Basis + b) ist Basis + der größere von a und b. Es geht auch für Spalten noch lebender Blobs und wird nicht von einem vergessenen vertrockneten Blob blockiert.
+- In Schritt 1 der Umsetzung wird gemessen, wie groß die Tabellen im Spiel wirklich werden.
+
+---
+
+## 7. Ressourcen verteilen
+
+### 7.1 Kosten des Abspaltens
+
+**Vorgabe (Entwickler):** Abspalten kostet Ressourcen.
+
+Vorschlag:
+1. 10 Pflanzenfasern. Sie sind verbraucht und landen bei keinem Blob.
+2. Was an Fasern fehlt, wird mit Körpermasse bezahlt (1 Faser = 1 Masse).
+3. Reicht beides nicht, kann man dort nicht abspalten. **Ausnahme: das Nest.** Es kann immer abspalten und zahlt, was es hat, notfalls nichts.
+4. Grow verdaut die letzten 10 Fasern im Lager nicht (Reserve fürs Abspalten).
+
+**Begründung (Vorschlag Claude, offen):**
+- Pflanzenfasern sind die erste Ressource, die der Blob sammelt (Gras im Nest). So lernt man den Kreislauf gleich zu Beginn: Gras sammeln, abspalten, reisen.
+- Ohne Kosten gäbe es nach dem Vertrocknen keinen Grund, vorsichtig zu sein.
+- Punkt 2 und 3: Niemand darf festsitzen. Das Nest kann immer abspalten, und zum Nest kann man immer springen. Wäre jedes leere Lager kostenlos, könnte man nach einmal „Alles mitnehmen“ für immer umsonst abspalten, und das Vertrocknen kostete nur noch den Weg.
+- Punkt 4: Grow verdaut 2–30 Fasern pro Minute. Ohne Reserve wäre das Lager fast immer leer, und Abspalten würde praktisch immer mit Körpermasse bezahlt.
+- Das Nest kann deshalb nicht eingezogen werden (Abschnitt 4.4).
+
+### 7.2 Verteilen (Dialog)
+
+Der Dialog erscheint beim Abspalten und beim Verbinden mit einem niedergelassenen Blob.
+
+```
+Verteilen        bleibt · nimmt mit
+Pflanzenfaser    12 ─●─ 12
+Chitin            3 ─●─  3
+Körpermasse      40 ─●─ 40
+  (Reisender: 95 HP, Stärke 4,1)
+[Nichts] [Hälfte] [Alles]
+         [Fertig]
+```
+
+- Je Ressource ein Schieberegler. Voreingestellt ist halbe-halbe (Vorgabe Entwickler). Bei ungerader Menge bleibt das übrige Stück beim niedergelassenen Blob.
+- Die Knöpfe stellen alle Regler auf einmal: nichts, Hälfte oder alles mitnehmen.
+- Die Summe bleibt immer gleich. Nichts wird dupliziert, nichts geht verloren.
+- Unter der Körpermasse steht, wie viel maxHP und Stärke der Reisende damit hat.
+- Das Spiel pausiert, solange der Dialog offen ist, wie bei den anderen Menüs.
+
+---
+
+## 8. Tätigkeit niedergelassener Blobs
+
+**Vorgabe (Entwickler):** Niedergelassene Blobs können aktiv sein: analysieren, absorbieren, sammeln. Dieser Fortschritt soll nicht in jedem Frame berechnet werden. Er ergibt sich aus der Zeit seit dem letzten Moment, in dem man dort war bzw. sich mit ihm verbunden hat.
+
+### 8.1 Grundidee: nachrechnen bei Bedarf
+
+Jeder niedergelassene Blob merkt sich, bis zu welcher Spielzeit sein Stand berechnet ist. Nachgerechnet wird nur bei einem Anlass:
+- Das Bewusstsein springt zu ihm.
+- Ein Reisender verbindet sich mit ihm.
+- Die Karte zeigt seine Werte (nur zur Anzeige, ohne zu speichern).
+
+**Solange das Bewusstsein bei ihm ist, ruht die selbsttätige Arbeit.** Man absorbiert und analysiert dann von Hand, mit der **Arbeitsreichweite** als Reichweite und nur an friedlichen Wesen (8.3). Begründung (Vorschlag Claude, offen): Sonst würden dieselben Wesen doppelt geerntet, einmal gerechnet und einmal echt. Mit der normalen Reichweite eines kleinen Blobs erreichte man das Gras im Nest nicht. Und von Hand Wölfe zu absorbieren, ohne angreifbar zu sein, wäre derselbe Freifahrtschein wie in 8.3.
+
+### 8.2 Uhr
+
+Es zählt die **Spielzeit**, also nur die Zeit, in der das Spiel läuft, nicht die echte Uhrzeit.
+
+Begründung (Vorschlag Claude, offen): Wie bei der Überdehnung (GDD-02 Abschnitt 8.5) bringt eine verstellte Geräte-Uhr nichts, und das Spiel bleibt gerecht für Leute, die wenig spielen. Fortschritt, während das Spiel geschlossen ist (wie in Idle-Spielen), wäre eine eigene Entscheidung.
+
+Hinweis für die Umsetzung: Das Nachwachsen der Wesen in der echten Welt läuft heute über die echte Uhrzeit (`Date.now()`), das Nachrechnen über die Spielzeit. Beides misst Sekunden, die Werte passen also zusammen.
+
+### 8.3 Was er erreicht
+
+**Arbeitsreichweite** = das Größere aus Reichweite × 2 und 48 px. Das Adernetz breitet sich weiter aus als ein runder Körper.
+
+**Mindestabstand:** Niedergelassene Blobs müssen mindestens 2 × Arbeitsreichweite voneinander entfernt sein. Begründung (Vorschlag Claude, offen): Sonst ernten zwei Blobs denselben Grasfleck doppelt. Erntet ein Reisender von Hand neben einem fremden niedergelassenen Blob, zählt das doppelt; das wird hingenommen, weil Ernte von Hand langsam ist.
+
+Welche Wesen in dieser Reichweite vorkommen, lässt sich ohne geladene Welt bestimmen. Die Welt entsteht immer gleich aus ihrem Startwert (`generateChunk`, Seed). Gespeichert wird eine kleine Liste: Wesen-Art, Anzahl, Respawn-Zeit. Wächst die Reichweite (mehr Körpermasse), wird die Liste beim nächsten Nachrechnen neu bestimmt.
+
+Erreichbar sind nur Wesen, die sich nicht wehren (`behavior: passive`): Gras, Würmer, Schnecken …
+
+Begründung (Vorschlag Claude, offen): Ein unverwundbarer Blob, der Wölfe absorbiert, wäre ein Freifahrtschein. Pflanzen und Kleintiere passen zum Bild der Fabrik.
+
+### 8.4 Tätigkeit
+
+Am niedergelassenen Blob stellt man eine Tätigkeit ein:
+- **Ruhen:** nichts.
+- **Analysieren:** Erfahrung, keine Materialien.
+- **Absorbieren:** Erfahrung und Materialien.
+
+Passive Skills laufen mit: Grow verdaut Fasern aus seinem Lager, Sehen sammelt Erfahrung.
+
+Begründung (Vorschlag Claude, offen): Das sind dieselben Möglichkeiten wie beim Reisenden, nur ohne Kampf. Herstellen kommt später dazu (Abschnitt 15).
+
+### 8.5 Rechnung
+
+Die Zeit seit dem letzten Nachrechnen wird in Stücken zu 60 s gerechnet, bei sehr langer Zeit in größeren Stücken, sodass es höchstens 500 werden. Je Stück und Wesen-Art:
+
+```
+Versuche =
+  Zeit / 6 s × Anteil
+Absorbieren höchstens:
+  Anzahl × Zeit / Respawn
+Erfolge =
+  Versuche × Erfolgschance
+Erfahrung =
+  Erfolge × XP je Erfolg
+Materialien =
+  Erfolge × Fundchance
+  × Menge
+Skill-Fund =
+  Erfolge × Skill-Chance
+  (Analysieren × 0,7)
+```
+
+- **6 s** = Dauer einer Aktion (VORLÄUFIG).
+- **Anteil** = Anteil dieser Art an allen erreichbaren Wesen.
+- **Skill-Chance** = Chance, mit der diese Art einen Skill lehrt (wie beim Absorbieren und Analysieren von Hand).
+
+- **Mittelwerte statt Würfel:** Das Nachrechnen ergibt immer dasselbe, egal wie oft und in welchen Stücken. Bruchteile (0,4 Faser) werden aufgehoben und beim nächsten Mal weitergezählt.
+- **Stücke statt eines Schritts:** Die Erfahrung je Erfolg sinkt, je weiter ein Skill schon ist. In Stücken gerechnet, wird das unterwegs berücksichtigt.
+- **Nur Absorbieren hängt an der Respawn-Zeit.** Analysieren entfernt keine Wesen (wie bisher, `EntitySystem`). Begründung (Vorschlag Claude, offen): Absorbieren verbraucht, was da ist; Analysieren schaut nur hin.
+- **Neue Skills:** Ergeben die aufsummierten Skill-Funde einer Art zusammen 1, wird ihr Skill entdeckt. Die Entdeckung selbst bringt noch keine Erfahrung, wie von Hand.
+- **Verlernen gilt** wie sonst (Kapazität, Überdehnung). Die Überdehnung schmilzt je Stück ab, wie im Spiel.
+- **Kein Übertraining beim Nachrechnen,** auch keine Ermüdung. Begründung (Vorschlag Claude, offen): Die Arbeit verteilt sich gleichmäßig über lange Zeit; das ist keine Überanstrengung. Die Ermüdung gehört außerdem zum Bewusstsein (Abschnitt 5), und das war nicht dort.
+- **„Zuletzt geübt“** wird auf die Zeit des jeweiligen Stücks gesetzt, nicht auf jetzt. Sonst gälten alle nachgerechneten Skills als gerade geübt, und das Verlernen träfe die falschen.
+- **Kern-Fähigkeiten (Analyze, Absorb) lernen beim Nachrechnen nicht.** Sie lernen nur durch eigenes Handeln. Begründung (Vorschlag Claude, offen): Sie haben keine Kapazitätsgrenze. Mehrere niedergelassene Blobs könnten sie sonst ohne Grenze hochtreiben.
+
+**Grenzen:** Die Respawn-Zeit begrenzt die Materialien, die Kapazität begrenzt die Erfahrung. Viele niedergelassene Blobs bringen trotzdem mehr Materialien. Dafür gibt es eine Höchstzahl (Abschnitt 15).
+
+**Wenig Quellen:** Heute gibt nur Gras Material, und Regenwurm und Schnecke leben nur in Wald und Sumpf. Außerhalb davon bringt ein niedergelassener Blob kaum etwas. Mehr friedliche Wesen und Materialien je Biom sind eine eigene Aufgabe (Abschnitt 15).
+
+---
+
+## 9. Vertrocknen (Tod)
+
+**Vorgabe (Entwickler):** Der Blob stirbt nicht. Wird er besiegt, vertrocknet er an Ort und Stelle. Ressourcen und Erfahrung bleiben erhalten. Das Bewusstsein springt zum nächstgelegenen niedergelassenen Blob. Von dort kann man sich erneut abspalten, den vertrockneten Blob aufsuchen und sich mit ihm verbinden, um seine Erfahrung und Skills einzusammeln.
+
+Ablauf:
+1. HP ≤ 0: Ein offener Dialog wird geschlossen. Der Reisende wird zum vertrockneten Blob. Sein Stand wird eingefroren: Wissen, Ressourcen, zurückgehaltene Erfahrung. Gift und Status-Effekte verfallen.
+2. Gegner verlieren ihre Aggro (wie bisher `resetAi`).
+3. Das Bewusstsein springt zum niedergelassenen Blob, der dem Ort am nächsten liegt. Er wird nachgerechnet.
+4. Eine kurze Übersicht zeigt, was im vertrockneten Blob liegt: neue Skills, Erfahrung, Ressourcen.
+5. Der vertrocknete Blob wird automatisch markiert; ein Richtungspfeil zeigt zu ihm (Abschnitt 11). Eine schon bestehende Markierung bleibt erhalten, dann zeigen zwei Pfeile. **Vorgabe (Entwickler, 14. November 2026).**
+
+Weitere Regeln:
+- Ein vertrockneter Blob bleibt dauerhaft liegen und kann vorerst nicht zerstört werden.
+- Stirbt der nächste Reisende, bevor er den ersten vertrockneten Blob erreicht, liegen zwei in der Welt. Beide behalten ihren Stand. Wer beide einsammelt, bekommt alles, und nichts zählt doppelt (Abschnitt 6).
+- Hinweis an den Spieler, einmal nach dem ersten Abspalten: „Lässt du dich nieder, ist dein Fortschritt gesichert.“
+
+**Preis fürs Vertrocknen:** Den Weg zurück, die Kosten fürs Abspalten und, bis zum Einsammeln, den Fortschritt seit dem letzten Verbinden. Ob das reicht, zeigt erst das Spielen (Abschnitt 15).
+
+**[VERWORFEN, vorläufig — bitte bestätigen, 14. November 2026]** Den vertrockneten Blob vor dem Verbinden mit Wasser wiederbeleben (GDD-01 Abschnitt 10, GDD-03 Abschnitt 7). Grund: Der neue Ablauf des Entwicklers nennt nur das Aufsuchen und Verbinden.
+
+---
+
+## 10. Darstellung
+
+**Vorgabe (Entwickler):** Ein niedergelassener Blob hat nicht mehr die runde Form, sondern sieht eher aus wie ein echter Schleimpilz: zerflossener und mit Adern. Vielleicht pulsiert er, um ihn vom vertrockneten Blob zu unterscheiden.
+
+Alle Einzelheiten unten sind Vorschlag Claude (offen). Alle drei Formen werden aus einfachen Formen gezeichnet, ohne Bilddateien, wie der Blob jetzt. Die Grundfarben bleiben die Grüntöne des Blobs (`#20a860`, `#40e890`, `#90ffcc`).
+
+### 10.1 Niedergelassen: Adernetz
+
+Vorbild ist das Plasmodium von *Physarum*: ein flacher Kern, aus dem verzweigte Adern laufen, an den Enden fächerförmige Wachstumsfronten.
+
+- **Kern:** flache, unregelmäßige Form statt Kreis.
+- **Adern:** 5–8 Hauptadern, jede verzweigt sich 1–2 Mal. Nach außen werden sie dünner und reichen bis zur Arbeitsreichweite (Abschnitt 8.3). Man sieht also, wie weit der Blob arbeitet.
+- **Wachstumsfronten:** halb durchsichtige Fächer an den Aderenden.
+- **Jeder sieht anders aus, aber immer gleich:** Die Form folgt aus der Nummer des Blobs.
+- **Pulsieren:** Echte Schleimpilze pumpen ihr Plasma rhythmisch hin und her. Im Spiel läuft alle 2,4 s eine helle Welle vom Kern nach außen.
+- **Bewusstsein hier:** Die Welle ist kräftiger, und der Kern leuchtet leicht.
+
+Technik: Das Netz wird **einmal** als Bild gezeichnet. Das Pulsieren ist eine kleine Animation, die Helligkeit und Größe einer hellen Kopie verändert (Phaser-Tween). Es wird nicht in jedem Frame neu gezeichnet.
+
+### 10.2 Reisend
+Wie bisher: runder Blob.
+
+### 10.3 Vertrocknet
+
+Vorbild ist das Sklerotium, die Dauerform von *Physarum*: eine harte, krustige, verschrumpelte Masse.
+
+- Kleiner als der Reisende war (etwa 70 % Radius), unregelmäßiger Umriss.
+- Farbe stumpfes Ocker bis Braun (`#8a6a2a`, Schatten `#5a4418`), dunkle Risse.
+- **Keine Bewegung, kein Leuchten, kein Pulsieren.**
+
+Der Gegensatz: Lebend heißt grün und pulsierend, vertrocknet heißt braun und still.
+
+**Offen:** Reicht das Pulsieren zur Unterscheidung, oder kommt zusätzlich ein Symbol über die Blobs? Und soll man sehen, wie ein niedergelassener Blob Gras „abweidet“, z. B. kleine Partikel, die zum Netz wandern? (Abschnitt 15)
+
+---
+
+## 11. Karte und Richtungspfeile
+
+**Vorgabe (Entwickler):** Vertrocknete Blobs werden auf einer Karte angezeigt; dafür braucht das Spiel eine Karte. Jeder Blob-Standort steht auf der Karte, niedergelassene wie vertrocknete. Man kann Standorte markieren. Nach dem Schließen der Karte zeigt am Bildschirmrand ein Pfeil in Richtung des markierten Blobs, damit man sich immer orientieren kann. Beim Vertrocknen wird automatisch markiert; eine vorher gesetzte Markierung bleibt, dann gibt es zwei Pfeile.
+
+Alle Einzelheiten unten sind Vorschlag Claude (offen).
+
+### 11.1 Karte
+- Neuer Reiter **„Karte“** im Spielmenü, gebaut wie die anderen Reiter (ohne Phaser).
+- Hintergrund: die Biome der 20 × 20 Chunks in ihren Grundfarben (GDD-04).
+- **Nebel:** Nur besuchte Chunks sind aufgedeckt. Begründung (Vorschlag Claude, offen): Erkunden bleibt Entdecken.
+- **Marker:** niedergelassen (grünes Netz), vertrocknet (braun), Reisender (Punkt mit Blickrichtung). Der Blob mit dem Bewusstsein ist hervorgehoben.
+- **Tipp auf einen Marker** zeigt: Name, Form, Entfernung, bei niedergelassenen die Tätigkeit und den Ertrag pro Stunde. Knöpfe: **Markieren / Markierung entfernen**, wenn erlaubt **Bewusstsein wechseln**.
+- **Liste** unter der Karte: alle Blobs. Das ist die Liste aus der Vorgabe zum Springen.
+- **Namen:** automatisch „Nest“, dann Biom und Nummer („Wald 2“). Umbenennen später.
+
+### 11.2 Richtungspfeile
+- Mehrere Blobs können zugleich markiert sein.
+- Für jeden markierten Blob außerhalb des Bildschirms zeigt am Rand ein Pfeil zu ihm, mit Name und Entfernung.
+- Pfeile zu vertrockneten Blobs sind braun, zu niedergelassenen grün. So hält man zwei Pfeile auseinander.
+- Ist der Blob auf dem Bildschirm, verschwindet sein Pfeil, und über ihm erscheint eine kleine Markierung.
+- Verbindet man sich mit einem markierten vertrockneten Blob, verschwindet er und mit ihm die Markierung.
+- Die Pfeile liegen als HTML über dem Spielfeld. Ihre Lage wird in jedem Frame aus zwei Positionen berechnet; das kostet fast nichts.
+
+---
+
+## 12. Spielstart im Nest
+
+**Vorgabe (Entwickler):** Das Spiel beginnt mit einem niedergelassenen Blob. Er erwacht, analysiert und bekommt mit der Fähigkeit Bewegen die Möglichkeit zu reisen, also die Form reisender Blob.
+
+Änderungen am Erwachen (GDD-09 Abschnitt 5):
+- **Start:** Der Nest-Blob ist niedergelassen und blind. Regenwurm, Schnecke und die drei Grashalme liegen in seiner Arbeitsreichweite. Die Grashalme liegen heute 25–37 px vom Startpunkt entfernt. Die normale Reichweite eines frischen Blobs ist nur etwa 10 px, die Mindest-Arbeitsreichweite von 48 px (8.3) reicht aber. Das Nest muss also nicht umgebaut werden.
+- **Lichtsinn und Kriechen in beliebiger Reihenfolge,** wie bisher.
+- **Lichtsinn gelernt:** Man sieht jetzt das eigene Adernetz und das Gras.
+- **Kriechen gelernt:** Text: „Du könntest einen Teil von dir losschicken.“ Der Knopf **Abspalten** erscheint.
+- **Nach dem Abspalten:** Hinweis: „Wirst du besiegt, kehrt dein Bewusstsein ins Nest zurück. Lässt du dich nieder, ist dein Fortschritt gesichert.“
+- Die Texte zur Trockenstarre beim Erwachen bleiben; sie sprechen nicht von Wasser.
+
+**Erstes Abspalten kostenlos** (folgt aus 7.1, das Nest zahlt, was es hat). Begründung (Vorschlag Claude, offen): Sonst muss man im Nest warten, bis genug Gras nachwächst. Drei Grashalme geben zusammen nur 3–9 Fasern, und Grow (von Gras gelernt) verdaut Fasern selbst weg. Bis 10 Fasern dauerte es oft 1–2 Minuten.
+
+---
+
+## 13. Datenmodell und Speichern
+
+### 13.1 Neue Typen (`src/types/Blob.ts`)
+
+```ts
+type BlobForm =
+  "settled" | "traveling" | "dried";
+
+interface KnowledgeEntry {
+  earned: Record<string, number>;
+  // Blob-ID → verdient, wächst nur
+  forgotten: number;
+  // verlernt, wächst nur
+  peakXp: number;
+  discoveredAt: number;
+  lastPracticedAt: number;
+}
+
+interface BlobState {
+  id: string;   // "b1", "b2" …
+  name: string;
+  form: BlobForm;
+  x: number; y: number;
+  knowledge:
+    Record<string, KnowledgeEntry>;
+  materials: Record<string, number>;
+  bodyMass: number;
+  pending: Record<string, {
+    pendingXp: number;
+    updatedAtMs: number; }>;
+  // zurückgehaltene Erfahrung
+  // (Ermüdung: im GameState)
+  enabledSkills:
+    Record<string, boolean>;
+  activeSkillSlots: (string|null)[];
+  // nur niedergelassen:
+  simulatedUntil?: number;
+  activity?:
+    "rest" | "analyze" | "absorb";
+  sources?: { entityId: string;
+    count: number;
+    respawnSeconds: number }[];
+  carry?: Record<string, number>;
+  // nur vertrocknet:
+  driedAt?: number;
+}
+```
+
+Im `GameState` kommen dazu:
+- `blobs`: alle Blobs außer dem Reisenden, der als Arbeitskopie im `PlayerState` lebt (13.2)
+- `consciousBlobId`
+- `markedBlobIds`: Liste, mehrere Markierungen möglich (Abschnitt 11)
+- `nextBlobNumber`: IDs werden nie wiederverwendet
+- `visitedChunks`: besuchte Chunks für den Nebel
+- `fatigue`: Ermüdung je Skill, gehört zum Bewusstsein (Abschnitt 5), mit ihren Zeitstempeln
+- `world.playtimeSeconds` (13.3) und die Gesamt-Statistiken (Absorbs, Lebenserfahrung)
+
+### 13.2 Arbeitskopie: Die bestehenden Systeme bleiben
+
+Gespielt wird immer mit einer **Arbeitskopie** des Blobs, bei dem das Bewusstsein ist. Bei Verbinden, Abspalten, Niederlassen, Vertrocknen, Wechseln und Speichern wird sie zurückgeschrieben.
+
+Die Arbeitskopie ist der bisherige `PlayerState`. Kampf, Skills und Fortschritt arbeiten weiter darauf, unverändert.
+- **Anlegen:** Erfahrung je Skill = Summe „verdient“ − „verlernt“. Dazu Ressourcen, zurückgehaltene Erfahrung, Skill-Leiste. Der Stand beim Anlegen wird als Ausgangswert gemerkt.
+- **Zurückschreiben:** Je Skill wird verglichen, was sich seit dem Anlegen geändert hat. Der Zuwachs von `totalXpEarned` (je gutgeschriebene Erfahrung, sinkt nie) kommt in die eigene Spalte „verdient“. Die Differenz zwischen diesem Zuwachs und dem Zuwachs der Erfahrung ist verlernt worden und kommt zu „verlernt“. Neu entdeckte Skills und die Kern-Fähigkeiten werden genauso erfasst. **Danach wird der Ausgangswert neu gesetzt**, sonst zählte das nächste Zurückschreiben (z. B. beim nächsten Speichern) dieselbe Änderung noch einmal.
+- Für das Nachrechnen eines niedergelassenen Blobs (Abschnitt 8) wird kurz eine eigene Arbeitskopie angelegt und danach zurückgeschrieben. Statt `gainExperience` schreibt eine eigene Funktion die Erfahrung gut: ohne Ermüdung und ohne echte Uhrzeit, mit der Spielzeit des Rechenstücks als „zuletzt geübt“. Kapazität und Überdehnung (`tickProgression`) laufen je Stück wie im Spiel. Begründung (Vorschlag Claude, offen): `gainExperience` rechnet immer Übertraining und nimmt die echte Uhrzeit.
+
+**Begründung (Vorschlag Claude, offen):** Der Eingriff bleibt klein. Die neue Verrechnung sitzt an wenigen, klar benannten Stellen. Verdientes und Verlerntes werden getrennt erfasst, nicht nur der Saldo. Das ist nötig, weil „verlernt“ beim Verbinden anders zusammengeführt wird als „verdient“.
+
+### 13.3 Uhr
+
+Eine Spielzeit für alle Blobs: `world.playtimeSeconds`. Sonst ließen sich „zuletzt geübt“ und „berechnet bis“ verschiedener Blobs nicht vergleichen. `player.playtimeSeconds` bleibt als Spiegel dieser Uhr. Es wird 17-mal in 7 Dateien benutzt, die so unverändert bleiben.
+
+### 13.4 Spielstand-Version 6 (alte Spielstände)
+- **Nest** (b1): niedergelassen am Startpunkt (400, 300). Wissen = das bisherige Wissen des Spielers (Spalte b1), keine Materialien, Körpermasse 0, keine zurückgehaltene Erfahrung, Tätigkeit Ruhen.
+- **Reisender** (b2): an der bisherigen Position, dieselbe Tabelle mit neuer leerer Spalte b2, alle Materialien, die ganze Körpermasse, die zurückgehaltene Erfahrung. Das Bewusstsein ist hier; die bisherige Ermüdung wird die des Bewusstseins.
+- Niemand verliert etwas, und der neue Checkpoint ist das Nest. Das Nest kann immer abspalten (7.1).
+
+### 13.5 Was sich in bestehenden Teilen ändert
+- **Gegner (`AiSystem`):** Ist das Bewusstsein bei einem niedergelassenen Blob, gibt es kein Ziel; Gegner greifen nicht an.
+- **Steuerung je Form:** Joystick nur beim Reisenden. Die Skill-Leiste zeigt beim niedergelassenen Blob Absorb, Analyze, Abspalten, Wechseln, Tätigkeit.
+- **WERTE-Reiter:** beim niedergelassenen Blob Tätigkeit, Quellen, Ertrag pro Stunde statt Tempo und Angriffen.
+- **INDEX-Reiter:** neue Regeln und Formeln eintragen (Verrechnung, Kosten, Nachrechnen).
+- **Speichermenü:** zeigt den Namen des Blobs mit Bewusstsein.
+- **Erwachen (`IntroSystem`):** „kann sich bewegen“ heißt beim niedergelassenen Blob „kann abspalten“.
+- **Körpermasse:** „schrumpft nie“ (GDD-02 Abschnitt 8.10, Kommentar in `GameState.ts`) gilt nicht mehr. Sie wird verteilt und kann als Ersatzkosten fürs Abspalten verbraucht werden (7.1).
+- **Grow:** lässt 10 Fasern als Reserve im Lager (7.1).
+
+---
+
+## 14. Umsetzung in Schritten
+
+Jeder Schritt ist für sich spielbar und bekommt eine eigene Version.
+
+1. **Wissen verrechnen:** Tabelle, Anlegen, Zurückschreiben, Zusammenführen, Kapazität.
+   - Prüfen mit Simulationen: Beispiele 6.3 und 6.4, wiederholtes Verbinden, doppeltes Verlernen (6.5), nie unter 0, Grenze nach dem Verbinden, Zurückschreiben zweimal hintereinander, Basis abziehen, Speichergröße.
+   - Dateien: `types/Blob.ts`, `data/blobs.ts` (Stellschrauben mit Begründungen), `systems/KnowledgeSystem.ts`
+2. **Datenmodell ohne neue Spielregeln:** Spielstand v6, Arbeitskopie, Weltuhr. Es gibt nur einen Blob. Das Spiel muss sich genau wie vorher spielen.
+   - Dateien: `GameState.ts`, `SaveSystem.ts`, `GameScene.ts`
+3. **Abläufe:** Niederlassen, Abspalten, Verbinden, Vertrocknen, Wechseln (als Liste), Start im Nest, Gegner ohne Ziel, Steuerung je Form. Verteilen erst fest halbe-halbe. Einfache Platzhalter-Grafik und ein Richtungspfeil zum vertrockneten Blob. `executeCheckpoint` entfällt.
+   - Dateien: `systems/BlobSystem.ts`, `AiSystem.ts`, `IntroSystem.ts`, `BiomeDefinitions.ts`, `GameScene.ts`, `SkillBar.ts`
+4. **Verteilen-Dialog** — `ui/TransferDialog.ts`
+5. **Darstellung:** Adernetz mit Pulsieren, vertrocknete Kruste — `GameScene.ts` oder eigene Datei im Ordner `scenes/`
+6. **Tätigkeit niedergelassener Blobs:** Quellen, Nachrechnen, WERTE-Anzeige — `systems/SettlementSystem.ts`, `StatsView.ts`
+7. **Karte:** Nebel, Markieren, mehrere Richtungspfeile — `ui/MapView.ts`, `GameMenu`, `GameScene.ts`
+
+Zu jedem Schritt werden GDD, INDEX und TODO.md nachgezogen: GDD-01 Abschnitt 10, GDD-02 Abschnitt 8.10, GDD-03 Abschnitt 7, GDD-09 Abschnitt 5 und die Dateitabelle in CLAUDE.md.
+
+---
+
+## 15. Offene Punkte
+
+**Entscheidungen des Entwicklers** (jeweils mit Begründung):
+1. Wasser zum Wiederbeleben ganz gestrichen? (Abschnitt 9)
+2. Kosten fürs Abspalten: 10 Fasern, Rest mit Körpermasse, nur das Nest notfalls kostenlos, Grow lässt 10 Fasern Reserve? (7.1, 12)
+3. Niederlassen nur ohne Aggro? Darf man sich unter Aggro in einen berührten niedergelassenen Blob zurückziehen? (3)
+4. Spielzeit oder auch echte Zeit bei geschlossenem Spiel? (8.2)
+5. Höchstzahl niedergelassener Blobs (Vorschlag 5) oder Unterhalt, z. B. Fasern je Stunde? (8.5)
+6. Einziehen erlauben (4.4)? Und soll ein niedergelassener Blob auch selbst wieder aufbrechen können, also ohne Abspalten wieder zum Reisenden werden? Bisher nicht vorgesehen.
+7. Nur friedliche Wesen für niedergelassene Blobs? (8.3)
+8. Selbsttätige Arbeit ruht, solange man selbst dort ist? (8.1)
+9. Lernen Kern-Fähigkeiten beim Nachrechnen nicht? (8.5)
+10. Ermüdung gehört zum Bewusstsein statt zum Körper? (5)
+11. Reicht der Preis fürs Vertrocknen, oder verderben Materialien im vertrockneten Blob teilweise? Vertrocknete Blobs sind sonst unverwundbare Lager. (9)
+12. Die Verrechnung mit Herkunftszählern (6.2) und Verlernen als eine gemeinsame Zahl je Skill (6.5)?
+13. Niederlassen als Grundfähigkeit? (3)
+14. Die festen Regeln aus Abschnitt 2.
+15. Nebel auf der Karte? (11.1)
+16. Ein Symbol über den Blobs zusätzlich zum Pulsieren? (10)
+17. Sichtbares „Abweiden“ durch niedergelassene Blobs? (10)
+18. Darf Verbinden Erfahrung senken (6.5)?
+19. Grenze nach dem Verbinden: Kapazität bzw. bisherige Summe statt Obergrenze der Überdehnung? (6.5)
+20. Kein Übertraining beim Nachrechnen? (8.5)
+21. Reichweite und erlaubte Ziele, wenn man selbst am niedergelassenen Blob ist (8.1)?
+22. Mindestabstand zwischen niedergelassenen Blobs? (8.3)
+23. Zurückgehaltene Erfahrung wird nicht kopiert (5); doppelt schnelles Wiedererlernen in zwei Zweigen wird hingenommen (6.6)?
+24. Alle übrigen Regeln, die mit *Vorschlag Claude (offen)* gekennzeichnet sind, bestätigen.
+
+**Später:**
+- Herstellen: aus Fasern neue Materialien (Status: Konzept)
+- Können Gegner niedergelassene oder vertrocknete Blobs angreifen?
+- Niedergelassene Blobs umbenennen
+- Mehr friedliche Wesen und Materialien je Biom, damit niedergelassene Blobs überall etwas finden (8.5)
+- Alle Zahlen abstimmen: Kosten, Aggro-Sperre, Arbeitsreichweite, Aktionsdauer, Pulsdauer, Höchstzahl
+
+---
+
+*Letzte Aktualisierung: 14. November 2026 — zweite Prüfrunde eingearbeitet: Ermüdung gehört zum Bewusstsein, eigene Gutschrift beim Nachrechnen, Reichweite und Ziele vor Ort, Kosten nur im Nest notfalls frei, Grow-Reserve, Grenze nach dem Verbinden, Verbinden kann Erfahrung senken, Mindestabstand, Ausgangswert beim Zurückschreiben, Basis abziehen statt Falten, Beispiel 6.4 Schritt 6 berichtigt, Kennzeichnungen ergänzt; davor überarbeitet nach Konzept- und Doku-Prüfung: Verlernen als eine gemeinsame Zahl (kein doppeltes Verlernen, nie negativ), Ersatzkosten gegen Festsitzen, Ermüdung kopieren, Reihenfolge, Speicherbedarf, Nachrechnen ohne Übertraining und ohne Kern-Fähigkeiten, Arbeit ruht vor Ort, Einziehen, Nest-Umbau, Umsetzung in 7 Schritten, handytaugliche Gliederung; davor Erstfassung mit mehreren Markierungen (Vorgabe Entwickler)*

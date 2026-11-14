@@ -34,7 +34,7 @@ Der Protagonist ist dem realen Organismus *Physarum polycephalum* nachempfunden 
 | **Intelligenz ohne Gehirn** | Findet in Labyrinthen den kürzesten Weg zu Nahrung, lernt dazu | Blob entdeckt und kombiniert Skills durch Interaktion |
 | **Wachstum** | Verdoppelt seine Größe unter idealen Bedingungen innerhalb eines Tages | ~~Blob wächst mit jedem Level~~ [VERWORFEN] → Blob wächst stetig mit seiner Erfahrung ([GDD-02 Abschnitt 8.4](GDD-02-Skillsystem.md#84-kapazität-verlernen-wiedererlernen)), Welt wirkt kleiner |
 | **Wissensübertragung** | Wenn zwei Blobs verschmelzen, geben sie erworbene Informationen weiter | Absorb-Mechanic überträgt Skills absorbierter Entities |
-| **Widerstandsfähigkeit** | Trocknet bei Gefahr aus, Ruhezustand — mit Wasser wieder erweckbar | Checkpoint-System: Blob erwacht nach Tod am Spawn |
+| **Widerstandsfähigkeit** | Trocknet bei Gefahr aus, Ruhezustand — mit Wasser wieder erweckbar ([VERWORFEN, vorläufig]: Wasser, siehe GDD-10 Abschnitt 9) | Checkpoint-System: Blob erwacht nach Tod am Spawn |
 | **Lebensraum** | Schattige, feuchte Orte, verrottendes Holz, Laub | Blob beginnt im Wald, erkundet feuchte und dunkle Biome zuerst |
 | **Geschlechter** | Über 720 biologische Geschlechter | Keine direkte Spielmechanik — Teil der Lore |
 | **Unsterblichkeit** | Gilt als biologisch unsterblich | Blob respawnt immer — kein permanenter Tod |
@@ -175,6 +175,7 @@ Unabhängig vom Ursprung gilt für die ersten Minuten des Spiels:
 ## 10. Blob-Teilung & Respawn-System
 
 > Status: Konzept — noch nicht implementiert
+> **Präzisiert in [GDD-10 Blob-Formen](GDD-10-Blob-Formen.md) (14. November 2026).** Dort gelten die neuen Begriffe: *niedergelassener Blob* statt Hauptblob, *reisender Blob* statt Reise-Blob. Wissen wird mit Herkunftszählern verrechnet. Wo dieser Abschnitt GDD-10 widerspricht, gilt GDD-10.
 
 ### Grundprinzip
 
@@ -215,12 +216,12 @@ Spieler startet ohne die Skills/XP des vertrockneten Blobs
 
 Das angesammelte Wissen (Skills und ihre Erfahrung; ~~Level~~ [VERWORFEN], es gibt keine Level mehr) des vertrockneten Blobs geht **vorübergehend verloren** — nicht permanent.
 
-Der Spieler kann die Stelle aufsuchen, an der der Blob vertrocknet ist, und ihn **mit Wasser wiederbeleben**. Danach kann sich der Reise-Blob mit dem wiedererweckten Blob vereinigen und erhält so alles Wissen zurück.
+Der Spieler kann die Stelle aufsuchen, an der der Blob vertrocknet ist, und ihn **mit Wasser wiederbeleben** ([VERWORFEN, vorläufig — bitte bestätigen, 14. November 2026]: Der neue Ablauf in GDD-10 Abschnitt 9 nennt nur Aufsuchen und Verbinden, Wasser ist dort nicht vorgesehen). Danach kann sich der Reise-Blob mit dem wiedererweckten Blob vereinigen und erhält so alles Wissen zurück.
 
 ```
 Spieler findet getrockneten Blob
     ↓
-Wasser einsetzen → Blob erwacht
+Wasser einsetzen → Blob erwacht   [VERWORFEN, vorläufig — siehe GDD-10 Abschnitt 9]
     ↓
 Reise-Blob berührt wiedererweckten Blob → Verschmelzung
     ↓
@@ -233,7 +234,7 @@ Alle Skills und XP des vertrockneten Blobs übertragen
 
 ### Offen zu entscheiden
 
-- Wie kommt der Spieler an Wasser? (Flüsse, Brunnen, Skill, Item?)
+- ~~Wie kommt der Spieler an Wasser? (Flüsse, Brunnen, Skill, Item?)~~ [VERWORFEN, vorläufig — bitte bestätigen, 14. November 2026] Wasser ist im neuen Ablauf nicht vorgesehen (GDD-10 Abschnitt 9). Die übrigen offenen Fragen beantwortet GDD-10 als Vorschläge (Abschnitte 9 und 11).
 - Wie lange bleibt ein vertrockneter Blob in der Welt, bevor er verschwindet?
 - Kann ein vertrockneter Blob von Feinden zerstört werden?
 - Wie wird dem Spieler die Position des vertrockneten Blobs angezeigt?
@@ -241,4 +242,4 @@ Alle Skills und XP des vertrockneten Blobs übertragen
 
 ---
 
-*Letzte Aktualisierung: v0.4 — Level-Bezüge an „Erfahrung statt Level“ angepasst (Abschnitte 2, 3, 5, 10), GDD-07 und GDD-08 in den Referenzen ergänzt (31. Oktober 2026); davor Startsequenz (Abschnitt 9) und Blob-Teilungs-Respawn-System (Abschnitt 10) als Konzepte ergänzt (März 2026)*
+*Letzte Aktualisierung: 14. November 2026 — Abschnitt 10 verweist auf GDD-10 (Blob-Formen), Wasser-Wiederbelebung vorläufig als VERWORFEN markiert (bitte bestätigen); davor v0.4 — Level-Bezüge an „Erfahrung statt Level“ angepasst (Abschnitte 2, 3, 5, 10), GDD-07 und GDD-08 in den Referenzen ergänzt (31. Oktober 2026); davor Startsequenz (Abschnitt 9) und Blob-Teilungs-Respawn-System (Abschnitt 10) als Konzepte ergänzt (März 2026)*

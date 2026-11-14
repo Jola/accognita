@@ -38,6 +38,7 @@ Diese Datei ist der **Einstiegspunkt für Menschen und KI-Systeme**, die mit den
 | **[GDD-07-Bestiarium.md](GDD-07-Bestiarium.md)** | Entwurf: ca. 100 Einheiten auf dem Weg vom Wald in die Stadt, Größenklassen G1–G8, Skill-Ideen (Status: Diskussion) | Beim Entwerfen neuer Einheiten und Skills |
 | **[GDD-08-Progressionsmathematik.md](GDD-08-Progressionsmathematik.md)** | Teil 1: Mathematik des Skill- und Charakter-Levelings (Kurvenfamilien, proportionale Erfahrung vs. Level-Differenz-Multiplikator, Integer-Grenzen, Vergleich mit anderen Spielen, Zwei-Exponenten-Modell). Teil 2: Wirkungskurven pro Level, Wahrscheinlichkeiten (Trefferstufen, Gift, Skill-Fund), Wechselwirkungen (Geschick, Stapelregeln, Schwellen). Teil 3: unendliches Leveln mit linearer Skala und %-Anzeige. Teil 4: feste Level-Grenze, Level abschaffen, Größe/Stärke-Index als Vergleich. Teil 5: Skill-Kapazität und Verlernen, Gruppen schwacher Gegner, Weltstufen (Status: Diskussion). Teil 6: Mathematik der umgesetzten Lösung ohne Level (Kurve, Kapazität, Übertraining; Status: Implementiert) | Bei Fragen zu XP-Kurven, Level-Tempo, Skill-Stärke pro Level, Zufall und Skill-Synergien |
 | **[GDD-09-Grundwerte-und-Sinne.md](GDD-09-Grundwerte-und-Sinne.md)** | Grundwerte des Blobs (Stärke, Geschick, Tempo, Sicht), Bewegung (Kriechen, Krabbeln, Laufen als Konzept), Stärke aus Körpergröße, Sehen (Schwarz → Graustufen → Farbe), Erwachen/Intro mit Nest (Status: Implementiert) | Bei Fragen zu Grundwerten, Bewegung, Sicht und dem Spielstart |
+| **[GDD-10-Blob-Formen.md](GDD-10-Blob-Formen.md)** | Blob-Formen: niedergelassen (Checkpoint, arbeitet über Zeit), reisend, vertrocknet (Tod); Abspalten, Verbinden, Bewusstsein wechseln; Wissen verrechnen mit Herkunftszählern (wer hat was beigetragen); Ressourcen verteilen; Karte und Richtungspfeile (Status: Konzept, in Diskussion) | Bei Fragen zu Tod, Checkpoints, mehreren Blobs, Karte |
 | **slime-rpg.html** | [VERWORFEN] Ursprünglicher Vanilla-JS-Prototype v0.1 — nicht mehr aktiv gepflegt | Nur als historische Referenz |
 | **accognita.html** | Aktuelles Spiel v0.3 — Single-File-Build, per Doppelklick öffenbar oder via GitHub Pages | Als Referenz für implementierte Mechaniken |
 | **[src/types/Skill.ts](../src/types/Skill.ts)** | TypeScript-Interfaces: SkillDefinition, SkillInstance, DiscoveryResult | Beim Erweitern des Skill-Systems |
@@ -111,6 +112,7 @@ GDD-00 (Index)
     ├── GDD-07 (Bestiarium) — Entwurf neuer Einheiten, nutzt GDD-02 (Skills) und GDD-03 (Gegner)
     │
     ├── GDD-09 (Grundwerte und Sinne) — Bewegung, Sicht, Stärke aus Größe, Erwachen; nutzt GDD-02 (Skills, Wachsen)
+    ├── GDD-10 (Blob-Formen) — Niederlassen, Abspalten, Verbinden, Vertrocknen; ersetzt GDD-03 Abschnitt 7, präzisiert GDD-01 Abschnitt 10
     └── GDD-08 (Progressionsmathematik) — XP-Kurven, Level-Tempo, Wirkung pro Level, Zufall, Wechselwirkungen; vertieft GDD-02 Abschnitt 4 und GDD-05
 ```
 
@@ -141,6 +143,7 @@ Jede Regel, Formel, Konstante und Balancing-Entscheidung wird **mit ihrem Grund*
 | `**Vorgabe (Entwickler):**` | *Was* der Entwickler entschieden hat — getrennt vom *Warum* |
 | `**Begründung (Entwickler):**` | Grund vom Entwickler selbst genannt (nichts hinzugedichtet) |
 | `**Begründung (Vorschlag Claude, übernommen):**` | Von Claude vorgeschlagen, vom Entwickler bestätigt |
+| `**Vorschlag Claude (offen):**` / `**Begründung (Vorschlag Claude, offen):**` | Von Claude vorgeschlagen, noch nicht bestätigt |
 | `**Begründung (rekonstruiert, bitte bestätigen):**` | Aus Code oder Kommentaren abgeleitet — noch nicht bestätigt |
 | `> Begründung offen` | Grund unbekannt — beim Entwickler nachfragen |
 
@@ -204,7 +207,7 @@ Wenn du als KI-Assistent an diesem Projekt arbeitest, gelten folgende Regeln:
 
 ### Noch offene Entscheidungen
 
-- [ ] Tod-Mechanik: Soft Death, Checkpoint oder Rogue-like? → [GDD-03 Abschnitt 7](GDD-03-Kampfsystem.md#7-tod-mechanik--respawn)
+- [ ] Tod-Mechanik: Soft Death, Checkpoint oder Rogue-like? → [GDD-03 Abschnitt 7](GDD-03-Kampfsystem.md#7-tod-mechanik--respawn) → Konzept in Diskussion: Vertrocknen und niedergelassene Blobs als Checkpoints, [GDD-10](GDD-10-Blob-Formen.md)
 - [ ] Skill-Limit: Gibt es eine Obergrenze für aktive Skills? → [GDD-02 Abschnitt 6](GDD-02-Skillsystem.md#6-skill-slots--limits)
 - [ ] Unbekannte Rezepte: Ab wann werden Kombinations-Rezepte versteckt? → [GDD-02 Abschnitt 5](GDD-02-Skillsystem.md#5-kombinationssystem)
 - [ ] PWA: Soll das Spiel als installierbare App (PWA) verfügbar sein? → [GDD-04](GDD-04-LookAndFeel.md)
@@ -225,4 +228,4 @@ Wenn du als KI-Assistent an diesem Projekt arbeitest, gelten folgende Regeln:
 
 ---
 
-*Letzte Aktualisierung: v0.7 — GDD-09 (Grundwerte und Sinne) ergänzt, body.ts, BodySystem.ts, IntroSystem.ts, grow.ts, GrowSystem.ts (13. November 2026); davor v0.6 — StatsSystem.ts und StatsView.ts ergänzt (1. November 2026); progression.ts: Fortschritt 0–100 % statt Übungsgrad (1. November 2026); davor v0.5 — ValueChart.ts ergänzt (1. November 2026); stufenlose Regeneration (StatusEffectSystem) vermerkt; venom.ts und VenomSystem.ts ergänzt (31. Oktober 2026); davor fehlende Code-Dateien in der Tabelle ergänzt (progression.ts, version.ts, ProgressionSystem, EntityLevelingSystem, DamageSystem, SkillEffectSystem, SkillEffects, GameMenu, IndexView) (31. Oktober 2026); davor Erfahrung statt Level umgesetzt (GDD-02 Abschnitt 8, GDD-08 Teil 6), Backlog aktualisiert (30. Oktober 2026); GDD-08 (Progressionsmathematik, Teil 1–5) ergänzt; GDD-07 (Bestiarium-Entwurf) ergänzt; Begründungspflicht (Abschnitt 5 und 7) eingeführt; HitSystem (Treffer-Stufen) ergänzt; GDD-06 verworfen (Referenz jetzt als INDEX-Tab im Spiel), SaveSystem-Migration vermerkt (Oktober 2026)*
+*Letzte Aktualisierung: 14. November 2026 — GDD-10 (Blob-Formen, Konzept) ergänzt, Tod-Mechanik verweist darauf, Kennzeichnung „Vorschlag Claude (offen)“ in die Legende aufgenommen; davor v0.7 — GDD-09 (Grundwerte und Sinne) ergänzt, body.ts, BodySystem.ts, IntroSystem.ts, grow.ts, GrowSystem.ts (13. November 2026); davor v0.6 — StatsSystem.ts und StatsView.ts ergänzt (1. November 2026); progression.ts: Fortschritt 0–100 % statt Übungsgrad (1. November 2026); davor v0.5 — ValueChart.ts ergänzt (1. November 2026); stufenlose Regeneration (StatusEffectSystem) vermerkt; venom.ts und VenomSystem.ts ergänzt (31. Oktober 2026); davor fehlende Code-Dateien in der Tabelle ergänzt (progression.ts, version.ts, ProgressionSystem, EntityLevelingSystem, DamageSystem, SkillEffectSystem, SkillEffects, GameMenu, IndexView) (31. Oktober 2026); davor Erfahrung statt Level umgesetzt (GDD-02 Abschnitt 8, GDD-08 Teil 6), Backlog aktualisiert (30. Oktober 2026); GDD-08 (Progressionsmathematik, Teil 1–5) ergänzt; GDD-07 (Bestiarium-Entwurf) ergänzt; Begründungspflicht (Abschnitt 5 und 7) eingeführt; HitSystem (Treffer-Stufen) ergänzt; GDD-06 verworfen (Referenz jetzt als INDEX-Tab im Spiel), SaveSystem-Migration vermerkt (Oktober 2026)*

@@ -116,6 +116,8 @@ Der Übergang zu Farbe ist fließend: Mit dem Fortschritt von Facettenauge kommt
 
 ## 5. Erwachen (Intro)
 
+> **Geplante Änderung (Konzept): [GDD-10 Abschnitt 12](GDD-10-Blob-Formen.md).** Der Blob erwacht dort als niedergelassener Blob im Nest. Das Gras rückt in seine Arbeitsreichweite, und mit Kriechen kommt das Abspalten statt des Joysticks. Bis zur Umsetzung gilt der Ablauf unten.
+
 **Vorgabe (Entwickler):** Am Anfang ist der Bildschirm schwarz, nur Analyze und Absorb existieren, und einige Texte erklären, was geschieht. Dafür müssen sich in der Nähe Einheiten aufhalten, an denen der Blob Sehen und Bewegen lernen kann.
 
 ### 5.1 Ablauf
@@ -158,4 +160,4 @@ Spielstand-Version 5: Wer schon spielte, konnte sich bewegen und farbig sehen. D
 
 ---
 
-*Letzte Aktualisierung: 13. November 2026 — Datei neu angelegt: Grundwerte, Bewegung (Kriechen, Krabbeln), Stärke aus Größe, Sehen (Lichtsinn, Facettenauge, Hauptaugen), Erwachen mit Nest*
+*Letzte Aktualisierung: 14. November 2026 — Abschnitt 5 verweist auf die geplante Änderung in GDD-10 Abschnitt 12; 13. November 2026 — Datei neu angelegt: Grundwerte, Bewegung (Kriechen, Krabbeln), Stärke aus Größe, Sehen (Lichtsinn, Facettenauge, Hauptaugen), Erwachen mit Nest*
