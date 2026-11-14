@@ -314,7 +314,7 @@ Das aktuelle System ist ein Platzhalter bis das Blob-Teilungs-System (siehe unte
 ### Geplant (Konzept): Blob-Teilungs-Respawn-System
 
 > Status: Konzept — ersetzt das Checkpoint-System sobald implementiert
-> **Aktueller Stand: [GDD-10 Blob-Formen](GDD-10-Blob-Formen.md) (14. November 2026).** Die Kurzfassung unten ist der ältere Entwurf. Wasser zum Wiederbeleben ist dort vorläufig [VERWORFEN] (bitte bestätigen). Genauer gefasst: Der Spieler startet mit dem Stand des niedergelassenen Blobs, zu dem das Bewusstsein springt; der Fortschritt des vertrockneten Blobs fehlt, bis man sich mit ihm verbindet.
+> **Aktueller Stand: [GDD-10 Blob-Formen](GDD-10-Blob-Formen.md) (14. November 2026).** Die Kurzfassung unten ist der ältere Entwurf. Wasser zum Wiederbeleben ist dort [VERWORFEN] (vom Entwickler bestätigt, 14. November 2026). Genauer gefasst: Der Spieler startet mit dem Stand des niedergelassenen Blobs, zu dem das Bewusstsein springt; der Fortschritt des vertrockneten Blobs fehlt, bis man sich mit ihm verbindet.
 
 Das Respawn-System basiert auf der biologischen Teilungsfähigkeit von *Physarum polycephalum* und der Desiccations-Widerstandsfähigkeit des Blobs. Vollständige Beschreibung in [GDD-01, Abschnitt 10](GDD-01-Hauptbeschreibung.md#10-blob-teilung--respawn-system).
 
@@ -334,7 +334,7 @@ Spieler startet ohne Skills/XP des vertrockneten Blobs
 
 **Wissen zurückgewinnen:**
 - Spieler sucht Ort des Todes auf
-- Wasser auf vertrockneten Blob → Blob erwacht ([VERWORFEN, vorläufig — siehe GDD-10 Abschnitt 9])
+- Wasser auf vertrockneten Blob → Blob erwacht ([VERWORFEN, 14. November 2026, vom Entwickler bestätigt] — siehe GDD-10 Abschnitt 9)
 - Berührung → Verschmelzung → alle Skills/XP übertragen
 
 **Unterschied zum alten Checkpoint-System:**
@@ -455,4 +455,4 @@ scenes/GameScene.ts                ← verdrahtet alle Systeme, Phaser-Rendering
 
 ---
 
-*Letzte Aktualisierung: 2026-11-14 — MP-Regeneration, KI-Werte und Gegner-Bonus-Level stehen in balance.ts (Werte unverändert); 2026-11-14 — Abschnitt 7 verweist auf GDD-10 (Blob-Formen); 2026-11-13 — Geschwindigkeit aus Bewegungs-Skills (Abschnitt 3, GDD-09); Photosynthese wirkt immer (Abschnitt 5); Geschick = Präzision (Abschnitt 6); Schaden-Multiplikator durch Eigenschafts-Skalierung ersetzt (Abschnitt 3); Kein Angriff ohne Skill, unbewaffneter Nahkampf verworfen (Abschnitte 3 und 6); 2026-11-01 — Hinweis auf das allgemeine Schema (Fortschritt 0–100 %, v0.6); Treffer-Reichweite ab Rand des Gegners (Icon-Größe), Blob-Reichweite erhöht; Balancing: Photosynthese, Skorpione, Schlange schwächer; 2026-10-31 — Gelegentlicher Angriff (Skorpion-Stachelstich); Regeneration (Photosynthesis) stufenlos; Venom-DoT durch Giftlast ersetzt (Verweis auf GDD-05 Abschnitt 12); Hinweis „Übungsgrad statt Skill-Level“ ergänzt, HP/MP wachsen mit dem Wachstum statt pro Level; 2026-10-25 — Größen- und levelabhängiges Aggro als Konzept (Abschnitt 4); 2026-10-24 — Geschick ohne Beitrag des eingesetzten Skills; Begründungen ergänzt bzw. als offen markiert, veraltete Werte (Spieler-Wachstum, Entity-Tabelle, Passiv-Effekte) als VERWORFEN gekennzeichnet; Treffer-Stufen und Geschick; Venom-Chance mit 100-%-Deckel*
+*Letzte Aktualisierung: 2026-11-14 — Wasser zum Wiederbeleben endgültig verworfen (Abschnitt 7); davor 2026-11-14 — MP-Regeneration, KI-Werte und Gegner-Bonus-Level stehen in balance.ts (Werte unverändert); 2026-11-14 — Abschnitt 7 verweist auf GDD-10 (Blob-Formen); 2026-11-13 — Geschwindigkeit aus Bewegungs-Skills (Abschnitt 3, GDD-09); Photosynthese wirkt immer (Abschnitt 5); Geschick = Präzision (Abschnitt 6); Schaden-Multiplikator durch Eigenschafts-Skalierung ersetzt (Abschnitt 3); Kein Angriff ohne Skill, unbewaffneter Nahkampf verworfen (Abschnitte 3 und 6); 2026-11-01 — Hinweis auf das allgemeine Schema (Fortschritt 0–100 %, v0.6); Treffer-Reichweite ab Rand des Gegners (Icon-Größe), Blob-Reichweite erhöht; Balancing: Photosynthese, Skorpione, Schlange schwächer; 2026-10-31 — Gelegentlicher Angriff (Skorpion-Stachelstich); Regeneration (Photosynthesis) stufenlos; Venom-DoT durch Giftlast ersetzt (Verweis auf GDD-05 Abschnitt 12); Hinweis „Übungsgrad statt Skill-Level“ ergänzt, HP/MP wachsen mit dem Wachstum statt pro Level; 2026-10-25 — Größen- und levelabhängiges Aggro als Konzept (Abschnitt 4); 2026-10-24 — Geschick ohne Beitrag des eingesetzten Skills; Begründungen ergänzt bzw. als offen markiert, veraltete Werte (Spieler-Wachstum, Entity-Tabelle, Passiv-Effekte) als VERWORFEN gekennzeichnet; Treffer-Stufen und Geschick; Venom-Chance mit 100-%-Deckel*
