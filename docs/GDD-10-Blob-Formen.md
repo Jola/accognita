@@ -47,6 +47,8 @@
 
 Dieses Verbinden mit einem vertrockneten Blob heißt jetzt **Verschmelzen** (Abschnitt 4.5, Vorgabe Entwickler, 14. November 2026).
 
+Statt automatisch zum nächstgelegenen Blob zu springen, erscheint beim Vertrocknen ein **Sterbescreen**; dort wählt man, wo man weitermacht (Abschnitt 9, Vorgabe Entwickler, 14. November 2026).
+
 **Begründung (Entwickler):** Das entspricht den Fähigkeiten des biologischen Vorbilds *Physarum polycephalum*. Es kann sich teilen, Teile verschmelzen wieder, und bei Gefahr trocknet es zu einer Dauerform ein, statt zu sterben.
 
 ---
@@ -150,7 +152,7 @@ Diese Fähigkeiten sind keine Skills: keine Erfahrung, kein Rang, keine Kapazit�
 - **Reisend + niedergelassen → Verschmelzen →** der Reisende geht im niedergelassenen Blob auf; das Bewusstsein ist danach dort (4.5).
 - **Reisend + vertrocknet → Verschmelzen →** der Reisende geht im vertrockneten Blob auf; daraus wird ein niedergelassener Blob mit dem Bewusstsein (4.5).
 - ~~Reisend + niedergelassen → Einziehen → der niedergelassene Blob geht im Reisenden auf (nicht beim Nest). Reisend + vertrocknet → Verbinden → der vertrocknete Blob geht im Reisenden auf.~~ [VERWORFEN, 14. November 2026] Umgekehrte Richtung, siehe 4.5.
-- **Reisend, HP ≤ 0 →** vertrocknet; das Bewusstsein springt zum nächstgelegenen niedergelassenen Blob.
+- **Reisend, HP ≤ 0 →** vertrocknet; Sterbescreen, dort wählt man einen niedergelassenen Blob (9). ~~Das Bewusstsein springt zum nächstgelegenen niedergelassenen Blob.~~ [VERWORFEN, 14. November 2026]
 
 ### 4.1 Niederlassen
 1. Der Reisende wird an seiner Stelle niedergelassen und behält Wissen und Ressourcen.
@@ -692,14 +694,54 @@ Skill-Fund =
 
 Dieses Verbinden heißt jetzt Verschmelzen; aus dem vertrockneten Blob wird dabei ein niedergelassener (Abschnitt 4.5, Vorgabe Entwickler, 14. November 2026).
 
+Dieses Verbinden heißt jetzt Verschmelzen (siehe oben). ~~Das Bewusstsein springt zum nächstgelegenen niedergelassenen Blob.~~ [VERWORFEN, 14. November 2026] Ersetzt durch den Sterbescreen unten.
+
+### 9.1 Sterbescreen
+
+**Vorgabe (Entwickler, 14. November 2026):** Beim Vertrocknen springt man nicht automatisch zum nächstgelegenen Blob. Stattdessen erscheint ein Sterbescreen.
+- Ein kurzer Hinweis sagt, dass du gestorben bist und was das bedeutet: Der Blob ist zur Sicherheit an Ort und Stelle vertrocknet, und du musst bei einem anderen weitermachen.
+- Vielleicht noch kurz: Du kannst den vertrockneten Blob wieder einsammeln, um die Erfahrung wiederherzustellen.
+- Ein Knopf springt zum nächstgelegenen Blob.
+- Oder man wählt auf der Karte einen Blob aus, so wie beim Wechsel zwischen den Blobs.
+
+**Begründung (Entwickler):** Das macht das Verhalten nachvollziehbarer, insbesondere wenn man neu im Spiel ist.
+
+~~Begründung offen. Vorschlag Claude: Der Spieler versteht, was passiert ist, und entscheidet selbst, wo er weitermacht.~~ [VERWORFEN, 14. November 2026] Ersetzt durch die Begründung des Entwicklers.
+
+Entwurf (Vorschlag Claude, offen):
+
+```
+   Du bist vertrocknet
+Zum Schutz ist dein Körper
+an Ort und Stelle eingetrocknet.
+Mach bei einem anderen Blob
+weiter. Verschmilzt du später
+mit dem vertrockneten Blob,
+bekommst du alles zurück.
+
+Darin: 2 neue Skills,
+  340 Erfahrung, 12 Fasern
+
+[Zum nächsten Blob: Wald 2, 85 m]
+[Auf der Karte wählen]
+```
+
+- Die Überschrift sagt „vertrocknet“ statt „gestorben“, weil der Blob nach der Vorgabe oben nicht stirbt. Der Name „Sterbescreen“ bleibt als Arbeitsname.
+- Die kurze Übersicht (was im vertrockneten Blob liegt) steht mit auf dem Sterbescreen.
+- **Karte:** zeigt alle niedergelassenen Blobs wie beim Bewusstsein wechseln (4.2, 11). Solange es die Karte noch nicht gibt (Umsetzung Schritt 7), ist es die Liste.
+- Das Spiel pausiert, solange der Sterbescreen offen ist. Speichern geht dort nicht, denn das Bewusstsein ist gerade bei keinem Blob (Regel 3).
+
 Ablauf:
 1. HP ≤ 0: Ein offener Dialog wird geschlossen. Der Reisende wird zum vertrockneten Blob. Sein Stand wird eingefroren: Wissen, Ressourcen, zurückgehaltene Erfahrung. Gift und Status-Effekte verfallen.
 2. Gegner verlieren ihre Aggro (wie bisher `resetAi`).
-3. Das Bewusstsein springt zum niedergelassenen Blob, der dem Ort am nächsten liegt. Er wird nachgerechnet.
-4. Eine kurze Übersicht zeigt, was im vertrockneten Blob liegt: neue Skills, Erfahrung, Ressourcen.
+3. Der Sterbescreen erscheint (9.1).
+4. Man wählt einen niedergelassenen Blob. Das Bewusstsein springt dorthin, er wird nachgerechnet.
 5. Der vertrocknete Blob wird automatisch markiert; ein Richtungspfeil zeigt zu ihm (Abschnitt 11). Eine schon bestehende Markierung bleibt erhalten, dann zeigen zwei Pfeile. **Vorgabe (Entwickler, 14. November 2026).**
 
-Weitere Regeln:
+~~3. Das Bewusstsein springt zum niedergelassenen Blob, der dem Ort am nächsten liegt. Er wird nachgerechnet. 4. Eine kurze Übersicht zeigt, was im vertrockneten Blob liegt.~~ [VERWORFEN, 14. November 2026] Ersetzt durch den Sterbescreen (9.1).
+
+### 9.2 Weitere Regeln
+
 - Ein vertrockneter Blob bleibt dauerhaft liegen und kann vorerst nicht zerstört werden.
 - Stirbt der nächste Reisende, bevor er den ersten vertrockneten Blob erreicht, liegen zwei in der Welt. Beide behalten ihren Stand. Wer beide einsammelt, bekommt alles, und nichts zählt doppelt (Abschnitt 6).
 - Hinweis an den Spieler, einmal nach dem ersten Abspalten: „Lässt du dich nieder, ist dein Fortschritt gesichert.“
@@ -783,7 +825,7 @@ Alle Einzelheiten unten sind Vorschlag Claude (offen).
 - **Lichtsinn und Kriechen in beliebiger Reihenfolge,** wie bisher.
 - **Lichtsinn gelernt:** Man sieht jetzt das eigene Adernetz und das Gras.
 - **Kriechen gelernt:** Text: „Du könntest einen Teil von dir losschicken.“ Der Knopf **Abspalten** erscheint.
-- **Nach dem Abspalten:** Hinweis: „Wirst du besiegt, kehrt dein Bewusstsein ins Nest zurück. Lässt du dich nieder, ist dein Fortschritt gesichert.“
+- **Nach dem Abspalten:** Hinweis: „Wirst du besiegt, machst du bei einem niedergelassenen Blob weiter, zu Beginn im Nest. Lässt du dich nieder, ist dein Fortschritt gesichert.“ ~~„Wirst du besiegt, kehrt dein Bewusstsein ins Nest zurück.“~~ [VERWORFEN, 14. November 2026] Sterbescreen (9.1).
 - Die Texte zur Trockenstarre beim Erwachen bleiben; sie sprechen nicht von Wasser.
 
 **Erstes Abspalten kostenlos** (folgt aus 7.1: Das Nest kann immer abspalten. Ohne Fasern ist der erste Reisende so klein wie beim Erwachen). Begründung (Vorschlag Claude, offen): Sonst muss man im Nest warten, bis genug Gras nachwächst. Drei Grashalme geben zusammen nur 3–9 Fasern, und Grow (von Gras gelernt) verdaut Fasern selbst weg. Bis 10 Fasern dauerte es oft 1–2 Minuten.
@@ -897,9 +939,9 @@ Jeder Schritt ist für sich spielbar und bekommt eine eigene Version.
    - ~~Tabelle, Anlegen, Zurückschreiben, Zusammenführen, Kapazität; Simulationen zu 6.3, 6.4, doppeltem Verlernen, Zurückschreiben zweimal hintereinander, Basis abziehen, Speichergröße~~ [VERWORFEN, 14. November 2026] Herkunftszähler entfallen (6.1).
 2. **Datenmodell ohne neue Spielregeln:** Spielstand v6, Arbeitskopie, Weltuhr. Es gibt nur einen Blob. Das Spiel muss sich genau wie vorher spielen.
    - Dateien: `GameState.ts`, `SaveSystem.ts`, `GameScene.ts`
-3. **Abläufe:** Niederlassen, Abspalten, Verschmelzen, Erheben, Vertrocknen, Wechseln (als Liste), Start im Nest (unzerstörbar), Gegner ohne Ziel, Steuerung je Form. Verteilen erst fest halbe-halbe. Einfache Platzhalter-Grafik und ein Richtungspfeil zum vertrockneten Blob. `executeCheckpoint` entfällt.
+3. **Abläufe:** Niederlassen, Abspalten, Verschmelzen, Erheben, Vertrocknen, Wechseln (als Liste), Sterbescreen (9.1, Auswahl erst als Liste), Start im Nest (unzerstörbar), Gegner ohne Ziel, Steuerung je Form. Verteilen erst fest halbe-halbe. Einfache Platzhalter-Grafik und ein Richtungspfeil zum vertrockneten Blob. `executeCheckpoint` entfällt.
    - Dateien: `systems/BlobSystem.ts`, `AiSystem.ts`, `IntroSystem.ts`, `BiomeDefinitions.ts`, `GameScene.ts`, `SkillBar.ts`
-4. **Verteilen-Dialog** — `ui/TransferDialog.ts`
+4. **Verteilen-Dialog** — `ui/TransferDialog.ts`; Sterbescreen — `ui/DeathScreen.ts` (nur DOM)
 5. **Darstellung:** Adernetz mit Pulsieren, vertrocknete Kruste — `GameScene.ts` oder eigene Datei im Ordner `scenes/`
 6. **Tätigkeit niedergelassener Blobs:** Quellen, nächster Blob erntet (8.3), Nachrechnen, WERTE-Anzeige — `systems/SettlementSystem.ts`, `StatsView.ts`
 7. **Karte:** Nebel, Markieren, mehrere Richtungspfeile — `ui/MapView.ts`, `GameMenu`, `GameScene.ts`
@@ -936,6 +978,7 @@ Zu jedem Schritt werden GDD, INDEX und TODO.md nachgezogen: GDD-01 Abschnitt 10,
 23. Zurückgehaltene Erfahrung wird nicht kopiert (5)? ~~Doppelt schnelles Wiedererlernen in zwei Zweigen wird hingenommen (6.6)?~~ → Entfällt mit dem Höchstwert (6.3).
 24. Alle übrigen Regeln, die mit *Vorschlag Claude (offen)* gekennzeichnet sind, bestätigen.
 25. ~~Verbinden (beide bleiben)~~ → Gestrichen 14. November 2026 (Vorgabe Entwickler, 4.4).
+26. Sterbescreen: Text (Entwurf in 9.1), „vertrocknet“ statt „gestorben“ in der Überschrift? (9.1)
 
 **Später:**
 - Herstellen: aus Fasern neue Materialien (Status: Konzept)
@@ -947,4 +990,4 @@ Zu jedem Schritt werden GDD, INDEX und TODO.md nachgezogen: GDD-01 Abschnitt 10,
 
 ---
 
-*Letzte Aktualisierung: 14. November 2026 — Umrechnung 1 Faser = 0,1 kg vorerst übernommen; davor 14. November 2026 — Begründungen des Entwicklers für 120 kg und 61 cm und für Lesart B (Idle-Farm) eingetragen (7.1); davor 14. November 2026 — Feste Höchstmasse statt mit Grow steigend; ändert sie sich, bleibt die Größe und der Blob wächst nach (Vorgabe Entwickler, 7.1); davor 14. November 2026 — Präzisiert (Vorgabe Entwickler): niedergelassene Blobs dürfen wachsen, nur beim Erheben werden die Fasern nicht in Masse umgewandelt (4.7, 7.1, 8.3, 8.4, 13); davor 14. November 2026 — Größte Größe: Kugel mit 120 kg und 61 cm statt 80 kg und 90 cm (Vorgabe Entwickler, 7.1); davor 14. November 2026 — Vorgaben des Entwicklers: Höchstmasse an Grow, höchstens 80 kg und 90 cm, Form wandeln später; Nest kann immer abspalten; Größe beim Niederlassen speichern (gegen Wachstumssprünge); der nächste Blob erntet übernommen; Umrechnung und Folgen als Vorschlag (7.1, 4.7, 8.3, 8.4, 13, 15); davor 14. November 2026 — Verbinden gestrichen, Verschmelzen reicht (Vorgabe Entwickler, 4.4); Niederlassen auch nicht ausgewachsen, dann nur Erheben (Vorgabe Entwickler, 7.1); davor 14. November 2026 — Vorgaben des Entwicklers: je Skill nur der Höchstwert statt Herkunftszählern (6); Abspalten kostet Fasern für einen ausgewachsenen Körper, sonst kleiner, Gutschrift beim Verschmelzen (7.1); Mindestabstand und Höchstzahl weggelassen (8.3, 8.5); Vorschläge: Höchstmasse an Grow, Niederlassen nur ausgewachsen, Nest kann immer abspalten, der nächste Blob erntet; Abschnitte 3, 4, 5, 7.2, 12, 13, 14, 15 angepasst; davor 14. November 2026 — Verschmelzen mit dem Nest erlaubt und nur ohne Aggro übernommen; davor 14. November 2026 — Verschmelzen statt Einziehen (Vorgabe Entwickler): der Reisende geht im niedergelassenen oder vertrockneten Blob auf, Ergebnis immer niedergelassen; Ablauf und Folgefragen als Vorschlag (4.5); Abschnitte 1, 2, 3, 4, 5, 7.1, 8.1, 9, 11.2, 13.5, 14, 15 angepasst; davor 14. November 2026 — Begründung des Entwicklers fürs Nest (Unsterblichkeit), Ablauf des Erhebens übernommen, Einziehen als Vorgabe mit Begründung des Entwicklers (Name offen), Regel 4 bestätigt; davor 14. November 2026 — erste Entscheidungen des Entwicklers: Nest unzerstörbar, ortsfest und ohne Erheben (Abschnitt 2, 12); Erheben übernommen, nicht beim Nest (3, 4.7, Ablauf als Vorschlag); Bewusstsein nur zwischen niedergelassenen Blobs, höchstens ein Reisender, mit Begründung des Entwicklers (2); offene Punkte 6 und 14 teilweise entschieden; davor 14. November 2026 — zweite Prüfrunde eingearbeitet: Ermüdung gehört zum Bewusstsein, eigene Gutschrift beim Nachrechnen, Reichweite und Ziele vor Ort, Kosten nur im Nest notfalls frei, Grow-Reserve, Grenze nach dem Verbinden, Verbinden kann Erfahrung senken, Mindestabstand, Ausgangswert beim Zurückschreiben, Basis abziehen statt Falten, Beispiel 6.4 Schritt 6 berichtigt, Kennzeichnungen ergänzt; davor überarbeitet nach Konzept- und Doku-Prüfung: Verlernen als eine gemeinsame Zahl (kein doppeltes Verlernen, nie negativ), Ersatzkosten gegen Festsitzen, Ermüdung kopieren, Reihenfolge, Speicherbedarf, Nachrechnen ohne Übertraining und ohne Kern-Fähigkeiten, Arbeit ruht vor Ort, Einziehen, Nest-Umbau, Umsetzung in 7 Schritten, handytaugliche Gliederung; davor Erstfassung mit mehreren Markierungen (Vorgabe Entwickler)*
+*Letzte Aktualisierung: 14. November 2026 — Sterbescreen statt automatischem Sprung zum nächsten Blob (Vorgabe Entwickler mit Begründung, 9.1); davor 14. November 2026 — Umrechnung 1 Faser = 0,1 kg vorerst übernommen; davor 14. November 2026 — Begründungen des Entwicklers für 120 kg und 61 cm und für Lesart B (Idle-Farm) eingetragen (7.1); davor 14. November 2026 — Feste Höchstmasse statt mit Grow steigend; ändert sie sich, bleibt die Größe und der Blob wächst nach (Vorgabe Entwickler, 7.1); davor 14. November 2026 — Präzisiert (Vorgabe Entwickler): niedergelassene Blobs dürfen wachsen, nur beim Erheben werden die Fasern nicht in Masse umgewandelt (4.7, 7.1, 8.3, 8.4, 13); davor 14. November 2026 — Größte Größe: Kugel mit 120 kg und 61 cm statt 80 kg und 90 cm (Vorgabe Entwickler, 7.1); davor 14. November 2026 — Vorgaben des Entwicklers: Höchstmasse an Grow, höchstens 80 kg und 90 cm, Form wandeln später; Nest kann immer abspalten; Größe beim Niederlassen speichern (gegen Wachstumssprünge); der nächste Blob erntet übernommen; Umrechnung und Folgen als Vorschlag (7.1, 4.7, 8.3, 8.4, 13, 15); davor 14. November 2026 — Verbinden gestrichen, Verschmelzen reicht (Vorgabe Entwickler, 4.4); Niederlassen auch nicht ausgewachsen, dann nur Erheben (Vorgabe Entwickler, 7.1); davor 14. November 2026 — Vorgaben des Entwicklers: je Skill nur der Höchstwert statt Herkunftszählern (6); Abspalten kostet Fasern für einen ausgewachsenen Körper, sonst kleiner, Gutschrift beim Verschmelzen (7.1); Mindestabstand und Höchstzahl weggelassen (8.3, 8.5); Vorschläge: Höchstmasse an Grow, Niederlassen nur ausgewachsen, Nest kann immer abspalten, der nächste Blob erntet; Abschnitte 3, 4, 5, 7.2, 12, 13, 14, 15 angepasst; davor 14. November 2026 — Verschmelzen mit dem Nest erlaubt und nur ohne Aggro übernommen; davor 14. November 2026 — Verschmelzen statt Einziehen (Vorgabe Entwickler): der Reisende geht im niedergelassenen oder vertrockneten Blob auf, Ergebnis immer niedergelassen; Ablauf und Folgefragen als Vorschlag (4.5); Abschnitte 1, 2, 3, 4, 5, 7.1, 8.1, 9, 11.2, 13.5, 14, 15 angepasst; davor 14. November 2026 — Begründung des Entwicklers fürs Nest (Unsterblichkeit), Ablauf des Erhebens übernommen, Einziehen als Vorgabe mit Begründung des Entwicklers (Name offen), Regel 4 bestätigt; davor 14. November 2026 — erste Entscheidungen des Entwicklers: Nest unzerstörbar, ortsfest und ohne Erheben (Abschnitt 2, 12); Erheben übernommen, nicht beim Nest (3, 4.7, Ablauf als Vorschlag); Bewusstsein nur zwischen niedergelassenen Blobs, höchstens ein Reisender, mit Begründung des Entwicklers (2); offene Punkte 6 und 14 teilweise entschieden; davor 14. November 2026 — zweite Prüfrunde eingearbeitet: Ermüdung gehört zum Bewusstsein, eigene Gutschrift beim Nachrechnen, Reichweite und Ziele vor Ort, Kosten nur im Nest notfalls frei, Grow-Reserve, Grenze nach dem Verbinden, Verbinden kann Erfahrung senken, Mindestabstand, Ausgangswert beim Zurückschreiben, Basis abziehen statt Falten, Beispiel 6.4 Schritt 6 berichtigt, Kennzeichnungen ergänzt; davor überarbeitet nach Konzept- und Doku-Prüfung: Verlernen als eine gemeinsame Zahl (kein doppeltes Verlernen, nie negativ), Ersatzkosten gegen Festsitzen, Ermüdung kopieren, Reihenfolge, Speicherbedarf, Nachrechnen ohne Übertraining und ohne Kern-Fähigkeiten, Arbeit ruht vor Ort, Einziehen, Nest-Umbau, Umsetzung in 7 Schritten, handytaugliche Gliederung; davor Erstfassung mit mehreren Markierungen (Vorgabe Entwickler)*
