@@ -30,6 +30,7 @@ Current state: **v0.7** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/data/progression.ts` | All progression knobs with rationale: experience → progress 0–100 % (general scheme: every skill value runs start → max), ranks in %, comparison level vs. entity levels, capacity (discovered skills up to 90 %), overstretch, relearning, overtraining (no levels) |
 | `src/data/version.ts` | `GAME_VERSION` — must match `package.json` (build.js aborts otherwise). Shown in save dialog and stored in each save. |
 | `src/systems/SkillSystem.ts` | Pure skill logic — what earns how much XP, discovery, combining, blob growth (HP/MP) |
+| `src/systems/KnowledgeSystem.ts` | GDD-10: merges the knowledge of two blobs (highest value per skill, held-back XP, capacity limit) and carries fatigue and statistics over to the next body |
 | `src/systems/ProgressionSystem.ts` | How experience is booked: relearn bonus, overtraining/rest, capacity and forgetting, ranks; same progress conversion for player and entities |
 | `src/systems/EntitySystem.ts` | Absorb/Analyze/Respawn logic |
 | `src/systems/StatusEffectSystem.ts` | DoT/HoT/Aura processing, continuous regeneration (HoT as rate per frame), passive skill sync |

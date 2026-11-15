@@ -509,6 +509,21 @@ export function settleAfterLoad(player: PlayerState, nowMs: number): Progression
   return events;
 }
 
+/**
+ * Harte Grenze herstellen, ohne einen Skill zu schonen: Was über `limit`
+ * liegt (Standard: Kapazität + Überdehnung), wird sofort verlernt — zuerst
+ * bei den am längsten nicht geübten Skills. Für das Zusammenführen von
+ * Wissen beim Verschmelzen (GDD-10 Abschnitt 6.2) und das Nachrechnen
+ * niedergelassener Blobs.
+ */
+export function enforceCapacityLimit(player: PlayerState, limit?: number): ProgressionEvent[] {
+  const events: ProgressionEvent[] = [];
+  const info = getCapacityInfo(player);
+  const cap = limit ?? info.limit;
+  if (info.used > cap) forgetLeastPracticed(player, info.used - cap, null, events);
+  return events;
+}
+
 function clamp01(x: number): number {
   return Math.max(0, Math.min(1, x));
 }
