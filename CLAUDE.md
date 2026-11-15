@@ -92,7 +92,7 @@ Current state: **v0.8** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `docs/GDD-09-Grundwerte-und-Sinne.md` | Base stats (strength, dexterity, speed, sight), movement skills, strength from size, vision black → gray → color, awakening intro with nest. |
 | `docs/GDD-08-Progressionsmathematik.md` | Math of leveling (curve families, XP models, integer limits, other games) and of effects (power per level, hit/effect probabilities, skill interactions) (Status: Diskussion; Teil 6 = implemented XP model). |
 | `docs/GDD-10-Blob-Formen.md` | Implemented (v0.7.6–v0.8.4): blob forms settled/traveling/dried, settling, split, merging (no separate connect), rising up, consciousness switch, knowledge merge (highest value per skill), split cost (a fully grown body), resource split, map and direction arrows. |
-| `docs/GDD-11-Spieleinstieg.md` | Concept: onboarding — teach basics, leave room for discovery, hints framed as memories from dry dormancy, explanation/nudge/discovery with escalation, first-hour sequence, landscape layouts (skill intro cards implemented v0.8.6). |
+| `docs/GDD-11-Spieleinstieg.md` | Concept: onboarding — teach basics, leave room for discovery, hints framed as the blob's instinct (why it awakens stays a mystery), explanation/nudge/discovery with escalation, first-hour sequence, landscape layouts (skill intro cards implemented v0.8.6). |
 
 ---
 

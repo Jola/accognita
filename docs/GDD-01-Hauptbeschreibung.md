@@ -141,6 +141,10 @@ Das Spiel beginnt im feuchten, schattigen Unterholz eines uralten Waldes. Der Bl
 
 Wie dieses Erwachen geschieht, ist noch nicht entschieden. Zwei Konzepte stehen zur Wahl:
 
+**Vorgabe (Entwickler, 15. November 2026):** Für den Anfang reicht es, dass der Blob erwacht. Er erwacht nicht aus der Trockenstarre. Das Warum bleibt ein Mysterium; das Spiel erzählt es zu Beginn nicht (GDD-11 Abschnitt 3). Ob später eine der Optionen unten aufgelöst wird, ist offen.
+
+> Begründung offen
+
 ---
 
 ### Option A — Die magische Quelle
@@ -242,4 +246,4 @@ Alle Skills und XP des vertrockneten Blobs übertragen
 
 ---
 
-*Letzte Aktualisierung: 15. November 2026 — Abschnitt 10: offene Fragen mit den Entscheidungen in GDD-10 beantwortet, „Verschmelzen“ statt „Verbinden“; davor 14. November 2026 — Wasser zum Wiederbeleben endgültig verworfen (vom Entwickler bestätigt); davor 14. November 2026 — Verweis auf GDD-10: Höchstwert je Skill statt Herkunftszählern; davor 14. November 2026 — Abschnitt 10 verweist auf GDD-10 (Blob-Formen), Wasser-Wiederbelebung vorläufig als VERWORFEN markiert (bitte bestätigen); davor v0.4 — Level-Bezüge an „Erfahrung statt Level“ angepasst (Abschnitte 2, 3, 5, 10), GDD-07 und GDD-08 in den Referenzen ergänzt (31. Oktober 2026); davor Startsequenz (Abschnitt 9) und Blob-Teilungs-Respawn-System (Abschnitt 10) als Konzepte ergänzt (März 2026)*
+*Letzte Aktualisierung: 15. November 2026 — Abschnitt 9: das Warum des Erwachens bleibt zu Beginn ein Mysterium, kein Erwachen aus der Trockenstarre (Vorgabe Entwickler); davor 15. November 2026 — Abschnitt 10: offene Fragen mit den Entscheidungen in GDD-10 beantwortet, „Verschmelzen“ statt „Verbinden“; davor 14. November 2026 — Wasser zum Wiederbeleben endgültig verworfen (vom Entwickler bestätigt); davor 14. November 2026 — Verweis auf GDD-10: Höchstwert je Skill statt Herkunftszählern; davor 14. November 2026 — Abschnitt 10 verweist auf GDD-10 (Blob-Formen), Wasser-Wiederbelebung vorläufig als VERWORFEN markiert (bitte bestätigen); davor v0.4 — Level-Bezüge an „Erfahrung statt Level“ angepasst (Abschnitte 2, 3, 5, 10), GDD-07 und GDD-08 in den Referenzen ergänzt (31. Oktober 2026); davor Startsequenz (Abschnitt 9) und Blob-Teilungs-Respawn-System (Abschnitt 10) als Konzepte ergänzt (März 2026)*
