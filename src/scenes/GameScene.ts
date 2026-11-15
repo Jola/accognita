@@ -27,7 +27,7 @@ import { createGainFeed, type GainFeedState } from "../ui/GainFeed.js";
 import { createIntroQueue, skillIntroCard, type IntroQueueState, type IntroSection } from "../ui/SkillIntro.js";
 import {
   SIGHT_INTRO, MOVE_INTRO_SETTLED, MOVE_TRY_SETTLED, MOVE_INTRO_TRAVELING, MOVE_TRY_TRAVELING,
-  CARDS, DISCOVERIES, DISCOVERY_HOLD_MS, HINT_SETTLE_PEACEFUL_RADIUS_PX,
+  CARDS, DISCOVERIES, DISCOVERY_HOLD_MS, HINT_SETTLE_PEACEFUL_RADIUS_PX, CAPACITY_CARD_FRACTION, GROWN_DISCOVERY_MASS,
 } from "../data/tutorial";
 import { createHintRuntime, tickHints, markAct, remember, type ActiveHint, type TutorialContext } from "../systems/TutorialSystem";
 import { renderMemoryView, type MemoryItem } from "../ui/MemoryView.js";
@@ -182,6 +182,7 @@ export class GameScene extends Phaser.Scene {
   private formSeconds = 0;          // Spielzeit seit dem letzten Körperwechsel
   private lastTutHp = -1;           // HP im letzten Frame (erster Schaden als Reisender)
   private leftTouch = false;        // seit dem Körperwechsel einmal keinen eigenen Blob berührt
+  private massAtSwap = -1;          // Körpermasse beim Körperwechsel (Entdeckung „gewachsen“)
   private gamePaused = false;
   private pauseReasons = new Set<"fullscreen" | "ui" | "death" | "intro">();
   private hpBarGraphics!: any;
@@ -484,6 +485,12 @@ export class GameScene extends Phaser.Scene {
     const dt = this.tutorialAcc / 1000;
     this.tutorialAcc = 0;
     this.formSeconds += dt;
+    // 5.10: Wachsen als Entdeckung, Kapazität als Erklärung, wenn sie eine Rolle spielt
+    const p = state.player;
+    if (this.massAtSwap < 0) this.massAtSwap = p.bodyMass;
+    if (p.bodyMass - this.massAtSwap >= GROWN_DISCOVERY_MASS) this.discover("grown");
+    const cap = getCapacityInfo(p);
+    if (cap.capacity > 0 && cap.used / cap.capacity > CAPACITY_CARD_FRACTION) this.showCard("capacity");
     const hint = tickHints(t, this.hintRt, this.tutorialContext(), dt);
     if (hint && !this.loggedHints.has(hint.id)) {
       this.loggedHints.add(hint.id);
@@ -1620,6 +1627,7 @@ export class GameScene extends Phaser.Scene {
     this.formSeconds = 0;
     this.lastTutHp = -1;
     this.leftTouch = false;
+    this.massAtSwap = -1;
     this.setActiveHint(null);
     this.introStep = null;
     this.updateIntro();

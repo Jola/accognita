@@ -62,7 +62,7 @@ export const TRAVEL_TEXT = [
 // - Drei Stufen mit je etwa 45 s passen erst einmal (im Spiel ausprobieren).
 // - Anlässe fürs Niederlassen: weit vom Nest, guter Ort, wenig HP.
 // - Hinweise lassen sich nicht abschalten.
-// Texte und übrige Zahlen: Vorschlag Claude (offen).
+// Texte und übrige Zahlen: Vorschlag Claude, übernommen (15. November 2026: „Passt so“).
 // ============================================================
 
 /** Stufe 2 (konkreter Satz) nach so vielen Sekunden, Stufe 3 (Knopf pulsiert) nach dem Doppelten. Vorgabe Entwickler. */
@@ -82,6 +82,10 @@ export const HINT_SETTLE_HP_FRACTION = 0.5;
 export const HINT_RISE_AFTER_SECONDS = 60;
 /** Der Hinweis nach dem ersten Schaden erklärt nur; er steht so lange und ist dann erledigt (GDD-11 5.4). */
 export const HINT_DANGER_SHOW_SECONDS = 14;
+/** Erklärung „Kapazität“, wenn sie zum ersten Mal über diesen Anteil steigt (GDD-11 5.10) — vorher spielt sie keine Rolle. */
+export const CAPACITY_CARD_FRACTION = 0.8;
+/** Entdeckung „gewachsen“: so viele Fasern Körpermasse seit dem letzten Körperwechsel dazugewonnen (2 kg). */
+export const GROWN_DISCOVERY_MASS = 20;
 /** Entdeckt-Zeile unter dem Blob (GDD-11 7.1). */
 export const DISCOVERY_HOLD_MS = 6000;
 
@@ -183,6 +187,14 @@ export const CARDS: Record<string, CardText> = {
       "So holst du auch zurück, was ein vertrockneter Teil von dir gelernt hat.",
     ],
   },
+  capacity: {
+    kicker: "🧠 Kapazität", icon: "🧠", title: "Begrenzter Platz",
+    lines: [
+      "Alles, was du lernst, braucht Platz. Oben bei KAP siehst du, wie viel davon belegt ist.",
+      "Jeder neue Skill bringt eigenen Platz mit. Ist alles voll, verdrängt Neues, was du am längsten nicht geübt hast — es verblasst langsam.",
+      "Was du schon einmal konntest, lernst du doppelt so schnell wieder.",
+    ],
+  },
   dried: {
     kicker: "💀 Besiegt", icon: "🍂", title: "Vertrocknet",
     lines: [
@@ -198,6 +210,7 @@ export const DISCOVERIES: Record<string, { icon: string; text: string }> = {
   absorb_vanish: { icon: "💥", text: "Absorbiertes verschwindet — und wächst mit der Zeit nach." },
   analyze_keep: { icon: "🔍", text: "Analysieren lässt das Wesen in Ruhe — du lernst trotzdem von ihm." },
   plant_fiber: { icon: "🌿", text: "Aus Gras gewinnst du Pflanzenfasern — Nahrung, aus der dein Körper wächst." },
+  grown: { icon: "🫧", text: "Du bist gewachsen. Aus verdauten Fasern wird Körper: mehr HP, mehr Reichweite." },
 };
 
 // Stand: 15. November 2026 — Anstöße, Erklärungen und Entdeckungen des Spieleinstiegs (GDD-11); davor Erstfassung

@@ -1,7 +1,7 @@
 # Absorb & Evolve — Game Design Document
 ## Datei 11: Spieleinstieg — Grundmechaniken lernen, entdecken, verstehen
 
-> Status: Umgesetzt (v0.9.0, 15. November 2026) — Abschnitte 4, 5.3 bis 5.9, 7 und 8; noch nicht: 5.10 (Kapazität, Wachsen, Kombinieren). ~~Status: Konzept, entschieden (15. November 2026) — alle Fragen in Abschnitt 9 beantwortet; die Umsetzung wartet auf das Go des Entwicklers. ~~Wartet auf Entscheidungen des Entwicklers (Abschnitt 9).~~ Umgesetzt ist bisher nur der Anfang: Skill-Vorstellung, Anzeige unter dem Blob, Karte „Auf Reisen“ (v0.8.6, GDD-02 Abschnitt 6, GDD-10 Abschnitt 8.4).~~
+> Status: Umgesetzt (v0.9.0 und v0.9.1, 15. November 2026) — alles außer Kombinieren (5.10: dafür gibt es noch kein Konzept). ~~Umgesetzt (v0.9.0) — Abschnitte 4, 5.3 bis 5.9, 7 und 8; noch nicht: 5.10.~~ ~~Status: Konzept, entschieden (15. November 2026) — alle Fragen in Abschnitt 9 beantwortet; die Umsetzung wartet auf das Go des Entwicklers. ~~Wartet auf Entscheidungen des Entwicklers (Abschnitt 9).~~ Umgesetzt ist bisher nur der Anfang: Skill-Vorstellung, Anzeige unter dem Blob, Karte „Auf Reisen“ (v0.8.6, GDD-02 Abschnitt 6, GDD-10 Abschnitt 8.4).~~
 
 **Der Kern in einem Satz:** Das Spiel erklärt nur, was man zum Weiterkommen verstehen muss, und gibt Anstöße, was man ausprobieren könnte. Ein Anstoß ist eine einfache Frage, etwa „Warum probierst du es nicht mal aus?“. Wer fragt, bleibt offen. ~~Diese Anstöße kommen aus dem Blob selbst: aus seinem Gespür für die Welt.~~ [VERWORFEN, 15. November 2026] Vorgabe Entwickler: Fragen, nicht „etwas in dir“ (Abschnitt 3). ~~Diese Anstöße kommen aus der Geschichte des Blobs: Er erinnert sich, was er früher konnte.~~ [VERWORFEN, 15. November 2026] Vorgabe Entwickler: kein Erwachen aus der Trockenstarre (Abschnitt 3).
 
@@ -198,11 +198,14 @@ Je Schritt: Anlass → Anstoß (Frage → konkret) → Erklärung danach. ✅ = 
 - **Anlass:** Zum ersten Mal gibt es zwei niedergelassene Blobs.
 - **Anstoß:** „Zwei Teile von dir, weit voneinander entfernt. Wo sie wohl gerade sind?“ ~~„Du spürst beide Teile von dir, egal wie weit sie entfernt sind.“~~ → Im Menü unter KARTE siehst du sie und kannst dein Bewusstsein wechseln.
 
-### 5.10 Später: Kapazität, Kombinieren, Wachsen
+### 5.10 Später: Kapazität, Kombinieren, Wachsen ✅ (v0.9.1, ohne Kombinieren)
 - **Kapazität:** Erklärung, wenn sie zum ersten Mal über 80 % steigt (vorher spielt sie keine Rolle).
 - **Wachsen:** Entdeckung beim ersten Größersein: „Du bist gewachsen.“
 - **Kombinieren:** erst, wenn Rezepte existieren (offene Entscheidung, CLAUDE.md).
-- Noch nicht umgesetzt (gehörte nicht zum Plan in Abschnitt 9, Frage 7).
+- ~~Noch nicht umgesetzt (gehörte nicht zum Plan in Abschnitt 9, Frage 7).~~ Umgesetzt (v0.9.1, Auftrag Entwickler 15. November 2026: „Bitte umsetzen“):
+  - **Kapazität:** Karte „Begrenzter Platz“, sobald KAP zum ersten Mal über 80 % steigt: Alles Gelernte braucht Platz (KAP oben), jeder neue Skill bringt eigenen Platz mit, ist alles voll, verblasst das am längsten nicht Geübte; was man schon konnte, lernt man doppelt so schnell wieder (GDD-02 Abschnitt 8.4).
+  - **Wachsen:** Entdeckung „Du bist gewachsen. Aus verdauten Fasern wird Körper: mehr HP, mehr Reichweite.“, sobald ein Körper seit dem letzten Körperwechsel 20 Fasern (2 kg) Masse dazugewonnen hat. **Begründung (Vorschlag Claude, offen):** Kleinere Schritte sieht man am Blob kaum.
+  - **Kombinieren:** entfällt, solange es kein Konzept gibt (COMBO-Reiter ausgebaut, GDD-02 Abschnitt 5).
 
 **Begründung (Vorschlag Claude, offen):** Die Reihenfolge folgt dem, was der Spieler braucht: erst Sinne, dann reisen, dann sich schützen und sichern, dann mehrere Blobs. Jede Erklärung kommt höchstens einmal. Der Spieler hat zwischen den Schritten Zeit, frei zu spielen.
 
@@ -264,7 +267,7 @@ Der Reiter sammelt jede gezeigte Erklärung, jede Skill-Karte und jede Entdeckun
 
 ### 8.1 Umsetzung (v0.9.0, 15. November 2026)
 
-**Abweichungen vom Plan oben** (Vorschlag Claude, offen):
+**Abweichungen vom Plan oben** (Vorschlag Claude, übernommen 15. November 2026: „Passt so“):
 - **`TutorialSystem.tickHints(tutorial, runtime, ctx, dt)`** statt `nextHint(state, events)`. Die Szene misst die Lage einmal pro Sekunde (`TutorialContext`: Form, Sekunden seit dem letzten Körperwechsel, HP, ruhig oder angegriffen, Entfernung zum Nest, Biom, friedliche Wesen in der Nähe, was gerade möglich ist). Taten meldet sie mit `markAct`. Die festen Texte in `IntroSystem.ts` bleiben für das Erwachen; ein Anstoß hat im Hinweisfeld Vorrang.
 - **Spielstand v10:** `seenIntros` bleibt (welche Karten schon gezeigt wurden). Neu ist `tutorial: { done, memory }`. `done` enthält Taten (`feed`, `settle`, `rise`, `merge`, `merge_dried`, `map`, `damaged`) und erledigte reine Hinweise (`hint:danger`). `memory` sind Schlüssel mit Spielzeit (`skill:…`, `card:…`, `find:…`); die Texte kommen beim Anzeigen aus den Daten. Migration: Das Gedächtnis beginnt mit den schon gezeigten Karten („früher“). Wer schon einen Blob außer dem Nest hat, bekommt den Anstoß zum Niederlassen nicht mehr, wer schon abgespalten hat, den zum Fressen nicht.
 - **Vorrang**, wenn mehrere Anlässe passen: Gefahr, Verschmelzen, Zurückholen, Niederlassen, Fressen, Erheben, Karte. **Begründung:** Was gerade geschieht (Schaden, Berührung), vor dem, was warten kann.
@@ -283,7 +286,7 @@ Der Reiter sammelt jede gezeigte Erklärung, jede Skill-Karte und jede Entdeckun
 - **Stufe 3** lässt den gemeinten Knopf golden pulsieren: Absorb und Analyze, Niederlassen, Erheben, Verschmelzen, Abspalten oder den Menü-Knopf 📋.
 - **Gedächtnis-Reiter:** Neueste Einträge oben, ein Eintrag klappt per Tippen auf. Skill-Einträge zeigen die Werte von jetzt. **Begründung:** Das zuletzt Erlebte sucht man am häufigsten.
 - **Hinweisfeld im Querformat:** oben links neben dem Sichtkreis statt mittig, weil unten links der Joystick liegt.
-- Alle Texte: Vorschlag Claude (offen).
+- Alle Texte: Vorschlag Claude, übernommen (15. November 2026).
 
 ---
 
@@ -299,4 +302,4 @@ Der Reiter sammelt jede gezeigte Erklärung, jede Skill-Karte und jede Entdeckun
 
 ---
 
-*Letzte Aktualisierung: 15. November 2026 — umgesetzt (v0.9.0): Anstöße 5.3 bis 5.9, Erklärungen, Entdeckungen, Gedächtnis-Reiter; Abweichungen in 8.1; davor 15. November 2026 — Hinweise nicht abschaltbar (Vorgabe Entwickler), Reihenfolge der Umsetzung übernommen, alle Fragen beantwortet; Stufen (4.2) und Anlässe fürs Niederlassen (5.5) übernommen, Gedächtnis als eigener Reiter, INDEX ist für den Entwickler (Vorgaben Entwickler, Fragen 3–5); davor 15. November 2026 — erster Hinweis im Nest ohne „Tätigkeit“ (Vorgabe Entwickler, v0.8.7); davor 15. November 2026 — Neugier als Antrieb, Anstöße als einfache Fragen ohne Sprecher, nicht „etwas in dir“; Elf und Quelle bleiben als Idee (Vorgaben Entwickler); Beispieltexte als Fragen neu (Vorschlag); davor 15. November 2026 — kein Erwachen aus der Trockenstarre, das Warum bleibt ein Mysterium (Vorgabe Entwickler); Hinweise als Gespür statt Erinnerungen (Vorschlag), Fragen 1 und 2 beantwortet; davor 15. November 2026 — Erstfassung (Konzept) auf Wunsch des Entwicklers: Grundmechaniken lernen, entdecken lassen, nicht frustrieren, in die Geschichte eingebettet, Querformat*
+*Letzte Aktualisierung: 15. November 2026 — 5.10 umgesetzt (Kapazität, Wachsen; v0.9.1), Abweichungen und Texte aus 8.1 übernommen; davor 15. November 2026 — umgesetzt (v0.9.0): Anstöße 5.3 bis 5.9, Erklärungen, Entdeckungen, Gedächtnis-Reiter; Abweichungen in 8.1; davor 15. November 2026 — Hinweise nicht abschaltbar (Vorgabe Entwickler), Reihenfolge der Umsetzung übernommen, alle Fragen beantwortet; Stufen (4.2) und Anlässe fürs Niederlassen (5.5) übernommen, Gedächtnis als eigener Reiter, INDEX ist für den Entwickler (Vorgaben Entwickler, Fragen 3–5); davor 15. November 2026 — erster Hinweis im Nest ohne „Tätigkeit“ (Vorgabe Entwickler, v0.8.7); davor 15. November 2026 — Neugier als Antrieb, Anstöße als einfache Fragen ohne Sprecher, nicht „etwas in dir“; Elf und Quelle bleiben als Idee (Vorgaben Entwickler); Beispieltexte als Fragen neu (Vorschlag); davor 15. November 2026 — kein Erwachen aus der Trockenstarre, das Warum bleibt ein Mysterium (Vorgabe Entwickler); Hinweise als Gespür statt Erinnerungen (Vorschlag), Fragen 1 und 2 beantwortet; davor 15. November 2026 — Erstfassung (Konzept) auf Wunsch des Entwicklers: Grundmechaniken lernen, entdecken lassen, nicht frustrieren, in die Geschichte eingebettet, Querformat*
