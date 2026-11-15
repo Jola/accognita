@@ -7,6 +7,7 @@ import type { SkillInstance, SkillProgress } from "./Skill";
 import { createSkillProgress } from "./Skill";
 import type { EntityInstance } from "./Entity";
 import type { StatusEffect } from "./Combat";
+import type { BlobMeta, StoredBlob } from "./Blob";
 import { GAME_VERSION } from "../data/version";
 
 // -----------------------------------------------------------
@@ -86,7 +87,16 @@ export interface WorldState {
 // GameState: Der komplette Spielzustand
 // -----------------------------------------------------------
 export interface GameState {
+  /** Arbeitskopie des Blobs, bei dem das Bewusstsein ist (GDD-10 Abschnitt 13.2) */
   player: PlayerState;
+  /** Was diesen Blob sonst ausmacht: ID, Name, Form */
+  conscious: BlobMeta;
+  /** Alle anderen Blobs (niedergelassen, vertrocknet) */
+  blobs: StoredBlob[];
+  /** Nächste Blob-Nummer — IDs werden nie wiederverwendet */
+  nextBlobNumber: number;
+  /** Markierte Blobs (Richtungspfeile, GDD-10 Abschnitt 11) */
+  markedBlobIds: string[];
   world: WorldState;
   version: string;
   savedAt?: number;
@@ -98,6 +108,10 @@ export interface GameState {
 export function createInitialGameState(): GameState {
   return {
     version: GAME_VERSION,
+    conscious: { id: "b1", name: "Reisender", form: "traveling" },
+    blobs: [],
+    nextBlobNumber: 2,
+    markedBlobIds: [],
     player: {
       x: 400,
       y: 300,

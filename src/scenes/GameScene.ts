@@ -617,7 +617,7 @@ export class GameScene extends Phaser.Scene {
         this.gameState.player.activeSkillSlots[i] = this.skillBar.slots[i];
       }
     }
-    saveToSlot(slot, this.gameState.player, this.skillBar?.slots ?? []);
+    saveToSlot(slot, this.gameState, this.skillBar?.slots ?? []);
     addLog(`💾 Spielstand in Slot ${slot + 1} gespeichert.`, "system");
   }
 
@@ -629,8 +629,12 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    // Spieler-State ersetzen
+    // Spieler-State (Arbeitskopie des Blobs mit Bewusstsein) und alle Blobs ersetzen
     this.gameState.player = saved.player;
+    this.gameState.conscious = saved.conscious;
+    this.gameState.blobs = saved.blobs;
+    this.gameState.nextBlobNumber = saved.nextBlobNumber;
+    this.gameState.markedBlobIds = saved.markedBlobIds;
 
     // Spieler-Sprite an gespeicherte Position
     this.blobGraphic.setPosition(saved.player.x, saved.player.y);

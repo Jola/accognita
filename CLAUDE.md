@@ -23,6 +23,7 @@ Current state: **v0.7** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/types/GameState.ts` | Central game state interfaces |
 | `src/types/Combat.ts` | AttackType, StatusEffect, AttackResult, AiFrame interfaces |
 | `src/types/Material.ts` | Material and loot-drop interfaces |
+| `src/types/Blob.ts` | GDD-10 blob forms: BlobForm, BlobMeta, StoredBlob, SerializedBody (stored body of a blob) |
 | `src/data/skills.ts` | All skill definitions and everything that belongs to a skill: values start → max, attributes it gives, attribute scaling, jump distance, healing, digestion, XP from practice (`practice`) |
 | `src/data/entities.ts` | All entity definitions |
 | `src/data/materials.ts` | All material/loot definitions |
@@ -50,7 +51,8 @@ Current state: **v0.7** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/systems/HitSystem.ts` | Hit grades (miss/light/normal/heavy/crit): chances from skill profile, level and dexterity; dice roll |
 | `src/systems/AiSystem.ts` | Aggro, chase, attack-trigger (pure logic, no Phaser) |
 | `src/systems/MaterialSystem.ts` | Loot drop resolution and material inventory logic |
-| `src/systems/SaveSystem.ts` | Save/load game state via localStorage (3 slots) |
+| `src/systems/SaveSystem.ts` | Save/load game state via localStorage (3 slots): body of the conscious blob plus all other blobs, migrations |
+| `src/systems/BodySerializer.ts` | Body of a blob ↔ stored form (shared by saves and stored blobs) |
 | `src/ui/Joystick.ts` | Self-contained virtual joystick — DOM only, no Phaser |
 | `src/ui/SkillBar.ts` | Touch skill slots with cooldown display and long-press menu |
 | `src/ui/SkillMenu.ts` | Full-screen skill management overlay (pauses game) |
