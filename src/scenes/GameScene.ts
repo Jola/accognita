@@ -14,12 +14,15 @@ import { getIntroStep, getIntroText, type IntroStep } from "../systems/IntroSyst
 import {
   settle, canSettle, split, canSplit, rise, canRise, merge, canMerge, dryOut, switchTo, canSwitch,
   findTouchedBlob, nearestSettled, summarizeAhead, storedCoreRadius, consciousWorkRange,
+  previewSplit, defaultSplitTake,
 } from "../systems/BlobSystem";
 import { runActivity, snapshotSources } from "../systems/SettlementSystem";
 import { ACTION_SECONDS, SETTLE_AGGRO_LOCK_MS } from "../data/blobs";
+import { KG_PER_FIBER, MAX_BODY_MASS } from "../data/grow";
 import type { BlobActivity, StoredBlob } from "../types/Blob";
 import { createBlobActions, type BlobActionsState, type BlobActionButton } from "../ui/BlobActions.js";
 import { createBlobPicker, type BlobPickerState } from "../ui/BlobPicker.js";
+import { createTransferDialog, type TransferDialogState } from "../ui/TransferDialog.js";
 import { createBlobArrows, type BlobArrowsState } from "../ui/BlobArrows.js";
 import { SIGHT_EDGE_FRACTION } from "../data/body";
 import { processGrow, getPlayerGrowth } from "../systems/GrowSystem";
@@ -165,6 +168,7 @@ export class GameScene extends Phaser.Scene {
   // Blob-Formen (GDD-10): Knöpfe, Auswahl/Sterbescreen, Richtungspfeile, andere Blobs
   private blobActions!: BlobActionsState;
   private blobPicker!: BlobPickerState;
+  private transferDialog!: TransferDialogState;
   private blobArrows!: BlobArrowsState;
   private blobSprites: Map<string, any> = new Map();
   private workRangeGfx!: any;
@@ -1180,6 +1184,7 @@ export class GameScene extends Phaser.Scene {
   private setupBlobUi() {
     this.blobActions = createBlobActions((id) => this.onBlobAction(id), (reason) => showToast(reason, "system"));
     this.blobPicker = createBlobPicker();
+    this.transferDialog = createTransferDialog();
     this.blobArrows = createBlobArrows(document.getElementById("canvas-wrap") ?? document.body);
     this.workRangeGfx = this.add.graphics().setDepth(4);
     this.refreshBlobSprites();
@@ -1398,17 +1403,7 @@ export class GameScene extends Phaser.Scene {
       this.logResultOfCatchUp(r.result);
       this.afterBodySwap();
     } else if (id === "split") {
-      this.flushSettledActivity();
-      const first = state.nextBlobNumber <= 2 || state.blobs.length === 0 && state.conscious.nest;
-      const r = split(state, world);
-      if (!r.ok) { showToast(r.reason ?? "Geht nicht.", "system"); return; }
-      addLog(`🧬 Ein Teil von dir macht sich auf den Weg (${(state.player.bodyMass * 0.1).toLocaleString("de-DE", { maximumFractionDigits: 1 })} kg).`, "system");
-      if (first) {
-        const hint = "Wirst du besiegt, machst du bei einem niedergelassenen Blob weiter, zu Beginn im Nest. Lässt du dich nieder, ist dein Fortschritt gesichert.";
-        addLog(hint, "system");
-        showToast(hint, "system");
-      }
-      this.afterBodySwap();
+      this.openTransferDialog();
     } else if (id === "rise") {
       this.flushSettledActivity();
       const r = rise(state);
@@ -1457,6 +1452,46 @@ export class GameScene extends Phaser.Scene {
       cancellable: true,
       onClose: () => this.resumeForUI(),
     });
+  }
+
+  /** Verteilen-Dialog vor dem Abspalten (GDD-10 7.2); das Spiel hält an. */
+  private openTransferDialog() {
+    const state = this.gameState;
+    const check = canSplit(state);
+    if (!check.ok) { showToast(check.reason ?? "Geht nicht.", "system"); return; }
+    this.flushSettledActivity();
+    const preview = previewSplit(state);
+    const preset = defaultSplitTake(preview);
+    const kg = (mass: number) => (mass * KG_PER_FIBER).toLocaleString("de-DE", { maximumFractionDigits: 1 });
+    this.pauseForUI();
+    this.transferDialog.open({
+      title: "Neuer Reisender",
+      info: [
+        `Körpermasse ${kg(preview.childMass)} / ${kg(MAX_BODY_MASS)} kg`,
+        `${preview.grown ? "ausgewachsen" : "nicht ausgewachsen"}, ${toDisplayHp(preview.maxHp)} HP`,
+        ...(preview.childMass <= 0 ? ["Ohne Pflanzenfasern im Lager wird er winzig."] : []),
+      ],
+      rows: preview.materials.map((m) => {
+        const def = MATERIAL_MAP.get(m.id);
+        return { id: m.id, label: `${def?.icon ?? ""} ${def?.name ?? m.id}`.trim(), total: m.amount, take: preset[m.id] ?? 0 };
+      }),
+      onDone: (take) => { this.resumeForUI(); this.doSplit(take); },
+      onCancel: () => this.resumeForUI(),
+    });
+  }
+
+  private doSplit(take: Record<string, number>) {
+    const state = this.gameState;
+    const first = state.nextBlobNumber <= 2 || state.blobs.length === 0 && state.conscious.nest;
+    const r = split(state, state.world, take);
+    if (!r.ok) { showToast(r.reason ?? "Geht nicht.", "system"); return; }
+    addLog(`🧬 Ein Teil von dir macht sich auf den Weg (${(state.player.bodyMass * KG_PER_FIBER).toLocaleString("de-DE", { maximumFractionDigits: 1 })} kg).`, "system");
+    if (first) {
+      const hint = "Wirst du besiegt, machst du bei einem niedergelassenen Blob weiter, zu Beginn im Nest. Lässt du dich nieder, ist dein Fortschritt gesichert.";
+      addLog(hint, "system");
+      showToast(hint, "system");
+    }
+    this.afterBodySwap();
   }
 
   private openSwitchList() {
@@ -1835,7 +1870,7 @@ function updateUI(state: GameState) {
 
   // HUD — statt Charakter-Level: belegte Skill-Kapazität (progression.ts Abschnitt 3/4)
   const cap = getCapacityInfo(p);
-  const capPct = Math.round((cap.used / cap.capacity) * 100);
+  const capPct = cap.capacity > 0 ? Math.round((cap.used / cap.capacity) * 100) : 0; // ohne entdeckte Skills: 0 %
   setEl("ui-level", `Kap. ${capPct}%${cap.overstretch > 0 ? " ↑" : ""}`);
   updateVitalsUI(p);
   // MP abrunden: sonst stünde z.B. „3 MP vorhanden“, obwohl ein 3-MP-Skill nicht geht

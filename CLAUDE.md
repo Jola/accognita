@@ -62,6 +62,7 @@ Current state: **v0.8** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/ui/SaveMenu.ts` | Save/load slot UI overlay |
 | `src/ui/BlobActions.ts` | GDD-10 context buttons (settle, merge, split, rise up, switch, activity) |
 | `src/ui/BlobPicker.ts` | GDD-10 overlay: death screen and list of blobs to switch to / activity choice (pauses the game) |
+| `src/ui/TransferDialog.ts` | GDD-10 transfer dialog on splitting: one slider per resource, Nothing/Half/All (pauses the game) |
 | `src/ui/BlobArrows.ts` | GDD-10 direction arrows to marked blobs at the screen edge |
 | `src/ui/GameMenu.ts` | Full-screen game menu (Skills, Werte, Combo, Inventar, Nearby, Log, Index) — pauses game; markup in `accognita.template.html` |
 | `src/ui/IndexView.ts` | INDEX tab: in-game reference of all skills and entities with all parameters, computed live from data + systems |

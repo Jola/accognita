@@ -192,16 +192,48 @@ export function canSplit(state: GameState): BlobOpResult {
   return { ok: true };
 }
 
+/** Was der Verteilen-Dialog anzeigt (GDD-10 7.2): Größe des neuen Reisenden und was zu verteilen ist. */
+export interface SplitPreview {
+  /** Körpermasse des neuen Reisenden (Fasern) */
+  childMass: number;
+  grown: boolean;
+  maxHp: number;
+  maxMp: number;
+  /** Ressourcen nach Abzug der Fasern für den Körper */
+  materials: { id: string; amount: number }[];
+}
+
+export function previewSplit(state: GameState): SplitPreview {
+  const fibers = state.player.materials.get(GROW_FOOD_MATERIAL_ID) ?? 0;
+  const childMass = Math.min(fibers, MAX_BODY_MASS);
+  const growth = calcGrowthFromMass(childMass);
+  const materials: { id: string; amount: number }[] = [];
+  for (const [id, amount] of state.player.materials) {
+    const left = id === GROW_FOOD_MATERIAL_ID ? amount - childMass : amount;
+    if (left > 0) materials.push({ id, amount: left });
+  }
+  return { childMass, grown: isFullyGrown(childMass), maxHp: calcMaxHp(growth), maxMp: calcMaxMp(growth), materials };
+}
+
+/** Voreinstellung des Dialogs: halbe-halbe, ungerade Reste bleiben (GDD-10 7.2). */
+export function defaultSplitTake(preview: SplitPreview): Record<string, number> {
+  const take: Record<string, number> = {};
+  for (const m of preview.materials) take[m.id] = Math.floor(m.amount * SPLIT_SHARE_DEFAULT);
+  return take;
+}
+
 /**
  * Der neue Reisende bekommt eine Kopie des Wissens (ohne zurückgehaltene
  * Erfahrung), einen Körper aus den Pflanzenfasern im Lager (höchstens bis
- * ausgewachsen) und die Hälfte der übrigen Ressourcen. Das Bewusstsein
- * geht auf ihn über.
+ * ausgewachsen) und von den übrigen Ressourcen, was im Verteilen-Dialog
+ * gewählt wurde (`take`: Menge je Material, ohne Angabe halbe-halbe).
+ * Das Bewusstsein geht auf ihn über.
  */
-export function split(state: GameState, world: WorldState, share = SPLIT_SHARE_DEFAULT): BlobOpResult {
+export function split(state: GameState, world: WorldState, take?: Record<string, number>): BlobOpResult {
   const check = canSplit(state);
   if (!check.ok) return check;
   const parent = state.player;
+  const chosen = take ?? defaultSplitTake(previewSplit(state));
 
   // Kosten: Fasern = Körpermasse des neuen Reisenden (Vorgabe Entwickler, 7.1)
   const fibers = parent.materials.get(GROW_FOOD_MATERIAL_ID) ?? 0;
@@ -216,13 +248,13 @@ export function split(state: GameState, world: WorldState, share = SPLIT_SHARE_D
   child.coreAbilities.analyze.pendingXp = 0;
   for (const inst of child.discoveredSkills.values()) inst.pendingXp = 0;
 
-  // Übrige Ressourcen aufteilen; ungerade Reste bleiben beim niedergelassenen Blob
+  // Übrige Ressourcen verteilen: die Summe bleibt gleich (GDD-10 7.2)
   child.materials = new Map();
   for (const [id, amount] of parent.materials) {
-    const take = Math.floor(amount * share);
-    if (take > 0) {
-      child.materials.set(id, take);
-      parent.materials.set(id, amount - take);
+    const n = Math.max(0, Math.min(amount, Math.floor(chosen[id] ?? 0)));
+    if (n > 0) {
+      child.materials.set(id, n);
+      parent.materials.set(id, amount - n);
     }
   }
 
@@ -409,4 +441,4 @@ export function switchTo(
   return { ok: true, result };
 }
 
-// Stand: 15. November 2026 — Erstfassung (GDD-10 Umsetzungsschritt 3)
+// Stand: 15. November 2026 — Verteilen nach Wahl im Dialog (Schritt 4); Erstfassung in Schritt 3

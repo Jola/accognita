@@ -704,7 +704,7 @@ const ATTRIBUTE_PAGES: AttributePage[] = [
       `<p class="idx-desc">Der Blob kann sich niederlassen und arbeitet dann von allein. Von einem niedergelassenen Blob spaltet sich ein Reisender ab. Wird der Reisende besiegt, vertrocknet er; mit ihm verschmelzen holt seinen Stand zurück (GDD-10).</p>`,
       params([
         ["Niederlassen", `erst mit Bewegen, nur ohne Aggro seit ${num(SETTLE_AGGRO_LOCK_MS / 1000)} s; nicht ausgewachsen kann man sich danach nur erheben`],
-        ["Abspalten", `nur ausgewachsen (das Nest immer); der Körper entsteht aus den Pflanzenfasern im Lager, höchstens ${num(MAX_BODY_MASS)}; übrige Ressourcen halbe-halbe`],
+        ["Abspalten", `nur ausgewachsen (das Nest immer); der Körper entsteht aus den Pflanzenfasern im Lager, höchstens ${num(MAX_BODY_MASS)}; übrige Ressourcen nach Wahl im Verteilen-Dialog (voreingestellt halbe-halbe)`],
         ["Verschmelzen", "der Reisende geht in den berührten Blob hinein; je Skill der höchste Wert; alle Ressourcen und die Körpermasse (als Fasern) gehen über; HP und MP: der niedrigere Anteil"],
         ["Erheben", "derselbe Blob reist weiter, mit seiner Größe; Fasern im Lager werden nicht zu Körpermasse. Nicht das Nest."],
         ["Kapazität beim Verschmelzen", `darf über die Kapazität steigen, höchstens ${pct(OVERSTRETCH_MAX_FRACTION)} darüber, schmilzt dann ab`],
