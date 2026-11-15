@@ -49,9 +49,15 @@ export const WORK_RANGE_MAX_PX = 96;
 // Begründung (Vorschlag Claude, übernommen): Mittelwerte ergeben immer
 //   dasselbe, egal wie oft und in welchen Stücken gerechnet wird. Kleine
 //   Stücke vor Ort, damit man den Fortschritt sofort sieht (beim Erwachen
-//   sähe man sonst eine Minute lang nichts).
+//   sähe man sonst lange nichts).
 // -----------------------------------------------------------
-export const ACTION_SECONDS = 6;
+// Vorgabe (Entwickler, 15. November 2026): eher eine Aktion pro Sekunde; der
+//   Anfang darf nicht langweilig werden, muss aber auch nicht zu schnell
+//   gehen, solange man etwas zulegt. Begründung (Entwickler): Mit 6 s dauerte
+//   es zu lange — selbst eine Aktion pro Sekunde ist langsamer als früher von
+//   Hand. Im Nest kommen die ersten Skills so nach gut 10 s statt nach 66 s.
+// [VERWORFEN, 15. November 2026] ACTION_SECONDS = 6 (Vorschlag Claude).
+export const ACTION_SECONDS = 1;
 export const CATCHUP_CHUNK_SECONDS = 60;
 export const CATCHUP_MAX_CHUNKS = 500;
 

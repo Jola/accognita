@@ -26,7 +26,7 @@ import { CHUNK_PX } from "../world/Chunk";
 
 export const NUM_SAVE_SLOTS = 3;
 const SAVE_PREFIX    = "accognita_save_";
-const SAVE_VERSION   = 8;
+const SAVE_VERSION   = 9;
 
 // -----------------------------------------------------------
 // SAVE-METADATEN — Vorschau ohne komplettes Deserialize
@@ -61,6 +61,8 @@ interface SaveData {
   markedBlobIds?: string[];
   /** ab v8: besuchte Chunks für den Nebel der Karte */
   visitedChunks?: string[];
+  /** ab v9: schon gezeigte Skill-Vorstellungen und Hinweise */
+  seenIntros?: string[];
 }
 
 // -----------------------------------------------------------
@@ -210,6 +212,16 @@ MIGRATIONS[7] = (data) => {
   data.visitedChunks = [...visited];
 };
 
+// v8 → v9: Skill-Vorstellungen. Was ein alter Spielstand schon kennt, gilt
+// als vorgestellt; „Auf Reisen“ gilt als gezeigt, sobald je abgespalten wurde.
+MIGRATIONS[8] = (data) => {
+  const seen = new Set<string>();
+  const bodies = [data.player, ...(data.blobs ?? []).map((b) => b.body)];
+  for (const body of bodies) for (const [id] of body.discoveredSkills ?? []) seen.add(`skill:${id}`);
+  if ((data.nextBlobNumber ?? 2) > 2 || data.conscious?.form === "traveling") seen.add("travel");
+  data.seenIntros = [...seen];
+};
+
 /** Skills, die alte Spielstände bei der Umstellung auf GDD-09 geschenkt bekommen. */
 const LEGACY_BODY_SKILLS = ["crawl", "scuttle", "light_sense", "compound_eye", "principal_eyes"];
 
@@ -281,6 +293,7 @@ export function saveToSlot(
     nextBlobNumber: state.nextBlobNumber,
     markedBlobIds: state.markedBlobIds,
     visitedChunks: state.visitedChunks,
+    seenIntros: state.seenIntros,
   };
 
   localStorage.setItem(slotKey(slot), JSON.stringify(data));
@@ -298,6 +311,7 @@ export interface LoadedGame {
   nextBlobNumber: number;
   markedBlobIds: string[];
   visitedChunks: string[];
+  seenIntros: string[];
   meta: SaveMeta;
 }
 
@@ -311,6 +325,7 @@ export function loadFromSlot(slot: number): LoadedGame | null {
     nextBlobNumber: data.nextBlobNumber ?? 2,
     markedBlobIds: data.markedBlobIds ?? [],
     visitedChunks: data.visitedChunks ?? ["0,0"],
+    seenIntros: data.seenIntros ?? [],
     meta: data.meta,
   };
 }

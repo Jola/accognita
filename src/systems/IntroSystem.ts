@@ -65,8 +65,8 @@ const INTRO_TEXT_TRAVELING: Record<IntroStep, string> = {
  * 2026 — der Entwickler bemerkte, dass nach der Wahl scheinbar nichts geschieht).
  */
 const INTRO_TEXT_SETTLED_WORKING =
-  "Du tastest die Wesen neben dir ab. Jede Aktion bringt ein wenig Erfahrung. " +
-  "Hab Geduld — nach und nach lernst du etwas Neues.";
+  "Du tastest die Wesen neben dir ab. Über dir siehst du, was du dabei lernst — " +
+  "bald entdeckst du etwas Neues.";
 
 export function getIntroText(
   step: IntroStep,

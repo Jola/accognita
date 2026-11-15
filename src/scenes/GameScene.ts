@@ -23,6 +23,9 @@ import type { BlobActivity, StoredBlob } from "../types/Blob";
 import { createBlobActions, type BlobActionsState, type BlobActionButton } from "../ui/BlobActions.js";
 import { createBlobPicker, type BlobPickerState } from "../ui/BlobPicker.js";
 import { createTransferDialog, type TransferDialogState } from "../ui/TransferDialog.js";
+import { createGainFeed, type GainFeedState } from "../ui/GainFeed.js";
+import { createIntroQueue, skillIntroCard, type IntroQueueState, type IntroSection } from "../ui/SkillIntro.js";
+import { SIGHT_INTRO, MOVE_INTRO_SETTLED, MOVE_TRY_SETTLED, MOVE_INTRO_TRAVELING, MOVE_TRY_TRAVELING, TRAVEL_TITLE, TRAVEL_TEXT } from "../data/tutorial";
 import { createMapView, type MapViewState, type MapBlob } from "../ui/MapView.js";
 import type { GameMenu } from "../ui/GameMenu.js";
 import { createBlobArrows, type BlobArrowsState } from "../ui/BlobArrows.js";
@@ -59,6 +62,7 @@ import {
 } from "../systems/ProgressionSystem.js";
 import type { GainResult, ProgressionEvent, RankInfo } from "../systems/ProgressionSystem.js";
 import {
+  type InteractionResult,
   absorbEntity,
   analyzeEntity,
   findNearestEntity,
@@ -164,7 +168,7 @@ export class GameScene extends Phaser.Scene {
   private introStep: IntroStep | null = null;
   private introWorking = false;
   private gamePaused = false;
-  private pauseReasons = new Set<"fullscreen" | "ui" | "death">();
+  private pauseReasons = new Set<"fullscreen" | "ui" | "death" | "intro">();
   private hpBarGraphics!: any;
   private skillBar!: SkillBarState;
   private playtimeAccumulator = 0; // Sekunden akkumulieren für player.playtimeSeconds
@@ -175,6 +179,9 @@ export class GameScene extends Phaser.Scene {
   private blobActions!: BlobActionsState;
   private blobPicker!: BlobPickerState;
   private transferDialog!: TransferDialogState;
+  private gainFeed: GainFeedState | null = null;
+  private moveFeed: { id: string; xp: number } | null = null;
+  private introQueue!: IntroQueueState;
   private gameMenu!: GameMenu;
   private mapView: MapViewState | null = null;
   /** Wahlmodus der Karte (Sterbescreen): wird beim Tipp auf „Hier weitermachen“ aufgerufen */
@@ -590,7 +597,7 @@ export class GameScene extends Phaser.Scene {
 
   // Das Spiel läuft nur, wenn kein Pause-Grund aktiv ist. So setzt das Schließen
   // eines Menüs das Spiel nicht fort, solange der Vollbildmodus verlassen ist.
-  private setPaused(reason: "fullscreen" | "ui" | "death", on: boolean) {
+  private setPaused(reason: "fullscreen" | "ui" | "death" | "intro", on: boolean) {
     if (on) this.pauseReasons.add(reason);
     else this.pauseReasons.delete(reason);
 
@@ -603,7 +610,7 @@ export class GameScene extends Phaser.Scene {
     // Pause-Overlay nur zeigen, wenn kein Menü darüber liegt
     document.getElementById("pauseOverlay")?.classList.toggle(
       "visible",
-      this.pauseReasons.has("fullscreen") && !this.pauseReasons.has("ui")
+      this.pauseReasons.has("fullscreen") && !this.pauseReasons.has("ui") && !this.pauseReasons.has("intro")
     );
   }
 
@@ -689,6 +696,8 @@ export class GameScene extends Phaser.Scene {
     this.gameState.nextBlobNumber = saved.nextBlobNumber;
     this.gameState.markedBlobIds = saved.markedBlobIds;
     this.gameState.visitedChunks = saved.visitedChunks;
+    this.gameState.seenIntros = saved.seenIntros;
+    this.gainFeed?.clear();
 
     // Spieler-Sprite an gespeicherte Position
     this.blobGraphic.setPosition(saved.player.x, saved.player.y);
@@ -786,6 +795,11 @@ export class GameScene extends Phaser.Scene {
       this.gameState.player.playtimeSeconds += seconds;
       this.playtimeAccumulator %= 1000;
       this.tickProgression(seconds);
+      if (this.moveFeed) {
+        const def = ALL_SKILLS.get(this.moveFeed.id);
+        this.gainFeed?.add(`xp:${this.moveFeed.id}`, def?.icon ?? "💨", def?.name ?? this.moveFeed.id, this.moveFeed.xp, "XP", formatXp);
+        this.moveFeed = null;
+      }
       if (this.progressDirty) {
         this.progressDirty = false;
         this.afterProgressChange();
@@ -805,6 +819,7 @@ export class GameScene extends Phaser.Scene {
     this.updateEntityVisuals();
     this.updateBlobWobble(_time);
     this.updateVision();
+    this.updateGainFeedAnchor();
     this.checkNearbyEntity();
     this.checkPlayerDeath();
     processRespawns(this.gameState.world);
@@ -819,7 +834,11 @@ export class GameScene extends Phaser.Scene {
     const moveSkill = getActiveMoveSkill(player);
     const dist = Math.hypot(player.x - prevX, player.y - prevY);
     if (moveSkill && dist > 0) {
+      const xpBefore = player.discoveredSkills.get(moveSkill)?.xp ?? 0;
       const gain = gainSkillXp(player, moveSkill, calcMoveXp(moveSkill, dist, this.calcPlayerWorldRadius()));
+      // Für die Anzeige sammeln, einmal pro Sekunde zeigen (nicht jeden Frame)
+      const xpGain = (player.discoveredSkills.get(moveSkill)?.xp ?? 0) - xpBefore;
+      if (xpGain > 0) this.moveFeed = { id: moveSkill, xp: (this.moveFeed?.id === moveSkill ? this.moveFeed.xp : 0) + xpGain };
       this.logProgressionEvents(gain.events);
       this.progressDirty = true;
     }
@@ -1212,6 +1231,13 @@ export class GameScene extends Phaser.Scene {
     this.blobActions = createBlobActions((id) => this.onBlobAction(id), (reason) => showToast(reason, "system"));
     this.blobPicker = createBlobPicker();
     this.transferDialog = createTransferDialog();
+    // Skill-Vorstellungen: eigener Pause-Grund, damit ein Dialog, der sich
+    // gleichzeitig schließt, das Spiel nicht unter der Karte fortsetzt
+    this.introQueue = createIntroQueue({
+      onFirstOpen: () => this.setPaused("intro", true),
+      onAllClosed: () => this.setPaused("intro", false),
+    });
+    this.gainFeed = createGainFeed(document.getElementById("canvas-wrap") ?? document.body);
     this.blobArrows = createBlobArrows(document.getElementById("canvas-wrap") ?? document.body);
     this.blobRenderer = new BlobRenderer(this, 5);
     reassignSources(this.gameState); // neues Spiel: Quellen des Nests
@@ -1252,20 +1278,24 @@ export class GameScene extends Phaser.Scene {
     // Reichweite gewachsen: neu verteilen (GDD-10 8.3)
     if (needsReassign(state)) reassignSources(state);
     const method = meta.activity === "absorb" || meta.activity === "analyze" ? meta.activity : null;
-    const coreBefore = method ? p.coreAbilities[method].xp : 0;
+    const before = this.xpSnapshot();
     const r = runActivity(p, meta.activity, meta.sources ?? [], seconds, meta.carry, p.playtimeSeconds);
-    if (method && feedback) this.showActivityTick(method, p.coreAbilities[method].xp - coreBefore, meta.carry, (meta.sources ?? []).length > 0);
+    if (method && feedback) {
+      this.feedXpSince(before, r.discovered);
+      this.feedMaterials(r.materials);
+      this.feedFindProgress(meta.carry, (meta.sources ?? []).length > 0, method);
+    }
     this.logProgressionEvents(r.events);
     for (const id of r.discovered) {
       const def = ALL_SKILLS.get(id);
       addLog(`✨ Neuer Skill entdeckt: ${def?.icon ?? ""} ${def?.name ?? id}`, "skill");
-      showToast(`✨ ${def?.name ?? id} entdeckt!`, "skill");
     }
     for (const [id, n] of Object.entries(r.materials)) {
       const m = MATERIAL_MAP.get(id);
       addLog(`+${n} ${m?.icon ?? ""} ${m?.name ?? id}`, "absorb");
     }
     if (r.discovered.length > 0) syncPassiveEffects(p);
+    this.announceSkills(r.discovered);
     if (r.events.length > 0 || r.discovered.length > 0 || Object.keys(r.materials).length > 0) {
       this.afterProgressChange();
     } else {
@@ -1273,33 +1303,118 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  /**
-   * Rückmeldung je Aktion über dem Blob (Vorschlag Claude, offen, 15. November
-   * 2026): Erfahrung der Kern-Fähigkeit und, solange noch etwas zu entdecken
-   * ist, wie weit der nächste Fund ist. Die Wesen selbst bleiben unberührt
-   * (kein sichtbares Abweiden, GDD-10 Abschnitt 11).
-   */
-  private showActivityTick(method: "absorb" | "analyze", coreXp: number, carry: Record<string, number>, hasSources: boolean) {
-    const icon = method === "absorb" ? "💥" : "🔍";
-    let text: string;
-    if (!hasSources) text = `${icon} nichts in Reichweite`;
-    else if (coreXp <= 0) text = `${icon} kein Erfolg`;
-    else {
-      text = `${icon} +${coreXp < 10 ? coreXp.toFixed(1).replace(".", ",") : Math.round(coreXp)} XP`;
-      let best = 0;
-      for (const [k, v] of Object.entries(carry)) if (k.startsWith("find:")) best = Math.max(best, v);
-      if (best > 0) text += ` · Neues ${Math.min(99, Math.floor(best * 100))} %`;
-    }
+  // ----------------------------------------------------------
+  // RÜCKMELDUNG: Anzeige unter dem Blob (GainFeed) und Skill-Vorstellungen
+  // (Vorgabe Entwickler, 15. November 2026)
+  // ----------------------------------------------------------
+
+  /** Erfahrung aller Skills und Kern-Fähigkeiten, um danach den Zuwachs zu zeigen */
+  private xpSnapshot(): Map<string, number> {
     const p = this.gameState.player;
-    const zoom = this.cameras.main.zoom;
-    const r = this.blobGraphic.displayHeight / 2 || 12;
-    const y0 = p.y - r - 8 / zoom;
-    const txt = this.add.text(p.x, y0, text, {
-      fontSize: "13px", color: "#9ff5dc", fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
-    }).setOrigin(0.5).setScale(1 / zoom).setDepth(22);
-    this.tweens.add({
-      targets: txt, y: y0 - 22 / zoom, alpha: 0, duration: 1800, ease: "Sine.easeOut",
-      onComplete: () => txt.destroy(),
+    const m = new Map<string, number>();
+    m.set("absorb", p.coreAbilities.absorb.xp);
+    m.set("analyze", p.coreAbilities.analyze.xp);
+    for (const [id, inst] of p.discoveredSkills) m.set(id, inst.xp);
+    return m;
+  }
+
+  /** Zuwachs seit `before` in die Anzeige; neu entdeckte Skills zeigt ihre Karte */
+  private feedXpSince(before: Map<string, number>, skip: string[] = []) {
+    const feed = this.gainFeed;
+    if (!feed) return;
+    const p = this.gameState.player;
+    const show = (id: string, icon: string, name: string, now: number) => {
+      const gain = now - (before.get(id) ?? now);
+      if (gain > 1e-6) feed.add(`xp:${id}`, icon, name, gain, "XP", formatXp);
+    };
+    show("analyze", "🔍", "Analyze", p.coreAbilities.analyze.xp);
+    show("absorb", "💥", "Absorb", p.coreAbilities.absorb.xp);
+    for (const [id, inst] of p.discoveredSkills) {
+      if (skip.includes(id) || !before.has(id)) continue;
+      const def = ALL_SKILLS.get(id);
+      show(id, def?.icon ?? "✨", def?.name ?? id, inst.xp);
+    }
+  }
+
+  private feedMaterials(materials: Record<string, number>) {
+    for (const [id, n] of Object.entries(materials)) {
+      const m = MATERIAL_MAP.get(id);
+      this.gainFeed?.add(`mat:${id}`, m?.icon ?? "📦", m?.name ?? id, n, "", (x) => String(Math.round(x)));
+    }
+  }
+
+  /** Wie weit der nächste Fund ist (nur solange noch etwas zu entdecken ist) */
+  private feedFindProgress(carry: Record<string, number>, hasSources: boolean, method: "absorb" | "analyze") {
+    const feed = this.gainFeed;
+    if (!feed) return;
+    if (!hasSources) { feed.set("find", `${method === "absorb" ? "💥" : "🔍"} Nichts in Reichweite`); return; }
+    let best = 0;
+    for (const [k, v] of Object.entries(carry)) {
+      if (k.startsWith("find:") && !this.gameState.player.discoveredSkills.has(k.slice(5))) best = Math.max(best, v);
+    }
+    if (best > 0) feed.set("find", `✨ Nächster neuer Skill ${Math.min(99, Math.floor(best * 100))} %`);
+  }
+
+  /** Feed unter dem Blob halten (Bildschirm-Pixel relativ zum Spielbereich) */
+  private updateGainFeedAnchor() {
+    if (!this.gainFeed) return;
+    const cam = this.cameras.main;
+    const p = this.gameState.player;
+    const sx = (p.x - cam.worldView.x) * cam.zoom;
+    const sy = (p.y - cam.worldView.y) * cam.zoom;
+    const r = calcPlayerWorldRadius(p) * cam.zoom;
+    // Querformat mit wenig Höhe: rechts neben den Blob, sonst darunter
+    const landscape = cam.width > cam.height && cam.height < 600;
+    if (landscape) this.gainFeed.setAnchor(sx + r + 16, sy - r, "left");
+    else this.gainFeed.setAnchor(sx, sy + r + 12);
+  }
+
+  /**
+   * Neu entdeckte Skills nacheinander vorstellen — jeder Skill nur beim
+   * ersten Mal im ganzen Spiel (seenIntros). Reihenfolge: Sehen zuerst,
+   * Bewegen zuletzt (endet mit der Aufforderung, es auszuprobieren).
+   */
+  private announceSkills(ids: string[]) {
+    const state = this.gameState;
+    const fresh = ids.filter((id) => ALL_SKILLS.has(id) && !state.seenIntros.includes(`skill:${id}`));
+    if (fresh.length === 0) return;
+    const has = (id: string, type: string) => ALL_SKILLS.get(id)?.effects?.some((e) => e.effectType === type) ?? false;
+    const order = (id: string) => has(id, "sight_range") ? 0 : has(id, "move_speed") ? 2 : 1;
+    fresh.sort((a, b) => order(a) - order(b));
+    const knownSkills = state.seenIntros.filter((k) => k.startsWith("skill:")).map((k) => k.slice(6));
+    let firstSight = !knownSkills.some((id) => has(id, "sight_range"));
+    let firstMove = !knownSkills.some((id) => has(id, "move_speed"));
+    for (const id of fresh) {
+      state.seenIntros.push(`skill:${id}`);
+      const def = ALL_SKILLS.get(id)!;
+      const extra: IntroSection[] = [];
+      if (firstSight && has(id, "sight_range")) {
+        firstSight = false;
+        extra.push({ heading: "Sehen", lines: SIGHT_INTRO, emphasis: true });
+      }
+      if (firstMove && has(id, "move_speed")) {
+        firstMove = false;
+        const settled = state.conscious.form === "settled";
+        extra.push({ heading: "Bewegen", lines: settled ? MOVE_INTRO_SETTLED : MOVE_INTRO_TRAVELING, emphasis: true });
+        extra.push({ lines: [settled ? MOVE_TRY_SETTLED : MOVE_TRY_TRAVELING], emphasis: true, atEnd: true });
+        // Als Reisender gleich unterwegs: dann gibt es nach dem Abspalten nichts mehr zu erklären
+        if (!settled && !state.seenIntros.includes("travel")) state.seenIntros.push("travel");
+      }
+      this.introQueue.push(skillIntroCard(def, state.player, extra));
+    }
+  }
+
+  /** Nach dem ersten Abspalten: was Reisen bedeutet */
+  private announceTravel() {
+    const state = this.gameState;
+    if (state.seenIntros.includes("travel")) return;
+    state.seenIntros.push("travel");
+    this.introQueue.push({
+      kicker: "🧬 Abgespalten",
+      icon: "🌍",
+      title: TRAVEL_TITLE,
+      tags: [],
+      sections: [{ lines: TRAVEL_TEXT }],
     });
   }
 
@@ -1476,6 +1591,7 @@ export class GameScene extends Phaser.Scene {
       const def = ALL_SKILLS.get(id);
       addLog(`✨ In deiner Abwesenheit entdeckt: ${def?.icon ?? ""} ${def?.name ?? id}`, "skill");
     }
+    this.announceSkills(result.discovered);
     const mats = Object.entries(result.materials).filter(([, n]) => n > 0);
     if (mats.length > 0) {
       addLog(`In deiner Abwesenheit gesammelt: ${mats.map(([id, n]) => `${n} ${MATERIAL_MAP.get(id)?.name ?? id}`).join(", ")}`, "absorb");
@@ -1542,9 +1658,10 @@ export class GameScene extends Phaser.Scene {
     if (first) {
       const hint = "Wirst du besiegt, machst du bei einem niedergelassenen Blob weiter, zu Beginn im Nest. Lässt du dich nieder, ist dein Fortschritt gesichert.";
       addLog(hint, "system");
-      showToast(hint, "system");
     }
+    this.gainFeed?.clear();
     this.afterBodySwap();
+    this.announceTravel();
   }
 
   private openSwitchList() {
@@ -1951,12 +2068,14 @@ export class GameScene extends Phaser.Scene {
       showToast("Keine Entity in Reichweite.", "system");
       return;
     }
+    const before = this.xpSnapshot();
     const result = absorbEntity(
       this.gameState.player,
       this.gameState.world,
       this.lastNearbyId
     );
     showInteractionResult(result, this.gameState);
+    this.feedInteraction(result, before);
     this.logForgetting(result.skillResults);
     if (result.success) {
       syncPassiveEffects(this.gameState.player);
@@ -1971,15 +2090,28 @@ export class GameScene extends Phaser.Scene {
       showToast("Keine Entity in Reichweite.", "system");
       return;
     }
+    const before = this.xpSnapshot();
     const result = analyzeEntity(
       this.gameState.player,
       this.gameState.world,
       this.lastNearbyId
     );
     showInteractionResult(result, this.gameState);
+    this.feedInteraction(result, before);
     this.logForgetting(result.skillResults);
     if (result.success) syncPassiveEffects(this.gameState.player);
     this.afterProgressChange();
+  }
+
+  /** Absorb/Analyze von Hand: Zuwachs in die Anzeige, neue Skills vorstellen */
+  private feedInteraction(result: InteractionResult, before: Map<string, number>) {
+    if (!result.success) return;
+    const discovered = result.skillResults.filter((r) => r.wasNewDiscovery).map((r) => r.skillId);
+    this.feedXpSince(before, discovered);
+    const mats: Record<string, number> = {};
+    for (const m of result.materialResults) mats[m.materialId] = (mats[m.materialId] ?? 0) + m.amount;
+    this.feedMaterials(mats);
+    this.announceSkills(discovered);
   }
 
   togglePassiveSkill(skillId: string) {
@@ -2318,7 +2450,8 @@ function showInteractionResult(result: any, state: GameState) {
   const detail = allLines.join(" · ");
 
   addLog(`${result.message}${detail ? ` — ${detail}` : ""}`, type);
-  showToast(`${result.message}${detail ? `\n${detail}` : ""}`, type);
+  // Kein Toast mehr: Erfahrung und Materialien zeigt die Anzeige über dem Blob,
+  // neue Skills ihre eigene Karte (Vorgabe Entwickler, 15. November 2026)
 }
 
 // -----------------------------------------------------------

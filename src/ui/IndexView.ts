@@ -67,7 +67,7 @@ const EFFECT_DE: Record<EffectType, string> = {
   move_speed: "Tempo-Faktor", sight_range: "Sichtweite", color_vision: "Farbsehen (ohne Rot)", red_vision: "Rot sehen",
   jump_distance: "Sprungweite", regen_hp: "Heilung", digest_rate: "Verdauung",
 };
-const PRACTICE_DE: Record<PracticeUnit, string> = {
+export const PRACTICE_DE: Record<PracticeUnit, string> = {
   body_radius_moved: "je zurückgelegtem Körperradius, solange dies der schnellste Bewegungs-Skill ist",
   second_enabled: "je Sekunde, solange eingeschaltet",
   hp_healed: "je geheiltem HP",

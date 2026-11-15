@@ -30,6 +30,7 @@ Current state: **v0.8** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/data/balance.ts` | General game rules and central entry (header lists which rule lives in which file): XP per absorb/analyze/combat, success chance, hit grades and precision, damage caps, HP/MP, MP regen, size/reach/speed, strength from size, AI, entity bonus levels |
 | `src/data/progression.ts` | All progression knobs with rationale: experience → progress 0–100 % (general scheme: every skill value runs start → max), ranks in %, comparison level vs. entity levels, capacity (discovered skills up to 90 %), overstretch, relearning, overtraining (no levels) |
 | `src/data/blobs.ts` | GDD-10 blob form knobs with rationale: aggro lock for settling/merging, work range, activity timing, split share, names |
+| `src/data/tutorial.ts` | Texts that present new skills (sight, movement, "Auf Reisen" after the first split), with the developer's rules and rationale |
 | `src/data/version.ts` | `GAME_VERSION` — must match `package.json` (build.js aborts otherwise). Shown in save dialog and stored in each save. |
 | `src/systems/SkillSystem.ts` | Pure skill logic — what earns how much XP, discovery, combining, blob growth (HP/MP) |
 | `src/systems/BlobSystem.ts` | GDD-10 form changes as pure operations on the GameState: settle, split, rise up, merge, dry out, switch consciousness; touch and nearest-blob queries |
@@ -63,6 +64,8 @@ Current state: **v0.8** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/ui/BlobActions.ts` | GDD-10 context buttons (settle, merge, split, rise up, switch, activity) |
 | `src/ui/BlobPicker.ts` | GDD-10 overlay: death screen and list of blobs to switch to / activity choice (pauses the game) |
 | `src/ui/TransferDialog.ts` | GDD-10 transfer dialog on splitting: one slider per resource, Nothing/Half/All (pauses the game) |
+| `src/ui/GainFeed.ts` | What the blob is learning and collecting right now: one line per skill/material under the blob that keeps counting instead of being overwritten (DOM only) |
+| `src/ui/SkillIntro.ts` | Presents newly learned skills one card at a time (what it does, values now and with practice, how it improves; sight and movement explained); queue pauses the game |
 | `src/ui/MapView.ts` | GDD-10 MAP tab: biomes, fog over unvisited chunks, blob markers, mark/unmark, switch consciousness, pick mode for the death screen (canvas, DOM only; the scene supplies the data) |
 | `src/ui/BlobArrows.ts` | GDD-10 direction arrows to marked blobs at the screen edge |
 | `src/ui/GameMenu.ts` | Full-screen game menu (Skills, Werte, Karte, Combo, Inventar, Nearby, Log, Index) — pauses game; markup in `accognita.template.html` |

@@ -99,6 +99,12 @@ export interface GameState {
   markedBlobIds: string[];
   /** Besuchte Chunks „cx,cy“ — nur sie sind auf der Karte aufgedeckt (GDD-10 11.1) */
   visitedChunks: string[];
+  /**
+   * Schon gezeigte Vorstellungen: „skill:<id>“ für jeden Skill, der einmal
+   * ausführlich vorgestellt wurde (gilt für alle Blobs), „travel“ für die
+   * Karte „Auf Reisen“ nach dem ersten Abspalten.
+   */
+  seenIntros: string[];
   world: WorldState;
   version: string;
   savedAt?: number;
@@ -116,6 +122,7 @@ export function createInitialGameState(): GameState {
     nextBlobNumber: 2,
     markedBlobIds: [],
     visitedChunks: ["0,0"],
+    seenIntros: [],
     player: {
       x: 400,
       y: 300,
