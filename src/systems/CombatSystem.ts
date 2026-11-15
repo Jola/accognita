@@ -435,6 +435,9 @@ export function executeJump(
 
 // -----------------------------------------------------------
 // CHECKPOINT — Spieler respawnen
+// [VERWORFEN, 15. November 2026] Wird nicht mehr aufgerufen: Besiegt heißt
+// jetzt Vertrocknen mit Sterbescreen (GDD-10 Abschnitt 9, BlobSystem.dryOut).
+// Bleibt bis zum Aufräumen der Alt-Formeln stehen (TODO.md).
 // -----------------------------------------------------------
 export function executeCheckpoint(player: PlayerState): void {
   player.hp = player.maxHp;

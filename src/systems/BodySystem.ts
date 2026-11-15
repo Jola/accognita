@@ -47,6 +47,18 @@ export function getMoveSpeedFactor(player: PlayerState): number {
   return bestOfEffect(getPlayerPassiveSkillProgress(player), "move_speed").value;
 }
 
+/**
+ * Kennt der Blob einen Bewegungs-Skill? „Bekannt“ heißt entdeckt, nicht
+ * eingeschaltet (GDD-10 Abschnitt 13.6). Voraussetzung für Niederlassen,
+ * Abspalten und Erheben.
+ */
+export function knowsMoveSkill(player: PlayerState): boolean {
+  for (const id of player.discoveredSkills.keys()) {
+    if ((ALL_SKILLS.get(id)?.effects ?? []).some((e) => e.trigger === "passive" && e.effectType === "move_speed")) return true;
+  }
+  return false;
+}
+
 /** Der Bewegungs-Skill, mit dem sich der Blob bewegt (der schnellste) — bekommt die Erfahrung. */
 export function getActiveMoveSkill(player: PlayerState): string | undefined {
   return bestOfEffect(getPlayerPassiveSkillProgress(player), "move_speed").skillId;

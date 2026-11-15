@@ -40,6 +40,13 @@ export interface SerializedBody {
   playtimeSeconds: number;
 }
 
+/** Eine Wesen-Art in Arbeitsreichweite eines niedergelassenen Blobs (GDD-10 8.3). */
+export interface ActivitySource {
+  entityId: string;
+  count: number;
+  respawnSeconds: number;
+}
+
 /** Was einen Blob ausmacht, außer seinem Körper. */
 export interface BlobMeta {
   id: string;          // "b1", "b2" … — nie wiederverwendet
@@ -51,6 +58,10 @@ export interface BlobMeta {
   activity?: BlobActivity | null;
   /** nur niedergelassen: bis zu welcher Spielzeit (s) sein Stand berechnet ist */
   simulatedUntil?: number;
+  /** nur niedergelassen: friedliche Wesen in Arbeitsreichweite (Momentaufnahme) */
+  sources?: ActivitySource[];
+  /** nur niedergelassen: Bruchteile der Tätigkeit ("mat:…", "find:…") */
+  carry?: Record<string, number>;
   /** nur vertrocknet: Spielzeit (s) des Vertrocknens */
   driedAt?: number;
 }

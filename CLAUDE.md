@@ -8,7 +8,7 @@ This file is the project constitution. Read it at the start of every session bef
 
 **Absorb & Evolve** is a browser-based Action-RPG. The player controls a Blob (inspired by the real organism *Physarum polycephalum*) that evolves by absorbing or analyzing entities in a medieval fantasy world. Skills are discovered through interaction, leveled through repetition, and combined into new abilities.
 
-Current state: **v0.7** — Modular TypeScript + Phaser.js architecture, Skill-System + Combat-System implemented. The blob awakens blind and immobile and learns movement and sight (GDD-09). Large procedural world (20×20 chunks = 20480×20480px) with 6 biomes, pixel art tiles, and dynamic chunk loading.
+Current state: **v0.8** — Modular TypeScript + Phaser.js architecture, Skill-System + Combat-System implemented. The blob awakens blind and immobile in the nest (a settled blob) and learns movement and sight (GDD-09); blob forms settled/traveling/dried with splitting, merging, rising up and a death screen are being implemented step by step (GDD-10). Large procedural world (20×20 chunks = 20480×20480px) with 6 biomes, pixel art tiles, and dynamic chunk loading.
 
 ---
 
@@ -29,8 +29,11 @@ Current state: **v0.7** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/data/materials.ts` | All material/loot definitions |
 | `src/data/balance.ts` | General game rules and central entry (header lists which rule lives in which file): XP per absorb/analyze/combat, success chance, hit grades and precision, damage caps, HP/MP, MP regen, size/reach/speed, strength from size, AI, entity bonus levels |
 | `src/data/progression.ts` | All progression knobs with rationale: experience → progress 0–100 % (general scheme: every skill value runs start → max), ranks in %, comparison level vs. entity levels, capacity (discovered skills up to 90 %), overstretch, relearning, overtraining (no levels) |
+| `src/data/blobs.ts` | GDD-10 blob form knobs with rationale: aggro lock for settling/merging, work range, activity timing, split share, names |
 | `src/data/version.ts` | `GAME_VERSION` — must match `package.json` (build.js aborts otherwise). Shown in save dialog and stored in each save. |
 | `src/systems/SkillSystem.ts` | Pure skill logic — what earns how much XP, discovery, combining, blob growth (HP/MP) |
+| `src/systems/BlobSystem.ts` | GDD-10 form changes as pure operations on the GameState: settle, split, rise up, merge, dry out, switch consciousness; touch and nearest-blob queries |
+| `src/systems/SettlementSystem.ts` | GDD-10 activity of settled blobs (analyze/absorb with mean values, no overtraining), work range, catch-up incl. Grow, regeneration and overstretch melt |
 | `src/systems/KnowledgeSystem.ts` | GDD-10: merges the knowledge of two blobs (highest value per skill, held-back XP, capacity limit) and carries fatigue and statistics over to the next body |
 | `src/systems/ProgressionSystem.ts` | How experience is booked: relearn bonus, overtraining/rest, capacity and forgetting, ranks; same progress conversion for player and entities |
 | `src/systems/EntitySystem.ts` | Absorb/Analyze/Respawn logic |
@@ -38,7 +41,7 @@ Current state: **v0.7** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/data/body.ts` | Blob only (not enemies): how the body combines skills ("best skill counts") and the soft sight edge |
 | `src/systems/BodySystem.ts` | Movement (best skill speed), strength incl. size bonus, vision (range, color, red) and color matrix |
 | `src/systems/IntroSystem.ts` | Awakening intro: step derived from skills (blind/immobile), hint texts |
-| `src/data/grow.ts` | General grow rules with rationale: food material, growth from body mass (digestion rate and XP per fiber are on the Grow skill) |
+| `src/data/grow.ts` | General grow rules with rationale: food material, growth from body mass, fixed max mass 120 kg = 1200 fibers (digestion rate and XP per fiber are on the Grow skill) |
 | `src/systems/GrowSystem.ts` | Grow feature, isolated: digest plant fibers over time → body mass → growth (size, HP, MP) |
 | `src/data/venom.ts` | Venom knobs with rationale: dose, stacking venom load, half-life, minimum rate |
 | `src/systems/VenomSystem.ts` | Venom feature, isolated: roll dose, venom load, continuous decay (= damage) |
@@ -57,6 +60,9 @@ Current state: **v0.7** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/ui/SkillBar.ts` | Touch skill slots with cooldown display and long-press menu |
 | `src/ui/SkillMenu.ts` | Full-screen skill management overlay (pauses game) |
 | `src/ui/SaveMenu.ts` | Save/load slot UI overlay |
+| `src/ui/BlobActions.ts` | GDD-10 context buttons (settle, merge, split, rise up, switch, activity) |
+| `src/ui/BlobPicker.ts` | GDD-10 overlay: death screen and list of blobs to switch to / activity choice (pauses the game) |
+| `src/ui/BlobArrows.ts` | GDD-10 direction arrows to marked blobs at the screen edge |
 | `src/ui/GameMenu.ts` | Full-screen game menu (Skills, Werte, Combo, Inventar, Nearby, Log, Index) — pauses game; markup in `accognita.template.html` |
 | `src/ui/IndexView.ts` | INDEX tab: in-game reference of all skills and entities with all parameters, computed live from data + systems |
 | `src/ui/StatsView.ts` | WERTE tab: all character stats of the blob (HP, MP, strength, dexterity, speed, defense, attacks) |

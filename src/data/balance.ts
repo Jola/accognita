@@ -38,6 +38,7 @@
 // ============================================================
 
 import type { HitProfile } from "../types/Combat";
+import { MAX_BODY_MASS, GROWTH_FIBER_SCALE } from "./grow";
 
 // -----------------------------------------------------------
 // MILLI-EINHEITEN
@@ -289,7 +290,9 @@ export const ANALYZE_CHANCE_MODIFIER = 0.7;
 //
 // Der Blob wächst stetig (Wachstum aus Körpermasse, GrowSystem.getPlayerGrowth). Seine Weltgröße
 // skaliert von PLAYER_WORLD_RADIUS_MIN (Wachstum 0) bis PLAYER_WORLD_RADIUS_MAX
-// (Wachstum PLAYER_SIZE_GROWTH_MAX+). Wachstum 0 / 19 ≙ früher Level 1 / 20.
+// (Wachstum PLAYER_SIZE_GROWTH_MAX = ausgewachsen, 120 kg, GDD-10 Abschnitt 7.1).
+// [VERWORFEN, 15. November 2026] größte Größe erst bei Wachstum 19 (≙ früher
+//   Level 20) — das waren etwa 10 Millionen Fasern, die niemand erreicht.
 // Der Kamera-Zoom wird so angepasst, dass der Blob auf dem Bildschirm
 // immer PLAYER_SCREEN_RADIUS Pixel groß bleibt.
 // Effekt: die Welt schrumpft optisch, während der Blob wächst.
@@ -305,8 +308,12 @@ export const PLAYER_WORLD_RADIUS_MIN = 2;
 /** Welt-Radius des Blobs ab Wachstum PLAYER_SIZE_GROWTH_MAX */
 export const PLAYER_WORLD_RADIUS_MAX = 8;
 
-/** Wachstum, ab dem die maximale Größe erreicht wird (≙ früher Level 20) */
-export const PLAYER_SIZE_GROWTH_MAX = 19;
+/**
+ * Wachstum, ab dem die maximale Größe erreicht wird: ausgewachsen (≈ 5,9).
+ * Vorgabe (Entwickler, 14. November 2026): Kugel von höchstens 120 kg und
+ * 61 cm; 61 cm = Welt-Radius 8 px (Größenklasse G5, Vorschlag Claude, übernommen).
+ */
+export const PLAYER_SIZE_GROWTH_MAX = Math.log2(1 + MAX_BODY_MASS / GROWTH_FIBER_SCALE);
 
 /** Konstante Bildschirm-Radius des Blobs in Pixeln (ändert sich nie) */
 export const PLAYER_SCREEN_RADIUS = 16;

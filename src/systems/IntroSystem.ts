@@ -25,20 +25,47 @@ export function getIntroStep(player: PlayerState): IntroStep {
   return "blind_still";
 }
 
-/** Hinweistext je Schritt (Texte: Vorschlag Claude). */
-export const INTRO_TEXT: Record<IntroStep, string> = {
+/**
+ * Hinweistexte je Schritt, für das Nest (niedergelassen) und den Reisenden
+ * (GDD-10 Abschnitt 12, Texte: Vorschlag Claude). Im Nest gibt es keine
+ * aktiven Skills: Man wählt eine Tätigkeit, keine ist voreingestellt
+ * (Vorgabe Entwickler, 15. November 2026); mit Kriechen kommt das Abspalten.
+ */
+const INTRO_TEXT_SETTLED: Record<IntroStep, string> = {
   blind_still:
-    "Wasser … Du erwachst aus der Trockenstarre. Du siehst nichts und kannst dich nicht bewegen. " +
-    "Doch du spürst etwas direkt neben dir. Analysiere oder absorbiere es — vielleicht lernst du etwas.",
+    "Du erwachst. Du siehst nichts und kannst dich nicht bewegen. Doch du spürst etwas direkt neben dir. " +
+    "Wähle eine Tätigkeit — Analysieren oder Absorbieren —, vielleicht lernst du etwas.",
   seeing_still:
     "Licht! Hell und dunkel, verschwommene Umrisse. Bewegen kannst du dich noch nicht. " +
-    "Lerne von den Wesen neben dir, wie man kriecht.",
+    "Lerne weiter von den Wesen neben dir — vielleicht auch, wie man kriecht.",
   moving_blind:
-    "Du kannst dich voranschieben — nutze den Joystick. Sehen kannst du noch nichts. " +
-    "Lerne von den Wesen neben dir, Licht zu spüren.",
+    "Du könntest einen Teil von dir losschicken: Tippe auf Abspalten. Sehen kannst du noch nichts — " +
+    "lerne von den Wesen neben dir, Licht zu spüren.",
   awake:
-    "Du siehst und bewegst dich. Je mehr du übst, desto schneller kriechst du und desto weiter siehst du. " +
-    "Gras in der Nähe gibt Pflanzenfasern — Nahrung zum Wachsen.",
+    "Du siehst, und du könntest einen Teil von dir losschicken: Tippe auf Abspalten. " +
+    "Gras gibt Pflanzenfasern — aus ihnen entsteht der Körper des Reisenden.",
 };
 
-// Stand: 13. November 2026 — Erstfassung
+const INTRO_TEXT_TRAVELING: Record<IntroStep, string> = {
+  blind_still:
+    "Du siehst nichts. Lerne von den Wesen um dich, Licht zu spüren.",
+  seeing_still:
+    "Bewegen kannst du dich noch nicht. Lerne von den Wesen um dich, wie man kriecht.",
+  moving_blind:
+    "Du kannst dich voranschieben — nutze den Joystick. Sehen kannst du noch nichts. " +
+    "Lerne von den Wesen um dich, Licht zu spüren.",
+  awake:
+    "Du siehst und bewegst dich. Je mehr du übst, desto schneller kriechst du und desto weiter siehst du. " +
+    "Gras gibt Pflanzenfasern — Nahrung zum Wachsen.",
+};
+
+export function getIntroText(step: IntroStep, form: "settled" | "traveling" | "dried"): string {
+  return (form === "settled" ? INTRO_TEXT_SETTLED : INTRO_TEXT_TRAVELING)[step];
+}
+
+// [VERWORFEN, 15. November 2026] INTRO_TEXT (ein Satz je Schritt, Erwachen
+//   als Reisender mit Joystick): „Wasser … Du erwachst aus der Trockenstarre.
+//   … Analysiere oder absorbiere es“ — Grund: Start im Nest (GDD-10 Abschnitt
+//   12), Wasser verworfen, im Nest keine aktiven Skills.
+
+// Stand: 15. November 2026 — Texte für Nest und Reisenden (GDD-10); davor 13. November 2026 — Erstfassung

@@ -108,7 +108,8 @@ export interface GameState {
 export function createInitialGameState(): GameState {
   return {
     version: GAME_VERSION,
-    conscious: { id: "b1", name: "Reisender", form: "traveling" },
+    // Start im Nest (GDD-10 Abschnitt 12): niedergelassen, keine Tätigkeit voreingestellt
+    conscious: { id: "b1", name: "Nest", form: "settled", nest: true, activity: null, simulatedUntil: 0, sources: [], carry: {} },
     blobs: [],
     nextBlobNumber: 2,
     markedBlobIds: [],

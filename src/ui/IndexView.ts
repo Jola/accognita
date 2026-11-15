@@ -21,7 +21,8 @@ import { DAMAGE_TYPE_DE } from "../systems/DamageSystem.js";
 import { getEffectValue } from "../systems/StatsSystem.js";
 import { BIOME_SPAWNS } from "../world/BiomeDefinitions.js";
 import { calcGrowthFromMass } from "../systems/GrowSystem.js";
-import { GROWTH_FIBER_SCALE } from "../data/grow.js";
+import { GROWTH_FIBER_SCALE, MAX_BODY_MASS, MAX_BODY_MASS_KG, KG_PER_FIBER } from "../data/grow.js";
+import { SETTLE_AGGRO_LOCK_MS, WORK_RANGE_MIN_PX, WORK_RANGE_MAX_PX, ACTION_SECONDS } from "../data/blobs.js";
 import {
   HP_PER_GROWTH, MP_PER_GROWTH, BASE_HP, BASE_MP, PLAYER_SIZE_GROWTH_MAX, PLAYER_SPEED_PER_WORLD_RADIUS,
   PLAYER_WORLD_RADIUS_MIN, PLAYER_WORLD_RADIUS_MAX, PLAYER_REACH_FACTOR,
@@ -29,7 +30,7 @@ import {
 } from "../data/balance.js";
 import { SIGHT_EDGE_FRACTION } from "../data/body.js";
 import { calcSizeStrengthBonus, maxEffectOverSkills } from "../systems/BodySystem.js";
-import { SKILL_RANKS, NATUR_PROGRESS, LEVEL_AT_NATUR } from "../data/progression.js";
+import { SKILL_RANKS, NATUR_PROGRESS, LEVEL_AT_NATUR, OVERSTRETCH_MAX_FRACTION } from "../data/progression.js";
 import { xpForProgress, getEntitySkillProgress, rankNameForProgress, levelFromProgress } from "../systems/ProgressionSystem.js";
 import {
   evalSkillValue, resolveDefenderEffects, resolveAttackerEffects, resolveDexterity, resolveStrength,
@@ -612,12 +613,12 @@ const ATTRIBUTE_PAGES: AttributePage[] = [
           ["Skala", `0 → ${num(sumMax)} aus Skills, × bis ${factor(1 + SIZE_STRENGTH_BONUS_MAX)} durch Größe → höchstens ${num(total)}`],
           ["Wirkung", `Schaden × (1 + Bonus je Punkt × Stärke), Bonus steht am Angriff`],
         ]),
-        section("Formel", formulaBox(`Stärke = (Σ Stärke-Effekte der eingeschalteten Passiv-Skills) × (1 + ${pct(SIZE_STRENGTH_BONUS_MAX)} × min(1, Wachstum / ${PLAYER_SIZE_GROWTH_MAX}))`)),
+        section("Formel", formulaBox(`Stärke = (Σ Stärke-Effekte der eingeschalteten Passiv-Skills) × (1 + ${pct(SIZE_STRENGTH_BONUS_MAX)} × min(1, Wachstum / ${num(PLAYER_SIZE_GROWTH_MAX)}))`)),
         section("Quellen", sourceTable("strength", (v) => num(v, 1))),
         section("Größenfaktor", pointsChart({
-          label: "Faktor der Körpergröße auf die Stärke über das Wachstum", unit: "Wachstum", maxPoints: PLAYER_SIZE_GROWTH_MAX,
+          label: "Faktor der Körpergröße auf die Stärke über das Wachstum", unit: "Wachstum", maxPoints: Math.ceil(PLAYER_SIZE_GROWTH_MAX),
           value: (g) => 1 + calcSizeStrengthBonus(g), format: (v) => factor(v),
-          formula: `1 + ${pct(SIZE_STRENGTH_BONUS_MAX)} × min(1, Wachstum / ${PLAYER_SIZE_GROWTH_MAX})`,
+          formula: `1 + ${pct(SIZE_STRENGTH_BONUS_MAX)} × min(1, Wachstum / ${num(PLAYER_SIZE_GROWTH_MAX)})`,
         })),
         section("Verstärkt", boosted ? `<div>${boosted}</div>` : ""),
         reason("Vorgabe (Entwickler): Bewegung gibt Stärke; die Körpergröße erhöht die Stärke prozentual. " +
@@ -689,11 +690,28 @@ const ATTRIBUTE_PAGES: AttributePage[] = [
       `<p class="idx-desc">Der Körper wächst nur durch den Skill Wachsen: Verdaute Pflanzenfasern werden Körpermasse. Das Wachstum bestimmt Größe, Reichweite, MaxHP, MaxMP und den Größenbonus auf die Stärke.</p>`,
       params([
         ["Wachstum", `log₂(1 + Körpermasse / ${num(GROWTH_FIBER_SCALE)})`],
-        ["Radius", `${num(PLAYER_WORLD_RADIUS_MIN)} → ${num(PLAYER_WORLD_RADIUS_MAX)} px, linear bis Wachstum ${PLAYER_SIZE_GROWTH_MAX}`],
+        ["Radius", `${num(PLAYER_WORLD_RADIUS_MIN)} → ${num(PLAYER_WORLD_RADIUS_MAX)} px, linear bis Wachstum ${num(PLAYER_SIZE_GROWTH_MAX)} (ausgewachsen, 120 kg)`],
         ["Reichweite", `${num(PLAYER_REACH_FACTOR)} × Radius, bis zum Rand des Ziels`],
+        ["Ausgewachsen", `${num(MAX_BODY_MASS_KG)} kg = ${num(MAX_BODY_MASS)} Pflanzenfasern (1 Faser = ${num(KG_PER_FIBER, 1)} kg); danach verdaut Wachsen nicht mehr. Das Nest gilt als ausgewachsen.`],
       ]),
       growthHtml(),
       reason("Vorgabe (Entwickler): Wachsen verbraucht Pflanzenfasern, wirkt passiv über die Zeit und ersetzt die Erfahrung als Quelle des Wachstums."),
+    ].join(""),
+  },
+  {
+    id: "blobforms", icon: "🧫", name: "Blob-Formen", sub: "niederlassen, abspalten, verschmelzen, erheben, vertrocknen",
+    html: () => [
+      `<p class="idx-desc">Der Blob kann sich niederlassen und arbeitet dann von allein. Von einem niedergelassenen Blob spaltet sich ein Reisender ab. Wird der Reisende besiegt, vertrocknet er; mit ihm verschmelzen holt seinen Stand zurück (GDD-10).</p>`,
+      params([
+        ["Niederlassen", `erst mit Bewegen, nur ohne Aggro seit ${num(SETTLE_AGGRO_LOCK_MS / 1000)} s; nicht ausgewachsen kann man sich danach nur erheben`],
+        ["Abspalten", `nur ausgewachsen (das Nest immer); der Körper entsteht aus den Pflanzenfasern im Lager, höchstens ${num(MAX_BODY_MASS)}; übrige Ressourcen halbe-halbe`],
+        ["Verschmelzen", "der Reisende geht in den berührten Blob hinein; je Skill der höchste Wert; alle Ressourcen und die Körpermasse (als Fasern) gehen über; HP und MP: der niedrigere Anteil"],
+        ["Erheben", "derselbe Blob reist weiter, mit seiner Größe; Fasern im Lager werden nicht zu Körpermasse. Nicht das Nest."],
+        ["Kapazität beim Verschmelzen", `darf über die Kapazität steigen, höchstens ${pct(OVERSTRETCH_MAX_FRACTION)} darüber, schmilzt dann ab`],
+        ["Arbeitsreichweite", `${num(WORK_RANGE_MIN_PX)} px frisch → ${num(WORK_RANGE_MAX_PX)} px ausgewachsen (Nest ${num(WORK_RANGE_MAX_PX)} px)`],
+        ["Tätigkeit", `Analysieren oder Absorbieren an friedlichen Wesen, eine Aktion je ${num(ACTION_SECONDS)} s, Mittelwerte statt Würfel, ohne Übertraining`],
+      ]),
+      reason("Vorgabe (Entwickler): Der Blob stirbt nicht. Begründung (Entwickler): Das entspricht dem Vorbild Physarum polycephalum — es teilt sich, Teile verschmelzen wieder, und bei Gefahr trocknet es zu einer Dauerform ein."),
     ].join(""),
   },
   {

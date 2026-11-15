@@ -43,6 +43,8 @@ Format:
 
 ## Erledigt
 
+- `[FEATURE]` **Blob-Formen, Schritte 1–3** (GDD-10, 15. November 2026): Wissen verrechnen mit Höchstwert je Skill (v0.7.6), Spielstand mit mehreren Blobs (v0.7.7), Start im Nest, Niederlassen, Abspalten, Verschmelzen, Erheben, Vertrocknen mit Sterbescreen, Tätigkeit niedergelassener Blobs, feste Höchstmasse 120 kg (v0.8.0). Es folgen: Verteilen-Dialog, Darstellung, Tätigkeit vollständig, Karte.
+
 - `[POLISH]` **Balance-Werte aufgeräumt**: Was zu einem Skill gehört, steht am Skill (Sprungweite, Photosynthese-Heilung, Grow-Verdauung als Effekte; Erfahrung durch Bewegen, Sehen, Heilen, Verdauen im Feld `practice`). `balance.ts` enthält die allgemeinen Regeln und listet im Kopf, was wo steht. MP-Regeneration, KI-Werte und Gegner-Bonus-Level aus der Spiellogik dorthin geholt. `body.ts` als „nur Blob“ klargestellt. Spiel unverändert (v0.7.5, GDD-02 Abschnitt 8.8, 14. November 2026).
 
 - `[BUG]` **Sichtkreis im Querformat verzerrt**: Fehler in Phaser 3.70. Die Bildfläche des Kamera-Farbfilters behielt die Startgröße. Fix: `GameScene.fixCameraFxSize` passt sie an, sobald sich die Spielfläche ändert (v0.7.2, 13. November 2026). Seit v0.7.3 nur beim Start und bei RESIZE (deckt auch Drehen ab) statt jeden Frame (14. November 2026). v0.7.2/v0.7.3 halfen nicht: resize() wirkt nur mit autoResize. Eigentliche Ursache: Die Zwischenflächen der Utility-Pipeline (fullFrame/halfFrame) haben nie autoResize. Fix v0.7.4: autoResize einschalten und anpassen, beim Start und bei RESIZE (14. November 2026).

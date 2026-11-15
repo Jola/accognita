@@ -7,7 +7,7 @@
 // ============================================================
 
 import type { PlayerState } from "../types/GameState";
-import { GROW_FOOD_MATERIAL_ID, GROWTH_FIBER_SCALE } from "../data/grow";
+import { GROW_FOOD_MATERIAL_ID, GROWTH_FIBER_SCALE, MAX_BODY_MASS } from "../data/grow";
 import { GROWTH_XP_SCALE } from "../data/progression";
 import { getSkillProgress } from "./ProgressionSystem";
 import { evalSkillEffect } from "./SkillEffectSystem";
@@ -28,17 +28,24 @@ export function isGrowActive(player: PlayerState): boolean {
   return !!inst && inst.isEnabled !== false;
 }
 
+/** Ausgewachsen: Körpermasse ≥ Höchstmasse (data/grow.ts Abschnitt 5, GDD-10 7.1). */
+export function isFullyGrown(bodyMass: number): boolean {
+  return bodyMass >= MAX_BODY_MASS;
+}
+
 /**
  * Verdaut über deltaMs Spielzeit Fasern aus dem Lager. Gibt die Zahl der
  * verdauten Fasern zurück (für XP und Anzeige); die Körpermasse wächst um
  * genau diese Zahl. Ohne Fasern ruht Grow, höchstens eine Faser wartet.
+ * Ausgewachsen verdaut Grow nicht mehr; die Fasern bleiben im Lager.
  */
 export function processGrow(player: PlayerState, deltaMs: number): number {
   if (!isGrowActive(player)) return 0;
+  if (isFullyGrown(player.bodyMass ?? 0)) { player.growDigest = 0; return 0; }
   const perMs = calcGrowFibersPerMinute(getSkillProgress(player, "grow")) / 60_000;
   let pending = (player.growDigest ?? 0) + perMs * deltaMs;
   let digested = 0;
-  while (pending >= 1 && getMaterialAmount(player, GROW_FOOD_MATERIAL_ID) >= 1) {
+  while (pending >= 1 && getMaterialAmount(player, GROW_FOOD_MATERIAL_ID) >= 1 && !isFullyGrown(player.bodyMass + digested)) {
     player.materials.set(GROW_FOOD_MATERIAL_ID, getMaterialAmount(player, GROW_FOOD_MATERIAL_ID) - 1);
     pending -= 1;
     digested += 1;
@@ -52,7 +59,7 @@ export function processGrow(player: PlayerState, deltaMs: number): number {
 // 4. WACHSTUM AUS KÖRPERMASSE
 // -----------------------------------------------------------
 
-/** Wachstum aus der Körpermasse (verdaute Fasern) — stetig, schrumpft nie. */
+/** Wachstum aus der Körpermasse (verdaute Fasern) — stetig. */
 export function calcGrowthFromMass(bodyMass: number): number {
   return Math.log2(1 + Math.max(0, bodyMass) / GROWTH_FIBER_SCALE);
 }
@@ -70,4 +77,4 @@ export function bodyMassFromLifetimeXp(lifetimeXp: number): number {
   return (Math.max(0, lifetimeXp) / GROWTH_XP_SCALE) * GROWTH_FIBER_SCALE;
 }
 
-// Stand: 13. November 2026 — Erstfassung
+// Stand: 15. November 2026 — verdaut nur bis ausgewachsen (GDD-10 7.1); davor 13. November 2026 — Erstfassung

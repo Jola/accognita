@@ -73,4 +73,24 @@ export const GROW_FOOD_MATERIAL_ID = "plant_fiber";
 // -----------------------------------------------------------
 export const GROWTH_FIBER_SCALE = 20;
 
-// Stand: 14. November 2026 — Verdauungstempo und Erfahrung an den Skill Grow verschoben; davor 13. November 2026 — Erstfassung
+// -----------------------------------------------------------
+// 5. HÖCHSTMASSE — ausgewachsen (GDD-10 Abschnitt 7.1)
+//
+// Vorgabe (Entwickler, 14. November 2026): feste Höchstmasse. Der Blob ist
+//   eine Kugel von höchstens 120 kg und 61 cm. Ausgewachsen = Körpermasse ≥
+//   Höchstmasse; größer nur durch Formwandeln (später), nicht durch Grow.
+//   Ändert sich der Wert, bleibt die Größe jedes Blobs, wie sie war; wer
+//   darunter liegt, wächst weiter.
+// Begründung (Entwickler): Der Blob soll im Endeffekt ungefähr mit Menschen
+//   auf einer Ebene sein, daher 120 kg; erhöht von 80 auf 120 kg, damit die
+//   Kugel etwas größer ist.
+// Umrechnung (Vorschlag Claude, übernommen): 1 Pflanzenfaser = 0,1 kg
+//   Körpermasse — 120 kg sind 1200 Fasern (etwa 600 Grashalme).
+// Grow verdaut nur bis zur Höchstmasse (GrowSystem.processGrow). Das Nest
+//   gilt als ausgewachsen und verdaut nie (Vorgabe Entwickler, 15. Nov. 2026).
+// -----------------------------------------------------------
+export const KG_PER_FIBER = 0.1;
+export const MAX_BODY_MASS_KG = 120;
+export const MAX_BODY_MASS = MAX_BODY_MASS_KG / KG_PER_FIBER; // 1200 Fasern
+
+// Stand: 15. November 2026 — Höchstmasse (GDD-10); davor 14. November 2026 — Verdauungstempo und Erfahrung an den Skill Grow verschoben; davor 13. November 2026 — Erstfassung

@@ -9,8 +9,18 @@
 // Phaser wird als globales `Phaser` aus dem CDN geladen.
 declare const Phaser: any;
 
-import { getPlayerVision, visionColorMatrix, getActiveMoveSkill, getActiveSightSkills, calcMoveXp } from "../systems/BodySystem";
-import { getIntroStep, INTRO_TEXT, type IntroStep } from "../systems/IntroSystem";
+import { getPlayerVision, visionColorMatrix, getActiveMoveSkill, getActiveSightSkills, calcMoveXp, knowsMoveSkill } from "../systems/BodySystem";
+import { getIntroStep, getIntroText, type IntroStep } from "../systems/IntroSystem";
+import {
+  settle, canSettle, split, canSplit, rise, canRise, merge, canMerge, dryOut, switchTo, canSwitch,
+  findTouchedBlob, nearestSettled, summarizeAhead, storedCoreRadius, consciousWorkRange,
+} from "../systems/BlobSystem";
+import { runActivity, snapshotSources } from "../systems/SettlementSystem";
+import { ACTION_SECONDS, SETTLE_AGGRO_LOCK_MS } from "../data/blobs";
+import type { BlobActivity, StoredBlob } from "../types/Blob";
+import { createBlobActions, type BlobActionsState, type BlobActionButton } from "../ui/BlobActions.js";
+import { createBlobPicker, type BlobPickerState } from "../ui/BlobPicker.js";
+import { createBlobArrows, type BlobArrowsState } from "../ui/BlobArrows.js";
 import { SIGHT_EDGE_FRACTION } from "../data/body";
 import { processGrow, getPlayerGrowth } from "../systems/GrowSystem";
 import { practiceXp } from "../systems/SkillEffectSystem";
@@ -84,7 +94,6 @@ import {
   canActivateSkill,
   consumeSkill,
   executeJump,
-  executeCheckpoint,
   regenMp,
   formatPlayerSkillDamage,
 } from "../systems/CombatSystem.js";
@@ -146,13 +155,24 @@ export class GameScene extends Phaser.Scene {
   private introEl: HTMLElement | null = null;
   private introStep: IntroStep | null = null;
   private gamePaused = false;
-  private pauseReasons = new Set<"fullscreen" | "ui">();
+  private pauseReasons = new Set<"fullscreen" | "ui" | "death">();
   private hpBarGraphics!: any;
   private skillBar!: SkillBarState;
   private playtimeAccumulator = 0; // Sekunden akkumulieren für player.playtimeSeconds
   // Stufenlose Erfahrung (Gift, Regeneration) kommt jeden Frame in kleinen Beträgen —
   // Werte, Wachstum und UI werden dann nur einmal pro Sekunde nachgeführt
   private progressDirty = false;
+  // Blob-Formen (GDD-10): Knöpfe, Auswahl/Sterbescreen, Richtungspfeile, andere Blobs
+  private blobActions!: BlobActionsState;
+  private blobPicker!: BlobPickerState;
+  private blobArrows!: BlobArrowsState;
+  private blobSprites: Map<string, any> = new Map();
+  private workRangeGfx!: any;
+  private lastAggroAt = -Infinity;       // Date.now() der letzten Aggro auf den Reisenden
+  private activityAccumulator = 0;       // ms Tätigkeit seit dem letzten Rechenstück
+  private deathPending = false;          // Sterbescreen offen
+  private actionsRefreshAt = 0;
+  private formUiKey = "";
 
   constructor() {
     super({ key: "GameScene" });
@@ -185,6 +205,7 @@ export class GameScene extends Phaser.Scene {
     this.setupSkillBar();
     this.setupSaveMenu();
     this.setupGameMenu();
+    this.setupBlobUi();
 
     this.cameras.main.startFollow(this.blobGraphic, true, 1.0, 1.0);
     this.updateCameraZoom(); // Zoom passend zur Startgröße
@@ -357,17 +378,17 @@ export class GameScene extends Phaser.Scene {
     if (step === "awake") {
       // Ein geladener, längst wacher Blob braucht keinen Hinweis
       if (first) { this.introEl.style.opacity = "0"; return; }
-      this.introEl.textContent = INTRO_TEXT.awake;
+      this.introEl.textContent = getIntroText("awake", this.gameState.conscious.form);
       this.introEl.style.opacity = "1";
       this.introLayoutKey = "";
-      addLog(INTRO_TEXT.awake, "system");
+      addLog(getIntroText("awake", this.gameState.conscious.form), "system");
       this.time.delayedCall(9000, () => { if (this.introStep === "awake" && this.introEl) this.introEl.style.opacity = "0"; });
       return;
     }
-    this.introEl.textContent = INTRO_TEXT[step];
+    this.introEl.textContent = getIntroText(step, this.gameState.conscious.form);
     this.introEl.style.opacity = "1";
     this.introLayoutKey = ""; // neuer Text, neue Höhe
-    if (!first) addLog(INTRO_TEXT[step], "system");
+    if (!first) addLog(getIntroText(step, this.gameState.conscious.form), "system");
   }
 
   // ----------------------------------------------------------
@@ -550,7 +571,7 @@ export class GameScene extends Phaser.Scene {
 
   // Das Spiel läuft nur, wenn kein Pause-Grund aktiv ist. So setzt das Schließen
   // eines Menüs das Spiel nicht fort, solange der Vollbildmodus verlassen ist.
-  private setPaused(reason: "fullscreen" | "ui", on: boolean) {
+  private setPaused(reason: "fullscreen" | "ui" | "death", on: boolean) {
     if (on) this.pauseReasons.add(reason);
     else this.pauseReasons.delete(reason);
 
@@ -611,6 +632,10 @@ export class GameScene extends Phaser.Scene {
 
   /** Spielstand in Slot speichern */
   saveGame(slot: number) {
+    if (this.deathPending) {
+      showToast("Wähle erst einen Blob, bei dem du weitermachst.", "system");
+      return;
+    }
     // SkillBar-Slots in player.activeSkillSlots spiegeln
     if (this.skillBar) {
       for (let i = 0; i < 4; i++) {
@@ -684,8 +709,15 @@ export class GameScene extends Phaser.Scene {
       instance.levelingCooldown = 0;
     }
 
+    this.deathPending = false;
+    this.blobPicker?.close();
+    this.setPaused("death", false);
+    this.activityAccumulator = 0;
+    this.refreshBlobSprites();
+    this.applyFormUi();
+
     updateUI(this.gameState);
-    addLog(`▶ Slot ${slot + 1} geladen — ${saved.player.discoveredSkills.size} Skills.`, "system");
+    addLog(`▶ Slot ${slot + 1} geladen — ${this.gameState.conscious.name}, ${saved.player.discoveredSkills.size} Skills.`, "system");
   }
 
   /** Alles zurücksetzen und Seite neu laden */
@@ -729,6 +761,8 @@ export class GameScene extends Phaser.Scene {
         this.afterProgressChange();
       }
     }
+    if (this.deathPending) return;
+    this.tickSettledActivity(delta);
     const prevX = this.gameState.player.x, prevY = this.gameState.player.y;
     this.handleMovement();
     this.syncPlayerPosition();
@@ -743,6 +777,7 @@ export class GameScene extends Phaser.Scene {
     this.checkNearbyEntity();
     this.checkPlayerDeath();
     processRespawns(this.gameState.world);
+    this.updateBlobOverlay();
   }
 
   // Bewegen und Sehen lernt man durch Tun (Menge am Skill: practice): Strecke
@@ -786,6 +821,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   private handleMovement() {
+    // Joystick nur beim Reisenden (GDD-10 Abschnitt 13.5)
+    if (this.gameState.conscious.form !== "traveling") {
+      this.blobGraphic.body.setVelocity(0, 0);
+      return;
+    }
     // Geschwindigkeit skaliert mit Weltgröße → Bildschirm-Speed bleibt über alle Größen konstant
     const speed = calcPlayerSpeed(this.gameState.player);
     const body = this.blobGraphic.body;
@@ -870,6 +910,8 @@ export class GameScene extends Phaser.Scene {
 
     // Nur Entities in aktiven Chunks (ACTIVE_RADIUS) simulieren
     const activeIds = this.chunkManager.getActiveEntityIds();
+    // Niedergelassene Blobs sind vorerst kein Ziel (GDD-10 Abschnitt 2)
+    const hasTarget = this.gameState.conscious.form === "traveling";
 
     for (const [id, instance] of this.gameState.world.entities) {
       if (!activeIds.has(id)) continue;
@@ -880,7 +922,8 @@ export class GameScene extends Phaser.Scene {
       tickAttackCooldown(instance, delta);
       tickRangedCooldown(instance, delta);
 
-      const frame = calcEntityAi(def, instance, px, py, now);
+      const frame = calcEntityAi(def, instance, px, py, now, hasTarget);
+      if (instance.isAggro) this.lastAggroAt = now;
 
       if (frame.becameAggro) {
         addLog(`${def.icon} ${def.name} wird aggressiv!`, "aggro");
@@ -1034,7 +1077,8 @@ export class GameScene extends Phaser.Scene {
     removeExpiredEffects(this.gameState.player, now);
 
     // Regeneration (Photosynthesis): stufenlos als Rate, jeden Frame
-    const healed = processRegeneration(this.gameState.player, delta);
+    // Bei 0 HP heilt nichts mehr — sonst rettete eine winzige Heilung im selben Frame vor dem Vertrocknen
+    const healed = this.gameState.player.hp > 0 ? processRegeneration(this.gameState.player, delta) : 0;
     if (healed > 0) {
       this.gameState.player.hp += healed;
       // Photosynthesis: XP je geheiltem HP (Menge am Skill: practice), stufenlos
@@ -1046,7 +1090,8 @@ export class GameScene extends Phaser.Scene {
     }
 
     // Wachsen (Grow): verdaut Pflanzenfasern über die Spielzeit → Körpermasse → Wachstum
-    const digested = processGrow(this.gameState.player, delta);
+    // Das Nest gilt als ausgewachsen und wächst nicht (GDD-10 Abschnitt 7.1)
+    const digested = this.gameState.conscious.nest ? 0 : processGrow(this.gameState.player, delta);
     if (digested > 0) {
       this.afterXpGain(gainSkillXp(this.gameState.player, "grow", practiceXp("grow", "fiber_digested", digested)));
     }
@@ -1109,20 +1154,377 @@ export class GameScene extends Phaser.Scene {
     regenMp(this.gameState.player, delta);
   }
 
+  // Vertrocknen statt Checkpoint (GDD-10 Abschnitt 9): Der Reisende wird zum
+  // vertrockneten Blob, dann erscheint der Sterbescreen. [VERWORFEN, 15. November
+  // 2026] executeCheckpoint — HP/MP wiederherstellen und zum Spawnpunkt.
   private checkPlayerDeath() {
-    if (this.gameState.player.hp > 0) return;
-
-    executeCheckpoint(this.gameState.player);
-    syncPassiveEffects(this.gameState.player);
-
-    for (const instance of this.gameState.world.entities.values()) {
-      resetAi(instance);
+    if (this.gameState.player.hp > 0 || this.deathPending) return;
+    if (this.gameState.conscious.form !== "traveling") {
+      this.gameState.player.hp = 1; // niedergelassen nicht angreifbar — Gift o. ä. lässt ihn nicht vertrocknen
+      return;
     }
-
-    this.blobGraphic.setPosition(this.gameState.player.x, this.gameState.player.y);
+    this.syncSkillBarIntoPlayer();
+    const dried = dryOut(this.gameState);
+    for (const instance of this.gameState.world.entities.values()) resetAi(instance);
     this.cameras.main.flash(400, 255, 50, 50);
-    addLog("💀 Besiegt! Checkpoint — HP/MP wiederhergestellt.", "system");
+    addLog(`💀 Besiegt — dein Körper ist als ${dried.name} vertrocknet.`, "system");
+    this.deathPending = true;
+    this.setPaused("death", true);
+    this.refreshBlobSprites();
+    this.openDeathScreen(dried);
+  }
+
+  // ----------------------------------------------------------
+  // BLOB-FORMEN (GDD-10) — Logik in BlobSystem/SettlementSystem, hier nur Glue
+  // ----------------------------------------------------------
+  private setupBlobUi() {
+    this.blobActions = createBlobActions((id) => this.onBlobAction(id), (reason) => showToast(reason, "system"));
+    this.blobPicker = createBlobPicker();
+    this.blobArrows = createBlobArrows(document.getElementById("canvas-wrap") ?? document.body);
+    this.workRangeGfx = this.add.graphics().setDepth(4);
+    this.refreshBlobSprites();
+    this.applyFormUi();
+  }
+
+  /** Meter aus Weltpixeln: 61 cm ≙ 16 px Durchmesser des ausgewachsenen Blobs. */
+  private toMeters(px: number): number {
+    return Math.round(px * 0.61 / 16);
+  }
+
+  /** Skill-Leiste gehört jedem Blob selbst (GDD-10 Abschnitt 5). */
+  private syncSkillBarIntoPlayer() {
+    if (!this.skillBar) return;
+    for (let i = 0; i < 4; i++) this.gameState.player.activeSkillSlots[i] = this.skillBar.slots[i];
+  }
+
+  /** Tätigkeit des niedergelassenen Blobs mit Bewusstsein: je Aktion ein Rechenstück (13.6). */
+  private tickSettledActivity(delta: number) {
+    const meta = this.gameState.conscious;
+    if (meta.form !== "settled") { this.activityAccumulator = 0; return; }
+    meta.simulatedUntil = this.gameState.player.playtimeSeconds;
+    if (!meta.activity || meta.activity === "rest") { this.activityAccumulator = 0; return; }
+    this.activityAccumulator += delta;
+    while (this.activityAccumulator >= ACTION_SECONDS * 1000) {
+      this.activityAccumulator -= ACTION_SECONDS * 1000;
+      this.runSettledAction(ACTION_SECONDS);
+    }
+  }
+
+  private runSettledAction(seconds: number) {
+    const state = this.gameState;
+    const meta = state.conscious;
+    if (meta.form !== "settled" || seconds <= 0) return;
+    meta.carry = meta.carry ?? {};
+    const p = state.player;
+    const sources = snapshotSources(state.world, p.x, p.y, consciousWorkRange(state));
+    const r = runActivity(p, meta.activity, sources, seconds, meta.carry, p.playtimeSeconds);
+    this.logProgressionEvents(r.events);
+    for (const id of r.discovered) {
+      const def = ALL_SKILLS.get(id);
+      addLog(`✨ Neuer Skill entdeckt: ${def?.icon ?? ""} ${def?.name ?? id}`, "skill");
+      showToast(`✨ ${def?.name ?? id} entdeckt!`, "skill");
+    }
+    for (const [id, n] of Object.entries(r.materials)) {
+      const m = MATERIAL_MAP.get(id);
+      addLog(`+${n} ${m?.icon ?? ""} ${m?.name ?? id}`, "absorb");
+    }
+    if (r.discovered.length > 0) syncPassiveEffects(p);
+    if (r.events.length > 0 || r.discovered.length > 0 || Object.keys(r.materials).length > 0) {
+      this.afterProgressChange();
+    } else {
+      this.progressDirty = true;
+    }
+  }
+
+  /** Angefangenes Rechenstück abschließen, bevor das Bewusstsein den Blob verlässt (4.6). */
+  private flushSettledActivity() {
+    if (this.gameState.conscious.form === "settled" && this.activityAccumulator > 0) {
+      this.runSettledAction(this.activityAccumulator / 1000);
+    }
+    this.activityAccumulator = 0;
+  }
+
+  /** Nach jedem Wechsel des Körpers: Effekte, Größe, Kamera, Skill-Leiste, Anzeige. */
+  private afterBodySwap() {
+    const p = this.gameState.player;
+    syncPassiveEffects(p);
+    updatePlayerGrowth(p);
+    this.blobGraphic.setPosition(p.x, p.y);
+    this.blobGraphic.body?.setVelocity(0, 0);
+    this.updateCameraZoom();
+    if (this.skillBar) {
+      for (let i = 0; i < 4; i++) this.skillBar.assignSlot(i, p.activeSkillSlots[i] ?? null);
+    }
+    this.lastNearbyId = null;
+    updateNearbyPanel(undefined, undefined, this.gameState);
+    this.refreshBlobSprites();
+    this.applyFormUi();
+    this.introStep = null;
+    this.updateIntro();
     updateUI(this.gameState);
+  }
+
+  /** Steuerung je Form: Joystick, Absorb/Analyze und Skill-Leiste nur beim Reisenden. */
+  private applyFormUi() {
+    const form = this.gameState.conscious.form;
+    const key = `${form}|${this.deathPending}`;
+    if (key === this.formUiKey) return;
+    this.formUiKey = key;
+    const traveling = form === "traveling";
+    for (const id of ["joystickZone", "joystickBase", "actionBtns", "skillBarWrap"]) {
+      const el = document.getElementById(id);
+      if (el) el.style.visibility = traveling ? "" : "hidden";
+    }
+    if (traveling) this.blobGraphic.clearTint();
+    else this.blobGraphic.setTint(0x7fe0a0);
+    this.actionsRefreshAt = 0;
+  }
+
+  /** Andere Blobs als einfache Platzhalter (Darstellung folgt in Umsetzungsschritt 5). */
+  private refreshBlobSprites() {
+    const ids = new Set(this.gameState.blobs.map((b) => b.id));
+    for (const [id, g] of this.blobSprites) {
+      if (!ids.has(id)) { g.destroy(); this.blobSprites.delete(id); }
+    }
+    for (const b of this.gameState.blobs) {
+      let g = this.blobSprites.get(b.id);
+      const key = `${b.form}|${b.body.bodyMass}|${b.body.x}|${b.body.y}`;
+      if (g && g.blobKey === key) continue;
+      g?.destroy();
+      g = this.add.graphics().setDepth(5);
+      const r = storedCoreRadius(b);
+      if (b.form === "settled") {
+        g.fillStyle(0x20a860, 0.08);
+        g.fillCircle(b.body.x, b.body.y, r * 3);
+        g.fillStyle(0x20a860, 0.85);
+        g.fillCircle(b.body.x, b.body.y, r);
+        g.fillStyle(0x90ffcc, 0.6);
+        g.fillCircle(b.body.x - r * 0.3, b.body.y - r * 0.3, r * 0.35);
+      } else {
+        g.fillStyle(0x5a4418, 0.95);
+        g.fillCircle(b.body.x, b.body.y, r);
+        g.fillStyle(0x8a6a2a, 1);
+        g.fillCircle(b.body.x - r * 0.15, b.body.y - r * 0.15, r * 0.75);
+      }
+      g.blobKey = key;
+      this.blobSprites.set(b.id, g);
+    }
+  }
+
+  /** Je Frame: Richtungspfeile, Arbeitsreichweite; alle 250 ms die Knöpfe. */
+  private updateBlobOverlay() {
+    const state = this.gameState;
+    const cam = this.cameras.main;
+    const view = cam.worldView;
+    const zoom = cam.zoom;
+    // Arbeitsreichweite des niedergelassenen Blobs mit Bewusstsein
+    this.workRangeGfx.clear();
+    if (state.conscious.form === "settled") {
+      this.workRangeGfx.lineStyle(1 / zoom, 0x40e890, 0.35);
+      this.workRangeGfx.strokeCircle(state.player.x, state.player.y, consciousWorkRange(state));
+    }
+    // Pfeile zu markierten Blobs
+    const targets = [];
+    for (const id of state.markedBlobIds) {
+      const b = state.blobs.find((x) => x.id === id);
+      if (!b) continue;
+      const dist = Math.hypot(b.body.x - state.player.x, b.body.y - state.player.y);
+      targets.push({
+        id, sx: (b.body.x - view.x) * zoom, sy: (b.body.y - view.y) * zoom,
+        label: `${b.name} · ${this.toMeters(dist)} m`,
+        color: b.form === "dried" ? "#d8b060" : "#7fe0a0",
+      });
+    }
+    this.blobArrows.update(targets, cam.width, cam.height);
+
+    const now = Date.now();
+    if (now < this.actionsRefreshAt) return;
+    this.actionsRefreshAt = now + 250;
+    this.blobActions.update(this.deathPending ? [] : this.computeBlobButtons(now));
+  }
+
+  private computeBlobButtons(now: number): BlobActionButton[] {
+    const state = this.gameState;
+    const buttons: BlobActionButton[] = [];
+    const calm = now - this.lastAggroAt >= SETTLE_AGGRO_LOCK_MS;
+    const aggroReason = "Erst wenn dich 5 s kein Gegner angreift.";
+    if (state.conscious.form === "traveling") {
+      const s = canSettle(state);
+      if (knowsMoveSkill(state.player)) {
+        buttons.push({ id: "settle", icon: "🌱", label: "Niederlassen", enabled: s.ok && calm, reason: s.reason ?? aggroReason });
+      }
+      const touched = findTouchedBlob(state);
+      if (touched && canMerge(state, touched).ok) {
+        buttons.push({ id: "merge", icon: "🫧", label: `Verschmelzen: ${touched.name}`, enabled: calm, reason: aggroReason });
+      }
+    } else if (state.conscious.form === "settled") {
+      const act = state.conscious.activity;
+      const actName = act === "analyze" ? "Analysieren" : act === "absorb" ? "Absorbieren" : act === "rest" ? "Ruhen" : "wählen";
+      buttons.push({ id: "activity", icon: act === "absorb" ? "💥" : act === "analyze" ? "🔍" : "💤", label: `Tätigkeit: ${actName}`, enabled: true });
+      if (knowsMoveSkill(state.player)) {
+        const sp = canSplit(state);
+        buttons.push({ id: "split", icon: "🧬", label: "Abspalten", enabled: sp.ok, reason: sp.reason });
+        if (!state.conscious.nest) {
+          const ri = canRise(state);
+          buttons.push({ id: "rise", icon: "⬆️", label: "Erheben", enabled: ri.ok, reason: ri.reason });
+        }
+      }
+      if (canSwitch(state).ok) buttons.push({ id: "switch", icon: "🔀", label: "Wechseln", enabled: true });
+    }
+    return buttons;
+  }
+
+  private onBlobAction(id: string) {
+    const state = this.gameState;
+    const world = state.world;
+    this.syncSkillBarIntoPlayer();
+    if (id === "settle") {
+      const r = settle(state, world);
+      if (!r.ok) { showToast(r.reason ?? "Geht nicht.", "system"); return; }
+      for (const inst of world.entities.values()) if (inst.isAggro) resetAi(inst);
+      addLog(`🌱 Du lässt dich nieder: ${state.conscious.name}. Dein Fortschritt ist gesichert.`, "system");
+      this.afterBodySwap();
+      showToast("Wähle eine Tätigkeit für deinen Blob.", "system");
+    } else if (id === "merge") {
+      const target = findTouchedBlob(state);
+      if (!target) return;
+      const wasDried = target.form === "dried";
+      const r = merge(state, target.id, world);
+      if (!r.ok) { showToast(r.reason ?? "Geht nicht.", "system"); return; }
+      for (const inst of world.entities.values()) if (inst.isAggro) resetAi(inst);
+      addLog(wasDried
+        ? `🫧 Verschmolzen mit dem vertrockneten Blob — ${state.conscious.name} lebt wieder.`
+        : `🫧 Verschmolzen mit ${state.conscious.name}.`, "system");
+      this.logResultOfCatchUp(r.result);
+      this.afterBodySwap();
+    } else if (id === "split") {
+      this.flushSettledActivity();
+      const first = state.nextBlobNumber <= 2 || state.blobs.length === 0 && state.conscious.nest;
+      const r = split(state, world);
+      if (!r.ok) { showToast(r.reason ?? "Geht nicht.", "system"); return; }
+      addLog(`🧬 Ein Teil von dir macht sich auf den Weg (${(state.player.bodyMass * 0.1).toLocaleString("de-DE", { maximumFractionDigits: 1 })} kg).`, "system");
+      if (first) {
+        const hint = "Wirst du besiegt, machst du bei einem niedergelassenen Blob weiter, zu Beginn im Nest. Lässt du dich nieder, ist dein Fortschritt gesichert.";
+        addLog(hint, "system");
+        showToast(hint, "system");
+      }
+      this.afterBodySwap();
+    } else if (id === "rise") {
+      this.flushSettledActivity();
+      const r = rise(state);
+      if (!r.ok) { showToast(r.reason ?? "Geht nicht.", "system"); return; }
+      addLog("⬆️ Du erhebst dich und reist weiter.", "system");
+      this.afterBodySwap();
+    } else if (id === "switch") {
+      this.openSwitchList();
+    } else if (id === "activity") {
+      this.openActivityPicker();
+    }
+  }
+
+  private logResultOfCatchUp(result: { events: ProgressionEvent[]; discovered: string[]; materials: Record<string, number> } | null | undefined) {
+    if (!result) return;
+    this.logProgressionEvents(result.events);
+    for (const id of result.discovered) {
+      const def = ALL_SKILLS.get(id);
+      addLog(`✨ In deiner Abwesenheit entdeckt: ${def?.icon ?? ""} ${def?.name ?? id}`, "skill");
+    }
+    const mats = Object.entries(result.materials).filter(([, n]) => n > 0);
+    if (mats.length > 0) {
+      addLog(`In deiner Abwesenheit gesammelt: ${mats.map(([id, n]) => `${n} ${MATERIAL_MAP.get(id)?.name ?? id}`).join(", ")}`, "absorb");
+    }
+  }
+
+  private openActivityPicker() {
+    const meta = this.gameState.conscious;
+    if (meta.form !== "settled") return;
+    this.pauseForUI();
+    const pick = (activity: BlobActivity) => () => {
+      this.flushSettledActivity();
+      meta.activity = activity;
+      const name = activity === "analyze" ? "Analysieren" : activity === "absorb" ? "Absorbieren" : "Ruhen";
+      addLog(`Tätigkeit: ${name}.`, "system");
+      this.actionsRefreshAt = 0;
+    };
+    this.blobPicker.open({
+      title: "Tätigkeit",
+      text: "Dein niedergelassener Blob arbeitet von allein an den friedlichen Wesen in seiner Reichweite — auch während du woanders bist.",
+      items: [
+        { label: "🔍 Analysieren", detail: "Erfahrung, keine Materialien. Die Wesen bleiben.", onPick: pick("analyze") },
+        { label: "💥 Absorbieren", detail: "Erfahrung und Materialien, so oft die Wesen nachwachsen.", onPick: pick("absorb") },
+        { label: "💤 Ruhen", detail: "Nichts tun.", onPick: pick("rest") },
+      ],
+      cancellable: true,
+      onClose: () => this.resumeForUI(),
+    });
+  }
+
+  private openSwitchList() {
+    const state = this.gameState;
+    const others = state.blobs.filter((b) => b.form === "settled");
+    if (others.length === 0) return;
+    this.pauseForUI();
+    this.blobPicker.open({
+      title: "Bewusstsein wechseln",
+      text: "Du hast danach nur den Stand des gewählten Blobs.",
+      items: others.map((b) => ({
+        label: `${b.nest ? "🏠" : "🌱"} ${b.name}`,
+        detail: `${this.toMeters(Math.hypot(b.body.x - state.player.x, b.body.y - state.player.y))} m entfernt`,
+        onPick: () => this.switchConsciousness(b.id, true),
+      })),
+      cancellable: true,
+      onClose: () => this.resumeForUI(),
+    });
+  }
+
+  private switchConsciousness(targetId: string, storeCurrent: boolean) {
+    if (storeCurrent) this.flushSettledActivity();
+    this.syncSkillBarIntoPlayer();
+    const r = switchTo(this.gameState, targetId, this.gameState.world, storeCurrent);
+    if (!r.ok) { showToast(r.reason ?? "Geht nicht.", "system"); return false; }
+    // Ziel liegt evtl. in einem nicht geladenen Teil der Welt: Chunks sofort laden
+    this.chunkManager.tick(this.gameState.player.x, this.gameState.player.y, Date.now() - 1000);
+    addLog(`🔀 Bewusstsein bei ${this.gameState.conscious.name}.`, "system");
+    this.logResultOfCatchUp(r.result);
+    this.afterBodySwap();
+    return true;
+  }
+
+  private openDeathScreen(dried: StoredBlob) {
+    const state = this.gameState;
+    const nearest = nearestSettled(state, dried.body.x, dried.body.y);
+    const ahead = summarizeAhead(dried, nearest);
+    const parts: string[] = [];
+    if (ahead.newSkills) parts.push(`${ahead.newSkills} neue Skill${ahead.newSkills === 1 ? "" : "s"}`);
+    if (ahead.higherSkills) parts.push(`${ahead.higherSkills} Skill${ahead.higherSkills === 1 ? "" : "s"} höher`);
+    for (const [id, n] of ahead.materials) parts.push(`${n} ${MATERIAL_MAP.get(id)?.name ?? id}`);
+    const settledBlobs = state.blobs.filter((b) => b.form === "settled");
+    const finish = (id: string) => {
+      if (this.switchConsciousness(id, false)) {
+        this.deathPending = false;
+        this.setPaused("death", false);
+        this.applyFormUi();
+      } else {
+        this.openDeathScreen(dried);
+      }
+    };
+    this.applyFormUi();
+    this.blobPicker.open({
+      title: "Du wurdest besiegt",
+      text: "Zum Schutz ist dein Körper an Ort und Stelle eingetrocknet. Mach bei einem anderen Blob weiter. Verschmilzt du später mit dem vertrockneten Blob, bekommst du zurück, was er dir voraushat.",
+      summary: parts.length ? `Darin: ${parts.join(", ")}` : undefined,
+      primary: nearest ? {
+        label: `Zum nächsten Blob: ${nearest.name}, ${this.toMeters(Math.hypot(nearest.body.x - dried.body.x, nearest.body.y - dried.body.y))} m`,
+        onPick: () => finish(nearest.id),
+      } : undefined,
+      listTitle: "Oder wählen",
+      items: settledBlobs.filter((b) => b.id !== nearest?.id).map((b) => ({
+        label: `${b.nest ? "🏠" : "🌱"} ${b.name}`,
+        detail: `${this.toMeters(Math.hypot(b.body.x - dried.body.x, b.body.y - dried.body.y))} m entfernt`,
+        onPick: () => finish(b.id),
+      })),
+      cancellable: false,
+    });
   }
 
   /** Nach jeder Erfahrung: Rangwechsel loggen, Werte und Wachstum nachführen */

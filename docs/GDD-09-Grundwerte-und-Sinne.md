@@ -118,7 +118,7 @@ Der Übergang zu Farbe ist fließend: Mit dem Fortschritt von Facettenauge kommt
 
 ## 5. Erwachen (Intro)
 
-> **Geplante Änderung (Konzept): [GDD-10 Abschnitt 12](GDD-10-Blob-Formen.md).** Der Blob erwacht dort als niedergelassener Blob im Nest. Das Gras liegt schon in seiner Arbeitsreichweite. Keine Tätigkeit ist voreingestellt; der Spieler wählt Analysieren oder Absorbieren selbst. Mit Kriechen kommt das Abspalten statt des Joysticks. Bis zur Umsetzung gilt der Ablauf unten.
+> **Umgesetzt (v0.8.0, 15. November 2026): [GDD-10 Abschnitt 12](GDD-10-Blob-Formen.md).** Der Blob erwacht dort als niedergelassener Blob im Nest. Das Gras liegt schon in seiner Arbeitsreichweite. Keine Tätigkeit ist voreingestellt; der Spieler wählt Analysieren oder Absorbieren selbst. Mit Kriechen kommt das Abspalten statt des Joysticks. Der Ablauf unten gilt seitdem für das Erwachen als Reisender nicht mehr ([VERWORFEN, 15. November 2026]).
 
 **Vorgabe (Entwickler):** Am Anfang ist der Bildschirm schwarz, nur Analyze und Absorb existieren, und einige Texte erklären, was geschieht. Dafür müssen sich in der Nähe Einheiten aufhalten, an denen der Blob Sehen und Bewegen lernen kann.
 
@@ -162,4 +162,4 @@ Spielstand-Version 5: Wer schon spielte, konnte sich bewegen und farbig sehen. D
 
 ---
 
-*Letzte Aktualisierung: 15. November 2026 — Abschnitt 5: Verweis auf GDD-10 angepasst (Gras schon in Reichweite, keine Tätigkeit voreingestellt); davor 14. November 2026 — Erfahrung durch Bewegen und Sehen steht je Skill (Feld practice), Größenbonus in balance.ts, body.ts gilt nur für den Blob (Werte unverändert); davor 14. November 2026 — Abschnitt 5 verweist auf die geplante Änderung in GDD-10 Abschnitt 12; 13. November 2026 — Datei neu angelegt: Grundwerte, Bewegung (Kriechen, Krabbeln), Stärke aus Größe, Sehen (Lichtsinn, Facettenauge, Hauptaugen), Erwachen mit Nest*
+*Letzte Aktualisierung: 15. November 2026 — Abschnitt 5: Erwachen im Nest umgesetzt (v0.8.0); Abschnitt 5: Verweis auf GDD-10 angepasst (Gras schon in Reichweite, keine Tätigkeit voreingestellt); davor 14. November 2026 — Erfahrung durch Bewegen und Sehen steht je Skill (Feld practice), Größenbonus in balance.ts, body.ts gilt nur für den Blob (Werte unverändert); davor 14. November 2026 — Abschnitt 5 verweist auf die geplante Änderung in GDD-10 Abschnitt 12; 13. November 2026 — Datei neu angelegt: Grundwerte, Bewegung (Kriechen, Krabbeln), Stärke aus Größe, Sehen (Lichtsinn, Facettenauge, Hauptaugen), Erwachen mit Nest*

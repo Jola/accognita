@@ -326,7 +326,7 @@ export function gainExperience(
  * Schreibt Erfahrung gut: Skill-XP, Höchststand, Lebenserfahrung — und
  * erzwingt danach die harte Kapazitätsgrenze.
  */
-function credit(player: PlayerState, track: Track, amount: number, events: ProgressionEvent[]): void {
+function credit(player: PlayerState, track: Track, amount: number, events: ProgressionEvent[], limit?: number): void {
   if (amount <= 0) return;
   const p = track.progress;
   const rankBefore = rankIndexForXp(p.xp, track.learningEffort);
@@ -340,7 +340,36 @@ function credit(player: PlayerState, track: Track, amount: number, events: Progr
   if (rankAfter > rankBefore) {
     events.push({ skillId: track.id, kind: "rank_up", rankName: SKILL_RANKS[rankAfter].name });
   }
-  if (track.usesCapacity) enforceHardLimit(player, track.id, events);
+  if (track.usesCapacity) enforceHardLimit(player, track.id, events, limit);
+}
+
+/**
+ * Erfahrung aus der Tätigkeit eines niedergelassenen Blobs (GDD-10 8.5, 13.6):
+ * Wiedererlernen gilt, aber kein Übertraining und keine Ermüdung.
+ * `limit`: harte Grenze — für niedergelassene Blobs das Größere aus Kapazität
+ * und Summe vorher (sie kommen durch Lernen nicht in die Überdehnung).
+ * `practicedAt`: Spielzeit des Rechenstücks für „zuletzt geübt“.
+ */
+export function gainExperienceCalm(
+  player: PlayerState,
+  skillId: string,
+  rawXp: number,
+  limit: number,
+  practicedAt: number
+): GainResult {
+  const track = findTrack(player, skillId);
+  if (!track || rawXp <= 0) return NO_GAIN;
+  const events: ProgressionEvent[] = [];
+  const gained = applyRelearnBonus(track.progress, rawXp);
+  track.progress.lastPracticedAt = Math.max(track.progress.lastPracticedAt, practicedAt);
+  credit(player, track, gained, events, limit);
+  return { xpNow: gained, xpDeferred: 0, events };
+}
+
+/** Grenze für niedergelassene Blobs: Kapazität oder die Summe vorher, falls darüber (GDD-10 6.2). */
+export function settledCapacityLimit(player: PlayerState): number {
+  const { used, capacity } = getCapacityInfo(player);
+  return Math.max(capacity, used);
 }
 
 // -----------------------------------------------------------
@@ -353,9 +382,9 @@ function credit(player: PlayerState, track: Track, amount: number, events: Progr
  * Der gerade trainierte Skill ist geschützt; nur wenn sonst nichts mehr
  * übrig ist, wird er selbst gekappt.
  */
-function enforceHardLimit(player: PlayerState, protectedId: string, events: ProgressionEvent[]): void {
+function enforceHardLimit(player: PlayerState, protectedId: string, events: ProgressionEvent[], customLimit?: number): void {
   const { used, limit } = getCapacityInfo(player);
-  let excess = used - limit;
+  let excess = used - (customLimit ?? limit);
   if (excess <= 0) return;
   excess = forgetLeastPracticed(player, excess, protectedId, events);
   if (excess > 0) {
@@ -488,14 +517,28 @@ export function tickProgression(
   }
 
   if (playSecondsElapsed > 0) {
-    const { overstretch } = getCapacityInfo(player);
-    if (overstretch > 0) {
-      const melt = overstretch * (1 - Math.pow(0.5, playSecondsElapsed / OVERSTRETCH_HALF_LIFE_PLAY_SECONDS));
-      forgetLeastPracticed(player, melt, null, events);
-      changed = true;
-    }
+    if (meltOverstretchInto(player, playSecondsElapsed, events)) changed = true;
   }
   return { changed, events };
+}
+
+/** 4. Überhang über der Kapazität schmelzen lassen (nur Spielzeit). */
+function meltOverstretchInto(player: PlayerState, playSecondsElapsed: number, events: ProgressionEvent[]): boolean {
+  const { overstretch } = getCapacityInfo(player);
+  if (overstretch <= 0 || playSecondsElapsed <= 0) return false;
+  const melt = overstretch * (1 - Math.pow(0.5, playSecondsElapsed / OVERSTRETCH_HALF_LIFE_PLAY_SECONDS));
+  forgetLeastPracticed(player, melt, null, events);
+  return true;
+}
+
+/**
+ * Nur das Abschmelzen der Überdehnung, ohne Ruhe nach Übertraining — für das
+ * Nachrechnen niedergelassener Blobs je Rechenstück (GDD-10 Abschnitt 13.6).
+ */
+export function meltOverstretch(player: PlayerState, playSecondsElapsed: number): ProgressionEvent[] {
+  const events: ProgressionEvent[] = [];
+  meltOverstretchInto(player, playSecondsElapsed, events);
+  return events;
 }
 
 /**

@@ -58,11 +58,21 @@ export function calcEntityAi(
   instance: EntityInstance,
   playerX: number,
   playerY: number,
-  now: number
+  now: number,
+  hasTarget = true
 ): AiFrame {
   // Entities ohne Kampfwerte (Pflanzen, Mineralien) bekommen keine AI
   if (!canFight(def) || def.behavior === "passive") {
     return idleFrame();
+  }
+
+  // Kein Ziel: Das Bewusstsein ist bei einem niedergelassenen Blob, der vorerst
+  // nicht angegriffen werden kann (GDD-10 Abschnitt 2, 13.5) — nur wandern.
+  if (!hasTarget) {
+    const lostAggro = instance.isAggro;
+    instance.isAggro = false;
+    const w = instance.isAlive ? calcWander(def, instance, now) : idleFrame();
+    return { ...w, wantToAttack: false, wantToRangedAttack: false, becameAggro: false, lostAggro };
   }
 
   // Distance check (squared — kein sqrt)

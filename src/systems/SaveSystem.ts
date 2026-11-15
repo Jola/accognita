@@ -17,12 +17,15 @@ import { bodyMassFromLifetimeXp } from "./GrowSystem";
 import type { GameState, PlayerState } from "../types/GameState";
 import type { BlobMeta, StoredBlob, SerializedBody } from "../types/Blob";
 import { serializeBody, deserializeBody } from "./BodySerializer";
+import { knowsMoveSkill } from "./BodySystem";
+import { GROW_FOOD_MATERIAL_ID, MAX_BODY_MASS } from "../data/grow";
+import { NEST_NAME } from "../data/blobs";
 import { GAME_VERSION } from "../data/version";
 import { calcMaxHp, calcMaxMp } from "./SkillSystem";
 
 export const NUM_SAVE_SLOTS = 3;
 const SAVE_PREFIX    = "accognita_save_";
-const SAVE_VERSION   = 6;
+const SAVE_VERSION   = 7;
 
 // -----------------------------------------------------------
 // SAVE-METADATEN — Vorschau ohne komplettes Deserialize
@@ -150,6 +153,47 @@ MIGRATIONS[5] = (data) => {
   data.nextBlobNumber = 2;
   data.markedBlobIds = [];
   data.meta.blobName = data.conscious.name;
+};
+
+// v6 → v7: Start im Nest (GDD-10 Umsetzungsschritt 3, Abschnitt 13.4/13.6).
+// Neben dem Reisenden entsteht das Nest am Startpunkt (400, 300): Wissen wie
+// der Reisende (ohne zurückgehaltene Erfahrung), keine Materialien, Körper-
+// masse 0 (das Nest gilt als ausgewachsen). Kennt der Spielstand noch keinen
+// Bewegungs-Skill, wird der bisherige Spieler selbst zum Nest. Körpermasse
+// über der Höchstmasse kommt als Fasern ins Lager.
+MIGRATIONS[6] = (data) => {
+  const traveler = deserializeBody(data.player);
+  const playtime = traveler.playtimeSeconds;
+  if (traveler.bodyMass > MAX_BODY_MASS) {
+    const extra = traveler.bodyMass - MAX_BODY_MASS;
+    data.player.bodyMass = MAX_BODY_MASS;
+    const fibers = data.player.materials.find(([id]) => id === GROW_FOOD_MATERIAL_ID);
+    if (fibers) fibers[1] += extra; else data.player.materials.push([GROW_FOOD_MATERIAL_ID, extra]);
+  }
+  const nestBody = serializeBody(traveler);
+  nestBody.x = 400; nestBody.y = 300;
+  nestBody.materials = [];
+  nestBody.bodyMass = 0;
+  nestBody.maxHp = calcMaxHp(0); nestBody.hp = nestBody.maxHp;
+  nestBody.maxMp = calcMaxMp(0); nestBody.mp = nestBody.maxMp;
+  nestBody.coreAbilities.absorb.pendingXp = 0;
+  nestBody.coreAbilities.analyze.pendingXp = 0;
+  for (const [, inst] of nestBody.discoveredSkills) inst.pendingXp = 0;
+  const nestMeta: BlobMeta = {
+    id: `b${data.nextBlobNumber ?? 2}`, name: NEST_NAME, form: "settled", nest: true,
+    activity: null, simulatedUntil: playtime, sources: [], carry: {},
+  };
+  data.nextBlobNumber = (data.nextBlobNumber ?? 2) + 1;
+  if (!knowsMoveSkill(traveler)) {
+    // Noch unbeweglich: der Spieler wird selbst zum Nest
+    data.player.x = 400; data.player.y = 300;
+    data.conscious = nestMeta;
+  } else {
+    data.blobs = [...(data.blobs ?? []), { ...nestMeta, body: nestBody }];
+    // Der Reisende erscheint nicht im Nest
+    if (Math.hypot(data.player.x - 400, data.player.y - 300) < 80) data.player.x = 480;
+  }
+  data.meta.blobName = data.conscious?.name;
 };
 
 /** Skills, die alte Spielstände bei der Umstellung auf GDD-09 geschenkt bekommen. */
