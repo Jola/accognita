@@ -1,7 +1,7 @@
 # Absorb & Evolve — Game Design Document
 ## Datei 11: Spieleinstieg — Grundmechaniken lernen, entdecken, verstehen
 
-> Status: Konzept, entschieden (15. November 2026) — alle Fragen in Abschnitt 9 beantwortet; die Umsetzung wartet auf das Go des Entwicklers. ~~Wartet auf Entscheidungen des Entwicklers (Abschnitt 9).~~ Umgesetzt ist bisher nur der Anfang: Skill-Vorstellung, Anzeige unter dem Blob, Karte „Auf Reisen“ (v0.8.6, GDD-02 Abschnitt 6, GDD-10 Abschnitt 8.4).
+> Status: Umgesetzt (v0.9.0, 15. November 2026) — Abschnitte 4, 5.3 bis 5.9, 7 und 8; noch nicht: 5.10 (Kapazität, Wachsen, Kombinieren). ~~Status: Konzept, entschieden (15. November 2026) — alle Fragen in Abschnitt 9 beantwortet; die Umsetzung wartet auf das Go des Entwicklers. ~~Wartet auf Entscheidungen des Entwicklers (Abschnitt 9).~~ Umgesetzt ist bisher nur der Anfang: Skill-Vorstellung, Anzeige unter dem Blob, Karte „Auf Reisen“ (v0.8.6, GDD-02 Abschnitt 6, GDD-10 Abschnitt 8.4).~~
 
 **Der Kern in einem Satz:** Das Spiel erklärt nur, was man zum Weiterkommen verstehen muss, und gibt Anstöße, was man ausprobieren könnte. Ein Anstoß ist eine einfache Frage, etwa „Warum probierst du es nicht mal aus?“. Wer fragt, bleibt offen. ~~Diese Anstöße kommen aus dem Blob selbst: aus seinem Gespür für die Welt.~~ [VERWORFEN, 15. November 2026] Vorgabe Entwickler: Fragen, nicht „etwas in dir“ (Abschnitt 3). ~~Diese Anstöße kommen aus der Geschichte des Blobs: Er erinnert sich, was er früher konnte.~~ [VERWORFEN, 15. November 2026] Vorgabe Entwickler: kein Erwachen aus der Trockenstarre (Abschnitt 3).
 
@@ -150,7 +150,7 @@ Ein Anstoß hat einen **Anlass** (etwas ist passiert oder der Blob ist an einem 
 
 ## 5. Ablauf der ersten Spielstunde
 
-Je Schritt: Anlass → Anstoß (Frage → konkret) → Erklärung danach. ✅ = umgesetzt (v0.8.6), sonst Konzept.
+Je Schritt: Anlass → Anstoß (Frage → konkret) → Erklärung danach. ✅ = umgesetzt (v0.8.6 bis v0.9.0), sonst Konzept.
 
 ### 5.1 Erwachen im Nest (blind)
 - **Anlass:** Spielstart.
@@ -163,38 +163,38 @@ Je Schritt: Anlass → Anstoß (Frage → konkret) → Erklärung danach. ✅ = 
 - **Kriechen:** Karte mit „Das Nest bleibt, du schickst einen Teil von dir los“, Anstoß Abspalten ✅. Frage: „Was wohl dort draußen ist? Warum schickst du nicht einen Teil von dir los?“ ~~Gespür: „Dort draußen ist mehr. Etwas in dir zieht dich hinaus.“~~ ~~Erinnerung: „Früher bist du weit gekrochen, über Wurzeln und Steine.“~~ [VERWORFEN, 15. November 2026]
 - **Wachsen, Photosynthese:** normale Skill-Karten ✅.
 
-### 5.3 Erste Reise
+### 5.3 Erste Reise ✅ (v0.9.0)
 - **Erklärung:** Karte „Auf Reisen“ nach dem ersten Abspalten ✅ (Joystick, Bewegen wird schneller, Niederlassen sichert, Besiegtwerden).
 - **Anstoß „Fressen von Hand“:** Anlass: Der Reisende ist 30 s unterwegs und hat noch nichts absorbiert oder analysiert. „Riecht da nicht etwas Essbares?“ ~~„Du riechst etwas Essbares in der Nähe.“~~ → Komm einem Wesen nahe und tippe 💥 Absorb oder 🔍 Analyze.
 - **Entdecken:** Absorbieren von Hand lässt das Wesen verschwinden, es wächst nach.
 
-### 5.4 Gefahr
+### 5.4 Gefahr ✅ (v0.9.0)
 - **Anlass:** zum ersten Mal Schaden genommen.
 - **Frage:** „Autsch! Ob sich hier wirklich alles fressen lässt?“ ~~„Schmerz. Nicht alles hier lässt sich fressen.“~~
 - **Erklärung (kurz, ohne Pause, als Hinweis):** HP, fliehen, Heilen über Zeit. Die Angriffs-Skills stellen die Skill-Karten vor.
 - **Entdecken:** Welche Wesen gefährlich sind (Farbe/Name, später).
 
-### 5.5 Niederlassen
+### 5.5 Niederlassen ✅ (v0.9.0)
 - **Anlass, eins von dreien:** (a) Der Reisende ist weit vom Nest entfernt (etwa 30 m), (b) er steht in Wald oder Sumpf an einem Ort mit vielen friedlichen Wesen, (c) seine HP sind unter der Hälfte und keine Gefahr ist in der Nähe. (Vorschlag Claude, übernommen 15. November 2026)
 - **Frage:** „Feucht, schattig, Nahrung ringsum. Warum lässt du dich hier nicht nieder?“ ~~„Feuchtigkeit. Schatten. Nahrung ringsum. Etwas in dir will hierbleiben und wachsen.“~~ ~~„… Früher hast du dich an solchen Orten festgesetzt und bist dort gewachsen.“~~ [VERWORFEN, 15. November 2026]
 - **Konkret:** „Probier es aus: Tippe auf 🌱 Niederlassen.“ Dieser Schritt ist die Antwort auf den Wunsch des Entwicklers: Der Anstoß hat einen Grund in der Welt.
 - **Erklärung danach (Karte):** Was niedergelassen heißt: Checkpoint, arbeitet von allein weiter, auch während du woanders bist, Tätigkeit wählen, Abspalten von hier.
 
-### 5.6 Erheben
+### 5.6 Erheben ✅ (v0.9.0)
 - **Anlass:** Der Spieler ist zum ersten Mal bei einem niedergelassenen Blob, der nicht das Nest ist, und hat dort mindestens eine Minute verbracht.
 - **Frage:** „Hier kennst du schon alles. Wie wäre es mit einem neuen Ort?“ ~~„Du spürst den Drang weiterzuziehen.“~~ → Tippe auf ⬆️ Erheben.
 - **Erklärung danach:** Erheben (der ganze Blob reist weiter, nichts bleibt zurück) und Abspalten (ein Teil reist, der Blob bleibt) im Vergleich.
 
-### 5.7 Vertrocknen (das erste Mal besiegt)
+### 5.7 Vertrocknen (das erste Mal besiegt) ✅ (v0.9.0)
 - **Erklärung:** Der Sterbescreen gibt es schon (GDD-10 Abschnitt 9.1). Dazu einmalig: „Du vertrocknest — aber du stirbst nicht. Ein Teil von dir lebt weiter.“ ~~Erinnerung: „… Das ist dir schon einmal passiert.“ Das schlägt den Bogen zum Anfang des Spiels.~~ [VERWORFEN, 15. November 2026] Kein Erwachen aus der Trockenstarre (Abschnitt 3).
 - **Anstoß danach:** „Dein vertrockneter Teil liegt noch dort draußen. Warum holst du ihn nicht zurück?“ ~~„Irgendwo dort draußen liegt ein Teil von dir, trocken und starr.“~~ → Auf der Karte siehst du ihn; berührst du ihn, verschmelzt ihr.
 
-### 5.8 Verschmelzen
+### 5.8 Verschmelzen ✅ (v0.9.0)
 - **Anlass:** Der Reisende berührt zum ersten Mal einen eigenen Blob.
 - **Frage:** „Ein Teil von dir! Warum werdet ihr nicht wieder eins?“ ~~„Ein Teil von dir. Ihr könntet wieder eins werden.“~~ → Tippe auf 🫧 Verschmelzen.
 - **Erklärung danach:** Je Skill zählt der höchste Wert, alle Ressourcen gehen zusammen.
 
-### 5.9 Karte und Bewusstsein
+### 5.9 Karte und Bewusstsein ✅ (v0.9.0)
 - **Anlass:** Zum ersten Mal gibt es zwei niedergelassene Blobs.
 - **Anstoß:** „Zwei Teile von dir, weit voneinander entfernt. Wo sie wohl gerade sind?“ ~~„Du spürst beide Teile von dir, egal wie weit sie entfernt sind.“~~ → Im Menü unter KARTE siehst du sie und kannst dein Bewusstsein wechseln.
 
@@ -202,6 +202,7 @@ Je Schritt: Anlass → Anstoß (Frage → konkret) → Erklärung danach. ✅ = 
 - **Kapazität:** Erklärung, wenn sie zum ersten Mal über 80 % steigt (vorher spielt sie keine Rolle).
 - **Wachsen:** Entdeckung beim ersten Größersein: „Du bist gewachsen.“
 - **Kombinieren:** erst, wenn Rezepte existieren (offene Entscheidung, CLAUDE.md).
+- Noch nicht umgesetzt (gehörte nicht zum Plan in Abschnitt 9, Frage 7).
 
 **Begründung (Vorschlag Claude, offen):** Die Reihenfolge folgt dem, was der Spieler braucht: erst Sinne, dann reisen, dann sich schützen und sichern, dann mehrere Blobs. Jede Erklärung kommt höchstens einmal. Der Spieler hat zwischen den Schritten Zeit, frei zu spielen.
 
@@ -260,6 +261,30 @@ Der Reiter sammelt jede gezeigte Erklärung, jede Skill-Karte und jede Entdeckun
 
 > Begründung offen
 
+
+### 8.1 Umsetzung (v0.9.0, 15. November 2026)
+
+**Abweichungen vom Plan oben** (Vorschlag Claude, offen):
+- **`TutorialSystem.tickHints(tutorial, runtime, ctx, dt)`** statt `nextHint(state, events)`. Die Szene misst die Lage einmal pro Sekunde (`TutorialContext`: Form, Sekunden seit dem letzten Körperwechsel, HP, ruhig oder angegriffen, Entfernung zum Nest, Biom, friedliche Wesen in der Nähe, was gerade möglich ist). Taten meldet sie mit `markAct`. Die festen Texte in `IntroSystem.ts` bleiben für das Erwachen; ein Anstoß hat im Hinweisfeld Vorrang.
+- **Spielstand v10:** `seenIntros` bleibt (welche Karten schon gezeigt wurden). Neu ist `tutorial: { done, memory }`. `done` enthält Taten (`feed`, `settle`, `rise`, `merge`, `merge_dried`, `map`, `damaged`) und erledigte reine Hinweise (`hint:danger`). `memory` sind Schlüssel mit Spielzeit (`skill:…`, `card:…`, `find:…`); die Texte kommen beim Anzeigen aus den Daten. Migration: Das Gedächtnis beginnt mit den schon gezeigten Karten („früher“). Wer schon einen Blob außer dem Nest hat, bekommt den Anstoß zum Niederlassen nicht mehr, wer schon abgespalten hat, den zum Fressen nicht.
+- **Vorrang**, wenn mehrere Anlässe passen: Gefahr, Verschmelzen, Zurückholen, Niederlassen, Fressen, Erheben, Karte. **Begründung:** Was gerade geschieht (Schaden, Berührung), vor dem, was warten kann.
+- **Die Stufen zählen nur, solange der Anstoß zu sehen ist.** Verdrängt ein anderer ihn, bleibt seine Zeit stehen.
+- **Gefahr (5.4)** ist ein reiner Hinweis ohne Tat: Frage und Erklärung stehen sofort da, 14 s lang, dann ist er erledigt.
+- **Niederlassen (5.5):** Je Anlass ein eigener Satz:
+  - weit vom Nest (ab 30 m): „So weit weg vom Nest … Warum lässt du dich hier nicht nieder?“
+  - guter Ort (Wald oder Sumpf, mindestens 3 friedliche Wesen im Umkreis von 240 px, mindestens 12 m vom Nest): „Feucht, schattig, Nahrung ringsum. …“
+  - verletzt (HP unter der Hälfte): „Du bist verletzt, und gerade ist es ruhig. …“
+  Alle drei nur, wenn kein Gegner angreift. **Begründung für die 12 m:** Direkt am Nest liegen schon Gras, Wurm und Schnecke; dort würde der Anstoß sofort nach dem Abspalten kommen, und dort erntet ohnehin das Nest.
+- **Zurückholen (5.7)** hat zwei Varianten: unterwegs „Folge dem braunen Pfeil am Rand“, niedergelassen „Tippe auf 🧬 Abspalten und folge dem braunen Pfeil“ (dann pulsiert Abspalten).
+- **Verschmelzen (5.8)** kommt erst, wenn man sich nach dem Abspalten einmal vom Blob entfernt hat und ihn wieder berührt. **Begründung:** Sonst würde gleich nach dem Abspalten „Warum werdet ihr nicht wieder eins?“ erscheinen.
+- **Vertrocknen (5.7):** Der Satz steht auf einer Karte „Vertrocknet“ über dem Sterbescreen (nur beim ersten Mal).
+- **Erklärungen danach** (Karten, je einmal im ganzen Spiel): „Ein fester Ort“ (Niederlassen), „Weiterziehen“ (Erheben), „Wieder eins“ (Verschmelzen), „Vertrocknet“, dazu „Auf Reisen“ seit v0.8.6. Texte in `data/tutorial.ts` (`CARDS`).
+- **Entdeckungen** (goldene Zeile unter dem Blob, 6 s, danach im Gedächtnis): „Absorbiertes verschwindet — und wächst mit der Zeit nach“ (erstes Absorbieren von Hand), „Analysieren lässt das Wesen in Ruhe — du lernst trotzdem von ihm“ (erstes Analysieren von Hand), „Aus Gras gewinnst du Pflanzenfasern …“ (erste Fasern, auch im Nest).
+- **Stufe 3** lässt den gemeinten Knopf golden pulsieren: Absorb und Analyze, Niederlassen, Erheben, Verschmelzen, Abspalten oder den Menü-Knopf 📋.
+- **Gedächtnis-Reiter:** Neueste Einträge oben, ein Eintrag klappt per Tippen auf. Skill-Einträge zeigen die Werte von jetzt. **Begründung:** Das zuletzt Erlebte sucht man am häufigsten.
+- **Hinweisfeld im Querformat:** oben links neben dem Sichtkreis statt mittig, weil unten links der Joystick liegt.
+- Alle Texte: Vorschlag Claude (offen).
+
 ---
 
 ## 9. Offene Fragen an den Entwickler
@@ -274,4 +299,4 @@ Der Reiter sammelt jede gezeigte Erklärung, jede Skill-Karte und jede Entdeckun
 
 ---
 
-*Letzte Aktualisierung: 15. November 2026 — Hinweise nicht abschaltbar (Vorgabe Entwickler), Reihenfolge der Umsetzung übernommen, alle Fragen beantwortet; Stufen (4.2) und Anlässe fürs Niederlassen (5.5) übernommen, Gedächtnis als eigener Reiter, INDEX ist für den Entwickler (Vorgaben Entwickler, Fragen 3–5); davor 15. November 2026 — erster Hinweis im Nest ohne „Tätigkeit“ (Vorgabe Entwickler, v0.8.7); davor 15. November 2026 — Neugier als Antrieb, Anstöße als einfache Fragen ohne Sprecher, nicht „etwas in dir“; Elf und Quelle bleiben als Idee (Vorgaben Entwickler); Beispieltexte als Fragen neu (Vorschlag); davor 15. November 2026 — kein Erwachen aus der Trockenstarre, das Warum bleibt ein Mysterium (Vorgabe Entwickler); Hinweise als Gespür statt Erinnerungen (Vorschlag), Fragen 1 und 2 beantwortet; davor 15. November 2026 — Erstfassung (Konzept) auf Wunsch des Entwicklers: Grundmechaniken lernen, entdecken lassen, nicht frustrieren, in die Geschichte eingebettet, Querformat*
+*Letzte Aktualisierung: 15. November 2026 — umgesetzt (v0.9.0): Anstöße 5.3 bis 5.9, Erklärungen, Entdeckungen, Gedächtnis-Reiter; Abweichungen in 8.1; davor 15. November 2026 — Hinweise nicht abschaltbar (Vorgabe Entwickler), Reihenfolge der Umsetzung übernommen, alle Fragen beantwortet; Stufen (4.2) und Anlässe fürs Niederlassen (5.5) übernommen, Gedächtnis als eigener Reiter, INDEX ist für den Entwickler (Vorgaben Entwickler, Fragen 3–5); davor 15. November 2026 — erster Hinweis im Nest ohne „Tätigkeit“ (Vorgabe Entwickler, v0.8.7); davor 15. November 2026 — Neugier als Antrieb, Anstöße als einfache Fragen ohne Sprecher, nicht „etwas in dir“; Elf und Quelle bleiben als Idee (Vorgaben Entwickler); Beispieltexte als Fragen neu (Vorschlag); davor 15. November 2026 — kein Erwachen aus der Trockenstarre, das Warum bleibt ein Mysterium (Vorgabe Entwickler); Hinweise als Gespür statt Erinnerungen (Vorschlag), Fragen 1 und 2 beantwortet; davor 15. November 2026 — Erstfassung (Konzept) auf Wunsch des Entwicklers: Grundmechaniken lernen, entdecken lassen, nicht frustrieren, in die Geschichte eingebettet, Querformat*

@@ -1,5 +1,5 @@
 // ============================================================
-// GAME MENU — Vollbild-Spielmenü (Skills, Werte, Karte, Inventar, Nearby, Log, Index; Combo ausgebaut 15. November 2026)
+// GAME MENU — Vollbild-Spielmenü (Skills, Werte, Karte, Gedächtnis, Inventar, Nearby, Log, Index; Combo ausgebaut 15. November 2026)
 //
 // Selbstständiges DOM-Modul. Das Markup steht in accognita.template.html
 // (#gameMenu), weil GameScene die Tab-Inhalte über deren IDs befüllt.
@@ -17,6 +17,10 @@ export interface GameMenu {
 export interface GameMenuOptions {
   /** Karte zeichnen (die Szene liefert die Daten, GDD-10 11.1) */
   renderMap?: (root: HTMLElement) => void;
+  /** Gedächtnis zeichnen (GDD-11 7.3) */
+  renderMemory?: (root: HTMLElement) => void;
+  /** Ein Reiter wurde geöffnet (Spieleinstieg: „Karte angesehen“) */
+  onTab?: (name: string) => void;
   /** Nach dem Schließen (z. B. Sterbescreen wieder zeigen) */
   onClose?: () => void;
 }
@@ -36,11 +40,13 @@ export function createGameMenu(opts: GameMenuOptions = {}): GameMenu {
     // Werte-Tab: bei jedem Öffnen neu, damit er den aktuellen Stand zeigt
     if (name === "stats") renderStatsView(document.getElementById("stats-root")!);
     if (name === "map") opts.renderMap?.(document.getElementById("map-root")!);
+    if (name === "memory") opts.renderMemory?.(document.getElementById("memory-root")!);
     if (name === "index" && !indexBuilt) {
       createIndexView(document.getElementById("index-root")!);
       indexBuilt = true;
     }
     body.scrollTop = 0;
+    if (isOpen) opts.onTab?.(name);
   }
 
   overlay.querySelectorAll<HTMLElement>(".tab-btn").forEach((b) =>
@@ -51,10 +57,12 @@ export function createGameMenu(opts: GameMenuOptions = {}): GameMenu {
     if (tab) switchTab(tab);
     else {
       const active = overlay.querySelector<HTMLElement>(".tab-btn.active")?.dataset.tab;
-      if (active === "stats" || active === "map") switchTab(active);
+      if (active === "stats" || active === "map" || active === "memory") switchTab(active);
     }
     if (isOpen) return;
     isOpen = true;
+    const active = overlay.querySelector<HTMLElement>(".tab-btn.active")?.dataset.tab;
+    if (active) opts.onTab?.(active);
     overlay.classList.remove("hidden");
     (window as any).gameScene?.pauseForUI?.();
   }

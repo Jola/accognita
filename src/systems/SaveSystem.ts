@@ -14,7 +14,7 @@
 import { naturXp, getLearningEffort } from "./ProgressionSystem";
 import { createSkillProgress } from "../types/Skill";
 import { bodyMassFromLifetimeXp } from "./GrowSystem";
-import type { GameState, PlayerState } from "../types/GameState";
+import type { GameState, PlayerState, TutorialState } from "../types/GameState";
 import type { BlobMeta, StoredBlob, SerializedBody } from "../types/Blob";
 import { serializeBody, deserializeBody } from "./BodySerializer";
 import { knowsMoveSkill } from "./BodySystem";
@@ -26,7 +26,7 @@ import { CHUNK_PX } from "../world/Chunk";
 
 export const NUM_SAVE_SLOTS = 3;
 const SAVE_PREFIX    = "accognita_save_";
-const SAVE_VERSION   = 9;
+const SAVE_VERSION   = 10;
 
 // -----------------------------------------------------------
 // SAVE-METADATEN — Vorschau ohne komplettes Deserialize
@@ -63,6 +63,7 @@ interface SaveData {
   visitedChunks?: string[];
   /** ab v9: schon gezeigte Skill-Vorstellungen und Hinweise */
   seenIntros?: string[];
+  tutorial?: TutorialState;
 }
 
 // -----------------------------------------------------------
@@ -222,6 +223,21 @@ MIGRATIONS[8] = (data) => {
   data.seenIntros = [...seen];
 };
 
+/**
+ * v9 → v10: Spieleinstieg (GDD-11). Das Gedächtnis beginnt mit den schon
+ * gezeigten Vorstellungen. Was man nachweislich schon getan hat, wird nicht
+ * mehr angestoßen.
+ */
+MIGRATIONS[9] = (data) => {
+  const memory = (data.seenIntros ?? []).map((k) => ({ key: k === "travel" ? "card:travel" : k, at: -1 }));
+  const done: string[] = [];
+  const blobs = data.blobs ?? [];
+  const c = data.conscious;
+  if (blobs.some((b) => b.form === "settled" && !b.nest) || (c?.form === "settled" && !c.nest)) done.push("settle");
+  if ((data.nextBlobNumber ?? 2) > 2) done.push("feed");
+  data.tutorial = { done, memory };
+};
+
 /** Skills, die alte Spielstände bei der Umstellung auf GDD-09 geschenkt bekommen. */
 const LEGACY_BODY_SKILLS = ["crawl", "scuttle", "light_sense", "compound_eye", "principal_eyes"];
 
@@ -294,6 +310,7 @@ export function saveToSlot(
     markedBlobIds: state.markedBlobIds,
     visitedChunks: state.visitedChunks,
     seenIntros: state.seenIntros,
+    tutorial: state.tutorial,
   };
 
   localStorage.setItem(slotKey(slot), JSON.stringify(data));
@@ -312,6 +329,7 @@ export interface LoadedGame {
   markedBlobIds: string[];
   visitedChunks: string[];
   seenIntros: string[];
+  tutorial: TutorialState;
   meta: SaveMeta;
 }
 
@@ -326,6 +344,7 @@ export function loadFromSlot(slot: number): LoadedGame | null {
     markedBlobIds: data.markedBlobIds ?? [],
     visitedChunks: data.visitedChunks ?? ["0,0"],
     seenIntros: data.seenIntros ?? [],
+    tutorial: data.tutorial ?? { done: [], memory: [] },
     meta: data.meta,
   };
 }

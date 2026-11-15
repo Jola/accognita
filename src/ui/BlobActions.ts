@@ -14,6 +14,8 @@ export interface BlobActionButton {
   /** false: ausgegraut, Tippen zeigt `reason` */
   enabled: boolean;
   reason?: string;
+  /** Pulsiert: Stufe 3 eines Anstoßes (GDD-11) */
+  pulse?: boolean;
 }
 
 export interface BlobActionsState {
@@ -39,6 +41,9 @@ function injectStyles() {
     }
     .ba-btn:active { transform: scale(.95); }
     .ba-btn.disabled { opacity: .45; border-style: dashed; }
+    /* Stufe 3 eines Anstoßes (GDD-11 4.2): dieser Knopf ist gemeint */
+    .ba-btn.pulse { animation: ba-pulse 1.1s ease-in-out infinite; }
+    @keyframes ba-pulse { 50% { box-shadow: 0 0 0 4px rgba(255,210,63,.55), 0 0 18px rgba(255,210,63,.6); border-color: #ffd23f; } }
     .ba-btn .ba-icon { font-size: 1.05rem; }
   `;
   document.head.appendChild(s);
@@ -56,13 +61,13 @@ export function createBlobActions(
 
   return {
     update(buttons) {
-      const key = buttons.map((b) => `${b.id}|${b.label}|${b.enabled}|${b.reason ?? ""}`).join(";");
+      const key = buttons.map((b) => `${b.id}|${b.label}|${b.enabled}|${b.reason ?? ""}|${b.pulse ? 1 : 0}`).join(";");
       if (key === lastKey) return;
       lastKey = key;
       bar.innerHTML = "";
       for (const b of buttons) {
         const el = document.createElement("div");
-        el.className = `ba-btn${b.enabled ? "" : " disabled"}`;
+        el.className = `ba-btn${b.enabled ? "" : " disabled"}${b.pulse ? " pulse" : ""}`;
         el.innerHTML = `<span class="ba-icon">${b.icon}</span><span>${b.label}</span>`;
         const fire = (ev: Event) => {
           ev.preventDefault();
@@ -78,4 +83,4 @@ export function createBlobActions(
   };
 }
 
-// Stand: 15. November 2026 — Erstfassung (GDD-10 Umsetzungsschritt 3)
+// Stand: 15. November 2026 — Pulsieren für Anstöße (GDD-11); davor Erstfassung (GDD-10 Umsetzungsschritt 3)

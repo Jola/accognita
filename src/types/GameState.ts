@@ -86,6 +86,24 @@ export interface WorldState {
 // -----------------------------------------------------------
 // GameState: Der komplette Spielzustand
 // -----------------------------------------------------------
+/** Ein Eintrag im GEDÄCHTNIS (GDD-11 7.3): Schlüssel „skill:<id>“, „card:<id>“ oder „find:<id>“, Text kommt aus den Daten. */
+export interface MemoryEntry {
+  key: string;
+  /** Spielzeit in Sekunden, als es erlebt wurde */
+  at: number;
+}
+
+/**
+ * Spieleinstieg (GDD-11). `done`: Taten des Spielers („feed“, „settle“,
+ * „rise“, „merge“, „merge_dried“, „map“, „damaged“) und erledigte reine
+ * Hinweise („hint:danger“). Was hier steht, wird nie mehr angestoßen.
+ * `memory`: was der Spieler erlebt hat, in dieser Reihenfolge.
+ */
+export interface TutorialState {
+  done: string[];
+  memory: MemoryEntry[];
+}
+
 export interface GameState {
   /** Arbeitskopie des Blobs, bei dem das Bewusstsein ist (GDD-10 Abschnitt 13.2) */
   player: PlayerState;
@@ -105,6 +123,8 @@ export interface GameState {
    * Karte „Auf Reisen“ nach dem ersten Abspalten.
    */
   seenIntros: string[];
+  /** Spieleinstieg (GDD-11): erledigte Anstöße und Taten, Gedächtnis */
+  tutorial: TutorialState;
   world: WorldState;
   version: string;
   savedAt?: number;
@@ -123,6 +143,7 @@ export function createInitialGameState(): GameState {
     markedBlobIds: [],
     visitedChunks: ["0,0"],
     seenIntros: [],
+    tutorial: { done: [], memory: [] },
     player: {
       x: 400,
       y: 300,

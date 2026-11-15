@@ -25,7 +25,13 @@ import { createBlobPicker, type BlobPickerState } from "../ui/BlobPicker.js";
 import { createTransferDialog, type TransferDialogState } from "../ui/TransferDialog.js";
 import { createGainFeed, type GainFeedState } from "../ui/GainFeed.js";
 import { createIntroQueue, skillIntroCard, type IntroQueueState, type IntroSection } from "../ui/SkillIntro.js";
-import { SIGHT_INTRO, MOVE_INTRO_SETTLED, MOVE_TRY_SETTLED, MOVE_INTRO_TRAVELING, MOVE_TRY_TRAVELING, TRAVEL_TITLE, TRAVEL_TEXT } from "../data/tutorial";
+import {
+  SIGHT_INTRO, MOVE_INTRO_SETTLED, MOVE_TRY_SETTLED, MOVE_INTRO_TRAVELING, MOVE_TRY_TRAVELING,
+  CARDS, DISCOVERIES, DISCOVERY_HOLD_MS, HINT_SETTLE_PEACEFUL_RADIUS_PX,
+} from "../data/tutorial";
+import { createHintRuntime, tickHints, markAct, remember, type ActiveHint, type TutorialContext } from "../systems/TutorialSystem";
+import { renderMemoryView, type MemoryItem } from "../ui/MemoryView.js";
+import { GROW_FOOD_MATERIAL_ID } from "../data/grow";
 import { createMapView, type MapViewState, type MapBlob } from "../ui/MapView.js";
 import type { GameMenu } from "../ui/GameMenu.js";
 import { createBlobArrows, type BlobArrowsState } from "../ui/BlobArrows.js";
@@ -166,6 +172,16 @@ export class GameScene extends Phaser.Scene {
   private introEl: HTMLElement | null = null;
   private introStep: IntroStep | null = null;
   private introWorking = false;
+  /** Text des Erwachens (null: nichts zu sagen); ein Anstoß (GDD-11) hat Vorrang */
+  private introText: string | null = null;
+  private activeHint: ActiveHint | null = null;
+  private hintRt = createHintRuntime();
+  private hintFieldKey = "";
+  private loggedHints = new Set<string>();
+  private tutorialAcc = 0;          // ms seit der letzten Prüfung der Anstöße
+  private formSeconds = 0;          // Spielzeit seit dem letzten Körperwechsel
+  private lastTutHp = -1;           // HP im letzten Frame (erster Schaden als Reisender)
+  private leftTouch = false;        // seit dem Körperwechsel einmal keinen eigenen Blob berührt
   private gamePaused = false;
   private pauseReasons = new Set<"fullscreen" | "ui" | "death" | "intro">();
   private hpBarGraphics!: any;
@@ -364,8 +380,9 @@ export class GameScene extends Phaser.Scene {
       });
     } else if (mode === "side") {
       Object.assign(el.style, {
+        // oben links, nicht mittig: unten links liegt der Joystick (GDD-11 7.2)
         left: `${gap}px`, width: `${Math.min(W / 2 - rs - 2 * gap, 320)}px`, fontSize: ".74rem",
-        top: "50%", transform: "translateY(-50%)",
+        top: `${gap}px`, transform: "none",
       });
     } else {
       Object.assign(el.style, {
@@ -387,33 +404,193 @@ export class GameScene extends Phaser.Scene {
     this.introStep = step;
     this.introWorking = working;
     this.lastNearbyId = null; // Nearby-Anzeige neu zeichnen (blind ↔ sehend)
-    if (!this.introEl) {
-      this.introEl = document.createElement("div");
-      this.introEl.id = "intro-text";
-      Object.assign(this.introEl.style, {
-        position: "absolute", left: "50%", top: "10px", transform: "translateX(-50%)",
-        width: "min(86vw, 420px)", padding: "10px 14px", borderRadius: "10px", boxSizing: "border-box",
-        background: "rgba(5,8,14,.78)", border: "1px solid rgba(74,240,200,.25)",
-        color: "#cfe", font: "italic .82rem/1.5 Georgia, serif", textAlign: "center",
-        pointerEvents: "none", zIndex: "40", transition: "opacity .6s",
-      });
-      (document.getElementById("canvas-wrap") ?? document.body).appendChild(this.introEl);
-    }
+    this.ensureIntroEl();
     if (step === "awake") {
       // Ein geladener, längst wacher Blob braucht keinen Hinweis
-      if (first) { this.introEl.style.opacity = "0"; return; }
-      this.introEl.textContent = getIntroText("awake", this.gameState.conscious.form);
-      this.introEl.style.opacity = "1";
-      this.introLayoutKey = "";
-      addLog(getIntroText("awake", this.gameState.conscious.form), "system");
-      this.time.delayedCall(9000, () => { if (this.introStep === "awake" && this.introEl) this.introEl.style.opacity = "0"; });
+      if (first) { this.introText = null; this.renderHintField(); return; }
+      const text = getIntroText("awake", this.gameState.conscious.form);
+      this.introText = text;
+      this.renderHintField();
+      addLog(text, "system");
+      this.time.delayedCall(9000, () => {
+        if (this.introStep === "awake" && this.introText === text) { this.introText = null; this.renderHintField(); }
+      });
       return;
     }
     const text = getIntroText(step, this.gameState.conscious.form, working);
-    this.introEl.textContent = text;
-    this.introEl.style.opacity = "1";
-    this.introLayoutKey = ""; // neuer Text, neue Höhe
+    this.introText = text;
+    this.renderHintField();
     if (!first) addLog(text, "system");
+  }
+
+  private ensureIntroEl() {
+    if (this.introEl) return;
+    this.introEl = document.createElement("div");
+    this.introEl.id = "intro-text";
+    Object.assign(this.introEl.style, {
+      position: "absolute", left: "50%", top: "10px", transform: "translateX(-50%)",
+      width: "min(86vw, 420px)", padding: "10px 14px", borderRadius: "10px", boxSizing: "border-box",
+      background: "rgba(5,8,14,.78)", border: "1px solid rgba(74,240,200,.25)",
+      color: "#cfe", font: "italic .82rem/1.5 Georgia, serif", textAlign: "center",
+      pointerEvents: "none", zIndex: "40", transition: "opacity .6s",
+    });
+    (document.getElementById("canvas-wrap") ?? document.body).appendChild(this.introEl);
+  }
+
+  /**
+   * Hinweisfeld oben: ein Anstoß des Spieleinstiegs (GDD-11 7.1: Frage
+   * kursiv, darunter der konkrete Satz) hat Vorrang vor dem Text des Erwachens.
+   */
+  private renderHintField() {
+    const el = this.introEl;
+    if (!el) return;
+    const h = this.activeHint;
+    const key = h ? `h|${h.textId}|${h.stage}` : `i|${this.introText ?? ""}`;
+    if (key === this.hintFieldKey) return;
+    this.hintFieldKey = key;
+    if (h) {
+      el.innerHTML = "";
+      const ask = document.createElement("div");
+      ask.textContent = h.ask;
+      el.appendChild(ask);
+      if (h.concrete) {
+        const c = document.createElement("div");
+        c.textContent = h.concrete;
+        c.style.cssText = "font:600 .92em/1.45 system-ui,sans-serif;font-style:normal;margin-top:5px;color:#ffe9a8";
+        el.appendChild(c);
+      }
+      el.style.opacity = "1";
+    } else if (this.introText) {
+      el.textContent = this.introText;
+      el.style.opacity = "1";
+    } else {
+      el.style.opacity = "0";
+    }
+    this.introLayoutKey = ""; // neuer Text, neue Höhe
+  }
+
+  // ----------------------------------------------------------
+  // SPIELEINSTIEG (GDD-11) — Anstöße, Erklärungen, Entdeckungen, Gedächtnis
+  // ----------------------------------------------------------
+  private tickTutorial(delta: number) {
+    const state = this.gameState;
+    const t = state.tutorial;
+    // Erster Schaden als Reisender (5.4); nach einem Körperwechsel neu messen
+    const hp = state.player.hp;
+    if (state.conscious.form === "traveling" && this.lastTutHp >= 0 && hp < this.lastTutHp - 0.5) markAct(t, "damaged");
+    this.lastTutHp = hp;
+    this.tutorialAcc += delta;
+    if (this.tutorialAcc < 1000) return;
+    const dt = this.tutorialAcc / 1000;
+    this.tutorialAcc = 0;
+    this.formSeconds += dt;
+    const hint = tickHints(t, this.hintRt, this.tutorialContext(), dt);
+    if (hint && !this.loggedHints.has(hint.id)) {
+      this.loggedHints.add(hint.id);
+      addLog(`💭 ${hint.ask}`, "system");
+    }
+    this.setActiveHint(hint);
+  }
+
+  private tutorialContext(): TutorialContext {
+    const state = this.gameState;
+    const p = state.player;
+    const c = state.conscious;
+    const nest = c.nest ? null : state.blobs.find((b) => b.nest) ?? null;
+    let peaceful = 0;
+    for (const inst of state.world.entities.values()) {
+      if (!inst.isAlive) continue;
+      const behavior = ENTITY_MAP.get(inst.definitionId)?.behavior;
+      if (behavior !== "passive" && behavior !== "defensive") continue;
+      if (Math.hypot(inst.x - p.x, inst.y - p.y) <= HINT_SETTLE_PEACEFUL_RADIUS_PX) peaceful++;
+    }
+    const touched = c.form === "traveling" ? findTouchedBlob(state) : null;
+    // Direkt nach dem Abspalten berührt man noch den eigenen Blob — erst nach
+    // dem Weggehen und Wiederkommen ist „wieder eins werden“ ein Anlass
+    if (!touched) this.leftTouch = true;
+    const moves = knowsMoveSkill(p);
+    return {
+      form: c.form,
+      isNest: !!c.nest,
+      formSeconds: this.formSeconds,
+      hpFraction: p.hp / Math.max(1, p.maxHp),
+      calm: Date.now() - this.lastAggroAt >= SETTLE_AGGRO_LOCK_MS,
+      nestMeters: nest ? this.toMeters(Math.hypot(nest.body.x - p.x, nest.body.y - p.y)) : null,
+      biome: getBiomeAt(Math.floor(p.x / CHUNK_PX), Math.floor(p.y / CHUNK_PX)),
+      peacefulNear: peaceful,
+      canSettle: c.form === "traveling" && moves && canSettle(state).ok,
+      canRise: c.form === "settled" && !c.nest && moves && canRise(state).ok,
+      canSplit: c.form === "settled" && moves && canSplit(state).ok,
+      canMergeTouched: !!touched && this.leftTouch && canMerge(state, touched).ok,
+      driedBlobs: state.blobs.filter((b) => b.form === "dried").length,
+      settledBlobs: state.blobs.filter((b) => b.form === "settled").length + (c.form === "settled" ? 1 : 0),
+    };
+  }
+
+  /** Anstoß zeigen; in Stufe 3 pulsiert der gemeinte Knopf */
+  private setActiveHint(hint: ActiveHint | null) {
+    this.activeHint = hint;
+    this.renderHintField();
+    const pulse = hint?.pulse ?? null;
+    for (const [id, on] of [["btnAbsorb", pulse === "absorb_analyze"], ["btnAnalyze", pulse === "absorb_analyze"], ["btnPanel", pulse === "menu"]] as const) {
+      document.getElementById(id)?.classList.toggle("tut-pulse", on);
+    }
+  }
+
+  /** Erklärung als Karte (einmal im ganzen Spiel), dann im Gedächtnis */
+  private showCard(id: string) {
+    const state = this.gameState;
+    const card = CARDS[id];
+    if (!card) return;
+    const seenKey = id === "travel" ? "travel" : `card:${id}`; // „travel“: Schlüssel seit v9
+    if (state.seenIntros.includes(seenKey)) return;
+    state.seenIntros.push(seenKey);
+    remember(state.tutorial, `card:${id}`, state.player.playtimeSeconds);
+    this.introQueue.push({ kicker: card.kicker, icon: card.icon, title: card.title, tags: [], sections: [{ lines: card.lines }] });
+  }
+
+  /** Entdeckung festhalten, nachdem der Spieler sie selbst gemacht hat (GDD-11 4.1) */
+  private discover(id: string) {
+    const d = DISCOVERIES[id];
+    if (!d || !remember(this.gameState.tutorial, `find:${id}`, this.gameState.player.playtimeSeconds)) return;
+    this.gainFeed?.discover(`find:${id}`, `✨ Entdeckt: ${d.icon} ${d.text}`, DISCOVERY_HOLD_MS);
+    addLog(`✨ Entdeckt: ${d.text}`, "skill");
+  }
+
+  /** Reiter GEDÄCHTNIS: Einträge aus den Schlüsseln, Texte aus den Daten */
+  private renderMemory(root: HTMLElement) {
+    const state = this.gameState;
+    const p = state.player;
+    const has = (id: string, type: string) => ALL_SKILLS.get(id)?.effects?.some((e) => e.effectType === type) ?? false;
+    const skillKeys = state.tutorial.memory.filter((m) => m.key.startsWith("skill:")).map((m) => m.key.slice(6));
+    const firstSight = skillKeys.find((id) => has(id, "sight_range"));
+    const firstMove = skillKeys.find((id) => has(id, "move_speed"));
+    const when = (at: number) => {
+      if (at < 0) return "früher"; // aus einem Spielstand vor v10
+      const d = Math.max(0, p.playtimeSeconds - at);
+      if (d < 60) return "gerade eben";
+      if (d < 3600) return `vor ${Math.floor(d / 60)} min`;
+      return `vor ${Math.floor(d / 3600)} h`;
+    };
+    const items: MemoryItem[] = [];
+    for (const m of state.tutorial.memory) {
+      const [kind, id] = [m.key.slice(0, m.key.indexOf(":")), m.key.slice(m.key.indexOf(":") + 1)];
+      if (kind === "skill") {
+        const def = ALL_SKILLS.get(id);
+        if (!def) continue;
+        const extra: IntroSection[] = [];
+        if (id === firstSight) extra.push({ heading: "Sehen", lines: SIGHT_INTRO, emphasis: true });
+        if (id === firstMove) extra.push({ heading: "Bewegen", lines: MOVE_INTRO_SETTLED, emphasis: true });
+        items.push({ key: m.key, icon: def.icon, title: def.name, kind: "Skill", when: when(m.at), sections: skillIntroCard(def, p, extra).sections });
+      } else if (kind === "card") {
+        const c = CARDS[id];
+        if (c) items.push({ key: m.key, icon: c.icon, title: c.title, kind: "Erklärung", when: when(m.at), sections: [{ lines: c.lines }] });
+      } else if (kind === "find") {
+        const d = DISCOVERIES[id];
+        if (d) items.push({ key: m.key, icon: d.icon, title: d.text, kind: "Entdeckung", when: when(m.at), sections: [] });
+      }
+    }
+    renderMemoryView(root, items);
   }
 
   // ----------------------------------------------------------
@@ -642,6 +819,8 @@ export class GameScene extends Phaser.Scene {
   private setupGameMenu() {
     const menu = createGameMenu({
       renderMap: (root) => this.renderMap(root),
+      renderMemory: (root) => this.renderMemory(root),
+      onTab: (name) => { if (name === "map") markAct(this.gameState.tutorial, "map"); },
       onClose: () => {
         // Karte im Wahlmodus ohne Wahl geschlossen: zurück zum Sterbescreen
         const pick = this.mapPick;
@@ -696,6 +875,8 @@ export class GameScene extends Phaser.Scene {
     this.gameState.markedBlobIds = saved.markedBlobIds;
     this.gameState.visitedChunks = saved.visitedChunks;
     this.gameState.seenIntros = saved.seenIntros;
+    this.gameState.tutorial = saved.tutorial;
+    this.hintRt = createHintRuntime();
     this.gainFeed?.clear();
 
     // Spieler-Sprite an gespeicherte Position
@@ -823,6 +1004,7 @@ export class GameScene extends Phaser.Scene {
     this.checkPlayerDeath();
     processRespawns(this.gameState.world);
     this.updateBlobOverlay();
+    this.tickTutorial(delta);
   }
 
   // Bewegen und Sehen lernt man durch Tun (Menge am Skill: practice): Strecke
@@ -1221,6 +1403,8 @@ export class GameScene extends Phaser.Scene {
     this.setPaused("death", true);
     this.refreshBlobSprites();
     this.openDeathScreen(dried);
+    this.setActiveHint(null);
+    this.showCard("dried"); // beim ersten Mal über dem Sterbescreen (GDD-11 5.7)
   }
 
   // ----------------------------------------------------------
@@ -1339,6 +1523,7 @@ export class GameScene extends Phaser.Scene {
     for (const [id, n] of Object.entries(materials)) {
       const m = MATERIAL_MAP.get(id);
       this.gainFeed?.add(`mat:${id}`, m?.icon ?? "📦", m?.name ?? id, n, "", (x) => String(Math.round(x)));
+      if (id === GROW_FOOD_MATERIAL_ID && n > 0) this.discover("plant_fiber");
     }
   }
 
@@ -1385,6 +1570,7 @@ export class GameScene extends Phaser.Scene {
     let firstMove = !knownSkills.some((id) => has(id, "move_speed"));
     for (const id of fresh) {
       state.seenIntros.push(`skill:${id}`);
+      remember(state.tutorial, `skill:${id}`, state.player.playtimeSeconds);
       const def = ALL_SKILLS.get(id)!;
       const extra: IntroSection[] = [];
       if (firstSight && has(id, "sight_range")) {
@@ -1405,16 +1591,7 @@ export class GameScene extends Phaser.Scene {
 
   /** Nach dem ersten Abspalten: was Reisen bedeutet */
   private announceTravel() {
-    const state = this.gameState;
-    if (state.seenIntros.includes("travel")) return;
-    state.seenIntros.push("travel");
-    this.introQueue.push({
-      kicker: "🧬 Abgespalten",
-      icon: "🌍",
-      title: TRAVEL_TITLE,
-      tags: [],
-      sections: [{ lines: TRAVEL_TEXT }],
-    });
+    this.showCard("travel");
   }
 
   /** Angefangenes Rechenstück abschließen, bevor das Bewusstsein den Blob verlässt (4.6). */
@@ -1440,6 +1617,10 @@ export class GameScene extends Phaser.Scene {
     updateNearbyPanel(undefined, undefined, this.gameState);
     this.refreshBlobSprites();
     this.applyFormUi();
+    this.formSeconds = 0;
+    this.lastTutHp = -1;
+    this.leftTouch = false;
+    this.setActiveHint(null);
     this.introStep = null;
     this.updateIntro();
     updateUI(this.gameState);
@@ -1511,7 +1692,8 @@ export class GameScene extends Phaser.Scene {
     if (now < this.actionsRefreshAt) return;
     this.actionsRefreshAt = now + 250;
     this.refreshBlobSprites(); // Netz wächst mit (Größe, Arbeitsreichweite); unverändert = nichts zu tun
-    this.blobActions.update(this.deathPending ? [] : this.computeBlobButtons(now));
+    const pulse = this.activeHint?.pulse ?? null;
+    this.blobActions.update(this.deathPending ? [] : this.computeBlobButtons(now).map((b) => ({ ...b, pulse: b.id === pulse })));
   }
 
   private computeBlobButtons(now: number): BlobActionButton[] {
@@ -1556,6 +1738,8 @@ export class GameScene extends Phaser.Scene {
       addLog(`🌱 Du lässt dich nieder: ${state.conscious.name}. Dein Fortschritt ist gesichert.`, "system");
       this.afterBodySwap();
       showToast("Wähle eine Tätigkeit für deinen Blob.", "system");
+      markAct(state.tutorial, "settle");
+      this.showCard("settled");
     } else if (id === "merge") {
       const target = findTouchedBlob(state);
       if (!target) return;
@@ -1568,6 +1752,9 @@ export class GameScene extends Phaser.Scene {
         : `🫧 Verschmolzen mit ${state.conscious.name}.`, "system");
       this.logResultOfCatchUp(r.result);
       this.afterBodySwap();
+      markAct(state.tutorial, "merge");
+      if (wasDried) markAct(state.tutorial, "merge_dried");
+      this.showCard("merge");
     } else if (id === "split") {
       this.openTransferDialog();
     } else if (id === "rise") {
@@ -1576,6 +1763,8 @@ export class GameScene extends Phaser.Scene {
       if (!r.ok) { showToast(r.reason ?? "Geht nicht.", "system"); return; }
       addLog("⬆️ Du erhebst dich und reist weiter.", "system");
       this.afterBodySwap();
+      markAct(state.tutorial, "rise");
+      this.showCard("rise");
     } else if (id === "switch") {
       this.openSwitchList();
     } else if (id === "activity") {
@@ -2078,6 +2267,8 @@ export class GameScene extends Phaser.Scene {
     this.feedInteraction(result, before);
     this.logForgetting(result.skillResults);
     if (result.success) {
+      markAct(this.gameState.tutorial, "feed");
+      this.discover("absorb_vanish");
       syncPassiveEffects(this.gameState.player);
       this.lastNearbyId = null;
       updateNearbyPanel(undefined, undefined, this.gameState);
@@ -2099,7 +2290,11 @@ export class GameScene extends Phaser.Scene {
     showInteractionResult(result, this.gameState);
     this.feedInteraction(result, before);
     this.logForgetting(result.skillResults);
-    if (result.success) syncPassiveEffects(this.gameState.player);
+    if (result.success) {
+      markAct(this.gameState.tutorial, "feed");
+      this.discover("analyze_keep");
+      syncPassiveEffects(this.gameState.player);
+    }
     this.afterProgressChange();
   }
 

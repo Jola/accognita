@@ -176,10 +176,12 @@ export function skillIntroCard(def: SkillDefinition, player: PlayerState, extra:
   const max = (def.effects ?? [])
     .map((e) => describeEffect(def.id, e, 1))
     .filter((l): l is string => l !== null);
+  // Einsatz und Verbessern getrennt: „Wirkt von selbst“ stand unter „So wird
+  // er besser“ und war dort unverständlich (Meldung Entwickler, 15. November 2026)
+  const use = def.activation === "passive"
+    ? "Passiv: Er wirkt die ganze Zeit, solange er eingeschaltet ist. Du musst ihn nicht auslösen."
+    : "Aktiv: Du löst ihn selbst aus. Als Reisender legst du ihn dazu auf die Skill-Leiste unten.";
   const how: string[] = [];
-  how.push(def.activation === "passive"
-    ? "Wirkt von selbst — du musst nichts tun."
-    : "Du setzt ihn bewusst ein: Als Reisender legst du ihn auf die Skill-Leiste.");
   how.push("Er wird besser, wenn du Wesen absorbierst oder analysierst, die ihn kennen.");
   if (def.practice) how.push(`Und durch Tun: Erfahrung ${PRACTICE_DE[def.practice.unit]}.`);
   return {
@@ -192,6 +194,7 @@ export function skillIntroCard(def: SkillDefinition, player: PlayerState, extra:
     sections: [
       { heading: "Was er tut", lines: [def.description] },
       ...extra.filter((x) => !x.atEnd),
+      { heading: "Einsatz", lines: [use] },
       { heading: "Jetzt", lines: now },
       { heading: "Mit Übung bis", lines: max.filter((m, i) => m !== now[i]) },
       { heading: "So wird er besser", lines: how },
@@ -200,4 +203,4 @@ export function skillIntroCard(def: SkillDefinition, player: PlayerState, extra:
   };
 }
 
-// Stand: 15. November 2026 — Erstfassung
+// Stand: 15. November 2026 — Einsatz (passiv/aktiv) als eigener Abschnitt statt unter „So wird er besser“; davor Erstfassung

@@ -23,6 +23,8 @@ export interface GainFeedState {
   add(key: string, icon: string, label: string, amount: number, unit: string, format: (n: number) => string): void;
   /** Zeile mit festem Text setzen (z. B. Fortschritt zum nächsten Fund) */
   set(key: string, text: string): void;
+  /** Goldene Entdeckt-Zeile, die länger stehen bleibt (GDD-11 7.1) */
+  discover(key: string, text: string, holdMs: number): void;
   /**
    * Oberkante der Liste in Bildschirm-Pixeln. "center": x ist die Mitte
    * (hochkant, unter dem Blob); "left": x ist der linke Rand (quer, rechts
@@ -57,6 +59,7 @@ function injectStyles() {
       text-shadow: 0 1px 2px #000; transition: opacity ${FADE_MS}ms, transform .25s;
     }
     .gf-row.bump { transform: scale(1.08); }
+    .gf-row.gold { color: #ffe9a8; border-color: rgba(255,210,63,.6); background: rgba(30,22,4,.82); white-space: normal; max-width: min(80vw, 340px); text-align: center; }
     .gf-row.out { opacity: 0; }
   `;
   document.head.appendChild(s);
@@ -79,7 +82,7 @@ export function createGainFeed(parent: HTMLElement): GainFeedState {
     rows.delete(key);
   };
 
-  const touch = (key: string, text: string, isNew: boolean) => {
+  const touch = (key: string, text: string, isNew: boolean, holdMs = HOLD_MS) => {
     let r = rows.get(key);
     if (!r) {
       if (rows.size >= MAX_ROWS) drop(rows.keys().next().value as string);
@@ -102,7 +105,7 @@ export function createGainFeed(parent: HTMLElement): GainFeedState {
       row.timer = null;
       row.el.classList.add("out");
       row.fadeTimer = window.setTimeout(() => drop(key), FADE_MS);
-    }, HOLD_MS);
+    }, holdMs);
     return r;
   };
 
@@ -118,6 +121,10 @@ export function createGainFeed(parent: HTMLElement): GainFeedState {
       const existing = rows.get(key);
       if (existing && existing.el.textContent === text) return;
       touch(key, text, !existing);
+    },
+    discover(key, text, holdMs) {
+      const r = touch(key, text, !rows.has(key), holdMs);
+      r.el.classList.add("gold");
     },
     setAnchor(x, y, align = "center") {
       const rx = Math.round(x), ry = Math.round(y);
@@ -137,4 +144,4 @@ export function createGainFeed(parent: HTMLElement): GainFeedState {
   };
 }
 
-// Stand: 15. November 2026 — Erstfassung
+// Stand: 15. November 2026 — Entdeckt-Zeile (GDD-11); davor Erstfassung
