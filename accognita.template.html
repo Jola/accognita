@@ -126,24 +126,6 @@
       font-size:.48rem; font-family:'Cinzel',serif;
     }
 
-    /* COMBO */
-    .combo-zone {
-      background:#0a1020; border:1px dashed #2a3a4a; border-radius:8px;
-      padding:10px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:8px;
-    }
-    .combo-slots { display:flex; gap:6px; justify-content:center; align-items:center; flex-wrap:wrap; }
-    .combo-slot {
-      width:56px; height:38px; background:#1a2030; border:1px solid #2a3a4a; border-radius:4px;
-      display:flex; align-items:center; justify-content:center;
-      font-size:.56rem; color:var(--muted); cursor:pointer; transition:all .2s; text-align:center; padding:3px;
-    }
-    .combo-slot.filled { border-color:var(--accent); color:var(--text); font-size:.58rem; background:#0d1a28; }
-    .combo-plus,.combo-eq { color:var(--muted); font-size:.9rem; }
-    .combo-result {
-      width:64px; height:38px; background:#1a2030; border:1px solid var(--accent2); border-radius:4px;
-      display:flex; align-items:center; justify-content:center;
-      font-size:.58rem; color:var(--accent2); text-align:center; padding:3px;
-    }
     .btn {
       padding:7px 14px; border:1px solid var(--accent); border-radius:4px; background:transparent;
       color:var(--accent); font-family:'Cinzel',serif; font-size:.58rem; letter-spacing:1px;
@@ -294,19 +276,6 @@
     .btn-passive-toggle:hover { background:#0f3a2e; }
     .skill-disabled { opacity:0.45; }
 
-    /* COMBINE PANEL */
-    .combine-panel { display:flex; flex-direction:column; gap:8px; }
-    .combine-selects { display:flex; gap:6px; align-items:center; }
-    .combine-selects select {
-      flex:1; padding:5px; background:var(--panel2); border:1px solid #2a3a4a;
-      color:var(--text); border-radius:4px; font-size:.65rem;
-    }
-    .combine-result { margin-top:4px; font-size:.7rem; padding:6px; border-radius:4px; }
-    .outcome-success_new { background:#1a3a1a; color:var(--green); }
-    .outcome-success_xp  { background:#1a2a1a; color:var(--accent); }
-    .outcome-no_recipe   { background:#2a1a1a; color:var(--red); }
-    .outcome-invalid_input { background:#2a2a1a; color:var(--muted); }
-
     /* SKILL CARD TWEAKS */
     .combo-badge { padding:1px 4px; border-radius:3px; background:#2a1a4a; color:var(--accent2); font-size:.48rem; font-family:'Cinzel',serif; }
     .xp-bar-wrap { position:relative; height:3px; background:#1a2030; border-radius:2px; overflow:hidden; margin:4px 0; }
@@ -413,7 +382,6 @@
     <button class="tab-btn active" data-tab="skills">SKILLS</button>
     <button class="tab-btn"        data-tab="stats">WERTE</button>
     <button class="tab-btn"        data-tab="map">KARTE</button>
-    <button class="tab-btn"        data-tab="combine">COMBO</button>
     <button class="tab-btn"        data-tab="materials">INVENTAR</button>
     <button class="tab-btn"        data-tab="nearby">NEARBY</button>
     <button class="tab-btn"        data-tab="log">LOG</button>
@@ -435,31 +403,6 @@
         <div id="map-root"></div>
       </div>
 
-      <div id="tab-combine" class="tab-content">
-        <div class="section-title">Skill Kombination</div>
-        <div class="combine-panel">
-          <div class="combine-selects">
-            <select id="combine-a"><option value="">— Skill A —</option></select>
-            <span style="color:var(--muted)">+</span>
-            <select id="combine-b"><option value="">— Skill B —</option></select>
-          </div>
-          <button class="btn" onclick="
-            const a=document.getElementById('combine-a').value;
-            const b=document.getElementById('combine-b').value;
-            if(a&&b) window.gameScene.doCombine(a,b);
-          ">KOMBINIEREN</button>
-          <div id="combine-result" class="combine-result"></div>
-        </div>
-        <div style="margin-top:10px;font-size:.62rem;color:var(--muted);line-height:1.8">
-          Rezepte:<br>
-          <span style="color:var(--accent)">Fire+Water</span> → Steam Burst<br>
-          <span style="color:var(--accent)">Fire+Wind</span> → Firestorm<br>
-          <span style="color:var(--accent)">Poison+Slime</span> → Toxic Coat<br>
-          <span style="color:var(--accent)">Earth+Water</span> → Mud Wall<br>
-          <span style="color:var(--accent)">Dark+Slime</span> → Shadow Form<br>
-          <span style="color:var(--accent)">Wind+Water</span> → Ice Shard
-        </div>
-      </div>
 
       <div id="tab-materials" class="tab-content">
         <div class="section-title">Inventar</div>

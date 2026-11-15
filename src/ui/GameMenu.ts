@@ -1,5 +1,5 @@
 // ============================================================
-// GAME MENU — Vollbild-Spielmenü (Skills, Werte, Karte, Combo, Inventar, Nearby, Log, Index)
+// GAME MENU — Vollbild-Spielmenü (Skills, Werte, Karte, Inventar, Nearby, Log, Index; Combo ausgebaut 15. November 2026)
 //
 // Selbstständiges DOM-Modul. Das Markup steht in accognita.template.html
 // (#gameMenu), weil GameScene die Tab-Inhalte über deren IDs befüllt.

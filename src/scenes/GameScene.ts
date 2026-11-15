@@ -42,7 +42,6 @@ import { MATERIAL_MAP } from "../data/materials.js";
 import { ENTITY_MAP, ENTITY_DEFINITIONS } from "../data/entities.js";
 import {
   discoverSkill,
-  combineSkills,
   getDiscoveredSkillsSorted,
   gainSkillXp,
   updatePlayerGrowth,
@@ -2125,14 +2124,6 @@ export class GameScene extends Phaser.Scene {
     showToast(`${ALL_SKILLS.get(skillId)?.name ?? skillId} ${state}`, "system");
   }
 
-  doCombine(skillIdA: string, skillIdB: string) {
-    const result = combineSkills(this.gameState.player, skillIdA, skillIdB);
-    showCombineResult(result);
-    this.afterProgressChange();
-    updateUI(this.gameState);
-    return result;
-  }
-
   // ----------------------------------------------------------
   // HILFSFUNKTION
   // ----------------------------------------------------------
@@ -2179,7 +2170,6 @@ function updateUI(state: GameState) {
   setEl("ui-absorb-level", `💥 ${coreText("absorb")}`);
 
   renderSkillList(state);
-  renderCombinePanel(state);
   renderMaterials(state);
 }
 
@@ -2264,25 +2254,6 @@ function formatRankProgress(info: RankInfo): string {
   if (!info.nextRankName) return `${Math.floor(info.xp)} XP · höchster Rang${pending}`;
   const target = Math.ceil(info.xp + info.xpToNextRank);
   return `${Math.floor(info.xp)} / ${target} XP → ${info.nextRankName}${pending}`;
-}
-
-function renderCombinePanel(state: GameState) {
-  const selects = ["combine-a", "combine-b"];
-  for (const selId of selects) {
-    const sel = document.getElementById(selId) as HTMLSelectElement | null;
-    if (!sel) continue;
-    const current = sel.value;
-    sel.innerHTML = '<option value="">— Skill wählen —</option>';
-    for (const [id, inst] of state.player.discoveredSkills) {
-      const def = ALL_SKILLS.get(id);
-      if (!def || def.category !== "basic") continue; // Nur basic-Skills kombinierbar
-      const opt = document.createElement("option");
-      opt.value = id;
-      opt.textContent = `${def.icon} ${def.name} (${getRankInfo(inst, getLearningEffort(id)).rankName})`;
-      sel.appendChild(opt);
-    }
-    if (current) sel.value = current;
-  }
 }
 
 function renderMaterials(state: GameState) {
@@ -2478,13 +2449,6 @@ function addLog(msg: string, type = "system") {
       .map((l) => `<div class="log-entry ${l.type}">${l.msg}</div>`)
       .join("");
   }
-}
-
-function showCombineResult(result: any) {
-  const out = document.getElementById("combine-result");
-  if (!out) return;
-  out.textContent = result.message;
-  out.className   = `combine-result outcome-${result.outcome}`;
 }
 
 // -----------------------------------------------------------

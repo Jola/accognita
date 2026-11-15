@@ -68,8 +68,8 @@ Current state: **v0.8** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/ui/SkillIntro.ts` | Presents newly learned skills one card at a time (what it does, values now and with practice, how it improves; sight and movement explained); queue pauses the game |
 | `src/ui/MapView.ts` | GDD-10 MAP tab: biomes, fog over unvisited chunks, blob markers, mark/unmark, switch consciousness, pick mode for the death screen (canvas, DOM only; the scene supplies the data) |
 | `src/ui/BlobArrows.ts` | GDD-10 direction arrows to marked blobs at the screen edge |
-| `src/ui/GameMenu.ts` | Full-screen game menu (Skills, Werte, Karte, Combo, Inventar, Nearby, Log, Index) — pauses game; markup in `accognita.template.html` |
-| `src/ui/IndexView.ts` | INDEX tab: in-game reference of all skills and entities with all parameters, computed live from data + systems |
+| `src/ui/GameMenu.ts` | Full-screen game menu (Skills, Werte, Karte, Inventar, Nearby, Log, Index; Combo tab removed until skill combination has a concept) — pauses game; markup in `accognita.template.html` |
+| `src/ui/IndexView.ts` | INDEX tab: in-game reference of all skills and entities with all parameters, computed live from data + systems. A developer tool (internals, balancing), not for the player |
 | `src/ui/StatsView.ts` | WERTE tab: all character stats of the blob (HP, MP, strength, dexterity, speed, defense, attacks); settled: activity, sources, yield per hour |
 | `src/ui/ValueChart.ts` | INDEX value charts: SVG curve "value over experience" per skill value, ranks as bands, tap/hover readout |
 | `src/scenes/GameScene.ts` | Phaser scene — main file that knows about Phaser |
@@ -114,6 +114,7 @@ types/   ←  data/  ←  systems/  ←  scenes/
 - `systems/` — Pure game logic. No rendering. Testable in isolation.
 - `world/` — Chunk system: no Phaser imports, scene typed as `any`. DOM Canvas 2D allowed for TilesetGenerator.
 - `ui/` — Self-contained DOM components (e.g. Joystick). No Phaser.
+  - The INDEX tab is for the developer (transparency, balancing). Anything the player needs gets its own screen, never a section of INDEX (Vorgabe Entwickler, 15. November 2026).
 - `scenes/` — Phaser + DOM glue. Calls systems and ui modules, renders results.
 
 ---
@@ -189,7 +190,7 @@ Bugs, Feature-Ideen und kleine Verbesserungen werden in **`TODO.md`** im Projekt
 
 - ~~Tod-Mechanik: Soft Death vs. Checkpoint vs. Rogue-like?~~ → decided and implemented: GDD-10 (drying out, settled blobs as checkpoints, death screen)
 - ~~Skill-Limit: Obergrenze für aktive Skills?~~ → decided: skill capacity (sum of experience), see GDD-02 section 8. Still open: how capacity grows, all numbers, rank names
-- Kombinations-Rezepte: Sollen sie versteckt werden?
+- Kombinations-Rezepte: Sollen sie versteckt werden? (No concept for skill combination yet; COMBO tab removed in v0.8.8, mechanism stays in SkillSystem)
 - Mobile Tap: Direkt Absorb/Analyze, oder erst Kontextmenü?
 - PWA: Ja oder Nein?
 - Balancing: XP-Kurven, Spawn-Dichte und Respawn-Zeiten noch nicht abgestimmt

@@ -1,7 +1,7 @@
 # Absorb & Evolve — Game Design Document
 ## Datei 11: Spieleinstieg — Grundmechaniken lernen, entdecken, verstehen
 
-> Status: Konzept (15. November 2026) — wartet auf Entscheidungen des Entwicklers (Abschnitt 9). Umgesetzt ist bisher nur der Anfang: Skill-Vorstellung, Anzeige unter dem Blob, Karte „Auf Reisen“ (v0.8.6, GDD-02 Abschnitt 6, GDD-10 Abschnitt 8.4).
+> Status: Konzept, entschieden (15. November 2026) — alle Fragen in Abschnitt 9 beantwortet; die Umsetzung wartet auf das Go des Entwicklers. ~~Wartet auf Entscheidungen des Entwicklers (Abschnitt 9).~~ Umgesetzt ist bisher nur der Anfang: Skill-Vorstellung, Anzeige unter dem Blob, Karte „Auf Reisen“ (v0.8.6, GDD-02 Abschnitt 6, GDD-10 Abschnitt 8.4).
 
 **Der Kern in einem Satz:** Das Spiel erklärt nur, was man zum Weiterkommen verstehen muss, und gibt Anstöße, was man ausprobieren könnte. Ein Anstoß ist eine einfache Frage, etwa „Warum probierst du es nicht mal aus?“. Wer fragt, bleibt offen. ~~Diese Anstöße kommen aus dem Blob selbst: aus seinem Gespür für die Welt.~~ [VERWORFEN, 15. November 2026] Vorgabe Entwickler: Fragen, nicht „etwas in dir“ (Abschnitt 3). ~~Diese Anstöße kommen aus der Geschichte des Blobs: Er erinnert sich, was er früher konnte.~~ [VERWORFEN, 15. November 2026] Vorgabe Entwickler: kein Erwachen aus der Trockenstarre (Abschnitt 3).
 
@@ -138,7 +138,9 @@ Jeder Anstoß hat bis zu drei Stufen. Sobald der Spieler das Verlangte tut, ist 
 2. **Konkret** (nach etwa 45 s Spielzeit ohne Erfolg): der Satz in Spielbegriffen dazu.
 3. **Zeigen** (nach weiteren 45 s): Der passende Knopf pulsiert, bei Orten zeigt ein Pfeil dorthin.
 
-**Begründung (Vorschlag Claude, offen):** Wer schnell versteht, sieht nur die Andeutung und entdeckt selbst. Wer feststeckt, bekommt nach anderthalb Minuten genau gezeigt, was zu tun ist. So wird keiner von beiden gelangweilt oder frustriert.
+**Vorgabe (Entwickler, 15. November 2026):** Drei Stufen mit je etwa 45 s passen erst einmal. Der Entwickler will sie im Spiel ausprobieren.
+
+**Begründung (Vorschlag Claude, übernommen):** Wer schnell versteht, sieht nur die Andeutung und entdeckt selbst. Wer feststeckt, bekommt nach anderthalb Minuten genau gezeigt, was zu tun ist. So wird keiner von beiden gelangweilt oder frustriert.
 
 ### 4.3 Wann ein Anstoß kommt
 
@@ -173,7 +175,7 @@ Je Schritt: Anlass → Anstoß (Frage → konkret) → Erklärung danach. ✅ = 
 - **Entdecken:** Welche Wesen gefährlich sind (Farbe/Name, später).
 
 ### 5.5 Niederlassen
-- **Anlass, eins von dreien:** (a) Der Reisende ist weit vom Nest entfernt (etwa 30 m), (b) er steht in Wald oder Sumpf an einem Ort mit vielen friedlichen Wesen, (c) seine HP sind unter der Hälfte und keine Gefahr ist in der Nähe.
+- **Anlass, eins von dreien:** (a) Der Reisende ist weit vom Nest entfernt (etwa 30 m), (b) er steht in Wald oder Sumpf an einem Ort mit vielen friedlichen Wesen, (c) seine HP sind unter der Hälfte und keine Gefahr ist in der Nähe. (Vorschlag Claude, übernommen 15. November 2026)
 - **Frage:** „Feucht, schattig, Nahrung ringsum. Warum lässt du dich hier nicht nieder?“ ~~„Feuchtigkeit. Schatten. Nahrung ringsum. Etwas in dir will hierbleiben und wachsen.“~~ ~~„… Früher hast du dich an solchen Orten festgesetzt und bist dort gewachsen.“~~ [VERWORFEN, 15. November 2026]
 - **Konkret:** „Probier es aus: Tippe auf 🌱 Niederlassen.“ Dieser Schritt ist die Antwort auf den Wunsch des Entwicklers: Der Anstoß hat einen Grund in der Welt.
 - **Erklärung danach (Karte):** Was niedergelassen heißt: Checkpoint, arbeitet von allein weiter, auch während du woanders bist, Tätigkeit wählen, Abspalten von hier.
@@ -236,7 +238,13 @@ Diese Dinge entdeckt der Spieler selbst. Das Spiel hält sie erst fest, nachdem 
 - **Gedächtnis-Reiter:** eine Liste, die in beiden Formaten gleich funktioniert.
 
 ### 7.3 Nachlesen: das Gedächtnis
-Ein neuer Abschnitt im Menü (z. B. im INDEX oder als eigener Reiter „GEDÄCHTNIS“). Er sammelt jede gezeigte Erklärung, jede Skill-Karte und jede Entdeckung in der Reihenfolge des Erlebens. Wer etwas weggeklickt hat, kann es dort noch einmal lesen.
+Ein eigener Reiter **GEDÄCHTNIS** im Menü. ~~Ein neuer Abschnitt im Menü (z. B. im INDEX oder als eigener Reiter „GEDÄCHTNIS“).~~ [VERWORFEN, 15. November 2026]
+
+**Vorgabe (Entwickler, 15. November 2026):** Der INDEX ist nicht für den Spieler, sondern für den Entwickler. Er soll die Interna des Spiels transparent machen und beim Balancing helfen. Was der Spieler braucht, wird immer ein eigener Bildschirm.
+
+**Begründung (Entwickler):** Für das Spiel enthält der INDEX zu viele Infos.
+
+Der Reiter sammelt jede gezeigte Erklärung, jede Skill-Karte und jede Entdeckung in der Reihenfolge des Erlebens. Wer etwas weggeklickt hat, kann es dort noch einmal lesen.
 
 **Begründung (Vorschlag Claude, offen):** Karten halten das Spiel an und werden oft schnell weggeklickt. Das Gedächtnis nimmt den Druck, alles sofort lesen zu müssen. Der Name passt: Es ist das Gedächtnis des Blobs für das, was er in diesem Spiel erlebt hat. ~~Der Name passt zur Erzählung (Abschnitt 3).~~ [VERWORFEN, 15. November 2026] Die Erinnerungen aus der Trockenstarre gibt es nicht mehr.
 
@@ -248,7 +256,9 @@ Ein neuer Abschnitt im Menü (z. B. im INDEX oder als eigener Reiter „GEDÄCHT
 - **`data/tutorial.ts`**: alle Texte und Zeiten mit Begründungen (gibt es schon für die Skill-Karten).
 - **Spielstand:** `seenIntros` (gibt es seit v9) wird zu `tutorial: { seen: string[]; done: string[]; memory: MemoryEntry[] }` erweitert. Eine Migration übernimmt die alten Einträge.
 - **Anlässe** meldet die Szene als Ereignisse (Schaden genommen, Blob berührt, Biom gewechselt, abgespalten …). Das System prüft sie einmal pro Sekunde, nicht jeden Frame.
-- **Einstellung „Hinweise“:** an / nur Erklärungen / aus, für Spieler, die das Spiel kennen. Dazu ein Knopf „Einführung neu starten“.
+- ~~**Einstellung „Hinweise“:** an / nur Erklärungen / aus, für Spieler, die das Spiel kennen. Dazu ein Knopf „Einführung neu starten“.~~ [VERWORFEN, 15. November 2026] Vorgabe Entwickler: Hinweise lassen sich nicht abschalten.
+
+> Begründung offen
 
 ---
 
@@ -256,12 +266,12 @@ Ein neuer Abschnitt im Menü (z. B. im INDEX oder als eigener Reiter „GEDÄCHT
 
 1. **Erzählstimme:** ~~Passen die Erinnerungen aus der Trockenstarre (Abschnitt 3)? Oder lieber eine andere Stimme, z. B. eine neutrale Erzählerin oder von Anfang an das Echo des Elfen?~~ Entschieden (Vorgabe Entwickler, 15. November 2026): kein Erwachen aus der Trockenstarre, das Warum bleibt ein Mysterium. ~~Neu: Passt das **Gespür** des Blobs als Stimme der Hinweise (Abschnitt 3)?~~ Entschieden (Vorgabe Entwickler): Neugier als Antrieb, Anstöße als einfache Fragen, Sprecher bleibt offen.
 2. **Ursprung:** ~~Option A (magische Quelle) oder Option B (sterbender Elf) aus GDD-01 Abschnitt 9? Für den Einstieg reicht die Entscheidung später, für die fremden Erinnerungen nicht.~~ Für den Anfang nicht nötig: Das Warum bleibt ein Mysterium (Vorgabe Entwickler, 15. November 2026). Ob und wann es später aufgelöst wird, bleibt offen. Elf und Quelle bleiben als Idee erhalten, die Entscheidung ist vertagt (Vorgabe Entwickler).
-3. **Deutlicher werden:** Passen drei Stufen mit je etwa 45 s (Abschnitt 4.2)?
-4. **Anlässe fürs Niederlassen (5.5):** weit vom Nest, guter Ort, wenig HP. Fehlt einer, oder ist einer zu viel?
-5. **Gedächtnis (7.3):** eigener Reiter oder Teil des INDEX?
-6. **Hinweise abschaltbar (8):** ja oder nein?
-7. **Reihenfolge der Umsetzung:** Vorschlag: zuerst TutorialSystem mit 5.3 bis 5.5 (Fressen von Hand, Gefahr, Niederlassen), dann Gedächtnis, dann 5.6 bis 5.9.
+3. **Deutlicher werden:** ~~Passen drei Stufen mit je etwa 45 s (Abschnitt 4.2)?~~ Entschieden (Vorgabe Entwickler, 15. November 2026): passt erst einmal, wird im Spiel ausprobiert.
+4. **Anlässe fürs Niederlassen (5.5):** ~~weit vom Nest, guter Ort, wenig HP. Fehlt einer, oder ist einer zu viel?~~ Entschieden (15. November 2026): so übernommen.
+5. **Gedächtnis (7.3):** ~~eigener Reiter oder Teil des INDEX?~~ Entschieden (Vorgabe Entwickler, 15. November 2026): eigener Reiter; der INDEX ist für den Entwickler.
+6. **Hinweise abschaltbar (8):** ~~ja oder nein?~~ Entschieden (Vorgabe Entwickler, 15. November 2026): nein.
+7. **Reihenfolge der Umsetzung:** Entschieden (15. November 2026, Vorschlag Claude übernommen): zuerst TutorialSystem mit 5.3 bis 5.5 (Fressen von Hand, Gefahr, Niederlassen), dann Gedächtnis, dann 5.6 bis 5.9.
 
 ---
 
-*Letzte Aktualisierung: 15. November 2026 — erster Hinweis im Nest ohne „Tätigkeit“ (Vorgabe Entwickler, v0.8.7); davor 15. November 2026 — Neugier als Antrieb, Anstöße als einfache Fragen ohne Sprecher, nicht „etwas in dir“; Elf und Quelle bleiben als Idee (Vorgaben Entwickler); Beispieltexte als Fragen neu (Vorschlag); davor 15. November 2026 — kein Erwachen aus der Trockenstarre, das Warum bleibt ein Mysterium (Vorgabe Entwickler); Hinweise als Gespür statt Erinnerungen (Vorschlag), Fragen 1 und 2 beantwortet; davor 15. November 2026 — Erstfassung (Konzept) auf Wunsch des Entwicklers: Grundmechaniken lernen, entdecken lassen, nicht frustrieren, in die Geschichte eingebettet, Querformat*
+*Letzte Aktualisierung: 15. November 2026 — Hinweise nicht abschaltbar (Vorgabe Entwickler), Reihenfolge der Umsetzung übernommen, alle Fragen beantwortet; Stufen (4.2) und Anlässe fürs Niederlassen (5.5) übernommen, Gedächtnis als eigener Reiter, INDEX ist für den Entwickler (Vorgaben Entwickler, Fragen 3–5); davor 15. November 2026 — erster Hinweis im Nest ohne „Tätigkeit“ (Vorgabe Entwickler, v0.8.7); davor 15. November 2026 — Neugier als Antrieb, Anstöße als einfache Fragen ohne Sprecher, nicht „etwas in dir“; Elf und Quelle bleiben als Idee (Vorgaben Entwickler); Beispieltexte als Fragen neu (Vorschlag); davor 15. November 2026 — kein Erwachen aus der Trockenstarre, das Warum bleibt ein Mysterium (Vorgabe Entwickler); Hinweise als Gespür statt Erinnerungen (Vorschlag), Fragen 1 und 2 beantwortet; davor 15. November 2026 — Erstfassung (Konzept) auf Wunsch des Entwicklers: Grundmechaniken lernen, entdecken lassen, nicht frustrieren, in die Geschichte eingebettet, Querformat*

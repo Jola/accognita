@@ -130,7 +130,10 @@ Tastatur- und Maussteuerung wurden mit Commit 0f3d348 („Switch to mobile-only 
 Ein einziges Menü für alle Bildschirmgrößen und Ausrichtungen ([src/ui/GameMenu.ts](../src/ui/GameMenu.ts)):
 - Beim Spielen geschlossen — das Spielfeld nutzt immer den ganzen Bildschirm.
 - Der 📋-Button (oben rechts) öffnet es als **Vollbild-Overlay**; das Spiel ist pausiert, solange es offen ist. „✕ Weiterspielen" schließt es.
-- Tabs: **SKILLS · WERTE · COMBO · INVENTAR · NEARBY · LOG · INDEX** (~~ohne WERTE~~ bis v0.6.4)
+- Tabs: **SKILLS · WERTE · KARTE · INVENTAR · NEARBY · LOG · INDEX** (~~ohne WERTE~~ bis v0.6.4; ~~COMBO~~ [VERWORFEN, 15. November 2026] ausgebaut in v0.8.8)
+  **Vorgabe (Entwickler, 15. November 2026):** COMBO wird erst einmal ausgebaut. Er wird noch nicht verwendet, und für die Skill-Kombination gibt es noch kein Konzept (GDD-02 Abschnitt 5).
+  **Vorgabe (Entwickler, 15. November 2026):** Der INDEX ist nicht für den Spieler, sondern für den Entwickler. Er soll die Interna des Spiels transparent machen und beim Balancing helfen. Was der Spieler braucht, wird immer ein eigener Bildschirm.
+  **Begründung (Entwickler):** Für das Spiel enthält der INDEX zu viele Infos.
 - **WERTE** ([src/ui/StatsView.ts](../src/ui/StatsView.ts), seit v0.6.5): alle Charakterwerte des Blobs auf einen Blick.
   - **Körper:** HP und MP mit Regeneration, Größe, Kapazität, Lebenserfahrung
   - **Attribute:** Stärke (Schadensfaktor der eingeschalteten Passiv-Skills, z. B. Superstrength), Geschick (aus Jump), Geschwindigkeit, Reichweite — jeweils mit den Skills, aus denen der Wert kommt
@@ -180,7 +183,7 @@ Ein einziges Menü für alle Bildschirmgrößen und Ausrichtungen ([src/ui/GameM
 | Tab | Funktion |
 |-----|---------|
 | SKILLS | ~~Alle entdeckten Skills mit Level und XP-Fortschritt~~ [VERWORFEN] → Rang, Erfahrungsbalken im Rang mit Abschnitt für ausstehende Erfahrung ([GDD-02 Abschnitt 6](GDD-02-Skillsystem.md#6-skill-anzeige--verwaltung)) |
-| COMBINE | Zwei Skills auswählen, Kombination versuchen |
+| ~~COMBINE~~ | ~~Zwei Skills auswählen, Kombination versuchen~~ [VERWORFEN, 15. November 2026] ausgebaut |
 | NEARBY | Entities in Reichweite mit Absorb/Analyze-Buttons |
 | LOG | Chronologisches Event-Journal |
 
@@ -341,4 +344,4 @@ Kein lokales Node.js, npm oder Terminal auf Jörns Seite nötig.
 
 ---
 
-*Letzte Aktualisierung: 14. November 2026 — Funktionsname calcRegenHp (Heilung aus dem Skill-Effekt regen_hp); davor v0.6 — Werte-Tab mit allen Charakterwerten, Version 0.6.5 (1. November 2026); Version 0.6.4 (tatsächlicher Schaden an den Skills, 1. November 2026); Werte-Graphen: Ränge als Werte-Zonen, Werte aus den echten Berechnungsfunktionen, Version 0.6.3 (1. November 2026); Formel zu jedem Werte-Graphen, Version 0.6.2 (1. November 2026); Version 0.6.1 (Ameise 5 Schaden, 1. November 2026); Fortschritt in % neben dem Rang (Skills-Tab, Kern-Fähigkeiten), Höchstwert-Linie in den Werte-Graphen, Version 0.6.0 (1. November 2026); davor v0.5 — Werte-Graphen im INDEX, Version 0.5.1 (1. November 2026); Reichweite bis zum Rand des Wesens; Version 0.5.0 (1. November 2026); Giftlast in der HP-Bar und Giftdosis-Zahl (31. Oktober 2026); davor Anzeige an Erfahrung statt Level angepasst: HUD zeigt Kapazität (KAP), Skills-Tab und INDEX nach Rängen, Rang-Aufstieg statt Level-Up, Spielstand-Format 3, Desktop-Steuerung (Tastatur/Maus) als verworfen markiert (31. Oktober 2026); davor Dev-Container und `npm run dev` für lokale Entwicklung; Begründungen für Spielmenü, Vollbild-Regel, Version und Spielstand-Migration ergänzt; Spielmenü als pausierendes Vollbild-Overlay mit INDEX-Tab (Oktober 2026)*
+*Letzte Aktualisierung: 15. November 2026 — COMBO-Reiter ausgebaut; INDEX ist für den Entwickler, was der Spieler braucht, bekommt einen eigenen Bildschirm (Vorgaben Entwickler, v0.8.8); davor 14. November 2026 — Funktionsname calcRegenHp (Heilung aus dem Skill-Effekt regen_hp); davor v0.6 — Werte-Tab mit allen Charakterwerten, Version 0.6.5 (1. November 2026); Version 0.6.4 (tatsächlicher Schaden an den Skills, 1. November 2026); Werte-Graphen: Ränge als Werte-Zonen, Werte aus den echten Berechnungsfunktionen, Version 0.6.3 (1. November 2026); Formel zu jedem Werte-Graphen, Version 0.6.2 (1. November 2026); Version 0.6.1 (Ameise 5 Schaden, 1. November 2026); Fortschritt in % neben dem Rang (Skills-Tab, Kern-Fähigkeiten), Höchstwert-Linie in den Werte-Graphen, Version 0.6.0 (1. November 2026); davor v0.5 — Werte-Graphen im INDEX, Version 0.5.1 (1. November 2026); Reichweite bis zum Rand des Wesens; Version 0.5.0 (1. November 2026); Giftlast in der HP-Bar und Giftdosis-Zahl (31. Oktober 2026); davor Anzeige an Erfahrung statt Level angepasst: HUD zeigt Kapazität (KAP), Skills-Tab und INDEX nach Rängen, Rang-Aufstieg statt Level-Up, Spielstand-Format 3, Desktop-Steuerung (Tastatur/Maus) als verworfen markiert (31. Oktober 2026); davor Dev-Container und `npm run dev` für lokale Entwicklung; Begründungen für Spielmenü, Vollbild-Regel, Version und Spielstand-Migration ergänzt; Spielmenü als pausierendes Vollbild-Overlay mit INDEX-Tab (Oktober 2026)*
