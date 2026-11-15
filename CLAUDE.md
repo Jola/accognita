@@ -33,7 +33,7 @@ Current state: **v0.8** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/data/version.ts` | `GAME_VERSION` — must match `package.json` (build.js aborts otherwise). Shown in save dialog and stored in each save. |
 | `src/systems/SkillSystem.ts` | Pure skill logic — what earns how much XP, discovery, combining, blob growth (HP/MP) |
 | `src/systems/BlobSystem.ts` | GDD-10 form changes as pure operations on the GameState: settle, split, rise up, merge, dry out, switch consciousness; touch and nearest-blob queries |
-| `src/systems/SettlementSystem.ts` | GDD-10 activity of settled blobs (analyze/absorb with mean values, no overtraining), work range, catch-up incl. Grow, regeneration and overstretch melt |
+| `src/systems/SettlementSystem.ts` | GDD-10 activity of settled blobs (analyze/absorb with mean values, no overtraining; `planActivity` for the yield per hour), sources from world-generation spawn points with "nearest blob harvests", work range, catch-up incl. Grow, regeneration and overstretch melt |
 | `src/systems/KnowledgeSystem.ts` | GDD-10: merges the knowledge of two blobs (highest value per skill, held-back XP, capacity limit) and carries fatigue and statistics over to the next body |
 | `src/systems/ProgressionSystem.ts` | How experience is booked: relearn bonus, overtraining/rest, capacity and forgetting, ranks; same progress conversion for player and entities |
 | `src/systems/EntitySystem.ts` | Absorb/Analyze/Respawn logic |
@@ -66,7 +66,7 @@ Current state: **v0.8** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/ui/BlobArrows.ts` | GDD-10 direction arrows to marked blobs at the screen edge |
 | `src/ui/GameMenu.ts` | Full-screen game menu (Skills, Werte, Combo, Inventar, Nearby, Log, Index) — pauses game; markup in `accognita.template.html` |
 | `src/ui/IndexView.ts` | INDEX tab: in-game reference of all skills and entities with all parameters, computed live from data + systems |
-| `src/ui/StatsView.ts` | WERTE tab: all character stats of the blob (HP, MP, strength, dexterity, speed, defense, attacks) |
+| `src/ui/StatsView.ts` | WERTE tab: all character stats of the blob (HP, MP, strength, dexterity, speed, defense, attacks); settled: activity, sources, yield per hour |
 | `src/ui/ValueChart.ts` | INDEX value charts: SVG curve "value over experience" per skill value, ranks as bands, tap/hover readout |
 | `src/scenes/GameScene.ts` | Phaser scene — main file that knows about Phaser |
 | `src/scenes/BlobRenderer.ts` | GDD-10 look of settled blobs (vein network with pulse wave, seeded by blob number) and dried blobs (crust); geometry is plain math |

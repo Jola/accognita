@@ -58,8 +58,10 @@ export interface BlobMeta {
   activity?: BlobActivity | null;
   /** nur niedergelassen: bis zu welcher Spielzeit (s) sein Stand berechnet ist */
   simulatedUntil?: number;
-  /** nur niedergelassen: friedliche Wesen in Arbeitsreichweite (Momentaufnahme) */
+  /** nur niedergelassen: friedliche Wesen, die er erntet (der nächste Blob erntet, GDD-10 8.3) */
   sources?: ActivitySource[];
+  /** nur niedergelassen: Arbeitsreichweite (px), mit der `sources` verteilt wurde — wächst er, wird neu verteilt */
+  workRange?: number;
   /** nur niedergelassen: Bruchteile der Tätigkeit ("mat:…", "find:…") */
   carry?: Record<string, number>;
   /** nur vertrocknet: Spielzeit (s) des Vertrocknens */
@@ -71,4 +73,4 @@ export interface StoredBlob extends BlobMeta {
   body: SerializedBody;
 }
 
-// Stand: 15. November 2026 — Erstfassung (GDD-10 Umsetzungsschritt 2)
+// Stand: 15. November 2026 — workRange für die Verteilung der Quellen (Schritt 6); Erstfassung in Schritt 2

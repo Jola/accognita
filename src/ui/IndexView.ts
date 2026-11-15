@@ -710,6 +710,8 @@ const ATTRIBUTE_PAGES: AttributePage[] = [
         ["Kapazität beim Verschmelzen", `darf über die Kapazität steigen, höchstens ${pct(OVERSTRETCH_MAX_FRACTION)} darüber, schmilzt dann ab`],
         ["Arbeitsreichweite", `${num(WORK_RANGE_MIN_PX)} px frisch → ${num(WORK_RANGE_MAX_PX)} px ausgewachsen (Nest ${num(WORK_RANGE_MAX_PX)} px)`],
         ["Tätigkeit", `Analysieren oder Absorbieren an friedlichen Wesen, eine Aktion je ${num(ACTION_SECONDS)} s, Mittelwerte statt Würfel, ohne Übertraining`],
+        ["Quellen", "die festen Entstehungsorte friedlicher Wesen aus der Weltgenerierung; jeden Ort erntet nur der nächste niedergelassene Blob, in dessen Arbeitsreichweite er liegt (überlappen sich zwei, teilt die Mittellinie). Neu verteilt beim Niederlassen, Erheben, Verschmelzen, Wechseln und wenn ein Blob wächst"],
+        ["Ertrag pro Stunde", "steht im WERTE-Reiter, solange das Bewusstsein bei einem niedergelassenen Blob ist"],
       ]),
       reason("Vorgabe (Entwickler): Der Blob stirbt nicht. Begründung (Entwickler): Das entspricht dem Vorbild Physarum polycephalum — es teilt sich, Teile verschmelzen wieder, und bei Gefahr trocknet es zu einer Dauerform ein."),
     ].join(""),

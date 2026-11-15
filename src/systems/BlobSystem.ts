@@ -21,7 +21,7 @@ import type { GameState, PlayerState, WorldState } from "../types/GameState";
 import type { BlobMeta, StoredBlob } from "../types/Blob";
 import { serializeBody, deserializeBody } from "./BodySerializer";
 import { mergeKnowledge, transferConsciousness } from "./KnowledgeSystem";
-import { catchUpSettled, snapshotSources, calcWorkRange, type ActivityResult } from "./SettlementSystem";
+import { catchUpSettled, assignSources, sameSources, calcWorkRange, type ActivityResult, type WorkSite } from "./SettlementSystem";
 import { knowsMoveSkill } from "./BodySystem";
 import { isFullyGrown, calcGrowthFromMass } from "./GrowSystem";
 import { calcMaxHp, calcMaxMp, updatePlayerGrowth } from "./SkillSystem";
@@ -130,18 +130,73 @@ function loadStored(blob: StoredBlob, nowPlay: number): { body: PlayerState; res
 }
 
 /** Arbeitskopie eines niedergelassenen Blobs ablegen (Bewusstsein verlässt ihn). */
-function storeConscious(state: GameState, world: WorldState): StoredBlob {
+function storeConscious(state: GameState): StoredBlob {
   const p = state.player;
   const meta = state.conscious;
   const stored: StoredBlob = {
     ...meta,
     simulatedUntil: p.playtimeSeconds,
-    sources: snapshotSources(world, p.x, p.y, consciousWorkRange(state)),
+    sources: meta.sources ?? [],
     carry: meta.carry ?? {},
     body: serializeBody(p),
   };
   state.blobs.push(stored);
   return stored;
+}
+
+// -----------------------------------------------------------
+// QUELLEN VERTEILEN: der nächste Blob erntet (GDD-10 8.3)
+// -----------------------------------------------------------
+
+/** Alle niedergelassenen Blobs als Arbeitsorte, auch der mit Bewusstsein. */
+function settledSites(state: GameState): WorkSite[] {
+  const sites: WorkSite[] = [];
+  for (const b of state.blobs) {
+    if (b.form === "settled") sites.push({ id: b.id, x: b.body.x, y: b.body.y, range: calcWorkRange(b.body.bodyMass, !!b.nest) });
+  }
+  if (state.conscious.form === "settled") {
+    sites.push({ id: state.conscious.id, x: state.player.x, y: state.player.y, range: consciousWorkRange(state) });
+  }
+  return sites;
+}
+
+/** Hat sich die Arbeitsreichweite des Blobs mit Bewusstsein seit der letzten Verteilung geändert (Wachsen)? */
+export function needsReassign(state: GameState): boolean {
+  if (state.conscious.form !== "settled") return false;
+  return Math.abs(consciousWorkRange(state) - (state.conscious.workRange ?? -1)) > 0.5;
+}
+
+/**
+ * Verteilt die Entstehungsorte neu: beim Niederlassen, Erheben, Verschmelzen,
+ * Wechseln und wenn eine Reichweite durch Wachsen größer wird. Nachbarn,
+ * deren Quellen sich ändern, werden vorher bis jetzt nachgerechnet, damit
+ * die vergangene Zeit noch mit der alten Verteilung zählt (GDD-10 8.3).
+ * Die laufende Tätigkeit des Blobs mit Bewusstsein schließt die Szene vorher ab.
+ */
+export function reassignSources(state: GameState): void {
+  const seed = state.world.worldSeed;
+  const nowPlay = state.player.playtimeSeconds;
+  let assignment = assignSources(settledSites(state), seed);
+  let caughtUp = false;
+  for (const b of state.blobs) {
+    if (b.form !== "settled" || sameSources(b.sources, assignment.get(b.id))) continue;
+    if ((b.simulatedUntil ?? nowPlay) < nowPlay) {
+      const { body } = loadStored(b, nowPlay);
+      b.body = serializeBody(body);
+      caughtUp = true;
+    }
+  }
+  // Beim Nachrechnen kann ein Nachbar gewachsen sein: mit den neuen Größen verteilen
+  if (caughtUp) assignment = assignSources(settledSites(state), seed);
+  for (const b of state.blobs) {
+    if (b.form !== "settled") continue;
+    b.sources = assignment.get(b.id) ?? [];
+    b.workRange = calcWorkRange(b.body.bodyMass, !!b.nest);
+  }
+  if (state.conscious.form === "settled") {
+    state.conscious.sources = assignment.get(state.conscious.id) ?? [];
+    state.conscious.workRange = consciousWorkRange(state);
+  }
 }
 
 function clearCombatState(p: PlayerState): void {
@@ -173,9 +228,10 @@ export function settle(state: GameState, world: WorldState): BlobOpResult {
     form: "settled",
     activity: null,
     simulatedUntil: p.playtimeSeconds,
-    sources: snapshotSources(world, p.x, p.y, calcWorkRange(p.bodyMass, false)),
+    sources: [],
     carry: {},
   };
+  reassignSources(state);
   return { ok: true };
 }
 
@@ -271,7 +327,7 @@ export function split(state: GameState, world: WorldState, take?: Record<string,
   child.x = parent.x + offset;
   child.y = parent.y;
 
-  storeConscious(state, world);
+  storeConscious(state);
   state.player = child;
   state.conscious = { id: allocateId(state), name: TRAVELER_NAME, form: "traveling" };
   return { ok: true };
@@ -300,6 +356,7 @@ export function rise(state: GameState): BlobOpResult {
   const id = state.conscious.id;
   state.conscious = { id, name: TRAVELER_NAME, form: "traveling" };
   state.markedBlobIds = state.markedBlobIds.filter((m) => m !== id);
+  reassignSources(state); // seine Quellen gehen an die Nachbarn
   return { ok: true };
 }
 
@@ -353,7 +410,7 @@ export function merge(state: GameState, targetId: string, world: WorldState): Bl
       form: "settled",
       activity: null,
       simulatedUntil: nowPlay,
-      sources: snapshotSources(world, body.x, body.y, calcWorkRange(body.bodyMass, false)),
+      sources: [],
       carry: {},
     };
   }
@@ -361,6 +418,7 @@ export function merge(state: GameState, targetId: string, world: WorldState): Bl
   state.markedBlobIds = state.markedBlobIds.filter((m) => m !== target.id);
   state.player = body;
   state.conscious = meta;
+  reassignSources(state);
   return { ok: true, result };
 }
 
@@ -430,7 +488,7 @@ export function switchTo(
   if (!target) return { ok: false, reason: "Ziel nicht gefunden." };
   if (storeCurrent && state.conscious.form !== "settled") return { ok: false, reason: "Wechseln geht nur zwischen niedergelassenen Blobs." };
   const from = state.player;
-  if (storeCurrent) storeConscious(state, world);
+  if (storeCurrent) storeConscious(state);
   const { body, result } = loadStored(target, from.playtimeSeconds);
   clearCombatState(body);
   transferConsciousness(from, body, Date.now());
@@ -438,7 +496,8 @@ export function switchTo(
   state.markedBlobIds = state.markedBlobIds.filter((m) => m !== target.id);
   state.player = body;
   state.conscious = metaOf(target);
+  reassignSources(state); // er kann beim Nachrechnen gewachsen sein
   return { ok: true, result };
 }
 
-// Stand: 15. November 2026 — Verteilen nach Wahl im Dialog (Schritt 4); Erstfassung in Schritt 3
+// Stand: 15. November 2026 — der nächste Blob erntet (Schritt 6); Verteilen nach Wahl im Dialog (Schritt 4); Erstfassung in Schritt 3

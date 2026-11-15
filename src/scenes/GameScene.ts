@@ -14,9 +14,9 @@ import { getIntroStep, getIntroText, type IntroStep } from "../systems/IntroSyst
 import {
   settle, canSettle, split, canSplit, rise, canRise, merge, canMerge, dryOut, switchTo, canSwitch,
   findTouchedBlob, nearestSettled, summarizeAhead, storedCoreRadius, consciousWorkRange, radiusFromMass,
-  previewSplit, defaultSplitTake,
+  previewSplit, defaultSplitTake, reassignSources, needsReassign,
 } from "../systems/BlobSystem";
-import { runActivity, snapshotSources, calcWorkRange } from "../systems/SettlementSystem";
+import { runActivity, calcWorkRange } from "../systems/SettlementSystem";
 import { ACTION_SECONDS, SETTLE_AGGRO_LOCK_MS } from "../data/blobs";
 import { KG_PER_FIBER, MAX_BODY_MASS } from "../data/grow";
 import type { BlobActivity, StoredBlob } from "../types/Blob";
@@ -717,6 +717,7 @@ export class GameScene extends Phaser.Scene {
     this.blobPicker?.close();
     this.setPaused("death", false);
     this.activityAccumulator = 0;
+    reassignSources(this.gameState); // Quellen nach „der nächste Blob erntet“ (GDD-10 8.3)
     this.refreshBlobSprites();
     this.applyFormUi();
 
@@ -1187,6 +1188,7 @@ export class GameScene extends Phaser.Scene {
     this.transferDialog = createTransferDialog();
     this.blobArrows = createBlobArrows(document.getElementById("canvas-wrap") ?? document.body);
     this.blobRenderer = new BlobRenderer(this, 5);
+    reassignSources(this.gameState); // neues Spiel: Quellen des Nests
     this.refreshBlobSprites();
     this.applyFormUi();
   }
@@ -1221,8 +1223,9 @@ export class GameScene extends Phaser.Scene {
     if (meta.form !== "settled" || seconds <= 0) return;
     meta.carry = meta.carry ?? {};
     const p = state.player;
-    const sources = snapshotSources(state.world, p.x, p.y, consciousWorkRange(state));
-    const r = runActivity(p, meta.activity, sources, seconds, meta.carry, p.playtimeSeconds);
+    // Reichweite gewachsen: neu verteilen (GDD-10 8.3)
+    if (needsReassign(state)) reassignSources(state);
+    const r = runActivity(p, meta.activity, meta.sources ?? [], seconds, meta.carry, p.playtimeSeconds);
     this.logProgressionEvents(r.events);
     for (const id of r.discovered) {
       const def = ALL_SKILLS.get(id);
