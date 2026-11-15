@@ -68,7 +68,8 @@ Current state: **v0.8** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/ui/IndexView.ts` | INDEX tab: in-game reference of all skills and entities with all parameters, computed live from data + systems |
 | `src/ui/StatsView.ts` | WERTE tab: all character stats of the blob (HP, MP, strength, dexterity, speed, defense, attacks) |
 | `src/ui/ValueChart.ts` | INDEX value charts: SVG curve "value over experience" per skill value, ranks as bands, tap/hover readout |
-| `src/scenes/GameScene.ts` | Phaser scene — only file that knows about Phaser |
+| `src/scenes/GameScene.ts` | Phaser scene — main file that knows about Phaser |
+| `src/scenes/BlobRenderer.ts` | GDD-10 look of settled blobs (vein network with pulse wave, seeded by blob number) and dried blobs (crust); geometry is plain math |
 | `src/world/Chunk.ts` | Types: BiomeId, HeightLevel, ChunkDef, LoadedChunk, SpawnDef + constants |
 | `src/world/BiomeDefinitions.ts` | Zone layout, spawn tables, tile index mapping |
 | `src/world/WorldGenerator.ts` | `generateChunk(cx, cy, seed)` — deterministic chunk generation |

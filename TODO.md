@@ -44,7 +44,7 @@ Format:
 ## Erledigt
 
 - `[BUG]` **Kopfleiste „Kap. NaN%“** ohne entdeckte Skills (Start im Nest): 0/0 wird jetzt als 0 % angezeigt (v0.8.1).
-- `[FEATURE]` **Blob-Formen, Schritte 1–4** (GDD-10, 15. November 2026): Wissen verrechnen mit Höchstwert je Skill (v0.7.6), Spielstand mit mehreren Blobs (v0.7.7), Start im Nest, Niederlassen, Abspalten, Verschmelzen, Erheben, Vertrocknen mit Sterbescreen, Tätigkeit niedergelassener Blobs, feste Höchstmasse 120 kg (v0.8.0), Verteilen-Dialog beim Abspalten (v0.8.1). Es folgen: Darstellung, Tätigkeit vollständig, Karte.
+- `[FEATURE]` **Blob-Formen, Schritte 1–5** (GDD-10, 15. November 2026): Wissen verrechnen mit Höchstwert je Skill (v0.7.6), Spielstand mit mehreren Blobs (v0.7.7), Start im Nest, Niederlassen, Abspalten, Verschmelzen, Erheben, Vertrocknen mit Sterbescreen, Tätigkeit niedergelassener Blobs, feste Höchstmasse 120 kg (v0.8.0), Verteilen-Dialog beim Abspalten (v0.8.1), Adernetz mit Pulsieren und vertrocknete Kruste (v0.8.2). Es folgen: Tätigkeit vollständig, Karte.
 
 - `[POLISH]` **Balance-Werte aufgeräumt**: Was zu einem Skill gehört, steht am Skill (Sprungweite, Photosynthese-Heilung, Grow-Verdauung als Effekte; Erfahrung durch Bewegen, Sehen, Heilen, Verdauen im Feld `practice`). `balance.ts` enthält die allgemeinen Regeln und listet im Kopf, was wo steht. MP-Regeneration, KI-Werte und Gegner-Bonus-Level aus der Spiellogik dorthin geholt. `body.ts` als „nur Blob“ klargestellt. Spiel unverändert (v0.7.5, GDD-02 Abschnitt 8.8, 14. November 2026).
 

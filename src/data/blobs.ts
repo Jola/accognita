@@ -67,11 +67,18 @@ export const SPLIT_SHARE_DEFAULT = 0.5;
 export const SPLIT_OFFSET_PX = 24;
 
 // -----------------------------------------------------------
-// 5. DARSTELLUNG (Platzhalter bis Umsetzungsschritt 5, GDD-10 Abschnitt 10)
+// 5. DARSTELLUNG (GDD-10 Abschnitt 10, gezeichnet in scenes/BlobRenderer.ts)
 //
 // Vertrocknet: etwa 70 % des Radius, den der Reisende hatte.
+// Pulsieren: alle 2,4 s läuft eine helle Welle vom Kern nach außen.
+// Vorgabe (Entwickler): Vielleicht pulsiert er, um ihn vom vertrockneten Blob
+// zu unterscheiden.
+// Begründung (Vorschlag Claude, übernommen): Echte Schleimpilze pumpen ihr
+// Plasma rhythmisch hin und her; lebend heißt grün und pulsierend,
+// vertrocknet braun und still.
 // -----------------------------------------------------------
 export const DRIED_RADIUS_FACTOR = 0.7;
+export const PULSE_MS = 2400;
 
 // -----------------------------------------------------------
 // 6. NAMEN (GDD-10 Abschnitt 11.1)
@@ -85,4 +92,4 @@ export const BIOME_NAMES: Record<string, string> = {
   mountain: "Gebirge", desert: "Wüste", dungeon: "Verlies",
 };
 
-// Stand: 15. November 2026 — Erstfassung (GDD-10 Umsetzungsschritt 3)
+// Stand: 15. November 2026 — Pulsdauer ergänzt (Umsetzungsschritt 5); Erstfassung in Schritt 3

@@ -13,10 +13,10 @@ import { getPlayerVision, visionColorMatrix, getActiveMoveSkill, getActiveSightS
 import { getIntroStep, getIntroText, type IntroStep } from "../systems/IntroSystem";
 import {
   settle, canSettle, split, canSplit, rise, canRise, merge, canMerge, dryOut, switchTo, canSwitch,
-  findTouchedBlob, nearestSettled, summarizeAhead, storedCoreRadius, consciousWorkRange,
+  findTouchedBlob, nearestSettled, summarizeAhead, storedCoreRadius, consciousWorkRange, radiusFromMass,
   previewSplit, defaultSplitTake,
 } from "../systems/BlobSystem";
-import { runActivity, snapshotSources } from "../systems/SettlementSystem";
+import { runActivity, snapshotSources, calcWorkRange } from "../systems/SettlementSystem";
 import { ACTION_SECONDS, SETTLE_AGGRO_LOCK_MS } from "../data/blobs";
 import { KG_PER_FIBER, MAX_BODY_MASS } from "../data/grow";
 import type { BlobActivity, StoredBlob } from "../types/Blob";
@@ -24,6 +24,7 @@ import { createBlobActions, type BlobActionsState, type BlobActionButton } from 
 import { createBlobPicker, type BlobPickerState } from "../ui/BlobPicker.js";
 import { createTransferDialog, type TransferDialogState } from "../ui/TransferDialog.js";
 import { createBlobArrows, type BlobArrowsState } from "../ui/BlobArrows.js";
+import { BlobRenderer, type BlobVisualSpec } from "./BlobRenderer";
 import { SIGHT_EDGE_FRACTION } from "../data/body";
 import { processGrow, getPlayerGrowth } from "../systems/GrowSystem";
 import { practiceXp } from "../systems/SkillEffectSystem";
@@ -170,8 +171,7 @@ export class GameScene extends Phaser.Scene {
   private blobPicker!: BlobPickerState;
   private transferDialog!: TransferDialogState;
   private blobArrows!: BlobArrowsState;
-  private blobSprites: Map<string, any> = new Map();
-  private workRangeGfx!: any;
+  private blobRenderer!: BlobRenderer;
   private lastAggroAt = -Infinity;       // Date.now() der letzten Aggro auf den Reisenden
   private activityAccumulator = 0;       // ms Tätigkeit seit dem letzten Rechenstück
   private deathPending = false;          // Sterbescreen offen
@@ -1186,7 +1186,7 @@ export class GameScene extends Phaser.Scene {
     this.blobPicker = createBlobPicker();
     this.transferDialog = createTransferDialog();
     this.blobArrows = createBlobArrows(document.getElementById("canvas-wrap") ?? document.body);
-    this.workRangeGfx = this.add.graphics().setDepth(4);
+    this.blobRenderer = new BlobRenderer(this, 5);
     this.refreshBlobSprites();
     this.applyFormUi();
   }
@@ -1280,54 +1280,43 @@ export class GameScene extends Phaser.Scene {
       const el = document.getElementById(id);
       if (el) el.style.visibility = traveling ? "" : "hidden";
     }
-    if (traveling) this.blobGraphic.clearTint();
-    else this.blobGraphic.setTint(0x7fe0a0);
+    // Niedergelassen zeichnet der BlobRenderer das Adernetz; der runde Blob ist nur der Reisende (GDD-10 10.2)
+    this.blobGraphic.setVisible(traveling && !this.deathPending);
+    this.refreshBlobSprites();
     this.actionsRefreshAt = 0;
   }
 
-  /** Andere Blobs als einfache Platzhalter (Darstellung folgt in Umsetzungsschritt 5). */
+  /** Niedergelassene und vertrocknete Blobs zeichnen (GDD-10 Abschnitt 10, scenes/BlobRenderer.ts). */
   private refreshBlobSprites() {
-    const ids = new Set(this.gameState.blobs.map((b) => b.id));
-    for (const [id, g] of this.blobSprites) {
-      if (!ids.has(id)) { g.destroy(); this.blobSprites.delete(id); }
+    if (!this.blobRenderer) return;
+    const state = this.gameState;
+    const specs: BlobVisualSpec[] = [];
+    for (const b of state.blobs) {
+      if (b.form !== "settled" && b.form !== "dried") continue;
+      specs.push({
+        id: b.id, form: b.form, x: b.body.x, y: b.body.y,
+        coreRadius: storedCoreRadius(b),
+        range: b.form === "settled" ? calcWorkRange(b.body.bodyMass, !!b.nest) : 0,
+        conscious: false,
+      });
     }
-    for (const b of this.gameState.blobs) {
-      let g = this.blobSprites.get(b.id);
-      const key = `${b.form}|${b.body.bodyMass}|${b.body.x}|${b.body.y}`;
-      if (g && g.blobKey === key) continue;
-      g?.destroy();
-      g = this.add.graphics().setDepth(5);
-      const r = storedCoreRadius(b);
-      if (b.form === "settled") {
-        g.fillStyle(0x20a860, 0.08);
-        g.fillCircle(b.body.x, b.body.y, r * 3);
-        g.fillStyle(0x20a860, 0.85);
-        g.fillCircle(b.body.x, b.body.y, r);
-        g.fillStyle(0x90ffcc, 0.6);
-        g.fillCircle(b.body.x - r * 0.3, b.body.y - r * 0.3, r * 0.35);
-      } else {
-        g.fillStyle(0x5a4418, 0.95);
-        g.fillCircle(b.body.x, b.body.y, r);
-        g.fillStyle(0x8a6a2a, 1);
-        g.fillCircle(b.body.x - r * 0.15, b.body.y - r * 0.15, r * 0.75);
-      }
-      g.blobKey = key;
-      this.blobSprites.set(b.id, g);
+    if (state.conscious.form === "settled") {
+      specs.push({
+        id: state.conscious.id, form: "settled", x: state.player.x, y: state.player.y,
+        coreRadius: radiusFromMass(state.player.bodyMass),
+        range: consciousWorkRange(state),
+        conscious: true,
+      });
     }
+    this.blobRenderer.sync(specs);
   }
 
-  /** Je Frame: Richtungspfeile, Arbeitsreichweite; alle 250 ms die Knöpfe. */
+  /** Je Frame: Richtungspfeile; alle 250 ms die Knöpfe und die Darstellung der Blobs. */
   private updateBlobOverlay() {
     const state = this.gameState;
     const cam = this.cameras.main;
     const view = cam.worldView;
     const zoom = cam.zoom;
-    // Arbeitsreichweite des niedergelassenen Blobs mit Bewusstsein
-    this.workRangeGfx.clear();
-    if (state.conscious.form === "settled") {
-      this.workRangeGfx.lineStyle(1 / zoom, 0x40e890, 0.35);
-      this.workRangeGfx.strokeCircle(state.player.x, state.player.y, consciousWorkRange(state));
-    }
     // Pfeile zu markierten Blobs
     const targets = [];
     for (const id of state.markedBlobIds) {
@@ -1345,6 +1334,7 @@ export class GameScene extends Phaser.Scene {
     const now = Date.now();
     if (now < this.actionsRefreshAt) return;
     this.actionsRefreshAt = now + 250;
+    this.refreshBlobSprites(); // Netz wächst mit (Größe, Arbeitsreichweite); unverändert = nichts zu tun
     this.blobActions.update(this.deathPending ? [] : this.computeBlobButtons(now));
   }
 
