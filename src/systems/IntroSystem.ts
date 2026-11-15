@@ -59,7 +59,21 @@ const INTRO_TEXT_TRAVELING: Record<IntroStep, string> = {
     "Gras gibt Pflanzenfasern — Nahrung zum Wachsen.",
 };
 
-export function getIntroText(step: IntroStep, form: "settled" | "traveling" | "dried"): string {
+/**
+ * Blind und unbeweglich im Nest, Tätigkeit schon gewählt: sagen, dass sie
+ * läuft und dass Lernen etwas dauert (Vorschlag Claude, offen, 15. November
+ * 2026 — der Entwickler bemerkte, dass nach der Wahl scheinbar nichts geschieht).
+ */
+const INTRO_TEXT_SETTLED_WORKING =
+  "Du tastest die Wesen neben dir ab. Jede Aktion bringt ein wenig Erfahrung. " +
+  "Hab Geduld — nach und nach lernst du etwas Neues.";
+
+export function getIntroText(
+  step: IntroStep,
+  form: "settled" | "traveling" | "dried",
+  activityChosen = false
+): string {
+  if (form === "settled" && step === "blind_still" && activityChosen) return INTRO_TEXT_SETTLED_WORKING;
   return (form === "settled" ? INTRO_TEXT_SETTLED : INTRO_TEXT_TRAVELING)[step];
 }
 
@@ -68,4 +82,4 @@ export function getIntroText(step: IntroStep, form: "settled" | "traveling" | "d
 //   … Analysiere oder absorbiere es“ — Grund: Start im Nest (GDD-10 Abschnitt
 //   12), Wasser verworfen, im Nest keine aktiven Skills.
 
-// Stand: 15. November 2026 — Texte für Nest und Reisenden (GDD-10); davor 13. November 2026 — Erstfassung
+// Stand: 15. November 2026 — Hinweis, sobald im Nest eine Tätigkeit läuft; Texte für Nest und Reisenden (GDD-10); davor 13. November 2026 — Erstfassung

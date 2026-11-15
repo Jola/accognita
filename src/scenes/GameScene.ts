@@ -162,6 +162,7 @@ export class GameScene extends Phaser.Scene {
   // Erwachen: Hinweistext, solange der Blob blind oder unbeweglich ist
   private introEl: HTMLElement | null = null;
   private introStep: IntroStep | null = null;
+  private introWorking = false;
   private gamePaused = false;
   private pauseReasons = new Set<"fullscreen" | "ui" | "death">();
   private hpBarGraphics!: any;
@@ -373,9 +374,12 @@ export class GameScene extends Phaser.Scene {
   // ----------------------------------------------------------
   private updateIntro() {
     const step = getIntroStep(this.gameState.player);
-    if (step === this.introStep) return;
+    const act = this.gameState.conscious.activity;
+    const working = this.gameState.conscious.form === "settled" && !!act && act !== "rest";
+    if (step === this.introStep && working === this.introWorking) return;
     const first = this.introStep === null;
     this.introStep = step;
+    this.introWorking = working;
     this.lastNearbyId = null; // Nearby-Anzeige neu zeichnen (blind ↔ sehend)
     if (!this.introEl) {
       this.introEl = document.createElement("div");
@@ -399,10 +403,11 @@ export class GameScene extends Phaser.Scene {
       this.time.delayedCall(9000, () => { if (this.introStep === "awake" && this.introEl) this.introEl.style.opacity = "0"; });
       return;
     }
-    this.introEl.textContent = getIntroText(step, this.gameState.conscious.form);
+    const text = getIntroText(step, this.gameState.conscious.form, working);
+    this.introEl.textContent = text;
     this.introEl.style.opacity = "1";
     this.introLayoutKey = ""; // neuer Text, neue Höhe
-    if (!first) addLog(getIntroText(step, this.gameState.conscious.form), "system");
+    if (!first) addLog(text, "system");
   }
 
   // ----------------------------------------------------------
@@ -1234,11 +1239,11 @@ export class GameScene extends Phaser.Scene {
     this.activityAccumulator += delta;
     while (this.activityAccumulator >= ACTION_SECONDS * 1000) {
       this.activityAccumulator -= ACTION_SECONDS * 1000;
-      this.runSettledAction(ACTION_SECONDS);
+      this.runSettledAction(ACTION_SECONDS, true);
     }
   }
 
-  private runSettledAction(seconds: number) {
+  private runSettledAction(seconds: number, feedback = false) {
     const state = this.gameState;
     const meta = state.conscious;
     if (meta.form !== "settled" || seconds <= 0) return;
@@ -1246,7 +1251,10 @@ export class GameScene extends Phaser.Scene {
     const p = state.player;
     // Reichweite gewachsen: neu verteilen (GDD-10 8.3)
     if (needsReassign(state)) reassignSources(state);
+    const method = meta.activity === "absorb" || meta.activity === "analyze" ? meta.activity : null;
+    const coreBefore = method ? p.coreAbilities[method].xp : 0;
     const r = runActivity(p, meta.activity, meta.sources ?? [], seconds, meta.carry, p.playtimeSeconds);
+    if (method && feedback) this.showActivityTick(method, p.coreAbilities[method].xp - coreBefore, meta.carry, (meta.sources ?? []).length > 0);
     this.logProgressionEvents(r.events);
     for (const id of r.discovered) {
       const def = ALL_SKILLS.get(id);
@@ -1263,6 +1271,36 @@ export class GameScene extends Phaser.Scene {
     } else {
       this.progressDirty = true;
     }
+  }
+
+  /**
+   * Rückmeldung je Aktion über dem Blob (Vorschlag Claude, offen, 15. November
+   * 2026): Erfahrung der Kern-Fähigkeit und, solange noch etwas zu entdecken
+   * ist, wie weit der nächste Fund ist. Die Wesen selbst bleiben unberührt
+   * (kein sichtbares Abweiden, GDD-10 Abschnitt 11).
+   */
+  private showActivityTick(method: "absorb" | "analyze", coreXp: number, carry: Record<string, number>, hasSources: boolean) {
+    const icon = method === "absorb" ? "💥" : "🔍";
+    let text: string;
+    if (!hasSources) text = `${icon} nichts in Reichweite`;
+    else if (coreXp <= 0) text = `${icon} kein Erfolg`;
+    else {
+      text = `${icon} +${coreXp < 10 ? coreXp.toFixed(1).replace(".", ",") : Math.round(coreXp)} XP`;
+      let best = 0;
+      for (const [k, v] of Object.entries(carry)) if (k.startsWith("find:")) best = Math.max(best, v);
+      if (best > 0) text += ` · Neues ${Math.min(99, Math.floor(best * 100))} %`;
+    }
+    const p = this.gameState.player;
+    const zoom = this.cameras.main.zoom;
+    const r = this.blobGraphic.displayHeight / 2 || 12;
+    const y0 = p.y - r - 8 / zoom;
+    const txt = this.add.text(p.x, y0, text, {
+      fontSize: "13px", color: "#9ff5dc", fontStyle: "bold", stroke: "#000000", strokeThickness: 3,
+    }).setOrigin(0.5).setScale(1 / zoom).setDepth(22);
+    this.tweens.add({
+      targets: txt, y: y0 - 22 / zoom, alpha: 0, duration: 1800, ease: "Sine.easeOut",
+      onComplete: () => txt.destroy(),
+    });
   }
 
   /** Angefangenes Rechenstück abschließen, bevor das Bewusstsein den Blob verlässt (4.6). */
@@ -1454,6 +1492,7 @@ export class GameScene extends Phaser.Scene {
       const name = activity === "analyze" ? "Analysieren" : activity === "absorb" ? "Absorbieren" : "Ruhen";
       addLog(`Tätigkeit: ${name}.`, "system");
       this.actionsRefreshAt = 0;
+      this.updateIntro();
     };
     this.blobPicker.open({
       title: "Tätigkeit",
