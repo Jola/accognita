@@ -415,7 +415,8 @@ export function merge(state: GameState, targetId: string, world: WorldState): Bl
     };
   }
   state.blobs = state.blobs.filter((b) => b.id !== target.id);
-  state.markedBlobIds = state.markedBlobIds.filter((m) => m !== target.id);
+  // Die Markierung bleibt: Der Blob ist weiter ein Ziel, nur zeigt kein Pfeil
+  // auf ihn, solange man selbst dort ist (GDD-10 11.2, geändert 15. November 2026)
   state.player = body;
   state.conscious = meta;
   reassignSources(state);
@@ -493,7 +494,7 @@ export function switchTo(
   clearCombatState(body);
   transferConsciousness(from, body, Date.now());
   state.blobs = state.blobs.filter((b) => b.id !== target.id);
-  state.markedBlobIds = state.markedBlobIds.filter((m) => m !== target.id);
+  // Markierung bleibt (siehe merge)
   state.player = body;
   state.conscious = metaOf(target);
   reassignSources(state); // er kann beim Nachrechnen gewachsen sein

@@ -27,11 +27,21 @@ function injectStyles() {
   s.id = "blobarrows-styles";
   s.textContent = `
     .bar-arrow {
-      position: absolute; z-index: 35; pointer-events: none; transform: translate(-50%, -50%);
-      display: flex; flex-direction: column; align-items: center; gap: 1px;
-      font: 600 .66rem/1.1 system-ui, sans-serif; text-shadow: 0 0 3px #000, 0 0 3px #000;
+      position: absolute; z-index: 36; pointer-events: none; transform: translate(-50%, -50%);
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      font: 700 .74rem/1.15 system-ui, sans-serif; text-shadow: 0 0 3px #000, 0 0 3px #000;
     }
-    .bar-arrow .bar-tip { font-size: 1.25rem; line-height: 1; }
+    /* Deutlich sichtbar, auch im Dunkeln (Meldung Entwickler, 15. November 2026) */
+    .bar-arrow .bar-tip {
+      font-size: 1.9rem; line-height: 1; filter: drop-shadow(0 0 4px currentColor) drop-shadow(0 0 2px #000);
+      animation: bar-pulse 1.4s ease-in-out infinite;
+    }
+    .bar-arrow .bar-label {
+      background: rgba(5,10,16,.8); border: 1px solid currentColor; border-radius: 8px;
+      padding: 1px 7px; white-space: nowrap;
+    }
+    .bar-arrow .bar-label:empty { display: none; }
+    @keyframes bar-pulse { 50% { opacity: .55; } }
   `;
   document.head.appendChild(s);
 }
@@ -39,7 +49,9 @@ function injectStyles() {
 export function createBlobArrows(container: HTMLElement): BlobArrowsState {
   injectStyles();
   const els = new Map<string, HTMLElement>();
-  const MARGIN = 28;
+  // Abstand vom Rand: so groß, dass die Beschriftung nicht abgeschnitten wird
+  const MARGIN_X = 52;
+  const MARGIN_Y = 40;
 
   return {
     update(targets, width, height) {
@@ -63,8 +75,8 @@ export function createBlobArrows(container: HTMLElement): BlobArrowsState {
           angle = Math.atan2(t.sy - cy, t.sx - cx);
           const dx = Math.cos(angle), dy = Math.sin(angle);
           const scale = Math.min(
-            Math.abs(dx) > 1e-6 ? (width / 2 - MARGIN) / Math.abs(dx) : Infinity,
-            Math.abs(dy) > 1e-6 ? (height / 2 - MARGIN) / Math.abs(dy) : Infinity,
+            Math.abs(dx) > 1e-6 ? (width / 2 - MARGIN_X) / Math.abs(dx) : Infinity,
+            Math.abs(dy) > 1e-6 ? (height / 2 - MARGIN_Y) / Math.abs(dy) : Infinity,
           );
           x = cx + dx * scale;
           y = cy + dy * scale;
@@ -82,4 +94,4 @@ export function createBlobArrows(container: HTMLElement): BlobArrowsState {
   };
 }
 
-// Stand: 15. November 2026 — Erstfassung (GDD-10 Umsetzungsschritt 3)
+// Stand: 15. November 2026 — größer, leuchtend, Beschriftung nicht mehr abgeschnitten; davor Erstfassung (GDD-10 Umsetzungsschritt 3)

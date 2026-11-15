@@ -43,6 +43,7 @@ Format:
 
 ## Erledigt
 
+- `[BUG]` **Kein Pfeil zum markierten Nest** (Meldung Entwickler, 15. November 2026): Nach der Rückkehr ins Nest (Verschmelzen, Besiegtwerden, Wechseln) wurde die Markierung gelöscht. Jetzt bleibt sie; der eigene Blob lässt sich markieren; Pfeile größer und leuchtend, Beschriftung nicht mehr abgeschnitten (v0.8.9).
 - `[UI]` **COMBO-Reiter ausgebaut** (Wunsch Entwickler, 15. November 2026): wird noch nicht verwendet, für Skill-Kombination gibt es noch kein Konzept; die Mechanik bleibt in `SkillSystem.ts` (v0.8.8).
 - `[TEXT]` **Erster Hinweis im Nest ohne „Tätigkeit“** (Wunsch Entwickler, 15. November 2026): „Versuch mal zu analysieren oder zu absorbieren — vielleicht lernst du etwas.“ (v0.8.7).
 - `[FEATURE]` **Einstieg ins Nest** (Wunsch Entwickler, 15. November 2026): eine Aktion pro Sekunde statt alle 6 s, Anzeige unter dem Blob, die je Skill und Material mitzählt statt sich zu überschreiben, neue Skills werden einzeln und ausführlich vorgestellt, mit Sehen und Bewegen und der Karte „Auf Reisen“ nach dem ersten Abspalten (v0.8.6).

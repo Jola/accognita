@@ -1752,11 +1752,12 @@ export class GameScene extends Phaser.Scene {
       const c = state.conscious;
       blobs.push({
         id: c.id, name: c.name, form: c.form, nest: !!c.nest, x: p.x, y: p.y,
-        conscious: true, marked: false, distance: "0 m",
+        conscious: true, marked: state.markedBlobIds.includes(c.id), distance: "0 m",
         info: c.form === "settled"
           ? [`Tätigkeit: ${activityText(c.activity)}`, yieldText(p, c.activity, c.sources), `Lager: ${matText([...p.materials]) || "leer"}`]
           : [`${toDisplayHp(p.hp)} / ${toDisplayHp(p.maxHp)} HP`],
-        canMark: false, canSwitch: false,
+        // Auch den eigenen niedergelassenen Blob als Ziel markieren, z. B. das Nest vor dem Abspalten
+        canMark: c.form === "settled", canSwitch: false,
       });
     }
     for (const b of state.blobs) {
