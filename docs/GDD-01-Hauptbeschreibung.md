@@ -175,7 +175,7 @@ Unabhängig vom Ursprung gilt für die ersten Minuten des Spiels:
 ## 10. Blob-Teilung & Respawn-System
 
 > Status: Konzept — noch nicht implementiert
-> **Präzisiert in [GDD-10 Blob-Formen](GDD-10-Blob-Formen.md) (14. November 2026).** Dort gelten die neuen Begriffe: *niedergelassener Blob* statt Hauptblob, *reisender Blob* statt Reise-Blob. Beim Verbinden gilt je Skill der höchste Erfahrungswert. Wo dieser Abschnitt GDD-10 widerspricht, gilt GDD-10.
+> **Präzisiert in [GDD-10 Blob-Formen](GDD-10-Blob-Formen.md) (14. November 2026).** Dort gelten die neuen Begriffe: *niedergelassener Blob* statt Hauptblob, *reisender Blob* statt Reise-Blob. Beim Verschmelzen gilt je Skill der höchste Erfahrungswert. Wo dieser Abschnitt GDD-10 widerspricht, gilt GDD-10.
 
 ### Grundprinzip
 
@@ -234,12 +234,12 @@ Alle Skills und XP des vertrockneten Blobs übertragen
 
 ### Offen zu entscheiden
 
-- ~~Wie kommt der Spieler an Wasser? (Flüsse, Brunnen, Skill, Item?)~~ [VERWORFEN, 14. November 2026, vom Entwickler bestätigt] Wasser ist im neuen Ablauf nicht vorgesehen (GDD-10 Abschnitt 9). Die übrigen offenen Fragen beantwortet GDD-10 als Vorschläge (Abschnitte 9 und 11).
-- Wie lange bleibt ein vertrockneter Blob in der Welt, bevor er verschwindet?
-- Kann ein vertrockneter Blob von Feinden zerstört werden?
-- Wie wird dem Spieler die Position des vertrockneten Blobs angezeigt?
-- Wie viele aktive Hauptblobs kann der Spieler gleichzeitig unterhalten?
+- ~~Wie kommt der Spieler an Wasser? (Flüsse, Brunnen, Skill, Item?)~~ [VERWORFEN, 14. November 2026, vom Entwickler bestätigt] Wasser ist im neuen Ablauf nicht vorgesehen (GDD-10 Abschnitt 9). Die übrigen offenen Fragen sind in GDD-10 entschieden (15. November 2026):
+- ~~Wie lange bleibt ein vertrockneter Blob in der Welt, bevor er verschwindet?~~ → dauerhaft (GDD-10 Abschnitt 9.2)
+- ~~Kann ein vertrockneter Blob von Feinden zerstört werden?~~ → vorerst nicht (GDD-10 Abschnitt 9.2)
+- ~~Wie wird dem Spieler die Position des vertrockneten Blobs angezeigt?~~ → Karte und Richtungspfeile (GDD-10 Abschnitt 11)
+- ~~Wie viele aktive Hauptblobs kann der Spieler gleichzeitig unterhalten?~~ → keine Höchstzahl, dafür ist Abspalten teuer (GDD-10 Abschnitt 7.1)
 
 ---
 
-*Letzte Aktualisierung: 14. November 2026 — Wasser zum Wiederbeleben endgültig verworfen (vom Entwickler bestätigt); davor 14. November 2026 — Verweis auf GDD-10: Höchstwert je Skill statt Herkunftszählern; davor 14. November 2026 — Abschnitt 10 verweist auf GDD-10 (Blob-Formen), Wasser-Wiederbelebung vorläufig als VERWORFEN markiert (bitte bestätigen); davor v0.4 — Level-Bezüge an „Erfahrung statt Level“ angepasst (Abschnitte 2, 3, 5, 10), GDD-07 und GDD-08 in den Referenzen ergänzt (31. Oktober 2026); davor Startsequenz (Abschnitt 9) und Blob-Teilungs-Respawn-System (Abschnitt 10) als Konzepte ergänzt (März 2026)*
+*Letzte Aktualisierung: 15. November 2026 — Abschnitt 10: offene Fragen mit den Entscheidungen in GDD-10 beantwortet, „Verschmelzen“ statt „Verbinden“; davor 14. November 2026 — Wasser zum Wiederbeleben endgültig verworfen (vom Entwickler bestätigt); davor 14. November 2026 — Verweis auf GDD-10: Höchstwert je Skill statt Herkunftszählern; davor 14. November 2026 — Abschnitt 10 verweist auf GDD-10 (Blob-Formen), Wasser-Wiederbelebung vorläufig als VERWORFEN markiert (bitte bestätigen); davor v0.4 — Level-Bezüge an „Erfahrung statt Level“ angepasst (Abschnitte 2, 3, 5, 10), GDD-07 und GDD-08 in den Referenzen ergänzt (31. Oktober 2026); davor Startsequenz (Abschnitt 9) und Blob-Teilungs-Respawn-System (Abschnitt 10) als Konzepte ergänzt (März 2026)*
