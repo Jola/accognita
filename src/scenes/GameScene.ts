@@ -16,20 +16,24 @@ import {
   findTouchedBlob, nearestSettled, summarizeAhead, storedCoreRadius, consciousWorkRange, radiusFromMass,
   previewSplit, defaultSplitTake, reassignSources, needsReassign,
 } from "../systems/BlobSystem";
-import { runActivity, calcWorkRange } from "../systems/SettlementSystem";
+import { runActivity, calcWorkRange, planActivity, catchUpSettled } from "../systems/SettlementSystem";
 import { ACTION_SECONDS, SETTLE_AGGRO_LOCK_MS } from "../data/blobs";
 import { KG_PER_FIBER, MAX_BODY_MASS } from "../data/grow";
 import type { BlobActivity, StoredBlob } from "../types/Blob";
 import { createBlobActions, type BlobActionsState, type BlobActionButton } from "../ui/BlobActions.js";
 import { createBlobPicker, type BlobPickerState } from "../ui/BlobPicker.js";
 import { createTransferDialog, type TransferDialogState } from "../ui/TransferDialog.js";
+import { createMapView, type MapViewState, type MapBlob } from "../ui/MapView.js";
+import type { GameMenu } from "../ui/GameMenu.js";
 import { createBlobArrows, type BlobArrowsState } from "../ui/BlobArrows.js";
 import { BlobRenderer, type BlobVisualSpec } from "./BlobRenderer";
 import { SIGHT_EDGE_FRACTION } from "../data/body";
 import { processGrow, getPlayerGrowth } from "../systems/GrowSystem";
 import { practiceXp } from "../systems/SkillEffectSystem";
 import { createInitialGameState } from "../types/GameState.js";
-import type { GameState } from "../types/GameState.js";
+import type { GameState, PlayerState } from "../types/GameState.js";
+import { serializeBody, deserializeBody } from "../systems/BodySerializer";
+import { getBiomeAt } from "../world/BiomeDefinitions.js";
 import { ALL_SKILLS } from "../data/skills.js";
 import { MATERIAL_MAP } from "../data/materials.js";
 import { ENTITY_MAP, ENTITY_DEFINITIONS } from "../data/entities.js";
@@ -116,7 +120,7 @@ import {
 } from "../data/balance.js";
 import { calcPlayerWorldRadius, calcPlayerSpeed, calcPlayerReach, describePlayerSkillValues } from "../systems/StatsSystem.js";
 import { addVenomDose, processVenom, getVenomLoad, clearVenom } from "../systems/VenomSystem.js";
-import { generateTileset, TILE_SIZE } from "../world/TilesetGenerator.js";
+import { generateTileset, TILE_SIZE, biomeBaseColor } from "../world/TilesetGenerator.js";
 import { ChunkManager } from "../world/ChunkManager.js";
 import { CHUNK_PX, WORLD_CHUNKS_X, WORLD_CHUNKS_Y } from "../world/Chunk.js";
 
@@ -170,6 +174,12 @@ export class GameScene extends Phaser.Scene {
   private blobActions!: BlobActionsState;
   private blobPicker!: BlobPickerState;
   private transferDialog!: TransferDialogState;
+  private gameMenu!: GameMenu;
+  private mapView: MapViewState | null = null;
+  /** Wahlmodus der Karte (Sterbescreen): wird beim Tipp auf „Hier weitermachen“ aufgerufen */
+  private mapPick: { finish: (id: string) => void; dried: StoredBlob } | null = null;
+  private visitedSet = new Set<string>();
+  private visitedRef: string[] | null = null;
   private blobArrows!: BlobArrowsState;
   private blobRenderer!: BlobRenderer;
   private lastAggroAt = -Infinity;       // Date.now() der letzten Aggro auf den Reisenden
@@ -619,7 +629,16 @@ export class GameScene extends Phaser.Scene {
   // SPIELMENÜ
   // ----------------------------------------------------------
   private setupGameMenu() {
-    const menu = createGameMenu();
+    const menu = createGameMenu({
+      renderMap: (root) => this.renderMap(root),
+      onClose: () => {
+        // Karte im Wahlmodus ohne Wahl geschlossen: zurück zum Sterbescreen
+        const pick = this.mapPick;
+        this.mapPick = null;
+        if (pick && this.deathPending) this.openDeathScreen(pick.dried);
+      },
+    });
+    this.gameMenu = menu;
     document.getElementById("btnPanel")?.addEventListener("click", () => menu.open());
   }
 
@@ -664,6 +683,7 @@ export class GameScene extends Phaser.Scene {
     this.gameState.blobs = saved.blobs;
     this.gameState.nextBlobNumber = saved.nextBlobNumber;
     this.gameState.markedBlobIds = saved.markedBlobIds;
+    this.gameState.visitedChunks = saved.visitedChunks;
 
     // Spieler-Sprite an gespeicherte Position
     this.blobGraphic.setPosition(saved.player.x, saved.player.y);
@@ -773,6 +793,7 @@ export class GameScene extends Phaser.Scene {
     this.syncPlayerPosition();
     this.gainBodyXp(prevX, prevY, delta);
     this.chunkManager.tick(this.gameState.player.x, this.gameState.player.y, Date.now());
+    this.markVisitedChunk();
     this.processEntityAi(delta);
     this.processEntityLeveling(delta);
     this.processCombatEffects(delta);
@@ -1518,6 +1539,105 @@ export class GameScene extends Phaser.Scene {
     return true;
   }
 
+  /** Besuchte Chunks für den Nebel der Karte (GDD-10 11.1). */
+  private markVisitedChunk() {
+    const state = this.gameState;
+    if (this.visitedRef !== state.visitedChunks) {
+      this.visitedRef = state.visitedChunks;
+      this.visitedSet = new Set(state.visitedChunks);
+    }
+    const key = `${Math.floor(state.player.x / CHUNK_PX)},${Math.floor(state.player.y / CHUNK_PX)}`;
+    if (!this.visitedSet.has(key)) {
+      this.visitedSet.add(key);
+      state.visitedChunks.push(key);
+    }
+  }
+
+  /** Reiter „Karte“ (GDD-10 11.1): Daten für ui/MapView zusammenstellen. */
+  private renderMap(root: HTMLElement) {
+    if (!this.mapView) {
+      this.mapView = createMapView(root, {
+        onToggleMark: (id) => {
+          const marks = this.gameState.markedBlobIds;
+          this.gameState.markedBlobIds = marks.includes(id) ? marks.filter((m) => m !== id) : [...marks, id];
+          this.renderMap(root);
+        },
+        onSwitch: (id) => {
+          this.gameMenu.close();
+          this.switchConsciousness(id, true);
+        },
+        onPick: (id) => {
+          const pick = this.mapPick;
+          this.mapPick = null;
+          this.gameMenu.close();
+          pick?.finish(id);
+        },
+      });
+    }
+    this.markVisitedChunk();
+    const state = this.gameState;
+    const p = state.player;
+    const meters = (x: number, y: number) => `${this.toMeters(Math.hypot(x - p.x, y - p.y))} m`;
+    const matText = (mats: [string, number][]) => mats.filter(([, n]) => n > 0)
+      .map(([id, n]) => `${Math.floor(n)} ${MATERIAL_MAP.get(id)?.name ?? id}`).join(", ");
+    const activityText = (a: BlobActivity | null | undefined) =>
+      a === "analyze" ? "Analysieren" : a === "absorb" ? "Absorbieren" : a === "rest" ? "Ruhen" : "keine gewählt";
+    const yieldText = (body: PlayerState, a: BlobActivity | null | undefined, sources: StoredBlob["sources"]) => {
+      const plan = planActivity(body, a, sources ?? [], 3600);
+      if (plan.attempts <= 0) return "Ertrag pro Stunde: nichts";
+      const parts = [`+${Math.round(plan.coreXp)} XP ${a === "absorb" ? "Absorb" : "Analyze"}`];
+      const skills = Object.keys(plan.skillXp).length + Object.keys(plan.finds).length;
+      if (skills) parts.push(`${skills} Skill${skills === 1 ? "" : "s"} lernen mit`);
+      for (const [id, n] of Object.entries(plan.materials)) parts.push(`${n.toLocaleString("de-DE", { maximumFractionDigits: 1 })} ${MATERIAL_MAP.get(id)?.name ?? id}`);
+      return `Ertrag pro Stunde: ${parts.join(", ")}`;
+    };
+    const consciousStored: StoredBlob = { ...state.conscious, body: serializeBody(p) };
+    const blobs: MapBlob[] = [];
+    if (!this.deathPending) {
+      const c = state.conscious;
+      blobs.push({
+        id: c.id, name: c.name, form: c.form, nest: !!c.nest, x: p.x, y: p.y,
+        conscious: true, marked: false, distance: "0 m",
+        info: c.form === "settled"
+          ? [`Tätigkeit: ${activityText(c.activity)}`, yieldText(p, c.activity, c.sources), `Lager: ${matText([...p.materials]) || "leer"}`]
+          : [`${toDisplayHp(p.hp)} / ${toDisplayHp(p.maxHp)} HP`],
+        canMark: false, canSwitch: false,
+      });
+    }
+    for (const b of state.blobs) {
+      const info: string[] = [];
+      if (b.form === "settled") {
+        // Nur zur Anzeige nachrechnen, ohne zu speichern (GDD-10 8.1)
+        const body = deserializeBody(b.body);
+        catchUpSettled(body, { activity: b.activity, sources: b.sources ?? [], carry: { ...(b.carry ?? {}) }, isNest: !!b.nest },
+          b.simulatedUntil ?? p.playtimeSeconds, p.playtimeSeconds);
+        info.push(`Tätigkeit: ${activityText(b.activity)}`, yieldText(body, b.activity, b.sources), `Lager: ${matText([...body.materials]) || "leer"}`);
+      } else if (b.form === "dried") {
+        const ahead = summarizeAhead(b, this.deathPending ? nearestSettled(state, b.body.x, b.body.y) : consciousStored);
+        const parts: string[] = [];
+        if (ahead.newSkills) parts.push(`${ahead.newSkills} neue Skill${ahead.newSkills === 1 ? "" : "s"}`);
+        if (ahead.higherSkills) parts.push(`${ahead.higherSkills} Skill${ahead.higherSkills === 1 ? "" : "s"} höher`);
+        if (ahead.materials.length) parts.push(matText(ahead.materials));
+        info.push("Verschmilz mit ihm, um zurückzubekommen, was er dir voraushat.");
+        if (parts.length) info.push(`Darin: ${parts.join(", ")}`);
+      }
+      blobs.push({
+        id: b.id, name: b.name, form: b.form, nest: !!b.nest, x: b.body.x, y: b.body.y,
+        conscious: false, marked: state.markedBlobIds.includes(b.id), distance: meters(b.body.x, b.body.y),
+        info,
+        canMark: true,
+        canSwitch: !this.deathPending && state.conscious.form === "settled" && b.form === "settled",
+      });
+    }
+    this.mapView.render({
+      chunksX: WORLD_CHUNKS_X, chunksY: WORLD_CHUNKS_Y, chunkPx: CHUNK_PX,
+      biomeColor: (cx, cy) => biomeBaseColor(getBiomeAt(cx, cy)),
+      visited: this.visitedSet,
+      blobs,
+      pickMode: !!this.mapPick,
+    });
+  }
+
   private openDeathScreen(dried: StoredBlob) {
     const state = this.gameState;
     const nearest = nearestSettled(state, dried.body.x, dried.body.y);
@@ -1546,11 +1666,17 @@ export class GameScene extends Phaser.Scene {
         onPick: () => finish(nearest.id),
       } : undefined,
       listTitle: "Oder wählen",
-      items: settledBlobs.filter((b) => b.id !== nearest?.id).map((b) => ({
-        label: `${b.nest ? "🏠" : "🌱"} ${b.name}`,
-        detail: `${this.toMeters(Math.hypot(b.body.x - dried.body.x, b.body.y - dried.body.y))} m entfernt`,
-        onPick: () => finish(b.id),
-      })),
+      items: [
+        {
+          label: "🗺️ Auf der Karte wählen",
+          onPick: () => { this.mapPick = { finish, dried }; this.gameMenu.open("map"); },
+        },
+        ...settledBlobs.filter((b) => b.id !== nearest?.id).map((b) => ({
+          label: `${b.nest ? "🏠" : "🌱"} ${b.name}`,
+          detail: `${this.toMeters(Math.hypot(b.body.x - dried.body.x, b.body.y - dried.body.y))} m entfernt`,
+          onPick: () => finish(b.id),
+        })),
+      ],
       cancellable: false,
     });
   }

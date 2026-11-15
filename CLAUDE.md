@@ -8,7 +8,7 @@ This file is the project constitution. Read it at the start of every session bef
 
 **Absorb & Evolve** is a browser-based Action-RPG. The player controls a Blob (inspired by the real organism *Physarum polycephalum*) that evolves by absorbing or analyzing entities in a medieval fantasy world. Skills are discovered through interaction, leveled through repetition, and combined into new abilities.
 
-Current state: **v0.8** — Modular TypeScript + Phaser.js architecture, Skill-System + Combat-System implemented. The blob awakens blind and immobile in the nest (a settled blob) and learns movement and sight (GDD-09); blob forms settled/traveling/dried with splitting, merging, rising up and a death screen are being implemented step by step (GDD-10). Large procedural world (20×20 chunks = 20480×20480px) with 6 biomes, pixel art tiles, and dynamic chunk loading.
+Current state: **v0.8** — Modular TypeScript + Phaser.js architecture, Skill-System + Combat-System implemented. The blob awakens blind and immobile in the nest (a settled blob) and learns movement and sight (GDD-09); blob forms settled/traveling/dried with splitting (transfer dialog), merging, rising up, settled-blob activity (nearest blob harvests), death screen and a map with fog and markers are implemented (GDD-10). Large procedural world (20×20 chunks = 20480×20480px) with 6 biomes, pixel art tiles, and dynamic chunk loading.
 
 ---
 
@@ -63,8 +63,9 @@ Current state: **v0.8** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/ui/BlobActions.ts` | GDD-10 context buttons (settle, merge, split, rise up, switch, activity) |
 | `src/ui/BlobPicker.ts` | GDD-10 overlay: death screen and list of blobs to switch to / activity choice (pauses the game) |
 | `src/ui/TransferDialog.ts` | GDD-10 transfer dialog on splitting: one slider per resource, Nothing/Half/All (pauses the game) |
+| `src/ui/MapView.ts` | GDD-10 MAP tab: biomes, fog over unvisited chunks, blob markers, mark/unmark, switch consciousness, pick mode for the death screen (canvas, DOM only; the scene supplies the data) |
 | `src/ui/BlobArrows.ts` | GDD-10 direction arrows to marked blobs at the screen edge |
-| `src/ui/GameMenu.ts` | Full-screen game menu (Skills, Werte, Combo, Inventar, Nearby, Log, Index) — pauses game; markup in `accognita.template.html` |
+| `src/ui/GameMenu.ts` | Full-screen game menu (Skills, Werte, Karte, Combo, Inventar, Nearby, Log, Index) — pauses game; markup in `accognita.template.html` |
 | `src/ui/IndexView.ts` | INDEX tab: in-game reference of all skills and entities with all parameters, computed live from data + systems |
 | `src/ui/StatsView.ts` | WERTE tab: all character stats of the blob (HP, MP, strength, dexterity, speed, defense, attacks); settled: activity, sources, yield per hour |
 | `src/ui/ValueChart.ts` | INDEX value charts: SVG curve "value over experience" per skill value, ranks as bands, tap/hover readout |
@@ -87,7 +88,7 @@ Current state: **v0.8** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `docs/GDD-07-Bestiarium.md` | Draft: ~100 units from forest to city, size classes, skill ideas (Status: Diskussion; Teil 6 = implemented XP model). |
 | `docs/GDD-09-Grundwerte-und-Sinne.md` | Base stats (strength, dexterity, speed, sight), movement skills, strength from size, vision black → gray → color, awakening intro with nest. |
 | `docs/GDD-08-Progressionsmathematik.md` | Math of leveling (curve families, XP models, integer limits, other games) and of effects (power per level, hit/effect probabilities, skill interactions) (Status: Diskussion; Teil 6 = implemented XP model). |
-| `docs/GDD-10-Blob-Formen.md` | Concept (decided, implementation only after the developer's go): blob forms settled/traveling/dried, settling, split, merging (no separate connect), rising up, consciousness switch, knowledge merge (highest value per skill), split cost (a fully grown body), resource split, map and direction arrows. |
+| `docs/GDD-10-Blob-Formen.md` | Implemented (v0.7.6–v0.8.4): blob forms settled/traveling/dried, settling, split, merging (no separate connect), rising up, consciousness switch, knowledge merge (highest value per skill), split cost (a fully grown body), resource split, map and direction arrows. |
 
 ---
 
@@ -182,7 +183,7 @@ Bugs, Feature-Ideen und kleine Verbesserungen werden in **`TODO.md`** im Projekt
 
 ## Open Decisions (ask developer before implementing)
 
-- Tod-Mechanik: Soft Death vs. Checkpoint vs. Rogue-like? → concept decided, awaiting go: GDD-10 (drying out, settled blobs as checkpoints, death screen)
+- ~~Tod-Mechanik: Soft Death vs. Checkpoint vs. Rogue-like?~~ → decided and implemented: GDD-10 (drying out, settled blobs as checkpoints, death screen)
 - ~~Skill-Limit: Obergrenze für aktive Skills?~~ → decided: skill capacity (sum of experience), see GDD-02 section 8. Still open: how capacity grows, all numbers, rank names
 - Kombinations-Rezepte: Sollen sie versteckt werden?
 - Mobile Tap: Direkt Absorb/Analyze, oder erst Kontextmenü?

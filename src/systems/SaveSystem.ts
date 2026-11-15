@@ -22,10 +22,11 @@ import { GROW_FOOD_MATERIAL_ID, MAX_BODY_MASS } from "../data/grow";
 import { NEST_NAME } from "../data/blobs";
 import { GAME_VERSION } from "../data/version";
 import { calcMaxHp, calcMaxMp } from "./SkillSystem";
+import { CHUNK_PX } from "../world/Chunk";
 
 export const NUM_SAVE_SLOTS = 3;
 const SAVE_PREFIX    = "accognita_save_";
-const SAVE_VERSION   = 7;
+const SAVE_VERSION   = 8;
 
 // -----------------------------------------------------------
 // SAVE-METADATEN — Vorschau ohne komplettes Deserialize
@@ -58,6 +59,8 @@ interface SaveData {
   blobs?: StoredBlob[];
   nextBlobNumber?: number;
   markedBlobIds?: string[];
+  /** ab v8: besuchte Chunks für den Nebel der Karte */
+  visitedChunks?: string[];
 }
 
 // -----------------------------------------------------------
@@ -196,6 +199,17 @@ MIGRATIONS[6] = (data) => {
   data.meta.blobName = data.conscious?.name;
 };
 
+// v7 → v8: Karte mit Nebel (GDD-10 Umsetzungsschritt 7, Abschnitt 11.1).
+// Aufgedeckt sind der Startchunk und die Chunks, in denen ein Blob liegt —
+// dort war man sicher schon.
+MIGRATIONS[7] = (data) => {
+  const visited = new Set<string>(["0,0"]);
+  const add = (x: number, y: number) => visited.add(`${Math.floor(x / CHUNK_PX)},${Math.floor(y / CHUNK_PX)}`);
+  add(data.player.x, data.player.y);
+  for (const b of data.blobs ?? []) add(b.body.x, b.body.y);
+  data.visitedChunks = [...visited];
+};
+
 /** Skills, die alte Spielstände bei der Umstellung auf GDD-09 geschenkt bekommen. */
 const LEGACY_BODY_SKILLS = ["crawl", "scuttle", "light_sense", "compound_eye", "principal_eyes"];
 
@@ -266,6 +280,7 @@ export function saveToSlot(
     blobs: state.blobs,
     nextBlobNumber: state.nextBlobNumber,
     markedBlobIds: state.markedBlobIds,
+    visitedChunks: state.visitedChunks,
   };
 
   localStorage.setItem(slotKey(slot), JSON.stringify(data));
@@ -282,6 +297,7 @@ export interface LoadedGame {
   blobs: StoredBlob[];
   nextBlobNumber: number;
   markedBlobIds: string[];
+  visitedChunks: string[];
   meta: SaveMeta;
 }
 
@@ -294,6 +310,7 @@ export function loadFromSlot(slot: number): LoadedGame | null {
     blobs: data.blobs ?? [],
     nextBlobNumber: data.nextBlobNumber ?? 2,
     markedBlobIds: data.markedBlobIds ?? [],
+    visitedChunks: data.visitedChunks ?? ["0,0"],
     meta: data.meta,
   };
 }

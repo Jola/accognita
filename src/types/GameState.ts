@@ -97,6 +97,8 @@ export interface GameState {
   nextBlobNumber: number;
   /** Markierte Blobs (Richtungspfeile, GDD-10 Abschnitt 11) */
   markedBlobIds: string[];
+  /** Besuchte Chunks „cx,cy“ — nur sie sind auf der Karte aufgedeckt (GDD-10 11.1) */
+  visitedChunks: string[];
   world: WorldState;
   version: string;
   savedAt?: number;
@@ -113,6 +115,7 @@ export function createInitialGameState(): GameState {
     blobs: [],
     nextBlobNumber: 2,
     markedBlobIds: [],
+    visitedChunks: ["0,0"],
     player: {
       x: 400,
       y: 300,

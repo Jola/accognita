@@ -1,5 +1,5 @@
 // ============================================================
-// GAME MENU — Vollbild-Spielmenü (Skills, Werte, Combo, Inventar, Nearby, Log, Index)
+// GAME MENU — Vollbild-Spielmenü (Skills, Werte, Karte, Combo, Inventar, Nearby, Log, Index)
 //
 // Selbstständiges DOM-Modul. Das Markup steht in accognita.template.html
 // (#gameMenu), weil GameScene die Tab-Inhalte über deren IDs befüllt.
@@ -14,7 +14,14 @@ export interface GameMenu {
   close(): void;
 }
 
-export function createGameMenu(): GameMenu {
+export interface GameMenuOptions {
+  /** Karte zeichnen (die Szene liefert die Daten, GDD-10 11.1) */
+  renderMap?: (root: HTMLElement) => void;
+  /** Nach dem Schließen (z. B. Sterbescreen wieder zeigen) */
+  onClose?: () => void;
+}
+
+export function createGameMenu(opts: GameMenuOptions = {}): GameMenu {
   const overlay = document.getElementById("gameMenu")!;
   const body = overlay.querySelector<HTMLElement>(".gm-body")!;
   let indexBuilt = false;
@@ -28,6 +35,7 @@ export function createGameMenu(): GameMenu {
 
     // Werte-Tab: bei jedem Öffnen neu, damit er den aktuellen Stand zeigt
     if (name === "stats") renderStatsView(document.getElementById("stats-root")!);
+    if (name === "map") opts.renderMap?.(document.getElementById("map-root")!);
     if (name === "index" && !indexBuilt) {
       createIndexView(document.getElementById("index-root")!);
       indexBuilt = true;
@@ -41,7 +49,10 @@ export function createGameMenu(): GameMenu {
 
   function open(tab?: string) {
     if (tab) switchTab(tab);
-    else if (overlay.querySelector<HTMLElement>(".tab-btn.active")?.dataset.tab === "stats") switchTab("stats");
+    else {
+      const active = overlay.querySelector<HTMLElement>(".tab-btn.active")?.dataset.tab;
+      if (active === "stats" || active === "map") switchTab(active);
+    }
     if (isOpen) return;
     isOpen = true;
     overlay.classList.remove("hidden");
@@ -53,6 +64,7 @@ export function createGameMenu(): GameMenu {
     isOpen = false;
     overlay.classList.add("hidden");
     (window as any).gameScene?.resumeForUI?.();
+    opts.onClose?.();
   }
 
   return { open, close };

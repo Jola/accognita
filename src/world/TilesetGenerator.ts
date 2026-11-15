@@ -89,6 +89,11 @@ const PALETTES: Record<string, Palette> = {
   dungeon:  { base: "#282838", light: "#383850", dark: "#14141e", accent: "#484858" },
 };
 
+/** Grundfarbe eines Bioms (GDD-04) — für die Karte (GDD-10 11.1). */
+export function biomeBaseColor(biome: string): string {
+  return PALETTES[biome]?.base ?? "#222";
+}
+
 // ────────────────────────────────────────
 // Biom-Zeichenfunktionen
 // ────────────────────────────────────────
