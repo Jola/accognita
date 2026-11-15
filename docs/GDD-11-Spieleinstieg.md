@@ -76,8 +76,10 @@
 **Begründung (Vorschlag Claude, offen):** Die Wahrnehmung ist der Anlass in der Welt (Vorgabe in Abschnitt 1: Der Anstoß kommt nicht aus dem Nichts). Die Frage lässt dem Spieler die Wahl: Er kann es ausprobieren, muss aber nicht. Das passt zu Neugier als Antrieb.
 
 **Beispiel: der Ton**
-> *Du erwachst. Du siehst nichts. Da liegt etwas neben dir — lebendig, warm. Was es wohl ist?*
-> → Wähle eine Tätigkeit: 🔍 Analysieren oder 💥 Absorbieren.
+> *Du erwachst. Du siehst nichts und kannst dich nicht bewegen. Doch du spürst etwas direkt neben dir.*
+> → Versuch mal zu analysieren oder zu absorbieren — vielleicht lernst du etwas.
+
+**Vorgabe (Entwickler, 15. November 2026):** Die bisherige Formulierung zum ersten Analysieren passt. Nur der Begriff „Tätigkeit“ fällt weg: „Versuch mal zu analysieren oder absorbieren, vielleicht lernst du was.“ (umgesetzt v0.8.7) ~~Beispiel: „Da liegt etwas neben dir — lebendig, warm. Was es wohl ist?“ → Wähle eine Tätigkeit: 🔍 Analysieren oder 💥 Absorbieren.~~ [VERWORFEN, 15. November 2026]
 
 **[VERWORFEN, 15. November 2026] Das Gespür des Blobs.** Grund: Vorgabe Entwickler oben (Fragen statt „etwas in dir“, Sprecher bleibt offen). Der frühere Vorschlag:
 
@@ -150,7 +152,7 @@ Je Schritt: Anlass → Anstoß (Frage → konkret) → Erklärung danach. ✅ = 
 
 ### 5.1 Erwachen im Nest (blind)
 - **Anlass:** Spielstart.
-- **Anstoß:** „Da liegt etwas neben dir — lebendig, warm. Was es wohl ist?“ → Wähle eine Tätigkeit. ~~„… Etwas in dir will es ertasten.“~~ ~~„… Du hast so etwas schon einmal ertastet.“~~ [VERWORFEN, 15. November 2026] (Abschnitt 3)
+- **Anstoß ✅ (v0.8.7, Vorgabe Entwickler):** „Du erwachst. Du siehst nichts und kannst dich nicht bewegen. Doch du spürst etwas direkt neben dir. Versuch mal zu analysieren oder zu absorbieren — vielleicht lernst du etwas.“ ~~„Da liegt etwas neben dir — lebendig, warm. Was es wohl ist?“ → Wähle eine Tätigkeit.~~ ~~„… Etwas in dir will es ertasten.“~~ ~~„… Du hast so etwas schon einmal ertastet.“~~ [VERWORFEN, 15. November 2026] (Abschnitt 3)
 - **Entdecken:** Analysieren lässt die Wesen in Ruhe, Absorbieren bringt Materialien. Das erklärt die Wahl kurz. Wie sich beide auswirken, zeigt die Anzeige unter dem Blob ✅.
 - **Erklärung danach:** keine. Die Anzeige ✅ zeigt, dass etwas geschieht.
 
@@ -262,4 +264,4 @@ Ein neuer Abschnitt im Menü (z. B. im INDEX oder als eigener Reiter „GEDÄCHT
 
 ---
 
-*Letzte Aktualisierung: 15. November 2026 — Neugier als Antrieb, Anstöße als einfache Fragen ohne Sprecher, nicht „etwas in dir“; Elf und Quelle bleiben als Idee (Vorgaben Entwickler); Beispieltexte als Fragen neu (Vorschlag); davor 15. November 2026 — kein Erwachen aus der Trockenstarre, das Warum bleibt ein Mysterium (Vorgabe Entwickler); Hinweise als Gespür statt Erinnerungen (Vorschlag), Fragen 1 und 2 beantwortet; davor 15. November 2026 — Erstfassung (Konzept) auf Wunsch des Entwicklers: Grundmechaniken lernen, entdecken lassen, nicht frustrieren, in die Geschichte eingebettet, Querformat*
+*Letzte Aktualisierung: 15. November 2026 — erster Hinweis im Nest ohne „Tätigkeit“ (Vorgabe Entwickler, v0.8.7); davor 15. November 2026 — Neugier als Antrieb, Anstöße als einfache Fragen ohne Sprecher, nicht „etwas in dir“; Elf und Quelle bleiben als Idee (Vorgaben Entwickler); Beispieltexte als Fragen neu (Vorschlag); davor 15. November 2026 — kein Erwachen aus der Trockenstarre, das Warum bleibt ein Mysterium (Vorgabe Entwickler); Hinweise als Gespür statt Erinnerungen (Vorschlag), Fragen 1 und 2 beantwortet; davor 15. November 2026 — Erstfassung (Konzept) auf Wunsch des Entwicklers: Grundmechaniken lernen, entdecken lassen, nicht frustrieren, in die Geschichte eingebettet, Querformat*

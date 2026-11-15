@@ -33,8 +33,11 @@ export function getIntroStep(player: PlayerState): IntroStep {
  */
 const INTRO_TEXT_SETTLED: Record<IntroStep, string> = {
   blind_still:
+    // Vorgabe (Entwickler, 15. November 2026): ohne den Begriff „Tätigkeit“ —
+    // „Versuch mal zu analysieren oder absorbieren, vielleicht lernst du was.“
+    // [VERWORFEN] „… Wähle eine Tätigkeit — Analysieren oder Absorbieren —, vielleicht lernst du etwas.“
     "Du erwachst. Du siehst nichts und kannst dich nicht bewegen. Doch du spürst etwas direkt neben dir. " +
-    "Wähle eine Tätigkeit — Analysieren oder Absorbieren —, vielleicht lernst du etwas.",
+    "Versuch mal zu analysieren oder zu absorbieren — vielleicht lernst du etwas.",
   seeing_still:
     "Licht! Hell und dunkel, verschwommene Umrisse. Bewegen kannst du dich noch nicht. " +
     "Lerne weiter von den Wesen neben dir — vielleicht auch, wie man kriecht.",
@@ -82,4 +85,4 @@ export function getIntroText(
 //   … Analysiere oder absorbiere es“ — Grund: Start im Nest (GDD-10 Abschnitt
 //   12), Wasser verworfen, im Nest keine aktiven Skills.
 
-// Stand: 15. November 2026 — Hinweis, sobald im Nest eine Tätigkeit läuft; Texte für Nest und Reisenden (GDD-10); davor 13. November 2026 — Erstfassung
+// Stand: 15. November 2026 — erster Hinweis im Nest ohne „Tätigkeit“ (Vorgabe Entwickler); Hinweis, sobald im Nest eine Tätigkeit läuft; Texte für Nest und Reisenden (GDD-10); davor 13. November 2026 — Erstfassung

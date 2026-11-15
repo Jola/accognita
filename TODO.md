@@ -43,6 +43,7 @@ Format:
 
 ## Erledigt
 
+- `[TEXT]` **Erster Hinweis im Nest ohne „Tätigkeit“** (Wunsch Entwickler, 15. November 2026): „Versuch mal zu analysieren oder zu absorbieren — vielleicht lernst du etwas.“ (v0.8.7).
 - `[FEATURE]` **Einstieg ins Nest** (Wunsch Entwickler, 15. November 2026): eine Aktion pro Sekunde statt alle 6 s, Anzeige unter dem Blob, die je Skill und Material mitzählt statt sich zu überschreiben, neue Skills werden einzeln und ausführlich vorgestellt, mit Sehen und Bewegen und der Karte „Auf Reisen“ nach dem ersten Abspalten (v0.8.6).
 - `[BUG]` **Tätigkeit scheint nichts zu tun** (Meldung Entwickler, 15. November 2026): Sie lief, zeigte aber bis zum ersten Fund nach gut einer Minute nichts. Jetzt steigt je Aktion ein Text über dem Blob auf (Erfahrung, Fortschritt zum nächsten Fund), und der Hinweis im Nest erklärt, dass Lernen dauert (v0.8.5).
 - `[BUG]` **Kopfleiste „Kap. NaN%“** ohne entdeckte Skills (Start im Nest): 0/0 wird jetzt als 0 % angezeigt (v0.8.1).
