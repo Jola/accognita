@@ -140,8 +140,11 @@ export function maxEffectOverSkills(type: EffectType, at = 1): number {
 // Graustufen G (Helligkeit nach Rec. 601), „ohne Rot“ P (Rot erscheint
 // dunkel, GDD-09 4.1), volle Farbe I:
 //   M = lerp(G, lerp(P, I, Rot), Farbe)
-// „Ohne Rot“: Grün und Blau bleiben, der Rot-Kanal wird dunkel (Rot → 30 %)
-// und nimmt etwas Grün auf, damit Gelb gelbgrün statt reingrün wirkt.
+// „Ohne Rot“: Grün und Blau bleiben, reines Rot wird schwarz (Vorgabe
+// Entwickler, 16. November 2026: „Rot darf gerne noch komplett schwarz
+// bleiben, solange der Rest sichtbar ist“). Der Rot-Kanal nimmt 40 % Grün
+// auf, damit Gelb gelbgrün statt reingrün wirkt.
+// [VERWORFEN, 16. November 2026] Rot auf 30 % abgedunkelt [0.3, 0.4, 0, …].
 // [VERWORFEN, 16. November 2026] Rotblindheit nachgebildet
 //   [0.567, 0.433, 0, 0.558, 0.442, 0, 0, 0.242, 0.758] — sie legt Rot und Grün
 //   zu einem Gelbgrau zusammen; im grün-braunen Wald blieb fast keine Farbe
@@ -150,7 +153,7 @@ export function maxEffectOverSkills(type: EffectType, at = 1): number {
 // Reine Mathematik — GameScene reicht das Ergebnis an Phaser weiter.
 // -----------------------------------------------------------
 const GRAY = [0.299, 0.587, 0.114, 0.299, 0.587, 0.114, 0.299, 0.587, 0.114];
-const NO_RED = [0.3, 0.4, 0, 0, 1, 0, 0, 0, 1];
+const NO_RED = [0, 0.4, 0, 0, 1, 0, 0, 0, 1];
 const FULL = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 
 export function visionColorMatrix(v: Vision): number[] {
