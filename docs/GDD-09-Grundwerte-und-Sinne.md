@@ -100,6 +100,10 @@ Bild       = lerp(Graustufen, lerp(ohne Rot, volle Farbe, Rot), Farbe)   — Far
 Erfahrung  = XP je Sekunde für jeden eingeschalteten Seh-Skill
              (Menge am Skill, Feld practice; derzeit 0,5 bei allen Seh-Skills)
 ```
+**„Ohne Rot“ als Farbmatrix** (v0.9.2, 16. November 2026): Grün und Blau bleiben, Rot wird auf 30 % abgedunkelt und nimmt 40 % Grün auf (Gelb wirkt gelbgrün). ~~Nachbildung einer Rotblindheit (Rot und Grün werden zu einem Gelbgrau zusammengelegt).~~ [VERWORFEN, 16. November 2026]
+**Anlass:** Meldung des Entwicklers: Facettenauge auf 50 % und Hauptaugen zeigten keine Farbe. Gemessen: Im grün-braunen Wald blieb mit der alten Matrix selbst bei voller Übung nur ein Viertel der Farbsättigung, bei 50 % ein Achtel; die Hauptaugen bringen ihre Farbe ohne Rot-Übung genauso wenig. Mit der neuen Matrix: volle Übung fast volle Sättigung, 50 % etwas über die Hälfte.
+**Begründung (Vorschlag Claude, offen):** Die Regel sagt „Rot erscheint dunkel“, nicht „Rot und Grün sind gleich“. Insekten sehen Grün und Blau gut; nur Rot fehlt ihnen.
+
 Außerhalb der Sichtweite ist es schwarz, der äußere Rand (35 %) geht weich über. Der Blob selbst bleibt sichtbar, denn er spürt sich. Der Farbfilter braucht WebGL. Ohne WebGL gilt nur die Sichtweite.
 
 ### 4.2 Werte (VORLÄUFIG)
@@ -162,4 +166,4 @@ Spielstand-Version 5: Wer schon spielte, konnte sich bewegen und farbig sehen. D
 
 ---
 
-*Letzte Aktualisierung: 15. November 2026 — Abschnitt 5: Erwachen im Nest umgesetzt (v0.8.0); Abschnitt 5: Verweis auf GDD-10 angepasst (Gras schon in Reichweite, keine Tätigkeit voreingestellt); davor 14. November 2026 — Erfahrung durch Bewegen und Sehen steht je Skill (Feld practice), Größenbonus in balance.ts, body.ts gilt nur für den Blob (Werte unverändert); davor 14. November 2026 — Abschnitt 5 verweist auf die geplante Änderung in GDD-10 Abschnitt 12; 13. November 2026 — Datei neu angelegt: Grundwerte, Bewegung (Kriechen, Krabbeln), Stärke aus Größe, Sehen (Lichtsinn, Facettenauge, Hauptaugen), Erwachen mit Nest*
+*Letzte Aktualisierung: 16. November 2026 — „ohne Rot“ lässt Grün und Blau stehen, Rot wird dunkel (Meldung Entwickler, v0.9.2); davor 15. November 2026 — Abschnitt 5: Erwachen im Nest umgesetzt (v0.8.0); Abschnitt 5: Verweis auf GDD-10 angepasst (Gras schon in Reichweite, keine Tätigkeit voreingestellt); davor 14. November 2026 — Erfahrung durch Bewegen und Sehen steht je Skill (Feld practice), Größenbonus in balance.ts, body.ts gilt nur für den Blob (Werte unverändert); davor 14. November 2026 — Abschnitt 5 verweist auf die geplante Änderung in GDD-10 Abschnitt 12; 13. November 2026 — Datei neu angelegt: Grundwerte, Bewegung (Kriechen, Krabbeln), Stärke aus Größe, Sehen (Lichtsinn, Facettenauge, Hauptaugen), Erwachen mit Nest*
