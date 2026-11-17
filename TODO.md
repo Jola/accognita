@@ -43,6 +43,7 @@ Format:
 
 ## Erledigt
 
+- `[BUG]` **Menü-Reiter im Hochformat abgeschnitten** (Meldung Entwickler, 17. November 2026): Die zentrierte Reiterleiste war etwas zu breit und schnitt SKILLS und INDEX an beiden Rändern ab. Jetzt passen alle Reiter, auf schmalen Schirmen mit weniger Innenabstand (v0.9.4).
 - `[BUG]` **Facettenauge und Hauptaugen ohne Farbe** (Meldung Entwickler, 16. November 2026): Der Filter „ohne Rot“ legte Rot und Grün zu Gelbgrau zusammen, im Wald blieb kaum Farbe. Jetzt bleiben Grün und Blau, nur Rot wird dunkel (v0.9.2).
 - `[FEATURE]` **Spieleinstieg 5.10** (Auftrag Entwickler, 15. November 2026): Karte „Begrenzter Platz“ ab 80 % Kapazität, Entdeckung „Du bist gewachsen“; Kombinieren entfällt ohne Konzept (v0.9.1).
 - `[FEATURE]` **Spieleinstieg nach GDD-11** (Wunsch Entwickler, 15. November 2026): Anstöße als Fragen mit drei Stufen (Fressen von Hand, Gefahr, Niederlassen, Erheben, Zurückholen, Verschmelzen, Karte), Erklärungs-Karten, Entdeckungen, Reiter GEDÄCHTNIS; Spielstand v10 (v0.9.0).

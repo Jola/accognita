@@ -75,8 +75,12 @@
       color:#ccc; font-size:.85em; padding:6px 16px; border-radius:8px; cursor:pointer;
     }
     .gm-body { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
-    #gameMenu .panel-tabs { overflow-x:auto; justify-content:center; }
-    #gameMenu .tab-btn { flex:1 0 auto; max-width:140px; padding:7px 10px; }
+    /* Nicht justify-content:center: Bei Überbreite schneidet das beide Ränder ab
+       (links nicht scrollbar). Auto-Ränder zentrieren nur, wenn Platz ist. */
+    #gameMenu .panel-tabs { overflow-x:auto; }
+    #gameMenu .tab-btn { flex:1 0 auto; max-width:140px; padding:7px clamp(4px,1.6vw,10px); }
+    #gameMenu .tab-btn:first-child { margin-left:auto; }
+    #gameMenu .tab-btn:last-child { margin-right:auto; }
     #gameMenu .tab-content { max-width:760px; margin:0 auto; padding:12px; overflow:visible; }
 
     .panel-tabs { display:flex; border-bottom:1px solid #1a2030; flex-shrink:0; }
