@@ -298,20 +298,32 @@ export const ANALYZE_CHANCE_MODIFIER = 0.7;
 // Effekt: die Welt schrumpft optisch, während der Blob wächst.
 //
 // Tile-Verhältnis (TILE_SIZE = 32):
-//   Level 1:  Radius 2  ≈ 1/8  Tile-Durchmesser (sehr kleines Lebewesen)
-//   Level 20: Radius 8  ≈ 1/2  Tile-Durchmesser (fuchsgroßes Lebewesen)
+//   frisch:       Radius 2    ≈ 1/8 Tile-Durchmesser (≈ 0,9 cm)
+//   ausgewachsen: Radius 16,5 ≈ 1 Tile-Durchmesser (61 cm)
+//   [VERWORFEN, 21. November 2026] ausgewachsen Radius 8 ≈ 1/2 Tile — passte
+//   nicht mehr zur Größenskala (unten), nach der 61 cm Radius 16,5 sind.
 // -----------------------------------------------------------
 
 /** Welt-Radius eines frischen Blobs (in World-Pixeln, TILE_SIZE=32) */
 export const PLAYER_WORLD_RADIUS_MIN = 2;
 
-/** Welt-Radius des Blobs ab Wachstum PLAYER_SIZE_GROWTH_MAX */
-export const PLAYER_WORLD_RADIUS_MAX = 8;
+/**
+ * Welt-Radius des Blobs ab Wachstum PLAYER_SIZE_GROWTH_MAX.
+ * 61 cm nach der Größenskala (unten): worldSize 3 × √(61 / 0,6) ≈ 30,2,
+ * Radius = 30,2 × ENTITY_ICON_RADIUS_FACTOR ≈ 16,6 → 16,5.
+ * Begründung (Vorschlag Claude, offen): Der Blob muss auf derselben Skala
+ *   liegen wie die Wesen, sonst stimmen Größenvergleiche (Größen-Aggro) und
+ *   das Bild nicht — mit Radius 8 wäre der ausgewachsene Blob (61 cm) kleiner
+ *   als ein Igel (25 cm). Der frische Blob (Radius 2) entspricht ≈ 0,9 cm.
+ * [VERWORFEN, 21. November 2026] 8 (Größenklasse G5, Vorschlag Claude, übernommen).
+ */
+export const PLAYER_WORLD_RADIUS_MAX = 16.5;
 
 /**
  * Wachstum, ab dem die maximale Größe erreicht wird: ausgewachsen (≈ 5,9).
  * Vorgabe (Entwickler, 14. November 2026): Kugel von höchstens 120 kg und
- * 61 cm; 61 cm = Welt-Radius 8 px (Größenklasse G5, Vorschlag Claude, übernommen).
+ * 61 cm; 61 cm = Welt-Radius 16,5 px (Größenskala, seit 21. November 2026;
+ * [VERWORFEN] 8 px, Größenklasse G5).
  */
 export const PLAYER_SIZE_GROWTH_MAX = Math.log2(1 + MAX_BODY_MASS / GROWTH_FIBER_SCALE);
 
@@ -366,10 +378,55 @@ export const PLAYER_REACH_FACTOR = 2.5;
 /**
  * Geschwindigkeit des Blobs pro World-Pixel Radius.
  * speed = worldRadius × PLAYER_SPEED_PER_WORLD_RADIUS
- *   Level 1  (radius 2): world-speed  20 → screen-speed  20 × 8 = 160 px/s
- *   Level 20 (radius 8): world-speed  80 → screen-speed  80 × 2 = 160 px/s
+ *   frisch       (radius 2):    world-speed  20 → screen-speed  20 × 8 = 160 px/s
+ *   ausgewachsen (radius 16,5): world-speed 165 → screen-speed 165 × 0,97 = 160 px/s
  */
 export const PLAYER_SPEED_PER_WORLD_RADIUS = 10;
+
+// -----------------------------------------------------------
+// GRÖSSENSKALA DER WESEN (worldSize aus der echten Größe)
+//
+// worldSize = SIZE_SCALE_BASE × √(Länge in cm / SIZE_SCALE_REF_CM)
+// Länge = durchschnittliche Körperlänge des Vorbilds (Säugetiere ohne
+// Schwanz, Schlange und Eidechse mit Schwanz, Gras = Wuchshöhe).
+// Vorgabe (Entwickler, 21. November 2026): Die Größen richten sich nach der
+//   natürlichen Durchschnittsgröße; der Drache ist etwa so groß wie ein
+//   Elefant. Umrechnung mit der Quadratwurzel (Entwickler hat zwischen
+//   Kubikwurzel, Quadratwurzel und 1:1 gewählt).
+// Begründung (Vorschlag Claude, übernommen): 1:1 geht nicht — echte Größen
+//   reichen von 6 mm bis 6 m (Faktor 1000); eine Ameise wäre kleiner als ein
+//   Pixel. Die Wurzel staucht und hält die Reihenfolge: doppelt so lang =
+//   41 % größer. Bezugspunkt Ameise (0,6 cm = worldSize 3), weil sie die
+//   kleinste Größe ist, die man noch erkennt.
+// Angriffsreichweite, Aggro-Radius und Tempo wachsen mit (Vorgabe
+//   Entwickler, 21. November 2026); die einzelnen Werte stehen mit
+//   Realismus- und Balance-Anpassungen am Wesen (entities.ts).
+// -----------------------------------------------------------
+
+/** worldSize eines Wesens mit SIZE_SCALE_REF_CM Länge (Ameise). */
+export const SIZE_SCALE_BASE = 3;
+/** Bezugslänge der Größenskala in cm (Ameise). */
+export const SIZE_SCALE_REF_CM = 0.6;
+
+// -----------------------------------------------------------
+// GRÖSSEN-AGGRO (AiSystem, EntityLevelingSystem; GDD-03 Abschnitt 4)
+//
+// Ist ein Wesen mindestens SIZE_IGNORE_RATIO-mal so groß wie das andere
+// (worldSize; beim Blob Radius ÷ ENTITY_ICON_RADIUS_FACTOR), lassen sich
+// beide in Ruhe: Das große sieht im kleinen keine Beute, das kleine legt
+// sich nicht mit dem großen an. Das gilt nur für Angriffe aus eigenem
+// Antrieb — wer angegriffen wird oder einen Absorb-Fehlschlag bemerkt,
+// wehrt sich trotzdem (Vorschlag in GDD-03 Abschnitt 4).
+// Vorgabe (Entwickler, 21. November 2026): Große Tiere lassen deutlich
+//   kleinere in Ruhe, da sie sie nicht als Beute sehen. Ebenso umgekehrt.
+// Begründung (Vorschlag Claude, offen) für 4: Auf der Wurzel-Skala ist das
+//   16-mal so lang. Ein Wert für beide Richtungen ist leicht zu verstehen.
+//   Der Drache (95) beachtet den Blob erst ab worldSize 23,75 (Radius 13,
+//   fast ausgewachsen) — er bleibt ein Ziel für später; bei 3 würde er den
+//   ausgewachsenen Blob (30) nie angreifen. Springspinne (3,5) und
+//   Giftspinne (4,5) greifen den Blob ab Radius 7,7 bzw. 9,9 nicht mehr an.
+// -----------------------------------------------------------
+export const SIZE_IGNORE_RATIO = 4;
 
 /**
  * Grundgeschwindigkeit für Entities pro worldSize-Einheit.

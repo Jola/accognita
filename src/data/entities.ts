@@ -17,6 +17,13 @@
 //     Werte daraus sind bei wenig Erfahrung deutlich niedriger als vorher
 //     (Startwerte ≈ 1). Die alten Werte stehen als [VERWORFEN] dabei.
 //   - disposition: "neutral" | "hostile" — für Fehlschlag-Reaktion
+//   - lengthCm / worldSize: Größe nach der echten Durchschnittslänge
+//     (Vorgabe Entwickler, 21. November 2026; Größenskala in balance.ts):
+//     worldSize = 3 × √(Länge / 0,6 cm), auf 0,5 gerundet. Reichweite,
+//     Aggro-Radius und Tempo wachsen mit (Grundregel 2 ×, 2,5 × und 5 ×
+//     worldSize); Abweichungen aus Realismus oder Balance stehen am Wesen.
+//     Begründung (Vorschlag Claude, offen) für alle Abweichungen.
+//     Die alten Werte stehen als [VERWORFEN] dabei.
 // ============================================================
 
 import type { EntityDefinition } from "../types/Entity";
@@ -50,7 +57,8 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     ],
     respawnTime: 60, // 1 Minute — wächst nach
     interactRadius: 50,
-    worldSize: 5,    // Grashalm — etwas größer als ein frischer Blob
+    lengthCm: 15,    // Wuchshöhe eines Grasbüschels
+    worldSize: 15,   // [VERWORFEN] 5 — „etwas größer als ein frischer Blob“
   },
 
   // ==========================================================
@@ -80,10 +88,13 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
       { skillId: "crawl",       chance: 0.35 },
     ],
     materialDrops: [],
-    hp: 4_000, speed: 4,
+    // Tempo bleibt fast gleich ([VERWORFEN] 4): Regenwürmer kriechen ≈ 2 cm/s,
+    // langsamer als eine Ameise (Realismus) — mit 5 × worldSize wäre er 67 px/s.
+    hp: 4_000, speed: 5,
     respawnTime: 10,
     interactRadius: 35,
-    worldSize: 4,
+    lengthCm: 12,
+    worldSize: 13.5, // [VERWORFEN] 4
   },
   {
     id: "snail",
@@ -101,10 +112,13 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
       { skillId: "light_sense", chance: 0.35 },
     ],
     materialDrops: [],
+    // Tempo bleibt ([VERWORFEN] gleicher Wert): Schnecken sind die langsamsten
+    // Wesen (≈ 1 mm/s), langsamer als der Regenwurm (Realismus).
     hp: 5_000, speed: 3,
     respawnTime: 10,
     interactRadius: 35,
-    worldSize: 4,
+    lengthCm: 5,     // Weinbergschnecke mit Fuß
+    worldSize: 8.5,  // [VERWORFEN] 4
   },
 
   // ==========================================================
@@ -133,13 +147,14 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 30,
     interactRadius: 35,
     aggroRadius: 8,    // 2.5 × worldSize
+    lengthCm: 0.6,     // Bezugspunkt der Größenskala (worldSize 3 bleibt)
     // bite 27 % (Übung) → 5 Schaden; chitin 0 % → blockt nichts
     // Vorgabe (Entwickler, 1. Nov. 2026): Die Ameise soll 5 Schaden machen.
     //   → Biss-Erfahrung 65,5 XP: 1 + (16 − 1) × 26,7 % = 5,0 HP
     //   ([VERWORFEN] bite 0 XP → 1 Schaden; davor u=1 → 7 Schaden;
     //    chitin u=1 → blockt 3 HP Stich)
     skillXp: { bite: 65.5, chitin_armor: 0 },
-    worldSize: 3,    // Ameise — winziges Insekt, ähnlich groß wie ein frischer Blob
+    worldSize: 3,    // Ameise — winziges Insekt, etwas kleiner als ein frischer Blob (3,6)
   },
   {
     id: "ladybug",
@@ -156,15 +171,16 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
       { skillId: "compound_eye", chance: 0.12 }, // Facettenaugen
     ],
     materialDrops: [],
-    hp: 6_000, speed: 20,          // worldSize 4 × 5 = 20
-    attackRangePx: 8, attackCooldownMs: 2000, attackType: "melee",   // 2 × worldSize
+    hp: 6_000, speed: 15,          // worldSize 3 × 5 ([VERWORFEN] 20)
+    attackRangePx: 6, attackCooldownMs: 2000, attackType: "melee",   // 2 × worldSize ([VERWORFEN] 8)
     respawnTime: 35,
     interactRadius: 35,
-    aggroRadius: 10,   // 2.5 × worldSize
+    aggroRadius: 8,    // 2.5 × worldSize ([VERWORFEN] 10)
+    lengthCm: 0.7,
     // Kein bite — Marienkäfer greifen nicht aktiv an.
     // Hemolymph 0 %: 1 Rückschlag-Schaden wenn der Blob ihn trifft ([VERWORFEN] u=1: 2).
     skillXp: { hemolymph: 0 },
-    worldSize: 4,    // Marienkäfer — etwas größer als Ameise
+    worldSize: 3,    // Marienkäfer — so groß wie eine Ameise ([VERWORFEN] 4)
   },
 
   // ==========================================================
@@ -188,15 +204,16 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
       { skillId: "principal_eyes", chance: 0.12 }, // Die schärfsten Augen der Kleintiere
     ],
     materialDrops: [],
-    hp: 18_000, speed: 30,         // worldSize 6 × 5 = 30
-    attackRangePx: 12, attackCooldownMs: 1200, attackType: "charge", // 2 × worldSize
+    hp: 18_000, speed: 17.5,       // worldSize 3,5 × 5 ([VERWORFEN] 30)
+    attackRangePx: 7, attackCooldownMs: 1200, attackType: "charge", // 2 × worldSize ([VERWORFEN] 12)
     respawnTime: 45,
     interactRadius: 40,
-    aggroRadius: 15,   // 2.5 × worldSize
+    aggroRadius: 9,    // 2.5 × worldSize ([VERWORFEN] 15)
+    lengthCm: 0.8,     // Körper ohne Beine
     // bite 3 % → 1,4 Schaden; chitin_armor 11 % → blockt 1,4 HP Stich; jump 3 % → Geschick 0,1
     //   ([VERWORFEN] bite u=2 → 8 Schaden; chitin_armor u=3; jump u=2 → Geschick ≈2)
     skillXp: { bite: 6, chitin_armor: 24, jump: 6 },
-    worldSize: 6,    // Springspinne — deutlich größer als Ameisen
+    worldSize: 3.5,  // Springspinne — kaum größer als eine Ameise ([VERWORFEN] 6)
   },
   {
     id: "poison_spider",
@@ -214,15 +231,16 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
       { skillId: "scuttle", chance: 0.15 }, // Acht Beine (GDD-09, VORLÄUFIG)
     ],
     materialDrops: [],
-    hp: 15_000, speed: 30,         // worldSize 6 × 5 = 30
-    attackRangePx: 12, attackCooldownMs: 1600, attackType: "melee",  // 2 × worldSize
+    hp: 15_000, speed: 22.5,       // worldSize 4,5 × 5 ([VERWORFEN] 30)
+    attackRangePx: 9, attackCooldownMs: 1600, attackType: "melee",  // 2 × worldSize ([VERWORFEN] 12)
     respawnTime: 50,
     interactRadius: 40,
-    aggroRadius: 15,   // 2.5 × worldSize
+    aggroRadius: 11,   // 2.5 × worldSize ([VERWORFEN] 15)
+    lengthCm: 1.5,     // Körper ohne Beine (Kreuzspinne)
     // bite 0 % → 1 Schaden; venom 11 % → 8 % Chance auf 4 HP Gift; chitin_armor 11 % → blockt 1,4 HP Stich
     //   ([VERWORFEN] bite u=1 → 7; venom u=3 → 44 % auf 12 HP; chitin u=3 → blockt 7,2 HP Stich)
     skillXp: { bite: 0, venom: 30, chitin_armor: 24 },
-    worldSize: 6,    // Giftspinne — ähnlich groß wie Springspinne
+    worldSize: 4.5,  // Giftspinne — etwas größer als die Springspinne ([VERWORFEN] 6)
   },
 
   // ==========================================================
@@ -250,6 +268,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     respawnTime: 60,
     interactRadius: 45,
     aggroRadius: 18,            // 2.5 × worldSize
+    lengthCm: 3.5,              // Europäischer Skorpion (Euscorpius) — Werte bleiben
     // pincer 37 % → 6,5 Wucht; chitin 37 % → blockt 4,7 HP Stich;
     // venom_sting 23 % → 3,3 Stich + 23 % Chance auf 8 HP Gift
     //   ([VERWORFEN] pincer u=5 → 11; chitin u=5 → 9; venom_sting u=4 → 7 + 89 % auf 18 HP)
@@ -280,11 +299,14 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
       { skillId: "scuttle", chance: 0.12 }, // Acht Beine (GDD-09, VORLÄUFIG)
     ],
     materialDrops: [],
-    hp: 55_000, speed: 50,         // worldSize 10 × 5 = 50
-    attackRangePx: 20, attackCooldownMs: 1600, attackType: "melee",  // 2 × worldSize
+    // Tempo 4 × worldSize statt 5 × (≈ 67): Skorpione lauern und laufen
+    // nur kurze Strecken (Realismus) ([VERWORFEN] 50).
+    hp: 55_000, speed: 54,
+    attackRangePx: 27, attackCooldownMs: 1600, attackType: "melee",  // 2 × worldSize ([VERWORFEN] 20)
     respawnTime: 120,
     interactRadius: 55,
-    aggroRadius: 25,            // 2.5 × worldSize
+    aggroRadius: 34,            // 2.5 × worldSize ([VERWORFEN] 25)
+    lengthCm: 12,               // Kaiserskorpion
     // pincer 98 % → 15,8 Wucht; chitin 75 % → blockt 9,8 HP Stich;
     // venom_sting 64 % → 7,4 Stich + 64 % Chance auf 21 HP Gift
     //   ([VERWORFEN] pincer u=13 → 16; chitin u=8 → 10,9; venom_sting u=7 → 9 + 92 % auf 24 HP)
@@ -293,7 +315,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     skillXp: { pincer: 864, chitin_armor: 294, venom_sting: 324 },
     // Stachel nur gelegentlich — Begründung beim kleinen Skorpion. VORLÄUFIG
     occasionalAttack: { skillId: "venom_sting", chance: 0.15 },
-    worldSize: 10,
+    worldSize: 13.5,            // [VERWORFEN] 10
   },
   // ==========================================================
   // DRACHE — Level 20 (legendär, Dungeon-Boss)
@@ -314,20 +336,33 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
       { skillId: "bite",        chance: 0.10 },
     ],
     materialDrops: [],
-    hp: 500_000, speed: 35,        // worldSize 20 × 5 = 100 → langsamer, aber massiv
-    attackRangePx: 40, attackCooldownMs: 1800, attackType: "melee",   // 2 × worldSize
-    // Feueratem: Fernkampf über 8 × worldSize = 160px Distanz
+    // Größe eines Elefanten (Vorgabe Entwickler, 21. November 2026).
+    // Alle Folgewerte zugunsten der Balance gedämpft — nach der Grundregel
+    // wäre er 475 px/s schnell, griffe 190 px weit und spiee 760 px weit
+    // Feuer (weiter als die KI rechnet, 500 px):
+    //   Tempo 90 (≈ 1 × worldSize): ein Elefant läuft ≈ 7 m/s, doppelt so
+    //     schnell wie eine Maus; im Spiel knapp schneller als die Maus (82),
+    //     aber langsamer als der ausgewachsene Blob (165 px/s) — man kann
+    //     ihm davonlaufen ([VERWORFEN] 35).
+    //   Nahkampf 95 (1 × worldSize): Klauen und Kopf reichen ≈ 43 px über
+    //     den Körper hinaus ([VERWORFEN] 40 — wäre jetzt kürzer als sein
+    //     eigener Radius von 52 px).
+    //   Feueratem 240 (≈ 2,5 × worldSize, [VERWORFEN] 160 = 8 × 20).
+    //   Aggro 240 (≈ 2,5 × worldSize, [VERWORFEN] 50), so weit wie das Feuer.
+    hp: 500_000, speed: 90,
+    attackRangePx: 95, attackCooldownMs: 1800, attackType: "melee",
     rangedAttackSkillId: "fire_breath",
-    rangedAttackRangePx: 160,        // 8 × worldSize
+    rangedAttackRangePx: 240,
     rangedAttackCooldownMs: 2500,
     respawnTime: 600,                // 10 Minuten — sehr seltener Spawn
     interactRadius: 80,
-    aggroRadius: 50,                 // 2.5 × worldSize
+    aggroRadius: 240,
+    lengthCm: 600,                   // Elefant: Kopf-Rumpf ≈ 6 m
     // claw ≈ 100 % → 18 Nahkampf-Schaden (Höchstwert)
     // fire_breath ≈ 100 % → 23 Fernkampf-Schaden (Höchstwert)
     //   ([VERWORFEN] u=20 → 24 bzw. 31 — der alte Übungsgrad wuchs unbegrenzt)
     skillXp: { claw: 2707.5, fire_breath: 4512.5 },
-    worldSize: 20,                   // Deutlich größer als alle anderen Gegner
+    worldSize: 95,                   // [VERWORFEN] 20 — deutlich größer als alle anderen Gegner
   },
 
   // ==========================================================
@@ -348,11 +383,19 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
       { skillId: "venom", chance: 0.30 }, // Starkes Schlangengift
     ],
     materialDrops: [],
-    hp: 120_000, speed: 60,        // worldSize 12 × 5 = 60
-    attackRangePx: 24, attackCooldownMs: 1200, attackType: "melee", // 2 × worldSize
+    // Folgewerte gedämpft (Realismus): Schlangen kriechen ≈ 1 m/s, langsamer
+    // als eine Maus — nach der Grundregel wären es 162 px/s.
+    //   Tempo 70 (≈ 2 × worldSize, [VERWORFEN] 60), unter der Maus (82).
+    //   Reichweite 49 (1,5 × worldSize, [VERWORFEN] 24): Sie schnellt etwa ein
+    //     Drittel ihrer Länge vor.
+    //   Aggro 65 (2 × worldSize, [VERWORFEN] 30): Lauerjägerin, schlägt erst zu,
+    //     wenn die Beute nah ist.
+    hp: 120_000, speed: 70,
+    attackRangePx: 49, attackCooldownMs: 1200, attackType: "melee",
     respawnTime: 180,               // 3 Minuten — seltener Gegner
     interactRadius: 60,
-    aggroRadius: 30,                // 2.5 × worldSize
+    aggroRadius: 65,
+    lengthCm: 70,                   // Kreuzotter/Ringelnatter mit Schwanz
     // bite 90 % (Natur) → 14,5 Schaden; venom 51 % → 35 % Chance auf 15 HP Gift
     //   ([VERWORFEN] bite u=10 → 14; venom u=6 → 52 % auf 18 HP)
     // Vorgabe (Entwickler, 1. Nov. 2026): Schlangen beißen etwas weniger fest,
@@ -360,7 +403,7 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     //   → 67 % auf 36 HP: alle 1,2 s gebissen ≈ 20 HP/s Gift im Dauerzustand).
     //   Jetzt ≈ 8 HP/s Gift im Dauerzustand. VORLÄUFIG
     skillXp: { bite: 486, venom: 187.5 },
-    worldSize: 12,
+    worldSize: 32.5,                // [VERWORFEN] 12
   },
 
   // ==========================================================
@@ -369,15 +412,16 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
   //   INDEX zu sehen, aber noch nirgends platziert (nicht in BIOME_SPAWNS).
   //   Sie bringen Laufen (GDD-09 Abschnitt 2.4).
   // Begründung (Vorschlag Claude, offen) für alle Zahlen:
-  //   - Größer als Insekten (worldSize 6–11 statt 3–7), kleiner als die
-  //     Schlange (12): Maus und Eidechse sind viel größer als eine Spinne,
-  //     der Maßstab im Spiel ist aber gestaucht.
-  //   - Tempo über worldSize × 5: Wirbeltiere laufen, statt zu krabbeln —
-  //     die Maus ist deutlich schneller als der Blob mit Krabbeln (20–80 px/s).
+  //   - Größe seit 21. November 2026 nach der echten Länge (Größenskala).
+  //     [VERWORFEN] worldSize 6–11 — „größer als Insekten, kleiner als die
+  //     Schlange (12), der Maßstab ist gestaucht“.
+  //   - Tempo nach der echten Höchstgeschwindigkeit geordnet: Mauswiesel
+  //     (≈ 6 m/s) > Waldmaus (≈ 3,5 m/s) > Zauneidechse, Wasserspitzmaus,
+  //     Igel (≈ 1,5–2 m/s). [VERWORFEN] Tempo über worldSize × 5.
   //   - Laufen steht nicht in skillXp: Bewegungs-Skills wirken bei Gegnern
   //     nicht (ihr Tempo ist speed); wie bei den Insekten und Krabbeln.
   //   - Angriffsreichweite 2 × worldSize, Aggro-Radius 2,5 × worldSize wie
-  //     bei allen Wesen.
+  //     bei allen Wesen (wachsen mit der neuen Größe mit).
   //   VORLÄUFIG — Platzierung, Spawn-Dichte und Balance sind offen.
   // ==========================================================
 
@@ -396,20 +440,22 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
       { skillId: "zigzag", chance: 0.12 }, // Fluchtverhalten
     ],
     materialDrops: [],
-    hp: 14_000, speed: 50,
-    attackRangePx: 14, attackCooldownMs: 900, attackType: "melee",
+    hp: 14_000, speed: 82,          // ≈ 7 × worldSize wie bisher ([VERWORFEN] 50)
+    attackRangePx: 23, attackCooldownMs: 900, attackType: "melee",  // [VERWORFEN] 14
     respawnTime: 40,
     interactRadius: 45,
-    aggroRadius: 18,
+    aggroRadius: 29,                // [VERWORFEN] 18
+    lengthCm: 9,                    // ohne Schwanz
     // gnaw 57 % → 5,0 Schnitt; zigzag 38 % → 7,5 % Ausweichen, Geschick 1,5
     skillXp: { gnaw: 120, zigzag: 100 },
     // Vorgabe (Entwickler, 21. November 2026): Die Waldmaus greift einmal an
     //   und haut dann 1 s im Zickzack ab. Ist der Blob danach noch in
     //   Reichweite (2 Mauslängen), greift sie wieder an und haut wieder ab;
     //   sonst greift sie nicht mehr an und läuft weiter weg.
-    // Mauslänge = Durchmesser ihres Symbols (2 × 0,55 × worldSize ≈ 7,7 px).
+    // Mauslänge = Durchmesser ihres Symbols (2 × 0,55 × worldSize ≈ 12,7 px,
+    // [VERWORFEN] 7,7 px). Auf der Flucht kommt sie ≈ 28 px/s vom Blob weg.
     hitAndRun: { fleeMs: 1000, reengageLengths: 2 },
-    worldSize: 7,
+    worldSize: 11.5,                // [VERWORFEN] 7
   },
   {
     id: "water_shrew",
@@ -427,15 +473,16 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
       { skillId: "voracity", chance: 0.15 }, // Rasender Stoffwechsel
     ],
     materialDrops: [],
-    hp: 16_000, speed: 45,
-    attackRangePx: 12, attackCooldownMs: 1100, attackType: "melee",
+    hp: 16_000, speed: 60,          // langsamer als die Waldmaus, an Land eher wuselnd ([VERWORFEN] 45)
+    attackRangePx: 22, attackCooldownMs: 1100, attackType: "melee",  // [VERWORFEN] 12
     respawnTime: 50,
     interactRadius: 40,
-    aggroRadius: 15,
+    aggroRadius: 28,                // [VERWORFEN] 15
+    lengthCm: 8,                    // ohne Schwanz
     // bite 38 % → 6,7 Stich; venom 20 % → 14 % Chance auf 6,7 HP Gift
     //   (schwächer als die Schlange; Spitzmausgift lähmt Insekten und Frösche)
     skillXp: { bite: 100, venom: 60 },
-    worldSize: 6,
+    worldSize: 11,                  // [VERWORFEN] 6
   },
   {
     id: "sand_lizard",
@@ -452,15 +499,16 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
       { skillId: "tail_drop", chance: 0.12 },
     ],
     materialDrops: [],
-    hp: 22_000, speed: 55,
-    attackRangePx: 16, attackCooldownMs: 1600, attackType: "melee",
+    hp: 22_000, speed: 70,          // kurze schnelle Sprints, langsamer als die Maus ([VERWORFEN] 55)
+    attackRangePx: 35, attackCooldownMs: 1600, attackType: "melee",  // [VERWORFEN] 16
     respawnTime: 60,
     interactRadius: 45,
-    aggroRadius: 20,
+    aggroRadius: 44,                // [VERWORFEN] 20
+    lengthCm: 20,                   // mit Schwanz (Kopf-Rumpf ≈ 9 cm)
     // snap_bite 51 % → 7,6 Stich (viele schwere Treffer).
     // Schwanz abwerfen wirkt nur beim Blob — Gegner werfen (noch) keinen ab.
     skillXp: { snap_bite: 150 },
-    worldSize: 8,
+    worldSize: 17.5,                // [VERWORFEN] 8
   },
   {
     id: "hedgehog",
@@ -478,16 +526,17 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
       { skillId: "venom_resistance", chance: 0.15 },
     ],
     materialDrops: [],
-    hp: 45_000, speed: 40,
-    attackRangePx: 22, attackCooldownMs: 1500, attackType: "melee",
+    hp: 45_000, speed: 55,          // läuft bis ≈ 2 m/s, meist gemächlich ([VERWORFEN] 40)
+    attackRangePx: 39, attackCooldownMs: 1500, attackType: "melee",  // [VERWORFEN] 22
     respawnTime: 90,
     interactRadius: 55,
-    aggroRadius: 28,
+    aggroRadius: 49,                // [VERWORFEN] 28
+    lengthCm: 25,
     // bite 51 % → 8,6 Stich; spines 25 % → 4,5 HP Rückschlag, blockt 1,2 HP Stich/Schnitt;
     // venom_resistance 76 % → fängt 46 % jeder Giftdosis ab.
     // Rückschlag bewusst niedrig: Er trifft jeden Angriff des Blobs, auch frische mit 1–5 HP.
     skillXp: { bite: 150, spines: 60, venom_resistance: 300 },
-    worldSize: 11,
+    worldSize: 19.5,                // [VERWORFEN] 11
   },
   {
     id: "least_weasel",
@@ -504,15 +553,16 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
       { skillId: "agility",   chance: 0.15 },
     ],
     materialDrops: [],
-    hp: 40_000, speed: 70,
-    attackRangePx: 20, attackCooldownMs: 1300, attackType: "melee",
+    hp: 40_000, speed: 100,         // schnellstes Wirbeltier, schneller als seine Beute, die Maus ([VERWORFEN] 70)
+    attackRangePx: 33, attackCooldownMs: 1300, attackType: "melee",  // [VERWORFEN] 20
     respawnTime: 120,
     interactRadius: 50,
-    aggroRadius: 25,
+    aggroRadius: 41,                // [VERWORFEN] 25
+    lengthCm: 18,                   // ohne Schwanz
     // neck_bite 61 % → 9,0 Stich, 15 % kritisch; agility 76 % → Geschick 4,6.
     // Jagt Mäuse (Level 2): Gegner jagen Wesen 1–3 Level unter sich (GDD-03 Abschnitt 9).
     skillXp: { neck_bite: 250, agility: 300 },
-    worldSize: 10,
+    worldSize: 16.5,                // [VERWORFEN] 10
   },
 ];
 

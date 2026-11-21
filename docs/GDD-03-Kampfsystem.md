@@ -122,7 +122,8 @@ Standard-Nahkampf: erster vorhandener Skill aus `bite`, `claw`, `pincer` (`ENTIT
 
 ### Größen- und levelabhängiges Aggro
 
-> Status: Konzept — noch nicht implementiert
+> ~~Status: Konzept — noch nicht implementiert~~ [VERWORFEN, 21. November 2026]
+> Status: Implementiert (v0.9.7) für die Größe; das Level zählt (noch) nicht
 
 **Vorgabe (Entwickler):** Ob ein Gegner aggressiv auf den Blob reagiert, hängt auch vom Größen- bzw. Levelunterschied ab:
 - **Viel größere Gegner** interessieren sich zunächst nicht für einen sehr kleinen Blob. Sie reagieren nicht aggressiv, selbst wenn sie normalerweise aggressiv sind.
@@ -130,10 +131,29 @@ Standard-Nahkampf: erster vorhandener Skill aus `bite`, `claw`, `pincer` (`ENTIT
 
 **Begründung (Entwickler):** Über die Größe soll Spieldynamik entstehen. Auch in Gebieten, für die der Blob eigentlich noch zu klein ist, darf es sehr starke Gegner geben. Man kann sie erst einmal einfach ignorieren, weil sie den Blob ebenfalls ignorieren. Bezug: [GDD-07 Abschnitt 1](GDD-07-Bestiarium.md#1-rahmen).
 
-Noch zu klären:
-- Ab welchem Unterschied gilt „viel größer“ bzw. „viel kleiner“? Und zählt die Größe, das Level oder beides?
-- Was passiert, wenn der Blob einen Gegner angreift, der ihn ignoriert? (Vorschlag: Der Gegner wehrt sich dann wie bei `defensive`.)
-- Fliehen viel kleinere Gegner vor dem Blob, oder bleiben sie nur friedlich?
+~~Noch zu klären:~~ [VERWORFEN, 21. November 2026 — teilweise beantwortet, siehe unten]
+- ~~Ab welchem Unterschied gilt „viel größer“ bzw. „viel kleiner“? Und zählt die Größe, das Level oder beides?~~
+- ~~Was passiert, wenn der Blob einen Gegner angreift, der ihn ignoriert? (Vorschlag: Der Gegner wehrt sich dann wie bei `defensive`.)~~
+- Fliehen viel kleinere Gegner vor dem Blob, oder bleiben sie nur friedlich? (weiter offen)
+
+**Vorgabe (Entwickler, 21. November 2026):** Große Tiere lassen deutlich kleinere Tiere in Ruhe, da sie sie nicht als Beute sehen. Ebenso umgekehrt.
+
+**Umsetzung (v0.9.7):**
+- Gemessen wird die Größe (`worldSize`; beim Blob Radius ÷ 0,55, also auf derselben Skala). Ist eines der beiden mindestens **4-mal** so groß wie das andere (`SIZE_IGNORE_RATIO`, balance.ts), greift keines das andere **aus eigenem Antrieb** an.
+- Das gilt gegenüber dem Blob (`AiSystem`, Aggro aggressiver und territorialer Wesen) und unter den Wesen (`EntityLevelingSystem`: viel kleinere sind keine Beute, viel größere kein Gegner).
+- Wer angegriffen wird oder einen Absorb-/Analyse-Fehlschlag bemerkt, wehrt sich trotzdem, und wer schon aggro ist, bleibt es. Das Level zählt (noch) nicht.
+
+**Begründung (Vorschlag Claude, offen):** 4-mal so groß ist auf der Wurzel-Skala (GDD-07 Abschnitt 1) 16-mal so lang. Ein Wert für beide Richtungen ist leicht zu verstehen. Der Drache (95) beachtet den Blob erst ab Radius 13, also fast ausgewachsen, und bleibt so ein Ziel für später. Bei 3 würde er den ausgewachsenen Blob (30) nie angreifen. Spinnen greifen den Blob ab Radius 7,7 (Springspinne) bzw. 9,9 (Giftspinne) nicht mehr an, der kleine Skorpion ab 15,4.
+**Begründung (Vorschlag Claude, offen)** für die Gegenwehr: entspricht dem Vorschlag oben (wie `defensive`). Ein Tier, das man beißt, wehrt sich, egal wie groß man ist.
+
+Wer greift den Blob von sich aus an (Test v0.9.7, aggressive Wesen):
+
+| Blob-Radius | greift an | lässt ihn in Ruhe |
+|---|---|---|
+| 2 (frisch) | Spinnen, Skorpione, Wasserspitzmaus | Schlange, Mauswiesel, Drache |
+| 5 | alle außer Drache | Drache |
+| 10 | Skorpione, Schlange, Wasserspitzmaus, Mauswiesel | Spinnen, Drache |
+| 16,5 (ausgewachsen) | großer Skorpion, Schlange, Wasserspitzmaus, Mauswiesel, Drache | Spinnen, kleiner Skorpion |
 
 ---
 
@@ -460,4 +480,4 @@ scenes/GameScene.ts                ← verdrahtet alle Systeme, Phaser-Rendering
 
 ---
 
-*Letzte Aktualisierung: 2026-11-21 — Abschnitt 4: Taktik „Zuschlagen und Abhauen“ (Waldmaus) und Ablenkung durch Schwanz abwerfen (v0.9.6); davor 2026-11-15 — Abschnitt 7: Vertrocknen statt Checkpoint umgesetzt (v0.8.0); Abschnitt 7: Verweis auf GDD-10 an Sterbescreen und Verschmelzen angepasst; davor 2026-11-14 — Wasser zum Wiederbeleben endgültig verworfen (Abschnitt 7); davor 2026-11-14 — MP-Regeneration, KI-Werte und Gegner-Bonus-Level stehen in balance.ts (Werte unverändert); 2026-11-14 — Abschnitt 7 verweist auf GDD-10 (Blob-Formen); 2026-11-13 — Geschwindigkeit aus Bewegungs-Skills (Abschnitt 3, GDD-09); Photosynthese wirkt immer (Abschnitt 5); Geschick = Präzision (Abschnitt 6); Schaden-Multiplikator durch Eigenschafts-Skalierung ersetzt (Abschnitt 3); Kein Angriff ohne Skill, unbewaffneter Nahkampf verworfen (Abschnitte 3 und 6); 2026-11-01 — Hinweis auf das allgemeine Schema (Fortschritt 0–100 %, v0.6); Treffer-Reichweite ab Rand des Gegners (Icon-Größe), Blob-Reichweite erhöht; Balancing: Photosynthese, Skorpione, Schlange schwächer; 2026-10-31 — Gelegentlicher Angriff (Skorpion-Stachelstich); Regeneration (Photosynthesis) stufenlos; Venom-DoT durch Giftlast ersetzt (Verweis auf GDD-05 Abschnitt 12); Hinweis „Übungsgrad statt Skill-Level“ ergänzt, HP/MP wachsen mit dem Wachstum statt pro Level; 2026-10-25 — Größen- und levelabhängiges Aggro als Konzept (Abschnitt 4); 2026-10-24 — Geschick ohne Beitrag des eingesetzten Skills; Begründungen ergänzt bzw. als offen markiert, veraltete Werte (Spieler-Wachstum, Entity-Tabelle, Passiv-Effekte) als VERWORFEN gekennzeichnet; Treffer-Stufen und Geschick; Venom-Chance mit 100-%-Deckel*
+*Letzte Aktualisierung: 2026-11-21 — Abschnitt 4: Größen-Aggro umgesetzt (v0.9.7); davor 2026-11-21 — Abschnitt 4: Taktik „Zuschlagen und Abhauen“ (Waldmaus) und Ablenkung durch Schwanz abwerfen (v0.9.6); davor 2026-11-15 — Abschnitt 7: Vertrocknen statt Checkpoint umgesetzt (v0.8.0); Abschnitt 7: Verweis auf GDD-10 an Sterbescreen und Verschmelzen angepasst; davor 2026-11-14 — Wasser zum Wiederbeleben endgültig verworfen (Abschnitt 7); davor 2026-11-14 — MP-Regeneration, KI-Werte und Gegner-Bonus-Level stehen in balance.ts (Werte unverändert); 2026-11-14 — Abschnitt 7 verweist auf GDD-10 (Blob-Formen); 2026-11-13 — Geschwindigkeit aus Bewegungs-Skills (Abschnitt 3, GDD-09); Photosynthese wirkt immer (Abschnitt 5); Geschick = Präzision (Abschnitt 6); Schaden-Multiplikator durch Eigenschafts-Skalierung ersetzt (Abschnitt 3); Kein Angriff ohne Skill, unbewaffneter Nahkampf verworfen (Abschnitte 3 und 6); 2026-11-01 — Hinweis auf das allgemeine Schema (Fortschritt 0–100 %, v0.6); Treffer-Reichweite ab Rand des Gegners (Icon-Größe), Blob-Reichweite erhöht; Balancing: Photosynthese, Skorpione, Schlange schwächer; 2026-10-31 — Gelegentlicher Angriff (Skorpion-Stachelstich); Regeneration (Photosynthesis) stufenlos; Venom-DoT durch Giftlast ersetzt (Verweis auf GDD-05 Abschnitt 12); Hinweis „Übungsgrad statt Skill-Level“ ergänzt, HP/MP wachsen mit dem Wachstum statt pro Level; 2026-10-25 — Größen- und levelabhängiges Aggro als Konzept (Abschnitt 4); 2026-10-24 — Geschick ohne Beitrag des eingesetzten Skills; Begründungen ergänzt bzw. als offen markiert, veraltete Werte (Spieler-Wachstum, Entity-Tabelle, Passiv-Effekte) als VERWORFEN gekennzeichnet; Treffer-Stufen und Geschick; Venom-Chance mit 100-%-Deckel*

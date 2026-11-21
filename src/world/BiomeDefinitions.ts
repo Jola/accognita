@@ -125,11 +125,16 @@ export function getTileIndex(biome: BiomeId, height: number): number {
 // (Radius 2, Reichweite 2,5 Radien bis zum Rand), dazu Gras etwas weiter
 // weg — erreichbar, sobald er kriechen kann.
 // Lokale Koordinaten im Chunk; Startpunkt (400, 300) = createInitialGameState.
+// Seit 21. November 2026 (Größenskala) sind Wurm (Radius 7,4) und Schnecke
+// (4,7) viel größer als der frische Blob (2): Sie liegen so, dass sie ihn
+// nicht verdecken und ihr Rand trotzdem in Reichweite (5 px) ist —
+// Wurm 11 px (Rand 3,6), Schnecke 8 px (Rand 3,4) vom Startpunkt.
+// [VERWORFEN] Wurm (405, 300), Schnecke (396, 304) — bei worldSize 4.
 // ────────────────────────────────────────
 export const START_NEST_CHUNK = { cx: 0, cy: 0 };
 export const START_NEST_SPAWNS: { id: string; localX: number; localY: number }[] = [
-  { id: "earthworm", localX: 405, localY: 300 },
-  { id: "snail",     localX: 396, localY: 304 },
+  { id: "earthworm", localX: 411, localY: 300 },
+  { id: "snail",     localX: 393, localY: 304 },
   { id: "grass",     localX: 422, localY: 288 },
   { id: "grass",     localX: 378, localY: 320 },
   { id: "grass",     localX: 430, localY: 322 },

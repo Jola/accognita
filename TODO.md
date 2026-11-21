@@ -41,6 +41,7 @@ Format:
 
 ## Erledigt
 
+- `[FEATURE]` **Größen nach echter Durchschnittsgröße und Größen-Aggro** (Auftrag Entwickler, 21. November 2026): worldSize = 3 × √(Länge / 0,6 cm), Drache so groß wie ein Elefant; Reichweite, Aggro und Tempo wachsen mit, auf Realismus geprüft, große Tiere gedämpft; ausgewachsener Blob Radius 16,5 statt 8; viel größere und viel kleinere Wesen (Faktor 4) greifen einander nicht von sich aus an (v0.9.7, GDD-07 Abschnitt 1, GDD-03 Abschnitt 4).
 - `[FEATURE]` **Laufen und fünf Wirbeltiere** (Auftrag Entwickler, 21. November 2026): Laufen, Nagen, Haken schlagen, Heißhunger, Schnappbiss, Schwanz abwerfen, Stachelkleid, Giftresistenz, Nackenbiss, Wendigkeit. Waldmaus mit Taktik „Zuschlagen und Abhauen“. Im INDEX sichtbar, noch nicht platziert (v0.9.6, GDD-02 Abschnitt 3.3).
 - `[POLISH]` **Ungenutzte Alt-Formeln entfernt** (Auftrag Entwickler, 21. November 2026): `calcChitinDr`, `calcVenomChance`, `calcVenomDmgPerTick`, `calcHemolymphReflect`, `calcSuperstrengthMult`, `calcFireBreathDamage`, `calcBiteDamage`, `calcClawDamage` und `SkillSystem.getSkillEffectiveness`. Spiel unverändert (v0.9.5).
 - `[BUG]` **Menü-Reiter im Hochformat abgeschnitten** (Meldung Entwickler, 17. November 2026): Die zentrierte Reiterleiste war etwas zu breit und schnitt SKILLS und INDEX an beiden Rändern ab. Jetzt passen alle Reiter, auf schmalen Schirmen mit weniger Innenabstand (v0.9.4).

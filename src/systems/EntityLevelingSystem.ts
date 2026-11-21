@@ -15,6 +15,7 @@
 import type { EntityDefinition, EntityInstance } from "../types/Entity";
 import { calcSkillAttackDamage } from "./SkillEffects";
 import { getEntitySkillProgress } from "./ProgressionSystem";
+import { ignoresBySize } from "./EntitySystem";
 import {
   ENTITY_MAX_BONUS_LEVEL, ENTITY_WINS_PER_BONUS_LEVEL, ENTITY_HUNT_RADIUS_PX, ENTITY_BONUS_STAT_SCALE,
 } from "../data/balance";
@@ -124,6 +125,8 @@ export function findLevelingPrey(
 
     const levelDiff = hunterLevel - getEffectiveLevel(candidateDef, candidate);
     if (levelDiff < 1 || levelDiff > 3) continue;
+    // Größen-Aggro: viel kleinere Wesen sind keine Beute, viel größere kein Gegner
+    if (ignoresBySize(hunterDef.worldSize ?? 5, candidateDef.worldSize ?? 5)) continue;
 
     const dx = candidate.x - hunter.x;
     const dy = candidate.y - hunter.y;

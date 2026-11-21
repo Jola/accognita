@@ -90,7 +90,7 @@ Current state: **v0.9** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `docs/GDD-03-Kampfsystem.md` | Combat design — v0.3 implemented. |
 | `docs/GDD-04-LookAndFeel.md` | Colors, typography, UI layout, mobile/desktop, tech stack. |
 | `docs/GDD-05-Kampfmathematik.md` | Damage pipeline, damage types, declarative skill effects. |
-| `docs/GDD-07-Bestiarium.md` | Draft: ~100 units from forest to city, size classes, skill ideas (Status: Diskussion; section 12 = five vertebrates with running, built but not placed yet). |
+| `docs/GDD-07-Bestiarium.md` | Draft: ~100 units from forest to city, size classes, size scale from real length (square root, implemented v0.9.7), skill ideas (Status: Diskussion; section 12 = five vertebrates with running, built but not placed yet). |
 | `docs/GDD-09-Grundwerte-und-Sinne.md` | Base stats (strength, dexterity, speed, sight), movement skills, strength from size, vision black → gray → color, awakening intro with nest. |
 | `docs/GDD-08-Progressionsmathematik.md` | Math of leveling (curve families, XP models, integer limits, other games) and of effects (power per level, hit/effect probabilities, skill interactions) (Status: Diskussion; Teil 6 = implemented XP model). |
 | `docs/GDD-10-Blob-Formen.md` | Implemented (v0.7.6–v0.8.4): blob forms settled/traveling/dried, settling, split, merging (no separate connect), rising up, consciousness switch, knowledge merge (highest value per skill), split cost (a fully grown body), resource split, map and direction arrows. |

@@ -102,8 +102,16 @@ export interface EntityDefinition {
    */
   hitAndRun?: { fleeMs: number; reengageLengths: number };
 
+  /**
+   * Durchschnittliche Körperlänge des Vorbilds in cm (Säugetiere ohne
+   * Schwanz, Schlange und Eidechse mit Schwanz, Gras = Wuchshöhe).
+   * Daraus folgt worldSize über die Größenskala (balance.ts).
+   */
+  lengthCm?: number;
+
   /** Visuelle Weltgröße in World-Pixeln. Bestimmt wie groß das Icon dargestellt wird.
-   *  Kleines Insekt: 3–4, Mittelgroßes: 5–7. Default: 5 wenn nicht angegeben. */
+   *  Seit 21. November 2026 aus lengthCm: 3 × √(Länge / 0,6 cm), auf 0,5 gerundet
+   *  (balance.ts, Größenskala). Default: 5 wenn nicht angegeben. */
   worldSize?: number;
 }
 

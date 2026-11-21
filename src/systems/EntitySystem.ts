@@ -19,7 +19,10 @@ import { getCoreProgress, levelFromProgress } from "./ProgressionSystem";
 import { addMaterial } from "./MaterialSystem";
 import { clearVenom } from "./VenomSystem";
 import type { SkillDiscoveryResult, DiscoveryMethod } from "../types/Skill";
-import { calcSuccessChance, ANALYZE_CHANCE_MODIFIER, ENTITY_ICON_RADIUS_FACTOR } from "../data/balance";
+import {
+  calcSuccessChance, ANALYZE_CHANCE_MODIFIER, ENTITY_ICON_RADIUS_FACTOR,
+  SIZE_SCALE_BASE, SIZE_SCALE_REF_CM, SIZE_IGNORE_RATIO,
+} from "../data/balance";
 import type { EntityDefinition } from "../types/Entity";
 
 // calcSuccessChance kommt aus balance.ts — hier re-exportiert damit GameScene.ts nur einen Import braucht
@@ -222,6 +225,26 @@ export function processRespawns(world: WorldState): string[] {
 // -----------------------------------------------------------
 // NEAREST ENTITY — findet nächste lebende Entity in Reichweite
 // -----------------------------------------------------------
+/** worldSize aus der echten Körperlänge (Größenskala, balance.ts). */
+export function worldSizeFromLength(lengthCm: number): number {
+  return SIZE_SCALE_BASE * Math.sqrt(lengthCm / SIZE_SCALE_REF_CM);
+}
+
+/** Größe des Blobs auf der worldSize-Skala (Radius ÷ Icon-Radius-Faktor). */
+export function blobWorldSize(worldRadius: number): number {
+  return worldRadius / ENTITY_ICON_RADIUS_FACTOR;
+}
+
+/**
+ * Größen-Aggro (balance.ts, GDD-03 Abschnitt 4): true, wenn eines der beiden
+ * mindestens SIZE_IGNORE_RATIO-mal so groß ist wie das andere — dann greift
+ * keines das andere aus eigenem Antrieb an.
+ */
+export function ignoresBySize(sizeA: number, sizeB: number): boolean {
+  if (sizeA <= 0 || sizeB <= 0) return false;
+  return sizeA >= SIZE_IGNORE_RATIO * sizeB || sizeB >= SIZE_IGNORE_RATIO * sizeA;
+}
+
 /** Radius eines Gegners in Weltpixeln — so groß wie sein Icon (balance.ts, Treffer-Reichweite). */
 export function getEntityRadius(def: EntityDefinition | undefined): number {
   return (def?.worldSize ?? 5) * ENTITY_ICON_RADIUS_FACTOR;

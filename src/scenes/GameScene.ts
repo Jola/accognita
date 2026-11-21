@@ -73,6 +73,7 @@ import {
   analyzeEntity,
   findNearestEntity,
   getEntityRadius,
+  blobWorldSize,
   processRespawns,
   calcSuccessChance,
 } from "../systems/EntitySystem.js";
@@ -1154,6 +1155,8 @@ export class GameScene extends Phaser.Scene {
     const activeIds = this.chunkManager.getActiveEntityIds();
     // Niedergelassene Blobs sind vorerst kein Ziel (GDD-10 Abschnitt 2)
     const hasTarget = this.gameState.conscious.form === "traveling";
+    // Größen-Aggro: Größe des Blobs auf der worldSize-Skala
+    const blobSize = blobWorldSize(this.calcPlayerWorldRadius());
 
     for (const [id, instance] of this.gameState.world.entities) {
       if (!activeIds.has(id)) continue;
@@ -1164,7 +1167,7 @@ export class GameScene extends Phaser.Scene {
       tickAttackCooldown(instance, delta);
       tickRangedCooldown(instance, delta);
 
-      const frame = calcEntityAi(def, instance, px, py, now, hasTarget);
+      const frame = calcEntityAi(def, instance, px, py, now, hasTarget, blobSize);
       if (instance.isAggro) this.lastAggroAt = now;
 
       if (frame.becameAggro) {

@@ -27,7 +27,9 @@ import {
   HP_PER_GROWTH, MP_PER_GROWTH, BASE_HP, BASE_MP, PLAYER_SIZE_GROWTH_MAX, PLAYER_SPEED_PER_WORLD_RADIUS,
   PLAYER_WORLD_RADIUS_MIN, PLAYER_WORLD_RADIUS_MAX, PLAYER_REACH_FACTOR,
   SIZE_STRENGTH_BONUS_MAX, MP_REGEN_MILLI_PER_SECOND,
+  SIZE_IGNORE_RATIO, ENTITY_ICON_RADIUS_FACTOR,
 } from "../data/balance.js";
+import { worldSizeFromLength } from "../systems/EntitySystem.js";
 import { SIGHT_EDGE_FRACTION } from "../data/body.js";
 import { calcSizeStrengthBonus, maxEffectOverSkills } from "../systems/BodySystem.js";
 import { SKILL_RANKS, NATUR_PROGRESS, LEVEL_AT_NATUR, OVERSTRETCH_MAX_FRACTION } from "../data/progression.js";
@@ -477,7 +479,13 @@ function entityDetail(e: EntityDefinition): string {
     ["Verhalten", `${BEHAVIOR_DE[e.behavior]} · ${DISPOSITION_DE[e.disposition]}`],
     ["HP", e.hp !== undefined ? `${hp(e.hp)} HP` : "—"],
     ["Tempo", e.speed !== undefined ? `${e.speed} px/s` : "—"],
-    ["Weltgröße", orDash(e.worldSize)],
+    ["Echte Länge", e.lengthCm !== undefined ? `${num(e.lengthCm, 1)} cm` : "—"],
+    ["Weltgröße", e.worldSize !== undefined
+      ? `${num(e.worldSize, 1)}${e.lengthCm !== undefined ? ` (Skala: ${num(worldSizeFromLength(e.lengthCm), 2)})` : ""}`
+      : "—"],
+    ["Größen-Aggro", e.worldSize !== undefined
+      ? `greift den Blob nicht von sich aus an, wenn sein Radius unter ${num(e.worldSize / SIZE_IGNORE_RATIO * ENTITY_ICON_RADIUS_FACTOR, 1)} px oder ab ${num(e.worldSize * SIZE_IGNORE_RATIO * ENTITY_ICON_RADIUS_FACTOR, 1)} px liegt (Blob ${num(PLAYER_WORLD_RADIUS_MIN)}–${num(PLAYER_WORLD_RADIUS_MAX)} px)`
+      : "—"],
     ["Interaktionsradius", `${e.interactRadius} px`],
     ["Respawn", `${e.respawnTime} s`],
   ];

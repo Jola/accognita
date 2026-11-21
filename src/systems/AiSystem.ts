@@ -20,6 +20,7 @@
 import type { EntityDefinition, EntityInstance } from "../types/Entity";
 import type { AiFrame } from "../types/Combat";
 import { canFight } from "./EntityLevelingSystem";
+import { ignoresBySize } from "./EntitySystem";
 import {
   ZIGZAG_ANGLE_DEG, ZIGZAG_SWITCH_MS, BODY_LENGTH_PER_WORLD_SIZE,
   AGGRO_LOSS_FACTOR, CHASE_STOP_FACTOR, WANDER_RADIUS_PX, WANDER_SPEED_FACTOR,
@@ -60,7 +61,8 @@ export function calcEntityAi(
   playerX: number,
   playerY: number,
   now: number,
-  hasTarget = true
+  hasTarget = true,
+  targetSize = 0   // Größe des Blobs auf der worldSize-Skala; 0 = Größen-Aggro aus
 ): AiFrame {
   // Entities ohne Kampfwerte (Pflanzen, Mineralien) bekommen keine AI
   if (!canFight(def) || def.behavior === "passive") {
@@ -123,7 +125,10 @@ export function calcEntityAi(
   let lostAggro   = false;
 
   if (!instance.isAggro) {
-    if (dist <= aggroRadius && shouldAggro(def)) {
+    // Größen-Aggro: viel größere oder viel kleinere Wesen greifen nicht von
+    // sich aus an (balance.ts SIZE_IGNORE_RATIO). Wer schon aggro ist
+    // (angegriffen, Absorb-Fehlschlag), bleibt es.
+    if (dist <= aggroRadius && shouldAggro(def) && !ignoresBySize(def.worldSize ?? 5, targetSize)) {
       instance.isAggro = true;
       becameAggro = true;
     }
