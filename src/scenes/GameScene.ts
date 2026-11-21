@@ -988,8 +988,7 @@ export class GameScene extends Phaser.Scene {
       this.playtimeAccumulator %= 1000;
       this.tickProgression(seconds);
       if (this.moveFeed) {
-        const def = ALL_SKILLS.get(this.moveFeed.id);
-        this.gainFeed?.add(`xp:${this.moveFeed.id}`, def?.icon ?? "💨", def?.name ?? this.moveFeed.id, this.moveFeed.xp, "XP", formatXp);
+        this.feedSkillProgress(this.moveFeed.id);
         this.moveFeed = null;
       }
       if (this.progressDirty) {
@@ -1027,10 +1026,12 @@ export class GameScene extends Phaser.Scene {
     const moveSkill = getActiveMoveSkill(player);
     const dist = Math.hypot(player.x - prevX, player.y - prevY);
     if (moveSkill && dist > 0) {
-      const xpBefore = player.discoveredSkills.get(moveSkill)?.xp ?? 0;
+      const total = () => { const i = player.discoveredSkills.get(moveSkill); return i ? i.xp + i.pendingXp : 0; };
+      const xpBefore = total();
       const gain = gainSkillXp(player, moveSkill, calcMoveXp(moveSkill, dist, this.calcPlayerWorldRadius()));
-      // Für die Anzeige sammeln, einmal pro Sekunde zeigen (nicht jeden Frame)
-      const xpGain = (player.discoveredSkills.get(moveSkill)?.xp ?? 0) - xpBefore;
+      // Für die Anzeige sammeln, einmal pro Sekunde zeigen (nicht jeden Frame);
+      // zurückgehaltene Erfahrung (Übertraining) zählt mit
+      const xpGain = total() - xpBefore;
       if (xpGain > 0) this.moveFeed = { id: moveSkill, xp: (this.moveFeed?.id === moveSkill ? this.moveFeed.xp : 0) + xpGain };
       this.logProgressionEvents(gain.events);
       this.progressDirty = true;
@@ -1518,32 +1519,54 @@ export class GameScene extends Phaser.Scene {
   // (Vorgabe Entwickler, 15. November 2026)
   // ----------------------------------------------------------
 
-  /** Erfahrung aller Skills und Kern-Fähigkeiten, um danach den Zuwachs zu zeigen */
+  /**
+   * Erfahrung aller Skills und Kern-Fähigkeiten, um danach den Zuwachs zu
+   * zeigen — einschließlich der zurückgehaltenen (Übertraining), damit auch
+   * Übung zählt, die erst in der Ruhe ankommt.
+   */
   private xpSnapshot(): Map<string, number> {
     const p = this.gameState.player;
     const m = new Map<string, number>();
-    m.set("absorb", p.coreAbilities.absorb.xp);
-    m.set("analyze", p.coreAbilities.analyze.xp);
-    for (const [id, inst] of p.discoveredSkills) m.set(id, inst.xp);
+    m.set("absorb", p.coreAbilities.absorb.xp + p.coreAbilities.absorb.pendingXp);
+    m.set("analyze", p.coreAbilities.analyze.xp + p.coreAbilities.analyze.pendingXp);
+    for (const [id, inst] of p.discoveredSkills) m.set(id, inst.xp + inst.pendingXp);
     return m;
   }
 
-  /** Zuwachs seit `before` in die Anzeige; neu entdeckte Skills zeigt ihre Karte */
+  /**
+   * Skills, die seit `before` Erfahrung bekommen haben (auch zurückgehaltene
+   * aus Übertraining), in die Anzeige; neu entdeckte Skills zeigt ihre Karte.
+   */
   private feedXpSince(before: Map<string, number>, skip: string[] = []) {
+    if (!this.gainFeed) return;
+    const p = this.gameState.player;
+    const gained = (id: string, now: number) => now - (before.get(id) ?? now) > 1e-6;
+    for (const a of ["analyze", "absorb"] as const) {
+      const c = p.coreAbilities[a];
+      if (gained(a, c.xp + c.pendingXp)) this.feedSkillProgress(a);
+    }
+    for (const [id, inst] of p.discoveredSkills) {
+      if (skip.includes(id) || !before.has(id)) continue;
+      if (gained(id, inst.xp + inst.pendingXp)) this.feedSkillProgress(id);
+    }
+  }
+
+  /**
+   * Zeile eines Skills in der Anzeige oben links: Name, darunter der Balken
+   * bis zur nächsten Stufe wie im SKILLS-Tab, mit der Erfahrung, die in der
+   * Ruhe nachkommt (Vorgabe Entwickler, 21. November 2026; GainFeed.ts).
+   */
+  private feedSkillProgress(id: string) {
     const feed = this.gainFeed;
     if (!feed) return;
     const p = this.gameState.player;
-    const show = (id: string, icon: string, name: string, now: number) => {
-      const gain = now - (before.get(id) ?? now);
-      if (gain > 1e-6) feed.add(`xp:${id}`, icon, name, gain, "XP", formatXp);
-    };
-    show("analyze", "🔍", "Analyze", p.coreAbilities.analyze.xp);
-    show("absorb", "💥", "Absorb", p.coreAbilities.absorb.xp);
-    for (const [id, inst] of p.discoveredSkills) {
-      if (skip.includes(id) || !before.has(id)) continue;
-      const def = ALL_SKILLS.get(id);
-      show(id, def?.icon ?? "✨", def?.name ?? id, inst.xp);
-    }
+    const core = id === "absorb" || id === "analyze" ? p.coreAbilities[id] : undefined;
+    const inst = core ?? p.discoveredSkills.get(id);
+    if (!inst) return;
+    const info = getRankInfo(inst, getLearningEffort(id));
+    const icon = id === "analyze" ? "🔍" : id === "absorb" ? "💥" : ALL_SKILLS.get(id)?.icon ?? "✨";
+    const name = id === "analyze" ? "Analyze" : id === "absorb" ? "Absorb" : ALL_SKILLS.get(id)?.name ?? id;
+    feed.progress(`xp:${id}`, icon, name, info.fraction, info.pendingFraction);
   }
 
   private feedMaterials(materials: Record<string, number>) {
@@ -1566,18 +1589,29 @@ export class GameScene extends Phaser.Scene {
     if (best > 0) feed.set("find", `✨ Nächster neuer Skill ${Math.min(99, Math.floor(best * 100))} %`);
   }
 
-  /** Feed unter dem Blob halten (Bildschirm-Pixel relativ zum Spielbereich) */
+  /**
+   * Anzeige oben links halten (Vorgabe Entwickler, 21. November 2026). Liegt
+   * dort gerade das Hinweisfeld (Spieleinstieg), rutscht sie darunter, damit
+   * sich beide nicht verdecken. Alle 200 ms reicht — das Feld bewegt sich selten.
+   * [VERWORFEN] unter dem Blob, im flachen Querformat rechts daneben.
+   */
+  private gainFeedLayoutAt = 0;
   private updateGainFeedAnchor() {
     if (!this.gainFeed) return;
-    const cam = this.cameras.main;
-    const p = this.gameState.player;
-    const sx = (p.x - cam.worldView.x) * cam.zoom;
-    const sy = (p.y - cam.worldView.y) * cam.zoom;
-    const r = calcPlayerWorldRadius(p) * cam.zoom;
-    // Querformat mit wenig Höhe: rechts neben den Blob, sonst darunter
-    const landscape = cam.width > cam.height && cam.height < 600;
-    if (landscape) this.gainFeed.setAnchor(sx + r + 16, sy - r, "left");
-    else this.gainFeed.setAnchor(sx, sy + r + 12);
+    const now = Date.now();
+    if (now < this.gainFeedLayoutAt) return;
+    this.gainFeedLayoutAt = now + 200;
+    const gap = 10;
+    let top = gap;
+    const hint = this.introEl;
+    const wrap = hint?.parentElement;
+    if (hint && wrap && hint.style.opacity !== "0") {
+      const h = hint.getBoundingClientRect();
+      const w = wrap.getBoundingClientRect();
+      const overlapsLeft = h.left - w.left < gap + this.gainFeed.width;
+      if (overlapsLeft) top = h.bottom - w.top + gap;
+    }
+    this.gainFeed.setAnchor(gap, top);
   }
 
   /**

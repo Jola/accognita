@@ -195,10 +195,15 @@
 
     /* Joystick-Styles werden vom Modul src/ui/Joystick.ts injiziert */
 
-    /* SKILL BAR */
+    /* SKILL BAR — quer nebeneinander über Absorb/Analyze.
+       Hochformat: übereinander (Vorgabe Entwickler, 21. November 2026) —
+       nebeneinander ragte das erste Kästchen in den Joystick. */
     #skillBarWrap {
       position:absolute; right:18px; bottom:108px;
       display:flex; gap:8px; pointer-events:all;
+    }
+    @media (orientation: portrait) {
+      #skillBarWrap { flex-direction:column; }
     }
 
     /* ABSORB / ANALYZE Touch-Buttons */

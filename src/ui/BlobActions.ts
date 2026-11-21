@@ -27,10 +27,21 @@ function injectStyles() {
   const s = document.createElement("style");
   s.id = "blobactions-styles";
   s.textContent = `
+    /* Vorgabe (Entwickler, 21. November 2026): Hochformat über dem Joystick,
+       Querformat neben ihm. [VERWORFEN] rechts über der Skill-Leiste.
+       Joystick: links 18 px, unten 18 px, 136 px groß (Joystick.ts).
+       Rechts frei halten: Hochformat die Skill-Spalte (52 px), Querformat
+       Skill-Leiste und Absorb/Analyze (≈ 232 px breit). */
     #blobActions {
-      position: fixed; right: 18px; bottom: 178px; z-index: 41;
-      display: flex; flex-wrap: wrap-reverse; justify-content: flex-end; gap: 8px;
-      max-width: min(80vw, 340px); pointer-events: none;
+      position: fixed; z-index: 41;
+      display: flex; flex-wrap: wrap-reverse; justify-content: flex-start; gap: 8px;
+      pointer-events: none;
+    }
+    @media (orientation: portrait) {
+      #blobActions { left: 18px; bottom: 166px; max-width: calc(100vw - 18px - 88px); }
+    }
+    @media (orientation: landscape) {
+      #blobActions { left: 166px; bottom: 18px; max-width: calc(100vw - 166px - 268px); }
     }
     .ba-btn {
       pointer-events: auto; cursor: pointer; user-select: none; -webkit-user-select: none;
@@ -83,4 +94,4 @@ export function createBlobActions(
   };
 }
 
-// Stand: 15. November 2026 — Pulsieren für Anstöße (GDD-11); davor Erstfassung (GDD-10 Umsetzungsschritt 3)
+// Stand: 21. November 2026 — Hochformat über, Querformat neben dem Joystick (Vorgabe Entwickler); davor 15. November 2026 — Pulsieren für Anstöße (GDD-11); davor Erstfassung (GDD-10 Umsetzungsschritt 3)

@@ -65,7 +65,7 @@ Current state: **v0.9** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/ui/BlobActions.ts` | GDD-10 context buttons (settle, merge, split, rise up, switch, activity) |
 | `src/ui/BlobPicker.ts` | GDD-10 overlay: death screen and list of blobs to switch to / activity choice (pauses the game) |
 | `src/ui/TransferDialog.ts` | GDD-10 transfer dialog on splitting: one slider per resource, Nothing/Half/All (pauses the game) |
-| `src/ui/GainFeed.ts` | What the blob is learning and collecting right now: one line per skill/material under the blob that keeps counting instead of being overwritten (DOM only) |
+| `src/ui/GainFeed.ts` | What the blob is learning and collecting right now, top left: per skill its name with the progress bar to the next rank (incl. XP pending from overtraining), per material a line that keeps counting (DOM only) |
 | `src/ui/SkillIntro.ts` | Presents newly learned skills one card at a time (what it does, values now and with practice, how it improves; sight and movement explained); queue pauses the game |
 | `src/ui/MemoryView.ts` | GEDÄCHTNIS tab: explanations, skill cards and discoveries the player has seen, to read again (DOM only) |
 | `src/ui/MapView.ts` | GDD-10 MAP tab: biomes, fog over unvisited chunks, blob markers, mark/unmark, switch consciousness, pick mode for the death screen (canvas, DOM only; the scene supplies the data) |

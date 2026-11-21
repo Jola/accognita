@@ -41,6 +41,7 @@ Format:
 
 ## Erledigt
 
+- `[UI]` **Lern-Anzeige oben links, Skill-Slots und Blob-Knöpfe neu angeordnet** (Auftrag Entwickler, 21. November 2026): Skills mit Fortschrittsbalken bis zur nächsten Stufe (inkl. Erfahrung aus der Ruhe) unter dem Namen; Skill-Slots im Hochformat übereinander; Blob-Knöpfe im Hochformat über, im Querformat neben dem Joystick (v0.9.9, GDD-04).
 - `[POLISH]` **Echte Größe eintragen, Skala erst beim Laden** (Auftrag Entwickler, 21. November 2026): Wesen haben nur `lengthCm` und Folgewerte als Vielfache der Größe; `worldSizeFromLength` (balance.ts) ist die einzige Stelle der Skala, auch der ausgewachsene Blob wird damit berechnet (v0.9.8, GDD-07 Abschnitt 1).
 - `[FEATURE]` **Größen nach echter Durchschnittsgröße und Größen-Aggro** (Auftrag Entwickler, 21. November 2026): worldSize = 3 × √(Länge / 0,6 cm), Drache so groß wie ein Elefant; Reichweite, Aggro und Tempo wachsen mit, auf Realismus geprüft, große Tiere gedämpft; ausgewachsener Blob Radius 16,5 statt 8; viel größere und viel kleinere Wesen (Faktor 4) greifen einander nicht von sich aus an (v0.9.7, GDD-07 Abschnitt 1, GDD-03 Abschnitt 4).
 - `[FEATURE]` **Laufen und fünf Wirbeltiere** (Auftrag Entwickler, 21. November 2026): Laufen, Nagen, Haken schlagen, Heißhunger, Schnappbiss, Schwanz abwerfen, Stachelkleid, Giftresistenz, Nackenbiss, Wendigkeit. Waldmaus mit Taktik „Zuschlagen und Abhauen“. Im INDEX sichtbar, noch nicht platziert (v0.9.6, GDD-02 Abschnitt 3.3).

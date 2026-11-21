@@ -29,6 +29,10 @@ function injectStyles() {
       gap: 8px;
       pointer-events: auto;
     }
+    /* Hochformat: Slots übereinander (Vorgabe Entwickler, 21. November 2026) */
+    @media (orientation: portrait) {
+      #skillBar { flex-direction: column; }
+    }
     .sk-slot {
       width: 52px; height: 52px;
       border-radius: 12px;
