@@ -362,6 +362,158 @@ export const ENTITY_DEFINITIONS: EntityDefinition[] = [
     skillXp: { bite: 486, venom: 187.5 },
     worldSize: 12,
   },
+
+  // ==========================================================
+  // WIRBELTIERE MIT BEINEN — Level 2–5 (GDD-07 Teil 7)
+  // Vorgabe (Entwickler, 21. November 2026): Alle fünf sind gebaut und im
+  //   INDEX zu sehen, aber noch nirgends platziert (nicht in BIOME_SPAWNS).
+  //   Sie bringen Laufen (GDD-09 Abschnitt 2.4).
+  // Begründung (Vorschlag Claude, offen) für alle Zahlen:
+  //   - Größer als Insekten (worldSize 6–11 statt 3–7), kleiner als die
+  //     Schlange (12): Maus und Eidechse sind viel größer als eine Spinne,
+  //     der Maßstab im Spiel ist aber gestaucht.
+  //   - Tempo über worldSize × 5: Wirbeltiere laufen, statt zu krabbeln —
+  //     die Maus ist deutlich schneller als der Blob mit Krabbeln (20–80 px/s).
+  //   - Laufen steht nicht in skillXp: Bewegungs-Skills wirken bei Gegnern
+  //     nicht (ihr Tempo ist speed); wie bei den Insekten und Krabbeln.
+  //   - Angriffsreichweite 2 × worldSize, Aggro-Radius 2,5 × worldSize wie
+  //     bei allen Wesen.
+  //   VORLÄUFIG — Platzierung, Spawn-Dichte und Balance sind offen.
+  // ==========================================================
+
+  {
+    id: "wood_mouse",
+    name: "Waldmaus",
+    icon: "🐁",
+    behavior: "defensive",
+    disposition: "neutral",   // scheu: greift nur an, wenn sie gestört wird
+    category: "creature",
+    rarity: "common",
+    level: 2,
+    skillDrops: [
+      { skillId: "run",    chance: 0.18 }, // Häufigstes Wirbeltier — der einfachste Weg zu Laufen
+      { skillId: "gnaw",   chance: 0.15 }, // Nagezähne
+      { skillId: "zigzag", chance: 0.12 }, // Fluchtverhalten
+    ],
+    materialDrops: [],
+    hp: 14_000, speed: 50,
+    attackRangePx: 14, attackCooldownMs: 900, attackType: "melee",
+    respawnTime: 40,
+    interactRadius: 45,
+    aggroRadius: 18,
+    // gnaw 57 % → 5,0 Schnitt; zigzag 38 % → 7,5 % Ausweichen, Geschick 1,5
+    skillXp: { gnaw: 120, zigzag: 100 },
+    // Vorgabe (Entwickler, 21. November 2026): Die Waldmaus greift einmal an
+    //   und haut dann 1 s im Zickzack ab. Ist der Blob danach noch in
+    //   Reichweite (2 Mauslängen), greift sie wieder an und haut wieder ab;
+    //   sonst greift sie nicht mehr an und läuft weiter weg.
+    // Mauslänge = Durchmesser ihres Symbols (2 × 0,55 × worldSize ≈ 7,7 px).
+    hitAndRun: { fleeMs: 1000, reengageLengths: 2 },
+    worldSize: 7,
+  },
+  {
+    id: "water_shrew",
+    name: "Wasserspitzmaus",
+    icon: "🐀",
+    behavior: "aggressive",
+    disposition: "hostile",
+    category: "creature",
+    rarity: "uncommon",
+    level: 3,
+    skillDrops: [
+      { skillId: "run",      chance: 0.15 },
+      { skillId: "bite",     chance: 0.12 },
+      { skillId: "venom",    chance: 0.15 }, // Giftiger Speichel — eines der wenigen giftigen Säugetiere
+      { skillId: "voracity", chance: 0.15 }, // Rasender Stoffwechsel
+    ],
+    materialDrops: [],
+    hp: 16_000, speed: 45,
+    attackRangePx: 12, attackCooldownMs: 1100, attackType: "melee",
+    respawnTime: 50,
+    interactRadius: 40,
+    aggroRadius: 15,
+    // bite 38 % → 6,7 Stich; venom 20 % → 14 % Chance auf 6,7 HP Gift
+    //   (schwächer als die Schlange; Spitzmausgift lähmt Insekten und Frösche)
+    skillXp: { bite: 100, venom: 60 },
+    worldSize: 6,
+  },
+  {
+    id: "sand_lizard",
+    name: "Zauneidechse",
+    icon: "🦎",
+    behavior: "defensive",
+    disposition: "neutral",
+    category: "creature",
+    rarity: "uncommon",
+    level: 3,
+    skillDrops: [
+      { skillId: "run",       chance: 0.15 },
+      { skillId: "snap_bite", chance: 0.12 },
+      { skillId: "tail_drop", chance: 0.12 },
+    ],
+    materialDrops: [],
+    hp: 22_000, speed: 55,
+    attackRangePx: 16, attackCooldownMs: 1600, attackType: "melee",
+    respawnTime: 60,
+    interactRadius: 45,
+    aggroRadius: 20,
+    // snap_bite 51 % → 7,6 Stich (viele schwere Treffer).
+    // Schwanz abwerfen wirkt nur beim Blob — Gegner werfen (noch) keinen ab.
+    skillXp: { snap_bite: 150 },
+    worldSize: 8,
+  },
+  {
+    id: "hedgehog",
+    name: "Igel",
+    icon: "🦔",
+    behavior: "defensive",
+    disposition: "neutral",
+    category: "creature",
+    rarity: "uncommon",
+    level: 4,
+    skillDrops: [
+      { skillId: "run",              chance: 0.12 },
+      { skillId: "bite",             chance: 0.10 },
+      { skillId: "spines",           chance: 0.20 }, // Das Merkmal des Igels
+      { skillId: "venom_resistance", chance: 0.15 },
+    ],
+    materialDrops: [],
+    hp: 45_000, speed: 40,
+    attackRangePx: 22, attackCooldownMs: 1500, attackType: "melee",
+    respawnTime: 90,
+    interactRadius: 55,
+    aggroRadius: 28,
+    // bite 51 % → 8,6 Stich; spines 25 % → 4,5 HP Rückschlag, blockt 1,2 HP Stich/Schnitt;
+    // venom_resistance 76 % → fängt 46 % jeder Giftdosis ab.
+    // Rückschlag bewusst niedrig: Er trifft jeden Angriff des Blobs, auch frische mit 1–5 HP.
+    skillXp: { bite: 150, spines: 60, venom_resistance: 300 },
+    worldSize: 11,
+  },
+  {
+    id: "least_weasel",
+    name: "Mauswiesel",
+    icon: "🦦",
+    behavior: "aggressive",
+    disposition: "hostile",
+    category: "creature",
+    rarity: "rare",
+    level: 5,
+    skillDrops: [
+      { skillId: "run",       chance: 0.20 },
+      { skillId: "neck_bite", chance: 0.15 },
+      { skillId: "agility",   chance: 0.15 },
+    ],
+    materialDrops: [],
+    hp: 40_000, speed: 70,
+    attackRangePx: 20, attackCooldownMs: 1300, attackType: "melee",
+    respawnTime: 120,
+    interactRadius: 50,
+    aggroRadius: 25,
+    // neck_bite 61 % → 9,0 Stich, 15 % kritisch; agility 76 % → Geschick 4,6.
+    // Jagt Mäuse (Level 2): Gegner jagen Wesen 1–3 Level unter sich (GDD-03 Abschnitt 9).
+    skillXp: { neck_bite: 250, agility: 300 },
+    worldSize: 10,
+  },
 ];
 
 // Schnellzugriffs-Map

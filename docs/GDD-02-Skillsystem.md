@@ -135,6 +135,54 @@ Fähigkeiten werden **nicht garantiert** übertragen. Ob ein Skill erworben wird
 
 Weitere Einheiten (Skorpione, Schlange, Drache) und alle aktuellen Werte: im Spiel unter 📋 → INDEX.
 
+### 3.3 Wirbeltier-Skills (implementiert v0.9.6, Tiere noch nicht platziert)
+
+> **Status: Implementiert (v0.9.6)** — Skills und Einheiten sind gebaut und im INDEX zu sehen. Keines der Tiere steht schon auf der Karte (nicht in `BIOME_SPAWNS`).
+
+**Vorgabe (Entwickler, 21. November 2026):** Fünf Wirbeltiere mit Beinen bringen Laufen (GDD-09 Abschnitt 2.4). Jedes hat neben Laufen mindestens zwei weitere Skills: einen Angriffs-Skill und einen, der Angriff, Schutz oder sonst nützlich ist. Die Skills orientieren sich an den Merkmalen der biologischen Vorbilder. Claudes Vorschläge sind alle übernommen, die Giftresistenz des Igels kommt dazu. Die Werte sollte Claude so überarbeiten, wie Einheiten und Skills sie brauchen. Die Tiere sollen im INDEX zu sehen sein, aber noch nicht auf der Karte.
+**Begründung (Vorschlag Claude, übernommen):** Je Skill im Feld `reasoning` in [skills.ts](../src/data/skills.ts), je Tier in [entities.ts](../src/data/entities.ts) und in [GDD-07 Abschnitt 12](GDD-07-Bestiarium.md).
+Alle Zahlen: **Vorschlag Claude (offen)**, VORLÄUFIG.
+
+#### Entitäten
+
+| Entität | Level | Verhalten | Skills (Fundchance Absorb) |
+|---------|-------|-----------|----------------------------|
+| Waldmaus 🐁 | 2 | defensiv, Taktik „Zuschlagen und Abhauen“ | Laufen (18 %), Nagen (15 %), Haken schlagen (12 %) |
+| Wasserspitzmaus 🐀 | 3 | aggressiv | Laufen (15 %), Biss (12 %), Venom (15 %), Heißhunger (15 %) |
+| Zauneidechse 🦎 | 3 | defensiv | Laufen (15 %), Schnappbiss (12 %), Schwanz abwerfen (12 %) |
+| Igel 🦔 | 4 | defensiv | Laufen (12 %), Biss (10 %), Stachelkleid (20 %), Giftresistenz (15 %) |
+| Mauswiesel 🦦 | 5 | aggressiv | Laufen (20 %), Nackenbiss (15 %), Wendigkeit (15 %) |
+
+Symbole: Für Spitzmaus und Wiesel gibt es kein eigenes Emoji. Die Ratte und der Otter (ein Marder wie das Wiesel) kommen am nächsten.
+
+#### Skills
+
+| Skill-ID | Name | Typ | Werte (start → max) | Lernt durch |
+|----------|------|-----|---------------------|-------------|
+| run | Laufen 🐾 | passiv | Tempo ×0,7 → ×1,5, Stärke 0 → 5, Geschick 0 → 3 | Bewegen (0,5 XP je Körperradius) |
+| gnaw | Nagen 🐭 | aktiv | 1 → 8 HP Schnitt, 0,7 s, 1 MP | Schaden |
+| zigzag | Haken schlagen ↯ | passiv | Ausweichen 0 → 20 %, Geschick 0 → 4 | vermiedenen Schaden |
+| voracity | Heißhunger 🍽️ | passiv | Verdauung von Wachsen ×1,0 → ×2,5 | verdaute Fasern (0,5 XP je Faser) |
+| snap_bite | Schnappbiss 🦎 | aktiv | 1 → 14 HP Stich, 1,6 s, 3 MP, viele schwere Treffer | Schaden |
+| tail_drop | Schwanz abwerfen 〰️ | passiv | tödlichen Treffer mit 1 HP überstehen, Nachwachsen 600 → 120 s, Ablenkung 1 → 4 s | Auslösen (25 XP) |
+| spines | Stachelkleid 🦔 | passiv | Rückschlag 1 → 15 HP, Block 0 → 5 HP gegen Stich und Schnitt | Rückschlag und Block |
+| venom_resistance | Giftresistenz 🧪 | passiv | neutralisiert 0 → 60 % jeder Giftdosis | neutralisiertes Gift |
+| neck_bite | Nackenbiss 🩸 | aktiv | 1 → 14 HP Stich, 1,8 s, 5 MP, 15 % kritisch | Schaden |
+| agility | Wendigkeit 🌀 | passiv | Geschick 0 → 6 | Absorb/Analyze |
+
+**Überarbeitet gegenüber dem ersten Vorschlag (21. November 2026):**
+- [VERWORFEN] Schnappbiss: „mehr schwere Treffer, wenn der Blob sich vorher bewegt hat“. Jetzt gilt immer ein Profil mit vielen schweren Treffern. **Begründung (Vorschlag Claude, offen):** Der Kampf kennt keinen Bewegungszustand. Den einzubauen lohnt erst, wenn mehrere Skills ihn brauchen.
+- [VERWORFEN] Wendigkeit: „mehr Tempo beim Richtungswechsel“. Jetzt nur Geschick, dafür das meiste aus einem Skill (6). **Begründung (Vorschlag Claude, offen):** Dafür bräuchte es eine Kurvenmechanik, die es nicht gibt.
+- [VERWORFEN] Mauswiesel: „Laufen mit dem höchsten Tempo-Maximum“. **Begründung:** Ein Skill hat für alle Quellen dieselben Werte (Abschnitt 8.6). Schneller ist nur das Wiesel selbst (`speed` 70).
+- Die Wasserspitzmaus beißt mit dem vorhandenen Biss und spritzt mit dem vorhandenen Venom. Ihr Gift ist schwächer als das der Schlange.
+
+**Neue Effekt-Typen** (GDD-05 Abschnitt 5.5): `evade`, `venom_resist`, `digest_mult`, `lethal_save`, `distract`.
+
+**Erfahrung für Verteidigung, anteilig je Skill:**
+**Vorgabe (Entwickler):** Skills lernen an dem, was sie bewirken.
+**Begründung (Vorschlag Claude, offen):** Seit Stachelkleid gibt es zwei Skills mit Rückschlag (Hemolymph, Stachelkleid) und zwei mit Block (Chitin Armor, Stachelkleid). Rückschlag und abgewehrter Schaden werden deshalb anteilig auf die Skills verteilt, die beigetragen haben. Für den Anteil am Block zählt 10 % Reduktion wie 1 HP Block.
+[VERWORFEN, 21. November 2026] Aller Rückschlag zählte für Hemolymph, alles Abgewehrte für Chitin Armor.
+
 ### 3.2 Pflanzen-Skills
 
 > **Status: Implementiert (v0.3)**
@@ -683,4 +731,4 @@ Das wirkt in Schritt [2] der Schadenspipeline (GDD-05 Abschnitt 3.1), also vor R
 
 ---
 
-*Letzte Aktualisierung: 15. November 2026 — Begründung zum Einsatz-Abschnitt übernommen; Kapazitäts-Karte (GDD-11 5.10, v0.9.1); davor 15. November 2026 — Skill-Karte: Einsatz (passiv/aktiv) als eigener Abschnitt (Meldung Entwickler, v0.9.0); davor 15. November 2026 — COMBO-Reiter ausgebaut (Vorgabe Entwickler, Abschnitt 5, v0.8.8); davor 15. November 2026 — Skill-Vorstellung beim ersten Erlernen, nacheinander, mit Sehen und Bewegen (Vorgabe Entwickler, Abschnitt 6, v0.8.6); davor 15. November 2026 — Abschnitt 8.5: Kapazität beim Verschmelzen als umgesetzt markiert; Abschnitt 8.10: Höchstmasse umgesetzt (v0.8.0); Abschnitte 8.5 und 8.10: Verweise auf GDD-10 an die Entscheidungen angepasst (Körpermasse, Kapazität beim Verschmelzen); davor 14. November 2026 — Abschnitt 7: Channeling für Absorb und Analyze als Idee des Entwicklers; davor 14. November 2026 — Abschnitt 8.8: Vorgabe, was am Skill und was in balance.ts konfiguriert wird; Sprungweite, Heilung, Verdauung und Erfahrung durch Tun an die Skills verschoben (v0.7.5, Spiel unverändert); davor 14. November 2026 — Abschnitt 8.10 verweist auf die geplante Verteilung der Körpermasse (GDD-10); davor v0.7 — Stärke-Skala neu: Bewegung gibt Stärke, Größe verstärkt sie, +4 % je Punkt (Abschnitt 8.11, GDD-09, 13. November 2026); Wachsen (Grow) umgesetzt, Wachstum nur noch aus Körpermasse, mehr Gras (Abschnitte 2, 3, 8.10, 13. November 2026); Photosynthese wirkt immer, auch im Kampf (Abschnitt 3.2, 13. November 2026); Geschick = Präzision, nicht Schaden, mit Begründung des Entwicklers (Abschnitt 8.11, 13. November 2026); Eigenschaften Stärke/Geschick und Skalierung der Angriffe (Abschnitt 8.11, 13. November 2026); Unbewaffneter Schaden verworfen, kein Angriff ohne Skill (Abschnitt 8, 13. November 2026); Effektive Werte an allen Skills (Abschnitt 6, 1. November 2026); Tatsächlicher Schaden in Skill-Ansicht und Skill-Menü (Abschnitt 6, 1. November 2026); Ameise: Biss-Erfahrung 65,5 XP → 5 Schaden (Abschnitt 8.3, 1. November 2026); Allgemeines Schema: Fortschritt 0–100 %, jeder Wert läuft vom Startwert zum Höchstwert, Ränge in Prozent, Kapazität = entdeckte Skills bis 90 % (Abschnitte 8.2–8.4, 1. November 2026); davor v0.5 — Balancing: Kapazität sättigt bei 4200, Verlernen verteilt statt reihum, Photosynthese-XP ×0,25, Stachelstich-Dosis gesenkt (1. November 2026); XP-Skalierung Absorb/Analyze: kein Abrunden mehr (31. Oktober 2026); Skorpione: Zangengriff und Stachelstich (31. Oktober 2026); Venom: Giftlast statt DoT (31. Oktober 2026); davor Abgleich mit dem Code: Material-System als teilweise implementiert (Abschnitt 2), Biss in den Quellen-Skills der Insekten ergänzt und `maxLevel` als verworfen markiert (Abschnitt 3.1) (31. Oktober 2026); davor Rangnamen: Biologie-Reihe aktiv, Handwerk-Reihe als Alternative (Abschnitt 8.2, 31. Oktober 2026); davor Erfahrung statt Level umgesetzt (Abschnitt 8: Ränge, fließende Wirkung, Kapazität, Überdehnung, Wiedererlernen, gleiche Skills für Blob und Gegner, Übertraining, Idee Grow); alte Level-Regeln in 1.2, 4, 6, 7.1 als [VERWORFEN] markiert (30. Oktober 2026). Davor: Skill-Kapazität und Verlernen als Überlegung des Entwicklers (Abschnitt 7.1); Verweis auf GDD-08 (Progressionsmathematik) in Abschnitt 4; Größe beim Absorbieren/Analysieren als Konzept (Abschnitt 1.4); XP-Skalierung (Absorb/Analyze und Kampf-XP nach Gegner-Level) mit Begründungen dokumentiert, Erfolgsformel als vorläufig vermerkt, Superstrength-Beschreibung korrigiert (Oktober 2026)*
+*Letzte Aktualisierung: 21. November 2026 — Abschnitt 3.3: Wirbeltier-Skills und fünf Wirbeltiere (v0.9.6, nicht platziert), Verteidigungs-Erfahrung anteilig je Skill; davor 15. November 2026 — Begründung zum Einsatz-Abschnitt übernommen; Kapazitäts-Karte (GDD-11 5.10, v0.9.1); davor 15. November 2026 — Skill-Karte: Einsatz (passiv/aktiv) als eigener Abschnitt (Meldung Entwickler, v0.9.0); davor 15. November 2026 — COMBO-Reiter ausgebaut (Vorgabe Entwickler, Abschnitt 5, v0.8.8); davor 15. November 2026 — Skill-Vorstellung beim ersten Erlernen, nacheinander, mit Sehen und Bewegen (Vorgabe Entwickler, Abschnitt 6, v0.8.6); davor 15. November 2026 — Abschnitt 8.5: Kapazität beim Verschmelzen als umgesetzt markiert; Abschnitt 8.10: Höchstmasse umgesetzt (v0.8.0); Abschnitte 8.5 und 8.10: Verweise auf GDD-10 an die Entscheidungen angepasst (Körpermasse, Kapazität beim Verschmelzen); davor 14. November 2026 — Abschnitt 7: Channeling für Absorb und Analyze als Idee des Entwicklers; davor 14. November 2026 — Abschnitt 8.8: Vorgabe, was am Skill und was in balance.ts konfiguriert wird; Sprungweite, Heilung, Verdauung und Erfahrung durch Tun an die Skills verschoben (v0.7.5, Spiel unverändert); davor 14. November 2026 — Abschnitt 8.10 verweist auf die geplante Verteilung der Körpermasse (GDD-10); davor v0.7 — Stärke-Skala neu: Bewegung gibt Stärke, Größe verstärkt sie, +4 % je Punkt (Abschnitt 8.11, GDD-09, 13. November 2026); Wachsen (Grow) umgesetzt, Wachstum nur noch aus Körpermasse, mehr Gras (Abschnitte 2, 3, 8.10, 13. November 2026); Photosynthese wirkt immer, auch im Kampf (Abschnitt 3.2, 13. November 2026); Geschick = Präzision, nicht Schaden, mit Begründung des Entwicklers (Abschnitt 8.11, 13. November 2026); Eigenschaften Stärke/Geschick und Skalierung der Angriffe (Abschnitt 8.11, 13. November 2026); Unbewaffneter Schaden verworfen, kein Angriff ohne Skill (Abschnitt 8, 13. November 2026); Effektive Werte an allen Skills (Abschnitt 6, 1. November 2026); Tatsächlicher Schaden in Skill-Ansicht und Skill-Menü (Abschnitt 6, 1. November 2026); Ameise: Biss-Erfahrung 65,5 XP → 5 Schaden (Abschnitt 8.3, 1. November 2026); Allgemeines Schema: Fortschritt 0–100 %, jeder Wert läuft vom Startwert zum Höchstwert, Ränge in Prozent, Kapazität = entdeckte Skills bis 90 % (Abschnitte 8.2–8.4, 1. November 2026); davor v0.5 — Balancing: Kapazität sättigt bei 4200, Verlernen verteilt statt reihum, Photosynthese-XP ×0,25, Stachelstich-Dosis gesenkt (1. November 2026); XP-Skalierung Absorb/Analyze: kein Abrunden mehr (31. Oktober 2026); Skorpione: Zangengriff und Stachelstich (31. Oktober 2026); Venom: Giftlast statt DoT (31. Oktober 2026); davor Abgleich mit dem Code: Material-System als teilweise implementiert (Abschnitt 2), Biss in den Quellen-Skills der Insekten ergänzt und `maxLevel` als verworfen markiert (Abschnitt 3.1) (31. Oktober 2026); davor Rangnamen: Biologie-Reihe aktiv, Handwerk-Reihe als Alternative (Abschnitt 8.2, 31. Oktober 2026); davor Erfahrung statt Level umgesetzt (Abschnitt 8: Ränge, fließende Wirkung, Kapazität, Überdehnung, Wiedererlernen, gleiche Skills für Blob und Gegner, Übertraining, Idee Grow); alte Level-Regeln in 1.2, 4, 6, 7.1 als [VERWORFEN] markiert (30. Oktober 2026). Davor: Skill-Kapazität und Verlernen als Überlegung des Entwicklers (Abschnitt 7.1); Verweis auf GDD-08 (Progressionsmathematik) in Abschnitt 4; Größe beim Absorbieren/Analysieren als Konzept (Abschnitt 1.4); XP-Skalierung (Absorb/Analyze und Kampf-XP nach Gegner-Level) mit Begründungen dokumentiert, Erfolgsformel als vorläufig vermerkt, Superstrength-Beschreibung korrigiert (Oktober 2026)*

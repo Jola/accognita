@@ -46,6 +46,7 @@ import {
   getEntityBaseDamage, getEntityRangedDamage, getScaledMaxHp, getScaledDamage, getScaledSpeed,
 } from "../systems/EntityLevelingSystem.js";
 import { getEntityAttackDamageType, getEntityMeleeHitBasis, getEntityMeleeSkillId, getEntityAttributeMult } from "../systems/CombatSystem.js";
+import { hitAndRunReengagePx } from "../systems/AiSystem.js";
 
 // Werte-Tabellen: Fortschritt zu Beginn jedes Rangs, dazu der Höchstwert
 // (p = 1, wird nie ganz erreicht). Dazwischen fließend.
@@ -66,12 +67,15 @@ const EFFECT_DE: Record<EffectType, string> = {
   dexterity: "Geschick", strength: "Stärke",
   move_speed: "Tempo-Faktor", sight_range: "Sichtweite", color_vision: "Farbsehen (ohne Rot)", red_vision: "Rot sehen",
   jump_distance: "Sprungweite", regen_hp: "Heilung", digest_rate: "Verdauung",
+  digest_mult: "Verdauungs-Faktor", evade: "Ausweichen", venom_resist: "Gift neutralisiert",
+  lethal_save: "Tödlichen Treffer überstehen, nachwachsen in", distract: "Ablenkung der Gegner",
 };
 export const PRACTICE_DE: Record<PracticeUnit, string> = {
   body_radius_moved: "je zurückgelegtem Körperradius, solange dies der schnellste Bewegungs-Skill ist",
   second_enabled: "je Sekunde, solange eingeschaltet",
   hp_healed: "je geheiltem HP",
   fiber_digested: "je verdauter Pflanzenfaser",
+  triggered: "je Auslösen",
 };
 const ATTRIBUTE_DE: Record<Attribute, string> = { strength: "Stärke", dexterity: "Geschick" };
 const ATTRIBUTE_ICON: Record<Attribute, string> = { strength: "💪", dexterity: "🎯" };
@@ -96,7 +100,8 @@ const seconds = (ms?: number) => (ms === undefined ? "—" : `${num(ms / 1000)} 
 const orDash = (v: unknown) => (v === undefined || v === null ? "—" : String(v));
 
 const ABSOLUTE_EFFECTS: EffectType[] = ["deal_damage", "flat_block", "heal_flat", "reflect_damage", "grant_penetration"];
-const PERCENT_EFFECTS: EffectType[] = ["percent_reduce", "apply_status", "inject_venom", "heal_percent"];
+const PERCENT_EFFECTS: EffectType[] = ["percent_reduce", "apply_status", "inject_venom", "heal_percent", "evade", "venom_resist"];
+const SECOND_EFFECTS: EffectType[] = ["lethal_save", "distract"];
 
 function formatEffectValue(type: EffectType, value: number): string {
   if (ABSOLUTE_EFFECTS.includes(type)) return `${num(value)} HP`;
@@ -107,6 +112,7 @@ function formatEffectValue(type: EffectType, value: number): string {
   if (type === "jump_distance") return `${num(value, 0)} px`;
   if (type === "regen_hp") return `${num(value)} HP/s`;
   if (type === "digest_rate") return `${num(value, 1)} Fasern/min`;
+  if (SECOND_EFFECTS.includes(type)) return `${num(value, 1)} s`;
   return factor(value);
 }
 
@@ -131,6 +137,7 @@ function effectFormula(type: EffectType, v: SkillValue): string {
   if (type === "jump_distance") return valueFormula(v, (x) => `${num(x)} px`);
   if (type === "regen_hp") return valueFormula(v, (x) => `${num(x)} HP/s`);
   if (type === "digest_rate") return valueFormula(v, (x) => `${num(x)} Fasern/min`);
+  if (SECOND_EFFECTS.includes(type)) return valueFormula(v, (x) => `${num(x)} s`);
   return `×(${valueFormula(v, (x) => num(x))})`;
 }
 
@@ -534,8 +541,15 @@ function entityDetail(e: EntityDefinition): string {
         `${num(evalSkillValue(x.statusConfig.damageFormula, skillLevels[id]))} HP/Tick für ${seconds(x.statusConfig.durationMs)}`);
     }
   }
-  const reflect = resolveDefenderEffects(skillLevels).reflectDamage;
-  if (reflect) combat.push(`<b>Rückschlag</b> bei erlittenem Treffer: ${hp(reflect)} HP`);
+  const ownDefense = resolveDefenderEffects(skillLevels);
+  if (ownDefense.reflectDamage) combat.push(`<b>Rückschlag</b> bei erlittenem Treffer: ${hp(ownDefense.reflectDamage)} HP`);
+  if (ownDefense.evade) combat.push(`<b>Ausweichen:</b> ${pct(ownDefense.evade)} Chance, einem Treffer ganz zu entgehen`);
+  if (ownDefense.venomResist) combat.push(`<b>Giftresistenz:</b> ${pct(ownDefense.venomResist)} jeder Giftdosis neutralisiert`);
+  if (e.hitAndRun) {
+    combat.push(`<b>Taktik Zuschlagen und Abhauen:</b> greift einmal an, flieht ${seconds(e.hitAndRun.fleeMs)} im Zickzack; ` +
+      `ist der Blob dann höchstens ${num(e.hitAndRun.reengageLengths)} Körperlängen ` +
+      `(${num(hitAndRunReengagePx(e))} px) entfernt, greift sie wieder an, sonst läuft sie weiter weg`);
+  }
 
   const defRows = ALL_DAMAGE_TYPES.map((t) => {
     const d = resolveDefenderEffects(skillLevels, t);

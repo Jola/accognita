@@ -35,7 +35,7 @@ import {
   getPlayerAllSkillProgress,
 } from "./SkillEffectSystem";
 import { calcJumpDistance, calcSkillAttackDamage } from "./SkillEffects";
-import { rollVenomDose, clearVenom } from "./VenomSystem";
+import { rollVenomDose, clearVenom, applyVenomResist } from "./VenomSystem";
 
 // [VERWORFEN, 13. November 2026] Unbewaffneter Nahkampf des Blobs (Absorb-
 // Fortschritt, 1 → 20 HP Wucht). Vorgabe (Entwickler): Ohne Skill ist kein
@@ -88,6 +88,7 @@ interface Combatant { effects: Record<string, number>; dex: number; str: number 
 
 interface HitOutcome {
   grade: HitGrade;
+  evaded?: boolean;       // Verteidiger ist ausgewichen (Effekt "evade") — zählt wie verfehlt
   dmg: number;            // milli-HP Endschaden
   absorbed: number;       // milli-HP durch Verteidigung abgefangen
   reflect: number;        // milli-HP Rückschlag an den Angreifer (nur bei Treffer)
@@ -102,11 +103,13 @@ function resolveHit(
   defender: Combatant,
   attackSkillId: string | undefined
 ): HitOutcome {
+  const def = resolveDefenderEffects(defender.effects, damageType);
+  // Ausweichen (Haken schlagen) vor dem Treffer-Wurf: Der Angriff geht ganz ins Leere
+  if (def.evade > 0 && Math.random() < def.evade) return { grade: "miss", evaded: true, dmg: 0, absorbed: 0, reflect: 0 };
   const grade = rollHitGrade(calcHitChances(profile, progress, attacker.dex, defender.dex));
   if (grade === "miss") return { grade, dmg: 0, absorbed: 0, reflect: 0 };
 
   const atk = resolveAttackerEffects(attacker.effects);
-  const def = resolveDefenderEffects(defender.effects, damageType);
   const hitMult = HIT_DAMAGE_MULT[grade];
   const attackerMult = atk.damageMult * combatantAttributeMult(attacker, attackSkillId);
   const dmg = calcFinalDamage({
@@ -244,18 +247,22 @@ export function playerAttack(
   const profile: HitProfile = skillDef.hitProfile ?? DEFAULT_HIT_PROFILE;
 
   const attacker = playerCombatant(player, skillId);
-  const outcome = resolveHit(baseDmg, damageType, profile, progress, attacker, entityCombatant(def), skillId);
+  const defender = entityCombatant(def);
+  const outcome = resolveHit(baseDmg, damageType, profile, progress, attacker, defender, skillId);
 
   if (outcome.grade === "miss") {
     return {
-      hit: false, hitGrade: "miss", damageDealt: 0, statusApplied: [],
-      message: `${def.icon} ${def.name}: verfehlt!`,
+      hit: false, hitGrade: "miss", damageDealt: 0, statusApplied: [], evaded: outcome.evaded,
+      message: outcome.evaded ? `${def.icon} ${def.name} weicht aus!` : `${def.icon} ${def.name}: verfehlt!`,
     };
   }
 
-  // Angreifer-seitige On-Hit-Effekte: Status-Effekte und Gift (VenomSystem)
+  // Angreifer-seitige On-Hit-Effekte: Status-Effekte und Gift (VenomSystem),
+  // Gift abzüglich der Giftresistenz des Ziels
   const appliedEffects: StatusEffect[] = resolveOnHitStatusEffects(attacker.effects);
-  const venomDose = rollVenomDose(attacker.effects, { skillId, progress });
+  const { dose: venomDose, resisted: venomResisted } = applyVenomResist(
+    rollVenomDose(attacker.effects, { skillId, progress }), resolveDefenderEffects(defender.effects).venomResist
+  );
 
   const msg = `${def.icon} ${def.name}: ${hp(outcome.dmg)} Schaden${gradeSuffix(outcome.grade)}` +
     (venomDose.total > 0 ? ` + ${hp(venomDose.total)} Gift!` : ".");
@@ -268,6 +275,7 @@ export function playerAttack(
     reflectDamage: outcome.reflect,  // Hemolymph der Entity trifft den Spieler
     statusApplied: appliedEffects,
     venomDose,
+    venomResisted,
     message: msg,
   };
 }
@@ -293,25 +301,32 @@ export function entityAttack(
   const baseDmg = getScaledDamage(def, instance.bonusLevel ?? 0, skillId);
   const { profile, progress } = getEntityMeleeHitBasis(def, skillId);
   const attacker = entityCombatant(def, skillId);
-  const outcome = resolveHit(
-    baseDmg, getEntityAttackDamageType(def, skillId), profile, progress, attacker, playerCombatant(player), skillId
-  );
+  const defender = playerCombatant(player);
+  const damageType = getEntityAttackDamageType(def, skillId);
+  const outcome = resolveHit(baseDmg, damageType, profile, progress, attacker, defender, skillId);
 
   if (outcome.grade === "miss") {
     return {
-      hit: false, hitGrade: "miss", damageDealt: 0, statusApplied: [],
-      message: `${def.icon} ${def.name}${label} verfehlt dich!`,
+      hit: false, hitGrade: "miss", damageDealt: 0, statusApplied: [], evaded: outcome.evaded,
+      message: outcome.evaded
+        ? `↯ Du weichst ${def.icon} ${def.name}${label} aus!`
+        : `${def.icon} ${def.name}${label} verfehlt dich!`,
     };
   }
 
   // On-Hit-Effekte der Entity: Status-Effekte und Gift (VenomSystem).
   // Gift aktiver Skills wirkt nur, wenn genau dieser Skill getroffen hat.
+  // Die Giftresistenz des Blobs neutralisiert einen Teil der Dosis.
   const appliedEffects: StatusEffect[] = resolveOnHitStatusEffects(attacker.effects);
-  const venomDose = rollVenomDose(attacker.effects, skillId ? { skillId, progress } : undefined);
+  const { dose: venomDose, resisted: venomResisted } = applyVenomResist(
+    rollVenomDose(attacker.effects, skillId ? { skillId, progress } : undefined),
+    resolveDefenderEffects(defender.effects).venomResist
+  );
 
   const armor = outcome.absorbed > 0 ? `, ${hp(outcome.absorbed)} abgewehrt` : "";
   const msg = `${def.icon} ${def.name}${label}: ${HIT_GRADE_DE[outcome.grade]} — ${hp(outcome.dmg)} Schaden${armor}` +
-    (venomDose.total > 0 ? ` + ${hp(venomDose.total)} Gift!` : ".");
+    (venomDose.total > 0 ? ` + ${hp(venomDose.total)} Gift!` : ".") +
+    (venomResisted > 0 ? ` 🧪 ${hp(venomResisted)} Gift neutralisiert.` : "");
 
   return {
     hit: true,
@@ -319,8 +334,10 @@ export function entityAttack(
     damageDealt: outcome.dmg,
     absorbedDamage: outcome.absorbed,
     reflectDamage: outcome.reflect,  // Hemolymph des Spielers trifft die Entity
+    damageType,
     statusApplied: appliedEffects,
     venomDose,
+    venomResisted,
     message: msg,
   };
 }
@@ -346,8 +363,10 @@ export function entityRangedAttack(def: EntityDefinition, player: PlayerState): 
 
   if (outcome.grade === "miss") {
     return {
-      hit: false, hitGrade: "miss", damageDealt: 0, statusApplied: [],
-      message: `${def.icon} ${def.name}: ${skillDef.name} verfehlt dich!`,
+      hit: false, hitGrade: "miss", damageDealt: 0, statusApplied: [], evaded: outcome.evaded,
+      message: outcome.evaded
+        ? `↯ Du weichst ${def.icon} ${def.name}: ${skillDef.name} aus!`
+        : `${def.icon} ${def.name}: ${skillDef.name} verfehlt dich!`,
     };
   }
   return {

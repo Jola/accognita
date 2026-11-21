@@ -67,7 +67,12 @@ export type EffectType =
   | "red_vision"         // Rot sehen, 0–1 (formula: Anteil; der beste Skill zählt)
   | "jump_distance"      // Sprungweite in Weltpixeln (formula: px; trigger on_activate)
   | "regen_hp"           // HP-Regeneration, stufenlos (formula: HP pro Sekunde; StatusEffectSystem)
-  | "digest_rate";       // Verdauung: Nahrung pro Minute Spielzeit (formula: Fasern/min; GrowSystem)
+  | "digest_rate"        // Verdauung: Nahrung pro Minute Spielzeit (formula: Fasern/min; GrowSystem)
+  | "digest_mult"        // Verdauungs-Faktor auf Grow (formula: Faktor; GrowSystem, z. B. Heißhunger)
+  | "evade"              // Ausweichen: Chance, einem Treffer ganz zu entgehen (formula: 0–1; trigger on_receive_damage)
+  | "venom_resist"       // Giftresistenz: Anteil jeder Giftdosis, der neutralisiert wird (formula: 0–1; trigger on_receive_damage)
+  | "lethal_save"        // Einmal einen tödlichen Treffer mit 1 HP überstehen; formula = Zeit bis es wieder geht (s)
+  | "distract";          // Lenkt Gegner ab, wenn lethal_save auslöst (formula: Sekunden)
 
 /**
  * Charakter-Eigenschaften. Sie kommen nur aus Skills (GDD-02 Abschnitt 8.1):
@@ -103,8 +108,9 @@ export interface AttributeScaling {
  *   second_enabled    — je Sekunde Spielzeit, solange eingeschaltet
  *   hp_healed         — je tatsächlich geheiltem HP
  *   fiber_digested    — je verdauter Pflanzenfaser
+ *   triggered         — je Auslösen (seltene Effekte wie Schwanz abwerfen)
  */
-export type PracticeUnit = "body_radius_moved" | "second_enabled" | "hp_healed" | "fiber_digested";
+export type PracticeUnit = "body_radius_moved" | "second_enabled" | "hp_healed" | "fiber_digested" | "triggered";
 
 export interface SkillPractice {
   unit: PracticeUnit;

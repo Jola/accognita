@@ -79,6 +79,27 @@ export function rollVenomDose(
 }
 
 // -----------------------------------------------------------
+// 1b. GIFTRESISTENZ DES ZIELS — neutralisiert einen Anteil der Dosis
+// Regel und Begründung: Skill venom_resistance in skills.ts, src/data/venom.ts Abschnitt 6.
+// -----------------------------------------------------------
+/**
+ * Verringert die Dosis um den Anteil resist (0–1), anteilig je Gift-Skill.
+ * Gibt die verringerte Dosis und die neutralisierte Menge (milli-HP) zurück.
+ */
+export function applyVenomResist(dose: VenomDose, resist: number): { dose: VenomDose; resisted: number } {
+  const r = Math.min(1, Math.max(0, resist));
+  if (dose.total <= 0 || r <= 0) return { dose, resisted: 0 };
+  const bySkill: Record<string, number> = {};
+  let total = 0;
+  for (const [skillId, amount] of Object.entries(dose.bySkill)) {
+    const kept = Math.round(amount * (1 - r));
+    bySkill[skillId] = kept;
+    total += kept;
+  }
+  return { dose: { total, bySkill }, resisted: dose.total - total };
+}
+
+// -----------------------------------------------------------
 // 2. GIFTLAST — Dosen addieren sich
 // -----------------------------------------------------------
 

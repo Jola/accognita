@@ -17,7 +17,7 @@ Format:
 
 ## Features & Ideen
 
-- `[FEATURE]` **Laufen** (Konzept, GDD-09 Abschnitt 2.4): schnellster Bewegungs-Skill, braucht neue Wirbeltiere mit Beinen (Maus, Eidechse …).
+- `[FEATURE]` **Wirbeltiere platzieren** (GDD-07 Abschnitt 12): Waldmaus, Wasserspitzmaus, Zauneidechse, Igel und Mauswiesel sind gebaut, stehen aber noch nicht auf der Karte. Offen: Biome, Häufigkeit, Spawn-Dichte.
 
 - `[FEATURE]` **Channeling für Absorb und Analyze** (Idee Entwickler, 14. November 2026, für später; GDD-02 Abschnitt 7): Beide sollen etwas Zeit in Anspruch nehmen und in dieser Zeit unterbrochen werden können.
 
@@ -41,6 +41,7 @@ Format:
 
 ## Erledigt
 
+- `[FEATURE]` **Laufen und fünf Wirbeltiere** (Auftrag Entwickler, 21. November 2026): Laufen, Nagen, Haken schlagen, Heißhunger, Schnappbiss, Schwanz abwerfen, Stachelkleid, Giftresistenz, Nackenbiss, Wendigkeit. Waldmaus mit Taktik „Zuschlagen und Abhauen“. Im INDEX sichtbar, noch nicht platziert (v0.9.6, GDD-02 Abschnitt 3.3).
 - `[POLISH]` **Ungenutzte Alt-Formeln entfernt** (Auftrag Entwickler, 21. November 2026): `calcChitinDr`, `calcVenomChance`, `calcVenomDmgPerTick`, `calcHemolymphReflect`, `calcSuperstrengthMult`, `calcFireBreathDamage`, `calcBiteDamage`, `calcClawDamage` und `SkillSystem.getSkillEffectiveness`. Spiel unverändert (v0.9.5).
 - `[BUG]` **Menü-Reiter im Hochformat abgeschnitten** (Meldung Entwickler, 17. November 2026): Die zentrierte Reiterleiste war etwas zu breit und schnitt SKILLS und INDEX an beiden Rändern ab. Jetzt passen alle Reiter, auf schmalen Schirmen mit weniger Innenabstand (v0.9.4).
 - `[BUG]` **Facettenauge und Hauptaugen ohne Farbe** (Meldung Entwickler, 16. November 2026): Der Filter „ohne Rot“ legte Rot und Grün zu Gelbgrau zusammen, im Wald blieb kaum Farbe. Jetzt bleiben Grün und Blau, nur Rot wird dunkel (v0.9.2).

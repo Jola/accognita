@@ -38,7 +38,7 @@ const STAT_SCALE         = ENTITY_BONUS_STAT_SCALE;
 // Normale Nahkampf-Skills einer Entity in der Reihenfolge, in der sie gewählt
 // werden (der erste vorhandene ist der Standard-Angriff). Gelegentliche
 // Angriffe (occasionalAttack, z.B. Stachelstich) kommen zusätzlich dazu.
-export const ENTITY_MELEE_SKILLS = ["bite", "claw", "pincer"] as const;
+export const ENTITY_MELEE_SKILLS = ["bite", "claw", "pincer", "gnaw", "snap_bite", "neck_bite"] as const;
 
 /** Standard-Nahkampf-Skill einer Entity (erster aus ENTITY_MELEE_SKILLS in skillXp). */
 export function getEntityMeleeSkillId(def: EntityDefinition): string | undefined {

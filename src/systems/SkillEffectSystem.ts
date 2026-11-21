@@ -78,11 +78,13 @@ export interface DefenderEffects {
   weaknessMult: number;     // multiplikativ gestapelt (1.0 = neutral)
   reflectDamage: number;    // milli-HP (z.B. Hemolymph)
   immune: boolean;
+  evade: number;            // 0–1: Chance, dem Treffer ganz auszuweichen (z.B. Haken schlagen)
+  venomResist: number;      // 0–1: Anteil jeder Giftdosis, der neutralisiert wird (Giftresistenz)
 }
 
 /** Leere DefenderEffects — neutraler Zustand */
 function emptyDefender(): DefenderEffects {
-  return { flatBlock: 0, percentReduce: 0, weaknessMult: 1.0, reflectDamage: 0, immune: false };
+  return { flatBlock: 0, percentReduce: 0, weaknessMult: 1.0, reflectDamage: 0, immune: false, evade: 0, venomResist: 0 };
 }
 
 // -----------------------------------------------------------
@@ -125,11 +127,49 @@ export function resolveDefenderEffects(
           // formula in Display-HP → ×MILLI
           result.reflectDamage += Math.round(value * MILLI);
           break;
+        case "evade":
+          // Mehrere Quellen: unabhängige Chancen (1 − Π(1 − c)), nie über 100 %
+          result.evade = 1 - (1 - result.evade) * (1 - Math.min(1, Math.max(0, value)));
+          break;
+        case "venom_resist":
+          // wie Ausweichen: unabhängige Anteile, nie über 100 %
+          result.venomResist = 1 - (1 - result.venomResist) * (1 - Math.min(1, Math.max(0, value)));
+          break;
       }
     }
   }
 
   return result;
+}
+
+// -----------------------------------------------------------
+// Anteile je Skill an einer Verteidigung — für die Erfahrung
+//
+// Vorgabe (Entwickler): Skills lernen an dem, was sie bewirken. Seit es mehr
+// als einen Skill mit Rückschlag (Hemolymph, Stachelkleid) und mit Block
+// (Chitin Armor, Stachelkleid) gibt, wird die Erfahrung anteilig aufgeteilt:
+// Jeder Skill bekommt den Teil, den er selbst beigetragen hat.
+// [VERWORFEN, 21. November 2026] Aller Rückschlag zählte für Hemolymph,
+// alles Abgewehrte für Chitin Armor.
+// -----------------------------------------------------------
+export type DefenseKind = "reflect" | "block";
+
+/** { skillId → Anteil 0–1 } an Rückschlag oder Block (Flat-Block + %-Reduktion) gegen damageType. */
+export function defenseShares(
+  skillProgress: Record<string, number>,
+  kind: DefenseKind,
+  damageType?: DamageType
+): Record<string, number> {
+  const raw: Record<string, number> = {};
+  let total = 0;
+  for (const [skillId, progress] of Object.entries(skillProgress)) {
+    const d = resolveDefenderEffects({ [skillId]: progress }, damageType);
+    // Block: Flat-Block in HP und %-Reduktion grob vergleichbar machen (10 % ≈ 1 HP)
+    const v = kind === "reflect" ? d.reflectDamage : d.flatBlock / MILLI + d.percentReduce * 10;
+    if (v > 0) { raw[skillId] = v; total += v; }
+  }
+  for (const id of Object.keys(raw)) raw[id] /= total;
+  return raw;
 }
 
 // -----------------------------------------------------------

@@ -138,6 +138,9 @@ export interface AttackResult {
   reflectDamage?: number;              // milli-HP: Rückschlag-Schaden an den Angreifer (z.B. Hemolymph)
   absorbedDamage?: number;             // milli-HP: Schaden der durch Verteidigung aufgefangen wurde
   venomDose?: VenomDose;               // eingespritztes Gift (VenomSystem): gesamt + je Gift-Skill, milli-HP
+  damageType?: DamageType;             // Schadenstyp des Angriffs (für die Block-Erfahrung je Skill)
+  evaded?: boolean;                    // Ziel ist ausgewichen (Effekt "evade", z. B. Haken schlagen)
+  venomResisted?: number;              // milli-HP Gift, die die Giftresistenz des Ziels neutralisiert hat
 }
 
 // -----------------------------------------------------------

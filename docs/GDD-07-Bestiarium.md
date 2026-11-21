@@ -1,7 +1,7 @@
 # ABSORB & EVOLVE — Game Design Document
 ## Datei 07: Bestiarium — Einheiten auf dem Weg vom Wald in die Stadt
 
-> Status: Diskussion — erster Entwurf, noch nichts davon implementiert (außer den als *vorhanden* markierten Einheiten)
+> Status: Diskussion — erster Entwurf, noch nichts davon implementiert (außer den als *vorhanden* markierten Einheiten und den fünf Wirbeltieren in Abschnitt 12: gebaut, aber noch nicht platziert)
 
 ---
 
@@ -92,8 +92,8 @@ Pilze, Insekten, erste kleine Wirbeltiere. Größen G2–G4.
 | 26 | Stinkwanze | Tier | G2 | häufig | defensiv | Stinkwolke* (Gegner weichen zurück) |
 | 27 | Hirschkäfer | Tier | G3 | gelegentlich | territorial | Zangengriff*, Chitin Armor |
 | 28 | Wespe | Tier | G2 | häufig | territorial | Stich*, Flug* |
-| 29 | Waldmaus | Tier | G3 | häufig | scheu | Flinkheit* |
-| 30 | Spitzmaus | Tier | G3 | gelegentlich | aggressiv | Biss, Venom (giftiger Speichel), Heißhunger* |
+| 29 | Waldmaus *(gebaut, nicht platziert — Abschnitt 12)* | Tier | G3 | häufig | scheu | ~~Flinkheit*~~ → Laufen, Nagen, Haken schlagen |
+| 30 | Spitzmaus *(als Wasserspitzmaus gebaut, nicht platziert — Abschnitt 12)* | Tier | G3 | gelegentlich | aggressiv | Biss, Venom (giftiger Speichel), Heißhunger, Laufen |
 | 31 | Blindschleiche | Tier | G4 | gelegentlich | defensiv | Schwanz abwerfen* |
 | 32 | Erdkröte | Tier | G3 | häufig | defensiv | Hautgift* (Absorbieren schadet, Analysieren ist sicher) |
 | 33 | Feuersalamander | Tier | G4 | selten | defensiv | Hautgift*, Regeneration* |
@@ -113,7 +113,7 @@ Pilze, Insekten, erste kleine Wirbeltiere. Größen G2–G4.
 | 38 | Grasfrosch | Tier | G3 | häufig | defensiv | Schleuderzunge* (Fernangriff, zieht heran), Jump |
 | 39 | Ringelnatter | Tier | G4 | gelegentlich | defensiv | Totstellen*, Abwehrsekret* |
 | 40 | Kreuzotter | Tier | G4 | selten | territorial | Biss, Venom |
-| 41 | Igel | Tier | G4 | gelegentlich | defensiv | Stachelkleid*, Einrollen*, Giftresistenz* |
+| 41 | Igel *(gebaut, nicht platziert — Abschnitt 12)* | Tier | G4 | gelegentlich | defensiv | Stachelkleid, Einrollen*, Giftresistenz, Laufen, Biss |
 | 42 | Eichhörnchen | Tier | G4 | häufig | scheu | Klettern*, Vorrat anlegen* |
 | 43 | Maulwurf | Tier | G4 | gelegentlich | passiv | Graben*, Tunnel* |
 | 44 | Fledermaus | Tier | G3 | gelegentlich | passiv | Echoortung* |
@@ -142,7 +142,7 @@ Offenes Kulturland. Größen G3–G6.
 | 58 | Heuschrecke | Tier | G3 | häufig | scheu | Jump |
 | 59 | Honigbiene | Tier | G2 | häufig | defensiv | Stich*, Schwarm*, Honig* (Heilung) |
 | 60 | Feldhamster | Tier | G4 | gelegentlich | territorial | Backentaschen* (Speicher, Bezug zu Infinite Storage), Biss |
-| 61 | Mauswiesel | Tier | G4 | gelegentlich | aggressiv | Nackenbiss* (hohe Krit-Chance) |
+| 61 | Mauswiesel *(gebaut, nicht platziert — Abschnitt 12)* | Tier | G4 | gelegentlich | aggressiv | Nackenbiss* (hohe Krit-Chance) → umgesetzt: Laufen, Nackenbiss, Wendigkeit |
 | 62 | Feldhase | Tier | G5 | häufig | scheu | Hakenschlagen* (Ausweichen) |
 | 63 | Rabenkrähe | Tier | G4 | häufig | defensiv | Picken*, Schwarm* |
 | 64 | Mäusebussard | Tier | G5 | gelegentlich | aggressiv | Sturzflug* |
@@ -288,4 +288,31 @@ Jede Etappe ist ein eigener Lebensraum, und die Einheiten folgen daraus, wo sie 
 
 ---
 
-*Letzte Aktualisierung: v0.4 — Größenregel nach GDD-02 verschoben (Analysieren ohne 20-%-Grenze, Maßstab `worldSize`); Größenzunahme gilt nur für bekämpfbare Gegner, mit Begründung des Entwicklers; Größenregel beim Absorbieren und „Menschen nur analysieren“ (beide vorläufig); erster Entwurf: 104 Einheiten in 7 Etappen (Oktober 2026)*
+## 12. Umgesetzt: Wirbeltiere mit Laufen (v0.9.6, noch nicht platziert)
+
+> Status: Implementiert (v0.9.6) — Einheiten und Skills gebaut, im INDEX zu sehen, aber nicht in `BIOME_SPAWNS`
+
+**Vorgabe (Entwickler, 21. November 2026):** Fünf Wirbeltiere bringen Laufen, jedes mit einem Angriffs-Skill und einem weiteren Skill nach dem biologischen Vorbild. Alle Vorschläge sind übernommen, dazu die Giftresistenz des Igels. Gebaut und im INDEX sichtbar, aber noch auf keiner Karte platziert.
+**Begründung (Vorschlag Claude, übernommen):** Alle fünf leben am Waldboden und Waldrand (Etappen 2–4). Die Zauneidechse ist neu, die Blindschleiche (Nr. 31) bleibt Konzept. Die Eidechse hat Beine und kann laufen, die Blindschleiche nicht.
+
+| Einheit | Gr. | Lv | HP | Tempo | worldSize | Verhalten | Skills | Merkmal des Vorbilds |
+|---------|-----|----|----|-------|-----------|-----------|--------|----------------------|
+| Waldmaus 🐁 | G3 | 2 | 14 | 50 | 7 | defensiv, Zuschlagen und Abhauen | Laufen, Nagen, Haken schlagen | Nagezähne wachsen nach; flieht im Zickzack vor Eule und Katze |
+| Wasserspitzmaus 🐀 | G3 | 3 | 16 | 45 | 6 | aggressiv | Laufen, Biss, Venom, Heißhunger | giftiger Speichel; frisst täglich ihr Körpergewicht |
+| Zauneidechse 🦎 | G3 | 3 | 22 | 55 | 8 | defensiv | Laufen, Schnappbiss, Schwanz abwerfen | Sprint und Zuschnappen; Autotomie |
+| Igel 🦔 | G4 | 4 | 45 | 40 | 11 | defensiv | Laufen, Biss, Stachelkleid, Giftresistenz | 7000 Stacheln; verträgt Schlangengift |
+| Mauswiesel 🦦 | G4 | 5 | 40 | 70 | 10 | aggressiv | Laufen, Nackenbiss, Wendigkeit | tötet mit Nackenbiss; passt durch Mauselöcher |
+
+**Vorschlag Claude (offen)**, alle Zahlen VORLÄUFIG:
+- **Größe:** `worldSize` 6–11, größer als Insekten (3–7), kleiner als die Schlange (12). **Begründung:** Eine Maus ist viel größer als eine Spinne, der Maßstab im Spiel ist aber gestaucht (Abschnitt 1, Größenklassen).
+- **Tempo:** über `worldSize × 5`. **Begründung:** Wirbeltiere laufen, statt zu krabbeln. Das Wiesel ist das schnellste, der Igel das langsamste.
+- **Stufen:** 2–5. **Begründung:** Die Tiere liegen zwischen den Spinnen (2) und der Schlange (10). Das Wiesel (5) jagt Mäuse (2), weil Gegner Wesen 1–3 Stufen unter sich jagen (GDD-03 Abschnitt 9).
+- **Rückschlag des Igels:** nur 4,5 HP (Stachelkleid 25 %). **Begründung:** Er trifft jeden Angriff des Blobs, auch die eines frischen Blobs mit 1–5 HP Schaden.
+- **Laufen** steht bei keinem Tier in `skillXp`: Bewegungs-Skills wirken bei Gegnern nicht (GDD-09 Abschnitt 2.3).
+- **Schwanz abwerfen** wirkt nur beim Blob. Die Eidechse wirft (noch) keinen ab.
+
+Offen: wo die Tiere platziert werden (Biome, Häufigkeit, Spawn-Dichte), und ob die Waldmaus als häufigstes Wirbeltier nahe am Startgebiet liegen soll.
+
+---
+
+*Letzte Aktualisierung: 21. November 2026 — Abschnitt 12: fünf Wirbeltiere mit Laufen gebaut, nicht platziert (v0.9.6); davor v0.4 — Größenregel nach GDD-02 verschoben (Analysieren ohne 20-%-Grenze, Maßstab `worldSize`); Größenzunahme gilt nur für bekämpfbare Gegner, mit Begründung des Entwicklers; Größenregel beim Absorbieren und „Menschen nur analysieren“ (beide vorläufig); erster Entwurf: 104 Einheiten in 7 Etappen (Oktober 2026)*

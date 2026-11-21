@@ -93,6 +93,15 @@ export interface EntityDefinition {
    */
   skillXp?: Record<string, number>;
 
+  /**
+   * Taktik „Zuschlagen und Abhauen“ (AiSystem, GDD-03 Abschnitt 10):
+   * Das Wesen greift einmal an und flieht danach fleeMs im Zickzack. Ist der
+   * Blob dann noch höchstens reengageLengths Körperlängen entfernt, greift es
+   * wieder an; sonst läuft es weiter weg, bis es die Aggro verliert.
+   * Vorgabe (Entwickler, 21. November 2026) für die Waldmaus (Haken schlagen).
+   */
+  hitAndRun?: { fleeMs: number; reengageLengths: number };
+
   /** Visuelle Weltgröße in World-Pixeln. Bestimmt wie groß das Icon dargestellt wird.
    *  Kleines Insekt: 3–4, Mittelgroßes: 5–7. Default: 5 wenn nicht angegeben. */
   worldSize?: number;

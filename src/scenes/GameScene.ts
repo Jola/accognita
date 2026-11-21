@@ -38,7 +38,8 @@ import { createBlobArrows, type BlobArrowsState } from "../ui/BlobArrows.js";
 import { BlobRenderer, type BlobVisualSpec } from "./BlobRenderer";
 import { SIGHT_EDGE_FRACTION } from "../data/body";
 import { processGrow, getPlayerGrowth } from "../systems/GrowSystem";
-import { practiceXp } from "../systems/SkillEffectSystem";
+import { practiceXp, defenseShares, getPlayerPassiveSkillProgress, evalSkillEffect, type DefenseKind } from "../systems/SkillEffectSystem";
+import type { EffectType } from "../types/Skill";
 import { createInitialGameState } from "../types/GameState.js";
 import type { GameState, PlayerState } from "../types/GameState.js";
 import { serializeBody, deserializeBody } from "../systems/BodySerializer";
@@ -79,7 +80,7 @@ import {
   getMaterialList,
 } from "../systems/MaterialSystem.js";
 import type { EntityInstance } from "../types/Entity.js";
-import type { HitGrade } from "../types/Combat.js";
+import type { DamageType, HitGrade } from "../types/Combat.js";
 import { createJoystick, type JoystickState } from "../ui/Joystick.js";
 import { createSkillBar, type SkillBarState } from "../ui/SkillBar.js";
 import { createSkillMenu } from "../ui/SkillMenu.js";
@@ -93,6 +94,7 @@ import {
   setAttackCooldown,
   setRangedCooldown,
   resetAi,
+  distractEntity,
 } from "../systems/AiSystem.js";
 import {
   getEffectiveLevel,
@@ -100,6 +102,7 @@ import {
   getScaledDamage,
   getScaledSpeed,
   getEntityBaseDamage,
+  getEntityRangedDamage,
   findLevelingPrey,
   processEntityVictory,
   canFight,
@@ -126,6 +129,7 @@ import {
   PLAYER_WORLD_RADIUS_MIN,
   PLAYER_SCREEN_RADIUS,
   toDisplayHp,
+  MILLI,
 } from "../data/balance.js";
 import { calcPlayerWorldRadius, calcPlayerSpeed, calcPlayerReach, describePlayerSkillValues } from "../systems/StatsSystem.js";
 import { addVenomDose, processVenom, getVenomLoad, clearVenom } from "../systems/VenomSystem.js";
@@ -1181,6 +1185,8 @@ export class GameScene extends Phaser.Scene {
         setRangedCooldown(instance, def);
         const ranged = entityRangedAttack(def, this.gameState.player);
         this.gameState.player.hp = Math.max(0, this.gameState.player.hp - ranged.damageDealt);
+        // Ausweichen (Haken schlagen): XP = vermiedener Schaden eines normalen Treffers
+        if (ranged.evaded) this.gainEffectXp("evade", getEntityRangedDamage(def) / MILLI, def.level);
         this.showFireBreath(instance.x, instance.y, px, py);
         this.showDamageNumber(px, py, ranged.damageDealt, "#ff6600", ranged.hitGrade);
         addLog(ranged.message, "aggro");
@@ -1201,17 +1207,21 @@ export class GameScene extends Phaser.Scene {
             this.showVenomDose(px, py, result.venomDose.total);
           }
 
-          // Chitin Armor: XP = durch Verteidigung absorbierter Schaden
+          // Block (Chitin Armor, Stachelkleid): XP = abgewehrter Schaden, anteilig je Skill
           if ((result.absorbedDamage ?? 0) > 0) {
-            this.afterXpGain(gainSkillXp(this.gameState.player, "chitin_armor", Math.round(result.absorbedDamage! / 1000), def.level));
+            this.gainDefenseXp("block", result.absorbedDamage!, def.level, result.damageType);
+          }
+          // Giftresistenz: XP = neutralisiertes Gift
+          if ((result.venomResisted ?? 0) > 0) {
+            this.gainEffectXp("venom_resist", result.venomResisted! / MILLI, def.level);
           }
 
-          // Hemolymph: Rückschlag-Schaden an die angreifende Entity
+          // Rückschlag (Hemolymph, Stachelkleid) an die angreifende Entity, XP anteilig je Skill
           const reflectDmg = result.reflectDamage ?? 0;
           if (reflectDmg > 0) {
             instance.currentHp = Math.max(0, instance.currentHp - reflectDmg);
             this.showDamageNumber(instance.x, instance.y, reflectDmg, "#ff8800");
-            this.afterXpGain(gainSkillXp(this.gameState.player, "hemolymph", Math.round(reflectDmg / 1000), def.level));
+            this.gainDefenseXp("reflect", reflectDmg, def.level);
             if (instance.currentHp <= 0) {
               instance.isAlive  = false;
               instance.respawnAt = Date.now() + (def?.respawnTime ?? 60) * 1000;
@@ -1226,6 +1236,8 @@ export class GameScene extends Phaser.Scene {
         } else if (result.hitGrade === "miss") {
           addLog(result.message, "aggro");
           this.showDamageNumber(px, py, 0, "#ff4444", "miss");
+          // Ausweichen (Haken schlagen): XP = vermiedener Schaden eines normalen Treffers
+          if (result.evaded) this.gainEffectXp("evade", getScaledDamage(def, instance.bonusLevel ?? 0) / MILLI, def.level);
         }
       }
     }
@@ -1332,6 +1344,10 @@ export class GameScene extends Phaser.Scene {
     const digested = this.gameState.conscious.nest ? 0 : processGrow(this.gameState.player, delta);
     if (digested > 0) {
       this.afterXpGain(gainSkillXp(this.gameState.player, "grow", practiceXp("grow", "fiber_digested", digested)));
+      // Heißhunger lernt mit, solange er eingeschaltet ist (Menge am Skill: practice)
+      if (getPlayerPassiveSkillProgress(this.gameState.player).voracity !== undefined) {
+        this.afterXpGain(gainSkillXp(this.gameState.player, "voracity", practiceXp("voracity", "fiber_digested", digested)));
+      }
     }
 
     // Gift auf dem Spieler: stufenlos, keine Zahl (die kam beim Biss)
@@ -1401,6 +1417,7 @@ export class GameScene extends Phaser.Scene {
       this.gameState.player.hp = 1; // niedergelassen nicht angreifbar — Gift o. ä. lässt ihn nicht vertrocknen
       return;
     }
+    if (this.tryLethalSave()) return;
     this.syncSkillBarIntoPlayer();
     const dried = dryOut(this.gameState);
     for (const instance of this.gameState.world.entities.values()) resetAi(instance);
@@ -2035,6 +2052,54 @@ export class GameScene extends Phaser.Scene {
   }
 
   /** Nach jeder Erfahrung: Rangwechsel loggen, Werte und Wachstum nachführen */
+  /** Erfahrung anteilig für die Skills, die eine Verteidigung bewirkt haben (Rückschlag, Block). */
+  private gainDefenseXp(kind: DefenseKind, amountMilli: number, level: number, damageType?: DamageType) {
+    const shares = defenseShares(getPlayerPassiveSkillProgress(this.gameState.player), kind, damageType);
+    for (const [id, share] of Object.entries(shares)) {
+      this.afterXpGain(gainSkillXp(this.gameState.player, id, (amountMilli / MILLI) * share, level));
+    }
+  }
+
+  /** Erfahrung für jeden eingeschalteten Passiv-Skill mit diesem Effekt (Ausweichen, Giftresistenz). */
+  private gainEffectXp(type: EffectType, amount: number, level: number) {
+    if (amount <= 0) return;
+    for (const id of Object.keys(getPlayerPassiveSkillProgress(this.gameState.player))) {
+      if (ALL_SKILLS.get(id)?.effects?.some((e) => e.effectType === type)) {
+        this.afterXpGain(gainSkillXp(this.gameState.player, id, amount, level));
+      }
+    }
+  }
+
+  // Schwanz abwerfen (Effekt "lethal_save"): Statt zu vertrocknen überlebt der
+  // Reisende mit 1 HP, alle Wesen werden abgelenkt (Effekt "distract"), das
+  // Stück muss nachwachsen (gemerkt in skillCooldowns, wie Abklingzeiten:
+  // nach dem Laden ist es wieder da). Gift im Körper wirkt weiter.
+  private tryLethalSave(): boolean {
+    const player = this.gameState.player;
+    const now = Date.now();
+    for (const [id, progress] of Object.entries(getPlayerPassiveSkillProgress(player))) {
+      const regrowS = evalSkillEffect(id, "lethal_save", progress);
+      if (regrowS <= 0 || now < (player.skillCooldowns.get(id) ?? 0)) continue;
+      player.hp = MILLI;
+      player.skillCooldowns.set(id, now + regrowS * 1000);
+      const distractMs = evalSkillEffect(id, "distract", progress) * 1000;
+      for (const instance of this.gameState.world.entities.values()) {
+        if (!instance.isAlive) continue;
+        instance.isAggro = false;
+        distractEntity(instance, now + distractMs);
+      }
+      const skill = ALL_SKILLS.get(id);
+      this.cameras.main.flash(250, 255, 220, 120);
+      addLog(`${skill?.icon ?? ""} ${skill?.name ?? id}! Du überlebst mit 1 HP, die Gegner stürzen sich ` +
+        `${Math.round(distractMs / 100) / 10} s lang auf das Stück. Nachwachsen: ${Math.round(regrowS)} s.`, "system");
+      showToast(`${skill?.icon ?? ""} ${skill?.name ?? id} — weg hier!`, "system");
+      this.afterXpGain(gainSkillXp(player, id, practiceXp(id, "triggered", 1)));
+      updateUI(this.gameState);
+      return true;
+    }
+    return false;
+  }
+
   private afterXpGain(result: GainResult) {
     this.logProgressionEvents(result.events);
     this.afterProgressChange();
@@ -2221,7 +2286,7 @@ export class GameScene extends Phaser.Scene {
             this.gameState.player.x, this.gameState.player.y,
             reflectDmgPlayer, "#ff8800"
           );
-          addLog(`${def?.icon ?? "🐞"} Hemolymph! ${toDisplayHp(reflectDmgPlayer)} Rückschlag-Schaden.`, "aggro");
+          addLog(`${def?.icon ?? "🐞"} Rückschlag! ${toDisplayHp(reflectDmgPlayer)} Schaden.`, "aggro");
         }
       }
 

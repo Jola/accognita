@@ -410,6 +410,31 @@ export const WANDER_PAUSE_MIN_MS = 1500;
 export const WANDER_PAUSE_MAX_MS = 4000;
 
 // -----------------------------------------------------------
+// TAKTIK „ZUSCHLAGEN UND ABHAUEN“ (AiSystem, Feld hitAndRun am Wesen)
+//
+// Vorgabe (Entwickler, 21. November 2026): Die Waldmaus greift einmal an und
+//   haut dann 1 s im Zickzack ab. Ist der Blob danach noch in Reichweite
+//   (2 Mauslängen), greift sie wieder an und haut wieder ab usw.; sonst
+//   greift sie nicht mehr an und läuft weiter weg. Fluchtdauer und
+//   Reichweite stehen am Wesen (entities.ts), hier nur, wie gezackt wird.
+// -----------------------------------------------------------
+
+/**
+ * Abweichung vom geraden Fluchtweg beim Hakenschlagen (Grad, abwechselnd
+ * links und rechts).
+ * Begründung (Vorschlag Claude, offen): Eine Maus schlägt Haken vor allem
+ * seitwärts. Bei 70° kommt sie nur ≈ 34 % ihres Tempos vom Blob weg
+ * (Waldmaus: ≈ 17 px in 1 s) — wer ihr nachsetzt, bleibt in Reichweite und
+ * wird wieder gebissen; wer stehen bleibt, ist danach zu weit weg. Bei 45°
+ * entkäme sie jedem Blob schon nach dem ersten Biss.
+ */
+export const ZIGZAG_ANGLE_DEG = 70;
+/** Zeit zwischen zwei Haken (ms). Begründung (Vorschlag Claude, offen): vier Haken pro Sekunde wirken hektisch, bleiben aber sichtbar. */
+export const ZIGZAG_SWITCH_MS = 250;
+/** Körperlänge eines Wesens = Durchmesser seines Symbols (2 × ENTITY_ICON_RADIUS_FACTOR × worldSize). */
+export const BODY_LENGTH_PER_WORLD_SIZE = 2 * ENTITY_ICON_RADIUS_FACTOR;
+
+// -----------------------------------------------------------
 // GEGNER UNTEREINANDER (EntityLevelingSystem, GDD-03 Abschnitt 8)
 //
 // Wesen mit Angriff jagen schwächere Wesen; Siege geben Bonus-Level, die

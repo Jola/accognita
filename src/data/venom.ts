@@ -141,5 +141,21 @@ export const VENOM_MIN_RATE_HP_PER_S = 1;
 //   kosten. Gleiches Prinzip wie der Abschnitt „in Ruhe“ beim Übertraining.
 // -----------------------------------------------------------
 
-// Stand: 1. November 2026 (Dosis nach dem allgemeinen Schema start → max)
+// -----------------------------------------------------------
+// 6. GIFTRESISTENZ (Skill venom_resistance, Igel)
+//
+//     ankommende Dosis = Dosis × (1 − Resistenz)
+//
+// Vorgabe (Entwickler, 21. November 2026): Der Igel bringt Giftresistenz.
+// Begründung (Vorschlag Claude, offen): Igel binden Schlangengift mit
+//   Eiweißen im Blut, bevor es wirkt — es kommt weniger Gift an. Ein
+//   schnellerer Abbau wäre falsch herum: Abbau ist hier der Schaden
+//   (Abschnitt 3), mehr Abbau hieße mehr Schaden pro Sekunde.
+//   Mehrere Quellen rechnen wie unabhängige Chancen: 1 − Π(1 − r).
+//   Erfahrung = neutralisiertes Gift in HP, wie Chitin am Abgewehrten lernt.
+//   Gilt für Blob und Gegner (ein Igel fängt auch das Gift des Blobs ab).
+// -----------------------------------------------------------
+
+// Stand: 21. November 2026 (Abschnitt 6: Giftresistenz)
+// Davor: 1. November 2026 (Dosis nach dem allgemeinen Schema start → max)
 // Davor: 31. Oktober 2026 (Stachelstich ergänzt)

@@ -21,6 +21,7 @@ import type { EntityDefinition, EntityInstance } from "../types/Entity";
 import type { AiFrame } from "../types/Combat";
 import { canFight } from "./EntityLevelingSystem";
 import {
+  ZIGZAG_ANGLE_DEG, ZIGZAG_SWITCH_MS, BODY_LENGTH_PER_WORLD_SIZE,
   AGGRO_LOSS_FACTOR, CHASE_STOP_FACTOR, WANDER_RADIUS_PX, WANDER_SPEED_FACTOR,
   WANDER_PAUSE_MIN_MS as WANDER_PAUSE_MIN, WANDER_PAUSE_MAX_MS as WANDER_PAUSE_MAX,
 } from "../data/balance";
@@ -64,6 +65,15 @@ export function calcEntityAi(
   // Entities ohne Kampfwerte (Pflanzen, Mineralien) bekommen keine AI
   if (!canFight(def) || def.behavior === "passive") {
     return idleFrame();
+  }
+
+  // Abgelenkt (Schwanz abwerfen): Das Wesen stürzt sich auf das abgeworfene
+  // Stück, bleibt stehen und greift nicht an, bis die Ablenkung vorbei ist.
+  if (now < ((instance as any)._distractedUntil ?? 0)) {
+    const lostAggro = instance.isAggro;
+    instance.isAggro = false;
+    delete (instance as any)._harPhase;
+    return { ...idleFrame(), lostAggro };
   }
 
   // Kein Ziel: Das Bewusstsein ist bei einem niedergelassenen Blob, der vorerst
@@ -128,6 +138,17 @@ export function calcEntityAi(
   let vx = 0;
   let vy = 0;
 
+  // Zuschlagen und Abhauen (Waldmaus): eigene Bewegung und eigener Angriffs-Check
+  if (!instance.isAggro) delete (instance as any)._harPhase;
+  if (def.hitAndRun && instance.isAggro && instance.isAlive) {
+    const f = calcHitAndRun(def, instance, dxRaw, dyRaw, dist, now);
+    (instance as any)._aiLastVx = f.vx;
+    (instance as any)._aiLastVy = f.vy;
+    (instance as any)._wanderTargetX = undefined;
+    (instance as any)._wanderTargetY = undefined;
+    return { ...f, becameAggro, lostAggro };
+  }
+
   if (instance.isAggro && instance.isAlive) {
     const speed = def.speed ?? 60;
     const stopDist = (def.attackRangePx ?? 60) * CHASE_STOP_FACTOR;
@@ -174,6 +195,75 @@ export function calcEntityAi(
   );
 
   return { vx, vy, wantToAttack, wantToRangedAttack, becameAggro, lostAggro };
+}
+
+// -----------------------------------------------------------
+// TAKTIK „ZUSCHLAGEN UND ABHAUEN“ (Feld hitAndRun am Wesen)
+//
+// Vorgabe (Entwickler, 21. November 2026), Waldmaus: einmal angreifen, dann
+// 1 s im Zickzack abhauen. Danach noch in Reichweite (2 Mauslängen) →
+// wieder angreifen; sonst nicht mehr angreifen und weiter weglaufen.
+// Phasen (private Felder wie _aiLastCalcAt):
+//   attack — auf den Blob zu, angreifen sobald in Reichweite
+//   flee   — fleeMs lang im Zickzack weg (ZIGZAG_ANGLE_DEG, balance.ts)
+//   escape — geradeaus weg, kein Angriff mehr, bis die Aggro verloren geht
+// -----------------------------------------------------------
+
+/** Reichweite für einen neuen Angriff nach der Flucht (px, Mitte zu Mitte). */
+export function hitAndRunReengagePx(def: EntityDefinition): number {
+  return (def.hitAndRun?.reengageLengths ?? 0) * BODY_LENGTH_PER_WORLD_SIZE * (def.worldSize ?? 5);
+}
+
+function calcHitAndRun(
+  def: EntityDefinition,
+  instance: EntityInstance,
+  dx: number,
+  dy: number,
+  dist: number,
+  now: number
+): AiFrame {
+  const inst = instance as any;
+  const har = def.hitAndRun!;
+  const speed = def.speed ?? 60;
+  let phase: "attack" | "flee" | "escape" = inst._harPhase ?? "attack";
+
+  if (phase === "flee" && now >= (inst._harUntil ?? 0)) {
+    phase = dist <= hitAndRunReengagePx(def) ? "attack" : "escape";
+  }
+
+  let vx = 0, vy = 0, wantToAttack = false;
+  const ux = dist > 0 ? dx / dist : 1;   // Richtung zum Blob
+  const uy = dist > 0 ? dy / dist : 0;
+
+  if (phase === "attack") {
+    const attackRange = def.attackRangePx ?? 60;
+    const stopDist = attackRange * CHASE_STOP_FACTOR;
+    if (dist > stopDist) { vx = ux * speed; vy = uy * speed; }
+    if (dist <= attackRange && instance.attackCooldownRemaining <= 0) {
+      // GameScene führt den Angriff in diesem Frame aus — danach sofort fliehen
+      wantToAttack = true;
+      phase = "flee";
+      inst._harUntil = now + har.fleeMs;
+      inst._harZigStart = now;
+    }
+  } else {
+    // Weg vom Blob; auf der Flucht abwechselnd links und rechts abgewinkelt
+    let angle = Math.atan2(-uy, -ux);
+    if (phase === "flee") {
+      const side = Math.floor((now - (inst._harZigStart ?? now)) / ZIGZAG_SWITCH_MS) % 2 === 0 ? 1 : -1;
+      angle += side * ZIGZAG_ANGLE_DEG * Math.PI / 180;
+    }
+    vx = Math.cos(angle) * speed;
+    vy = Math.sin(angle) * speed;
+  }
+
+  inst._harPhase = phase;
+  return { vx, vy, wantToAttack, wantToRangedAttack: false, becameAggro: false, lostAggro: false };
+}
+
+/** Lenkt ein Wesen bis untilMs ab (Schwanz abwerfen): kein Angriff, keine Aggro. */
+export function distractEntity(instance: EntityInstance, untilMs: number): void {
+  (instance as any)._distractedUntil = untilMs;
 }
 
 // -----------------------------------------------------------
@@ -231,6 +321,10 @@ export function resetAi(instance: EntityInstance): void {
   delete (instance as any)._wanderTargetX;
   delete (instance as any)._wanderTargetY;
   delete (instance as any)._wanderPauseUntil;
+  delete (instance as any)._harPhase;
+  delete (instance as any)._harUntil;
+  delete (instance as any)._harZigStart;
+  // _distractedUntil absichtlich NICHT löschen — die Ablenkung läuft nach dem Schwanz-Abwerfen weiter
   // _spawnX/_spawnY absichtlich NICHT löschen — bleibt der echte Spawnpunkt
 }
 

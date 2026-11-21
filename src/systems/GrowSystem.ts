@@ -10,7 +10,8 @@ import type { PlayerState } from "../types/GameState";
 import { GROW_FOOD_MATERIAL_ID, GROWTH_FIBER_SCALE, MAX_BODY_MASS } from "../data/grow";
 import { GROWTH_XP_SCALE } from "../data/progression";
 import { getSkillProgress } from "./ProgressionSystem";
-import { evalSkillEffect } from "./SkillEffectSystem";
+import { evalSkillEffect, evalSkillValue, getPlayerPassiveSkillProgress } from "./SkillEffectSystem";
+import { ALL_SKILLS } from "../data/skills";
 import { getMaterialAmount } from "./MaterialSystem";
 
 // -----------------------------------------------------------
@@ -20,6 +21,20 @@ import { getMaterialAmount } from "./MaterialSystem";
 /** Fasern pro Minute beim Fortschritt p (0–1) — Wert am Skill (skills.ts, Effekt "digest_rate"). */
 export function calcGrowFibersPerMinute(progress: number): number {
   return evalSkillEffect("grow", "digest_rate", progress);
+}
+
+/**
+ * Faktor auf das Verdauungstempo aus eingeschalteten Passiv-Skills mit Effekt
+ * "digest_mult" (Heißhunger), multiplikativ; 1 = keiner. Wert am Skill.
+ */
+export function calcDigestMult(player: PlayerState): number {
+  let mult = 1;
+  for (const [id, progress] of Object.entries(getPlayerPassiveSkillProgress(player))) {
+    for (const e of ALL_SKILLS.get(id)?.effects ?? []) {
+      if (e.trigger === "passive" && e.effectType === "digest_mult") mult *= evalSkillValue(e.formula, progress);
+    }
+  }
+  return mult;
 }
 
 /** true, wenn Grow bekannt und eingeschaltet ist. */
@@ -42,7 +57,7 @@ export function isFullyGrown(bodyMass: number): boolean {
 export function processGrow(player: PlayerState, deltaMs: number): number {
   if (!isGrowActive(player)) return 0;
   if (isFullyGrown(player.bodyMass ?? 0)) { player.growDigest = 0; return 0; }
-  const perMs = calcGrowFibersPerMinute(getSkillProgress(player, "grow")) / 60_000;
+  const perMs = calcGrowFibersPerMinute(getSkillProgress(player, "grow")) * calcDigestMult(player) / 60_000;
   let pending = (player.growDigest ?? 0) + perMs * deltaMs;
   let digested = 0;
   while (pending >= 1 && getMaterialAmount(player, GROW_FOOD_MATERIAL_ID) >= 1 && !isFullyGrown(player.bodyMass + digested)) {
@@ -77,4 +92,4 @@ export function bodyMassFromLifetimeXp(lifetimeXp: number): number {
   return (Math.max(0, lifetimeXp) / GROWTH_XP_SCALE) * GROWTH_FIBER_SCALE;
 }
 
-// Stand: 15. November 2026 — verdaut nur bis ausgewachsen (GDD-10 7.1); davor 13. November 2026 — Erstfassung
+// Stand: 21. November 2026 — Verdauungs-Faktor aus Heißhunger (calcDigestMult); davor 15. November 2026 — verdaut nur bis ausgewachsen (GDD-10 7.1); davor 13. November 2026 — Erstfassung

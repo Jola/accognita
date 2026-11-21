@@ -62,11 +62,17 @@ Kriechen erreicht durch Bewegen nach ≈ 20 s „Übung“ (20 %) und nach ≈ 1
 Gegner bewegen sich weiter mit ihrem Tempo aus `entities.ts`. Sie haben keine Erfahrung in Kriechen oder Krabbeln. Sonst bekämen sie Stärke und Geschick, und ihr Tempo widerspräche „gleiche Skills, gleiche Wirkung“ (GDD-02 Abschnitt 8.6).
 > Offen: Sollen Gegner Bewegungs-Skills bekommen und ihr Tempo daraus ableiten?
 
-### 2.4 Laufen — Status: Konzept
+### 2.4 Laufen — implementiert v0.9.6
 
-> Status: Konzept
+> Status: Implementiert (v0.9.6) — die Quellen-Tiere sind gebaut, stehen aber noch nicht auf der Karte
+
+~~Status: Konzept~~ [VERWORFEN, 21. November 2026]
 
 Laufen wäre der schnellste Bewegungs-Skill, zum Beispiel Tempo ×0,7 → ×1,5, Stärke 0 → 5, Geschick 0 → 3. Er wird von Wirbeltieren mit Beinen gelernt, die es noch nicht gibt (Maus, Eidechse … GDD-07). Die Schlange schlängelt, der Drache ist zu weit entfernt.
+
+**Umgesetzt (21. November 2026):** Skill `run` mit genau diesen Werten, Lernaufwand 15, Erfahrung 0,5 XP je Körperradius wie Kriechen und Krabbeln. Quellen: Waldmaus, Wasserspitzmaus, Zauneidechse, Igel und Mauswiesel (GDD-02 Abschnitt 3.3, GDD-07 Abschnitt 12).
+**Vorgabe (Entwickler, 21. November 2026):** Die Tiere sind gebaut und im INDEX zu sehen, aber noch nicht platziert.
+**Begründung (Vorschlag Claude, übernommen):** Wirbeltierbeine sind lang, stehen unter dem Körper und werden von großen Muskeln bewegt. Deshalb ist Laufen schon ungeübt fast so schnell wie geübtes Krabbeln. Es gibt mehr Stärke (5) als Krabbeln (3) und gleich viel Geschick (3).
 
 ---
 
@@ -167,4 +173,4 @@ Spielstand-Version 5: Wer schon spielte, konnte sich bewegen und farbig sehen. D
 
 ---
 
-*Letzte Aktualisierung: 16. November 2026 — „ohne Rot“: Rot ganz schwarz (Vorgabe Entwickler, v0.9.3); davor 16. November 2026 — „ohne Rot“ lässt Grün und Blau stehen, Rot wird dunkel (Meldung Entwickler, v0.9.2); davor 15. November 2026 — Abschnitt 5: Erwachen im Nest umgesetzt (v0.8.0); Abschnitt 5: Verweis auf GDD-10 angepasst (Gras schon in Reichweite, keine Tätigkeit voreingestellt); davor 14. November 2026 — Erfahrung durch Bewegen und Sehen steht je Skill (Feld practice), Größenbonus in balance.ts, body.ts gilt nur für den Blob (Werte unverändert); davor 14. November 2026 — Abschnitt 5 verweist auf die geplante Änderung in GDD-10 Abschnitt 12; 13. November 2026 — Datei neu angelegt: Grundwerte, Bewegung (Kriechen, Krabbeln), Stärke aus Größe, Sehen (Lichtsinn, Facettenauge, Hauptaugen), Erwachen mit Nest*
+*Letzte Aktualisierung: 21. November 2026 — Abschnitt 2.4: Laufen umgesetzt, Quellen-Tiere gebaut, aber nicht platziert (v0.9.6); davor 16. November 2026 — „ohne Rot“: Rot ganz schwarz (Vorgabe Entwickler, v0.9.3); davor 16. November 2026 — „ohne Rot“ lässt Grün und Blau stehen, Rot wird dunkel (Meldung Entwickler, v0.9.2); davor 15. November 2026 — Abschnitt 5: Erwachen im Nest umgesetzt (v0.8.0); Abschnitt 5: Verweis auf GDD-10 angepasst (Gras schon in Reichweite, keine Tätigkeit voreingestellt); davor 14. November 2026 — Erfahrung durch Bewegen und Sehen steht je Skill (Feld practice), Größenbonus in balance.ts, body.ts gilt nur für den Blob (Werte unverändert); davor 14. November 2026 — Abschnitt 5 verweist auf die geplante Änderung in GDD-10 Abschnitt 12; 13. November 2026 — Datei neu angelegt: Grundwerte, Bewegung (Kriechen, Krabbeln), Stärke aus Größe, Sehen (Lichtsinn, Facettenauge, Hauptaugen), Erwachen mit Nest*

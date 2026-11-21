@@ -617,6 +617,332 @@ export const BASE_SKILLS: SkillDefinition[] = [
       },
     ],
   },
+
+  // --- WIRBELTIER-SKILLS (GDD-07 Teil 7, GDD-09 Abschnitt 2.4) ---
+  // Vorgabe (Entwickler, 21. November 2026): Fünf Wirbeltiere mit Beinen
+  //   (Waldmaus, Wasserspitzmaus, Zauneidechse, Igel, Mauswiesel) bringen
+  //   Laufen, je einen Angriffs-Skill und mindestens einen weiteren Skill;
+  //   die Skills orientieren sich an den Merkmalen der biologischen Vorbilder.
+  //   Alle Vorschläge übernommen, Giftresistenz des Igels dazu.
+  // Begründung (Vorschlag Claude, übernommen): jeweils im Feld reasoning.
+  // Alle Zahlen VORLÄUFIG (Vorschlag Claude, offen).
+
+  {
+    id: "run",
+    name: "Laufen",
+    element: "earth",
+    icon: "🐾",
+    category: "basic",
+    activation: "passive",
+    learningEffort: 15,
+    description:
+      "Passiv: Der Blob formt vier Beine und läuft wie Maus, Eidechse oder Igel — die schnellste Fortbewegung. " +
+      "Tempo ×0,7 → ×1,5 des Grundtempos, Stärke 0 → 5, Geschick 0 → 3 mit der Übung. Lernt durch Bewegen. " +
+      "Quelle: Waldmaus, Wasserspitzmaus, Zauneidechse, Igel, Mauswiesel.",
+    practice: {
+      unit: "body_radius_moved", xpPer: 0.5,
+      reasoning:
+        "Begründung (Vorschlag Claude, übernommen): Bewegung lernt man durch Bewegen — wie Kriechen und Krabbeln " +
+        "1 XP je 2 Körperradien. Mit Lernaufwand 15 dauert es etwa anderthalbmal so lange wie Krabbeln (VORLÄUFIG).",
+    },
+    effects: [
+      {
+        trigger: "passive", effectType: "move_speed", formula: { start: 0.7, max: 1.5 },
+        reasoning:
+          "Wirbeltierbeine sind lang, unter dem Körper aufgehängt und werden von großen Muskeln bewegt — viel " +
+          "schneller als sechs kurze Insektenbeine. Schon ungeübt (×0,7) fast so schnell wie geübtes Krabbeln, " +
+          "geübt anderthalbmal so schnell (GDD-09 Abschnitt 2.4).",
+      },
+      {
+        trigger: "passive", effectType: "strength", formula: { start: 0, max: 5 },
+        reasoning: "Vorgabe (Entwickler): Bewegung gibt Stärke. Laufen braucht kräftige Bein- und Rumpfmuskeln — mehr als Krabbeln (3).",
+      },
+      {
+        trigger: "passive", effectType: "dexterity", formula: { start: 0, max: 3 },
+        reasoning: "Vorgabe (Entwickler): Bewegung gibt Geschick. Auf vier Beinen zu balancieren schult so viel wie sechs Beine zu koordinieren (3).",
+      },
+    ],
+  },
+  {
+    id: "gnaw",
+    name: "Nagen",
+    element: "none",
+    icon: "🐭",
+    category: "basic",
+    activation: "active",
+    learningEffort: 8,
+    description:
+      "Aktiv: Schnelle, schwache Bisse mit Nagezähnen (1 → 8 HP mit der Übung, Schnitt). Kurze Abklingzeit " +
+      "und nur 1 MP — damit lässt sich lange durchhalten. Quelle: Waldmaus.",
+    mpCost: 1_000,
+    cooldownMs: 700,
+    attackType: "melee",
+    // Begründung (Vorschlag Claude, offen): Bei Natur 7,3 HP alle 0,7 s ≈ 10 HP/s —
+    // etwas weniger als der Biss (≈ 12 HP/s), aber für 1,4 MP/s statt 2,5 MP/s.
+    // Der Blob regeneriert 1 MP/s: Nagen kann er fast ohne Pause einsetzen.
+    damage: { start: 1, max: 8 },
+    // Begründung (Vorschlag Claude, offen): Nagezähne sind Meißel — sie schneiden
+    // und schaben, statt zu stechen. Deshalb Schnitt; Chitin blockt Schnitt
+    // schwächer als Stich, Mäuse nagen sich auch durch harte Schalen.
+    damageType: "slash",
+    // Viele kleine Bisse: selten daneben, selten schwer
+    hitProfile: { miss: 0.03, light: 0.27, normal: 0.55, heavy: 0.13, crit: 0.02 },
+    scaling: [
+      {
+        attribute: "strength", perPoint: 0.04,
+        reasoning: "Vorgabe (Entwickler): Stärke verstärkt Bisse. +4 % je Punkt wie beim Biss (VORLÄUFIG).",
+      },
+    ],
+  },
+  {
+    id: "zigzag",
+    name: "Haken schlagen",
+    element: "none",
+    icon: "↯",
+    category: "basic",
+    activation: "passive",
+    learningEffort: 12,
+    description:
+      "Passiv: Plötzliche Richtungswechsel wie eine fliehende Maus. Gibt Geschick (0 → 4) und eine Chance, " +
+      "einem Treffer ganz auszuweichen (0 → 20 % mit der Übung). Lernt durch Ausweichen. Quelle: Waldmaus.",
+    effects: [
+      {
+        trigger: "on_receive_damage",
+        effectType: "evade",
+        formula: { start: 0, max: 0.2 },
+        reasoning:
+          "Mäuse entkommen Eulen und Katzen, indem sie im letzten Moment einen Haken schlagen — der Angriff geht " +
+          "ins Leere. 0 → 20 %, bei Natur 18 % (Vorschlag Claude, offen): kommt zum Verfehlen durch Geschick dazu, " +
+          "darf also nicht zu hoch sein. Wirkt gegen jeden Treffer, auch Fernkampf.",
+      },
+      {
+        trigger: "passive",
+        effectType: "dexterity",
+        formula: { start: 0, max: 4 },
+        reasoning:
+          "Wer Haken schlagen kann, beherrscht seinen Körper: Geschick 0 → 4, etwas weniger als Jump (4,4), " +
+          "weil das Ausweichen dazukommt.",
+      },
+    ],
+  },
+  {
+    id: "voracity",
+    name: "Heißhunger",
+    element: "nature",
+    icon: "🍽️",
+    category: "basic",
+    activation: "passive",
+    learningEffort: 10,
+    description:
+      "Passiv: Ein rasender Stoffwechsel wie bei der Spitzmaus. Wachsen verdaut ×1,0 → ×2,5 so schnell mit der " +
+      "Übung. Wirkt nur zusammen mit Wachsen. Lernt durch Verdauen. Quelle: Wasserspitzmaus.",
+    effects: [
+      {
+        trigger: "passive",
+        effectType: "digest_mult",
+        formula: { start: 1, max: 2.5 },
+        reasoning:
+          "Spitzmäuse haben einen der schnellsten Stoffwechsel aller Säugetiere: Sie fressen täglich etwa ihr " +
+          "eigenes Körpergewicht und verhungern nach wenigen Stunden ohne Nahrung. ×1,0 → ×2,5, bei Natur ×2,35 " +
+          "(Vorschlag Claude, offen): Wachsen bei Natur verdaut dann rund 64 statt 27 Fasern pro Minute — " +
+          "dann begrenzt erst recht das Sammeln, nicht die Verdauung.",
+      },
+    ],
+    practice: {
+      unit: "fiber_digested", xpPer: 0.5,
+      reasoning:
+        "Begründung (Vorschlag Claude, offen): Wie Wachsen lernt Heißhunger an dem, was er bewirkt — je verdauter " +
+        "Faser, solange Wachsen läuft. Halb so viel wie Wachsen (1 XP), weil er durch sich selbst mehr Fasern " +
+        "verdaut und sonst schneller lernte. Natur bei ≈ 800 verdauten Fasern.",
+    },
+  },
+  {
+    id: "snap_bite",
+    name: "Schnappbiss",
+    element: "none",
+    icon: "🦎",
+    category: "basic",
+    activation: "active",
+    learningEffort: 12,
+    description:
+      "Aktiv: Blitzschnelles Zuschnappen (1 → 14 HP mit der Übung, Stich). Trifft oft schwer, verfehlt aber " +
+      "auch öfter als ein Biss. MP-Kosten: 3. Quelle: Zauneidechse.",
+    mpCost: 3_000,
+    cooldownMs: 1600,
+    attackType: "melee",
+    // Begründung (Vorschlag Claude, offen): Basisschaden etwas unter dem Biss
+    // (16), dafür viele schwere Treffer: im Schnitt ×1,08 statt ×1,03 je Treffer.
+    damage: { start: 1, max: 14 },
+    damageType: "pierce",
+    // Eidechsen jagen aus dem Stand mit einem Sprint und einem Zuschnappen:
+    // Sitzt der Biss, sitzt er fest — schnappt er zu früh, geht er daneben.
+    // [VERWORFEN, 21. November 2026] Vorschlag „mehr schwere Treffer, wenn der
+    // Blob sich vorher bewegt hat“ — braucht einen Bewegungszustand im Kampf,
+    // den es nicht gibt; das schwere Profil gilt jetzt immer.
+    hitProfile: { miss: 0.06, light: 0.12, normal: 0.42, heavy: 0.34, crit: 0.06 },
+    scaling: [
+      {
+        attribute: "strength", perPoint: 0.04,
+        reasoning: "Vorgabe (Entwickler): Stärke verstärkt Bisse. +4 % je Punkt wie beim Biss (VORLÄUFIG).",
+      },
+    ],
+  },
+  {
+    id: "tail_drop",
+    name: "Schwanz abwerfen",
+    element: "none",
+    icon: "〰️",
+    category: "basic",
+    activation: "passive",
+    learningEffort: 10,
+    description:
+      "Passiv: Ein tödlicher Treffer trennt nur ein Stück Körper ab — der Blob überlebt mit 1 HP, und alle " +
+      "Gegner in der Nähe stürzen sich 1 → 4 s lang auf das zappelnde Stück statt auf ihn. Danach muss das " +
+      "Stück nachwachsen: 600 → 120 s mit der Übung. Gift im Körper wirkt weiter! Lernt, wenn er auslöst. " +
+      "Quelle: Zauneidechse.",
+    practice: {
+      unit: "triggered", xpPer: 25,
+      reasoning:
+        "Begründung (Vorschlag Claude, offen): Der Skill löst nur selten aus und lernt am Auslösen — 25 XP je " +
+        "abgeworfenem Stück, Natur nach gut 15 Mal (zusammen mit Absorb und Analyze schneller).",
+    },
+    effects: [
+      {
+        trigger: "on_receive_damage",
+        effectType: "lethal_save",
+        formula: { start: 600, max: 120 },
+        reasoning:
+          "Autotomie: Eidechsen werfen bei Gefahr den Schwanz an einer Sollbruchstelle ab und lassen ihn " +
+          "nachwachsen — das dauert Wochen, deshalb geht es nur selten. Nachwachsen 600 → 120 s, bei Natur 168 s " +
+          "(Vorschlag Claude, offen): Ein Wert, der fällt, je besser der Skill ist — Ausnahme vom üblichen " +
+          "„steigt mit der Übung“, wie eine Abklingzeit. Rettet vor jedem Tod durch einen Treffer; Gift im Körper " +
+          "wirkt weiter, denn ein abgeworfener Schwanz nimmt kein Gift mit.",
+      },
+      {
+        trigger: "on_receive_damage",
+        effectType: "distract",
+        formula: { start: 1, max: 4 },
+        reasoning:
+          "Der abgeworfene Schwanz zappelt minutenlang weiter und zieht den Räuber auf sich, während die Eidechse " +
+          "flieht. 1 → 4 s Ablenkung (Vorschlag Claude, offen): genug, um aus der Reichweite zu kommen.",
+      },
+    ],
+  },
+  {
+    id: "spines",
+    name: "Stachelkleid",
+    element: "earth",
+    icon: "🦔",
+    category: "basic",
+    activation: "passive",
+    learningEffort: 12,
+    description:
+      "Passiv: Ein Kleid aus harten Stacheln. Wer den Blob trifft, sticht sich selbst (1 → 15 HP Rückschlag), " +
+      "und Zähne und Klauen kommen schlechter an die Haut (0 → 5 HP Block gegen Stich und Schnitt). " +
+      "Lernt durch Rückschlag und Blocken. Quelle: Igel.",
+    effects: [
+      {
+        trigger: "on_receive_damage",
+        effectType: "reflect_damage",
+        formula: { start: 1, max: 15 },
+        reasoning:
+          "Rund 7000 Stacheln aus Keratin, die der Igel bei Gefahr aufrichtet — wer zubeißt, sticht sich. " +
+          "1 → 15 HP, bei Natur 13,6 HP (Vorschlag Claude, offen): weniger als Hemolymph (22), weil das " +
+          "Stachelkleid zusätzlich blockt.",
+      },
+      {
+        trigger: "on_receive_damage",
+        condition: { damageType: "pierce" },
+        effectType: "flat_block",
+        formula: { start: 0, max: 5 },
+        reasoning:
+          "Die Stacheln halten Zähne auf Abstand zur Haut. 0 → 5 HP, weniger als Chitin (13), weil zwischen den " +
+          "Stacheln Lücken bleiben (Vorschlag Claude, offen).",
+      },
+      {
+        trigger: "on_receive_damage",
+        condition: { damageType: "slash" },
+        effectType: "flat_block",
+        formula: { start: 0, max: 5 },
+        reasoning: "Klauen gleiten an den Stacheln ab — derselbe Schutz wie gegen Zähne (Vorschlag Claude, offen).",
+      },
+    ],
+  },
+  {
+    id: "venom_resistance",
+    name: "Giftresistenz",
+    element: "poison",
+    icon: "🧪",
+    category: "basic",
+    activation: "passive",
+    learningEffort: 12,
+    description:
+      "Passiv: Das Blut neutralisiert Gift. Von jeder Giftdosis, die den Blob trifft, kommt nur ein Teil an — " +
+      "0 → 60 % werden mit der Übung abgefangen. Lernt durch neutralisiertes Gift. Quelle: Igel.",
+    effects: [
+      {
+        trigger: "on_receive_damage",
+        effectType: "venom_resist",
+        formula: { start: 0, max: 0.6 },
+        reasoning:
+          "Igel vertragen ein Vielfaches der Giftmenge, die andere Säugetiere ihrer Größe tötet: Eiweiße im Blut " +
+          "binden das Gift der Kreuzotter, bevor es wirkt. Deshalb sinkt die Dosis, nicht der Abbau — schnellerer " +
+          "Abbau wäre hier sogar mehr Schaden pro Sekunde (src/data/venom.ts Abschnitt 3). 0 → 60 %, bei Natur " +
+          "54 % (Vorschlag Claude, offen): nie ganz immun.",
+      },
+    ],
+  },
+  {
+    id: "neck_bite",
+    name: "Nackenbiss",
+    element: "none",
+    icon: "🩸",
+    category: "basic",
+    activation: "active",
+    learningEffort: 15,
+    description:
+      "Aktiv: Ein gezielter Biss in den Nacken (1 → 14 HP mit der Übung, Stich) mit hoher Chance auf kritische " +
+      "Treffer (×2,5, schlagen durch Panzer). MP-Kosten: 5. Quelle: Mauswiesel.",
+    mpCost: 5_000,
+    cooldownMs: 1800,
+    attackType: "melee",
+    damage: { start: 1, max: 14 },
+    damageType: "pierce",
+    // Begründung (Vorschlag Claude, offen): Kritisch 15 % statt 4 % beim Biss.
+    // Im Schnitt ×1,11 je Treffer (Biss ×1,03), dafür öfter daneben — und weil
+    // kritische Treffer vor der Rüstung zählen, kommt er durch Chitin.
+    hitProfile: { miss: 0.08, light: 0.20, normal: 0.42, heavy: 0.15, crit: 0.15 },
+    scaling: [
+      {
+        attribute: "strength", perPoint: 0.04,
+        reasoning: "Vorgabe (Entwickler): Stärke verstärkt Bisse. +4 % je Punkt wie beim Biss (VORLÄUFIG).",
+      },
+    ],
+  },
+  {
+    id: "agility",
+    name: "Wendigkeit",
+    element: "none",
+    icon: "🌀",
+    category: "basic",
+    activation: "passive",
+    learningEffort: 12,
+    description:
+      "Passiv: Ein schlanker, biegsamer Körper, der jeder Bewegung folgt. Gibt Geschick (0 → 6 mit der Übung): " +
+      "bessere Treffer, Gegner treffen seltener gut. Lernt durch Absorbieren und Analysieren. Quelle: Mauswiesel.",
+    effects: [
+      {
+        trigger: "passive",
+        effectType: "dexterity",
+        formula: { start: 0, max: 6 },
+        reasoning:
+          "Wiesel folgen Mäusen bis in ihre Gänge; ihr Körper ist so schlank und biegsam, dass er durch ein " +
+          "Mauseloch passt. Geschick 0 → 6, bei Natur 5,4 — das meiste Geschick aus einem Skill, weil Wendigkeit " +
+          "sonst nichts gibt (Vorschlag Claude, offen). [VERWORFEN, 21. November 2026] „mehr Tempo beim " +
+          "Richtungswechsel“ — braucht eine Kurvenmechanik, die es nicht gibt.",
+      },
+    ],
+  },
 ];
 
 // -----------------------------------------------------------
