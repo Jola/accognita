@@ -17,8 +17,6 @@ Format:
 
 ## Features & Ideen
 
-- `[FEATURE]` **Wirbeltiere platzieren** (GDD-07 Abschnitt 12): Waldmaus, Wasserspitzmaus, Zauneidechse, Igel und Mauswiesel sind gebaut, stehen aber noch nicht auf der Karte. Offen: Biome, Häufigkeit, Spawn-Dichte.
-
 - `[FEATURE]` **Channeling für Absorb und Analyze** (Idee Entwickler, 14. November 2026, für später; GDD-02 Abschnitt 7): Beide sollen etwas Zeit in Anspruch nehmen und in dieser Zeit unterbrochen werden können.
 
 - `[FEATURE]` **Wärmesicht** (Konzept, GDD-09 Abschnitt 4.2): von der Schlange, Lebewesen leuchten auch im Dunkeln.
@@ -41,6 +39,7 @@ Format:
 
 ## Erledigt
 
+- `[FEATURE]` **Wirbeltiere platzieren** (Auftrag Entwickler, 21. November 2026): Waldmaus (Wald, Sumpf, Hochland), Wasserspitzmaus (Sumpf), Zauneidechse (Hochland, Wüste), Igel (Wald, Hochland), Mauswiesel (nur Hochland); Gewichte vorläufig (v0.9.10, GDD-07 Abschnitt 12.1).
 - `[UI]` **Lern-Anzeige oben links, Skill-Slots und Blob-Knöpfe neu angeordnet** (Auftrag Entwickler, 21. November 2026): Skills mit Fortschrittsbalken bis zur nächsten Stufe (inkl. Erfahrung aus der Ruhe) unter dem Namen; Skill-Slots im Hochformat übereinander; Blob-Knöpfe im Hochformat über, im Querformat neben dem Joystick (v0.9.9, GDD-04).
 - `[POLISH]` **Echte Größe eintragen, Skala erst beim Laden** (Auftrag Entwickler, 21. November 2026): Wesen haben nur `lengthCm` und Folgewerte als Vielfache der Größe; `worldSizeFromLength` (balance.ts) ist die einzige Stelle der Skala, auch der ausgewachsene Blob wird damit berechnet (v0.9.8, GDD-07 Abschnitt 1).
 - `[FEATURE]` **Größen nach echter Durchschnittsgröße und Größen-Aggro** (Auftrag Entwickler, 21. November 2026): worldSize = 3 × √(Länge / 0,6 cm), Drache so groß wie ein Elefant; Reichweite, Aggro und Tempo wachsen mit, auf Realismus geprüft, große Tiere gedämpft; ausgewachsener Blob Radius 16,5 statt 8; viel größere und viel kleinere Wesen (Faktor 4) greifen einander nicht von sich aus an (v0.9.7, GDD-07 Abschnitt 1, GDD-03 Abschnitt 4).

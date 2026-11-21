@@ -335,9 +335,10 @@ Jede Etappe ist ein eigener Lebensraum, und die Einheiten folgen daraus, wo sie 
 
 ---
 
-## 12. Umgesetzt: Wirbeltiere mit Laufen (v0.9.6, noch nicht platziert)
+## 12. Umgesetzt: Wirbeltiere mit Laufen (v0.9.6, platziert v0.9.10)
 
-> Status: Implementiert (v0.9.6) — Einheiten und Skills gebaut, im INDEX zu sehen, aber nicht in `BIOME_SPAWNS`
+> ~~Status: Implementiert (v0.9.6) — Einheiten und Skills gebaut, im INDEX zu sehen, aber nicht in `BIOME_SPAWNS`~~ [VERWORFEN, 21. November 2026]
+> Status: Implementiert (v0.9.6), auf der Karte seit v0.9.10 (`BIOME_SPAWNS`, Abschnitt 12.1)
 
 **Vorgabe (Entwickler, 21. November 2026):** Fünf Wirbeltiere bringen Laufen, jedes mit einem Angriffs-Skill und einem weiteren Skill nach dem biologischen Vorbild. Alle Vorschläge sind übernommen, dazu die Giftresistenz des Igels. Gebaut und im INDEX sichtbar, aber noch auf keiner Karte platziert.
 **Begründung (Vorschlag Claude, übernommen):** Alle fünf leben am Waldboden und Waldrand (Etappen 2–4). Die Zauneidechse ist neu, die Blindschleiche (Nr. 31) bleibt Konzept. Die Eidechse hat Beine und kann laufen, die Blindschleiche nicht.
@@ -358,8 +359,28 @@ Jede Etappe ist ein eigener Lebensraum, und die Einheiten folgen daraus, wo sie 
 - **Laufen** steht bei keinem Tier in `skillXp`: Bewegungs-Skills wirken bei Gegnern nicht (GDD-09 Abschnitt 2.3).
 - **Schwanz abwerfen** wirkt nur beim Blob. Die Eidechse wirft (noch) keinen ab.
 
-Offen: wo die Tiere platziert werden (Biome, Häufigkeit, Spawn-Dichte), und ob die Waldmaus als häufigstes Wirbeltier nahe am Startgebiet liegen soll.
+~~Offen: wo die Tiere platziert werden (Biome, Häufigkeit, Spawn-Dichte), und ob die Waldmaus als häufigstes Wirbeltier nahe am Startgebiet liegen soll.~~ [VERWORFEN, 21. November 2026] beantwortet in Abschnitt 12.1.
+
+### 12.1 Platzierung (v0.9.10)
+
+**Vorgabe (Entwickler, 21. November 2026):** Die neuen Einheiten auf die Karte setzen.
+
+**Vorschlag Claude (offen)**, Gewichte VORLÄUFIG (`BiomeDefinitions.ts`, `BIOME_SPAWNS`). Ein Chunk zieht 64–112 Mal (Mittel 88) aus der Tabelle seines Bioms:
+
+| Biom | Wirbeltier (Gewicht) | ≈ je Chunk |
+|------|----------------------|-----------|
+| Wald (Start) | Waldmaus (4), Igel (2) | 6,6 / 3,3 |
+| Sumpf | Wasserspitzmaus (5), Waldmaus (2) | 11 / 4,5 |
+| Hochland | Zauneidechse (5), Waldmaus (3), Igel (2), Mauswiesel (2) | 12 / 7 / 4,6 / 4,6 |
+| Wüste | Zauneidechse (3) | 10 |
+| Gebirge, Dungeon | – | – |
+
+**Begründung (Vorschlag Claude, offen):**
+- Jedes Tier kommt dorthin, wo das Vorbild lebt: Wasserspitzmaus ans Wasser (Sumpf), Zauneidechse auf sonnige, trockene Flächen (Hochland, Wüste), Igel an Waldrand und Hecke (Wald, Hochland), Mauswiesel auf Wiesen und Felder (Hochland). Die Waldmaus ist das häufigste Wirbeltier und kommt in drei Biomen vor, auch im Startwald.
+- Das Mauswiesel steht nicht im Startwald: Es ist aggressiv (Stufe 5) und greift den Blob an, sobald er nicht mehr 4× kleiner ist (Größen-Aggro, GDD-03 Abschnitt 4). Im Startwald gibt es nur defensive Wirbeltiere.
+- Gewichte 2–5 statt 6–15 wie bei Insekten: Wirbeltiere sind größer und stärker und sollen seltener sein. Weil die Ziehungen je Chunk gleich bleiben, werden die bisherigen Wesen in diesen Biomen etwas seltener (Wald um ca. 11 %, Sumpf ca. 18 %, Hochland ca. 32 %, Wüste ca. 12 %).
+- Gebirge und Dungeon bleiben ohne Wirbeltiere: Die Tiere liegen auf Stufe 2–5, dort ist die Gefahr höher (3–4).
 
 ---
 
-*Letzte Aktualisierung: 21. November 2026 — echte Länge wird eingetragen, Skala erst beim Laden angewendet, Folgewerte als Vielfache der Größe (Vorgabe Entwickler, v0.9.8); davor Größenskala nach echter Länge (Quadratwurzel), Folgewerte und Abweichungen (Abschnitt 1, v0.9.7); offene Frage worldSize-Skala beantwortet; Abschnitt 12: neue Größen und Tempi; davor 21. November 2026 — Abschnitt 12: fünf Wirbeltiere mit Laufen gebaut, nicht platziert (v0.9.6); davor v0.4 — Größenregel nach GDD-02 verschoben (Analysieren ohne 20-%-Grenze, Maßstab `worldSize`); Größenzunahme gilt nur für bekämpfbare Gegner, mit Begründung des Entwicklers; Größenregel beim Absorbieren und „Menschen nur analysieren“ (beide vorläufig); erster Entwurf: 104 Einheiten in 7 Etappen (Oktober 2026)*
+*Letzte Aktualisierung: 21. November 2026 — Abschnitt 12.1: die fünf Wirbeltiere platziert (Vorgabe Entwickler, Verteilung Vorschlag Claude, v0.9.10); davor echte Länge wird eingetragen, Skala erst beim Laden angewendet, Folgewerte als Vielfache der Größe (Vorgabe Entwickler, v0.9.8); davor Größenskala nach echter Länge (Quadratwurzel), Folgewerte und Abweichungen (Abschnitt 1, v0.9.7); offene Frage worldSize-Skala beantwortet; Abschnitt 12: neue Größen und Tempi; davor 21. November 2026 — Abschnitt 12: fünf Wirbeltiere mit Laufen gebaut, nicht platziert (v0.9.6); davor v0.4 — Größenregel nach GDD-02 verschoben (Analysieren ohne 20-%-Grenze, Maßstab `worldSize`); Größenzunahme gilt nur für bekämpfbare Gegner, mit Begründung des Entwicklers; Größenregel beim Absorbieren und „Menschen nur analysieren“ (beide vorläufig); erster Entwurf: 104 Einheiten in 7 Etappen (Oktober 2026)*

@@ -63,6 +63,17 @@ export interface BiomeSpawnEntry {
 // für Wachsen (Grow). > Begründung offen (naheliegend: genug Nahrung).
 const GRASS_COUNT = 2;
 
+// Vorgabe (Entwickler, 21. November 2026): die fünf Wirbeltiere (GDD-07
+// Abschnitt 12) auf die Karte setzen. Verteilung und Gewichte:
+// Vorschlag Claude (offen), VORLÄUFIG — nach dem Lebensraum des Vorbilds:
+//   Waldmaus: Wald (häufigstes Wirbeltier, auch nah am Start), Hochland, Sumpf
+//   Wasserspitzmaus: Sumpf (lebt am Wasser)
+//   Zauneidechse: Hochland, Wüste (sonnig, trocken)
+//   Igel: Wald, Hochland (Waldrand, Hecken)
+//   Mauswiesel: nur Hochland (Wiesen, Felder) — nicht im Startwald, weil es
+//     aggressiv ist (Stufe 5) und den Blob angreift, sobald er nicht mehr
+//     4× kleiner ist (Größen-Aggro).
+// Wirbeltiere bleiben seltener als Insekten (Gewicht 1–5 statt 6–15).
 export const BIOME_SPAWNS: Record<BiomeId, BiomeSpawnEntry[]> = {
   forest:   [
     { id: "ant",     weight: 10 },
@@ -70,17 +81,25 @@ export const BIOME_SPAWNS: Record<BiomeId, BiomeSpawnEntry[]> = {
     { id: "grass",   weight: 15, count: GRASS_COUNT },
     { id: "earthworm", weight: 6 },   // GDD-09, VORLÄUFIG
     { id: "snail",     weight: 6 },
+    { id: "wood_mouse", weight: 4 },
+    { id: "hedgehog",   weight: 2 },
   ],
   swamp:    [
     { id: "poison_spider", weight: 10 },
     { id: "grass",         weight: 10, count: GRASS_COUNT },
     { id: "snail",         weight: 8 },   // GDD-09, VORLÄUFIG — feucht, Schneckenland
     { id: "earthworm",     weight: 4 },
+    { id: "water_shrew",   weight: 5 },
+    { id: "wood_mouse",    weight: 2 },
   ],
   highland: [
     { id: "jumping_spider", weight: 10 },
     { id: "ant",            weight: 10 },
     { id: "small_scorpion", weight:  6 },
+    { id: "sand_lizard",    weight:  5 },
+    { id: "wood_mouse",     weight:  3 },
+    { id: "hedgehog",       weight:  2 },
+    { id: "least_weasel",   weight:  2 },
   ],
   mountain: [
     { id: "jumping_spider", weight: 10 },
@@ -92,6 +111,7 @@ export const BIOME_SPAWNS: Record<BiomeId, BiomeSpawnEntry[]> = {
     { id: "small_scorpion", weight:  8 },
     { id: "large_scorpion", weight:  5 },
     { id: "snake",          weight:  2 },
+    { id: "sand_lizard",    weight:  3 },
   ],
   dungeon:  [
     { id: "jumping_spider", weight: 10 },
