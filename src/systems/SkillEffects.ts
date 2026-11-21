@@ -12,45 +12,18 @@
 //         Nirgendwo sonst stehen diese Formeln.
 //
 // Allgemeines Schema (progression.ts Abschnitt 1): Wert = start + (max − start) × p.
-// Die Funktionen mit Parameter „practice“ (alter Übungsgrad u) sind
-// Alt-Formeln, die nirgends mehr aufgerufen werden (TODO.md) — [VERWORFEN].
+// [VERWORFEN, 21. November 2026] Alt-Formeln mit Übungsgrad u (calcChitinDr,
+// calcVenomChance, calcVenomDmgPerTick, calcHemolymphReflect,
+// calcSuperstrengthMult) und die Hüllen calcBiteDamage/calcClawDamage/
+// calcFireBreathDamage entfernt — sie wurden nirgends mehr aufgerufen und
+// lieferten teils andere Werte als die Effekte in skills.ts (Auftrag Entwickler).
 //
 // Keine Phaser-Abhängigkeit. Kein State. Rein funktional.
 // ============================================================
 
-import { getSkillEffectiveness } from "./SkillSystem";
 import { evalSkillValue, evalSkillEffect } from "./SkillEffectSystem";
 import { ALL_SKILLS } from "../data/skills";
 import { MILLI } from "../data/balance";
-
-// -----------------------------------------------------------
-// chitin_armor — Passive Schadensreduktion (0.0–0.70)
-//
-// Lv 1 → 10%,  Lv 2 → 15%,  Lv 5 → 30%,  Lv 8 → 45%
-// Maximum: 70% (nie vollständig unverwundbar)
-// -----------------------------------------------------------
-export function calcChitinDr(practice: number): number {
-  return Math.min(0.10 + (practice - 1) * 0.05, 0.70);
-}
-
-// -----------------------------------------------------------
-// venom — Vergiftungswahrscheinlichkeit (0.0–1.0) pro Treffer
-//
-// Lv 1 → 30%,  Lv 5 → 50%,  Lv 9 → 70%
-// -----------------------------------------------------------
-export function calcVenomChance(practice: number): number {
-  return 0.30 + (practice - 1) * 0.05;
-}
-
-// -----------------------------------------------------------
-// venom — Schaden pro Tick (DoT läuft 4 s in 1-Sekunden-Ticks)
-//
-// Lv 1 → 2/s,  Lv 3 → 3/s,  Lv 5 → 4/s,  Lv 8 → 5/s  (in HP)
-// Gespeichert in milli-HP: ×1000
-// -----------------------------------------------------------
-export function calcVenomDmgPerTick(practice: number): number {
-  return (2 + Math.floor((practice - 1) * 0.5)) * 1000;
-}
 
 // -----------------------------------------------------------
 // Generisch: Angriffsskill-Schaden für beliebigen Skill
@@ -66,27 +39,6 @@ export function calcSkillAttackDamage(skillId: string, progress: number): number
 }
 
 // -----------------------------------------------------------
-// bite — Direktangriff-Schaden (Werte: skills.ts)
-// -----------------------------------------------------------
-export function calcBiteDamage(progress: number): number {
-  return calcSkillAttackDamage("bite", progress);
-}
-
-// -----------------------------------------------------------
-// claw — Klauenhieb (Nahkampf, Werte: skills.ts)
-// -----------------------------------------------------------
-export function calcClawDamage(progress: number): number {
-  return calcSkillAttackDamage("claw", progress);
-}
-
-// -----------------------------------------------------------
-// fire_breath — Feueratem (Fernkampf, 8 × worldSize Reichweite, Werte: skills.ts)
-// -----------------------------------------------------------
-export function calcFireBreathDamage(progress: number): number {
-  return calcSkillAttackDamage("fire_breath", progress);
-}
-
-// -----------------------------------------------------------
 // jump — Dash-Reichweite in Weltpixeln
 //
 // Wert und Begründung am Skill (skills.ts, Effekt "jump_distance").
@@ -95,25 +47,6 @@ export function calcFireBreathDamage(progress: number): number {
 // -----------------------------------------------------------
 export function calcJumpDistance(progress: number, skillId = "jump"): number {
   return evalSkillEffect(skillId, "jump_distance", progress);
-}
-
-// -----------------------------------------------------------
-// hemolymph — Rückschlag-Schaden pro Treffer (Aura)
-//
-// Lv 1 → 2,  Lv 3 → 6,  Lv 5 → 10  (in HP)
-// Gespeichert in milli-HP: ×1000
-// -----------------------------------------------------------
-export function calcHemolymphReflect(practice: number): number {
-  return 2 * practice * 1000;
-}
-
-// -----------------------------------------------------------
-// superstrength — ausgehender Schaden-Multiplikator
-//
-// Lv 1 → ×1.30,  Lv 3 → ×1.59,  Lv 5 → ×1.74
-// -----------------------------------------------------------
-export function calcSuperstrengthMult(practice: number): number {
-  return 1.0 + 0.3 * getSkillEffectiveness(practice);
 }
 
 // -----------------------------------------------------------

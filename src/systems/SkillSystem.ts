@@ -167,22 +167,9 @@ export function getDiscoveredSkillsSorted(player: PlayerState): SkillInstance[] 
   );
 }
 
-/**
- * [VERWORFEN, 1. November 2026] — nur noch von einer ungenutzten Alt-Formel
- * (calcSuperstrengthMult) aufgerufen. Angriffe haben jetzt damage { start, max }
- * in skills.ts.
- * Schadens-Faktor aktiver Angriffs-Skills (Biss, Klaue, Feuerodem) für
- * Blob und Gegner gleichermaßen. Stetig im Übungsgrad u:
- *   1 + 0,1·(u−1) + 0,15·Übergang(u zwischen 2 und 3)
- * [VERWORFEN] früher: +0,15 als Sprung ab Level 3. Jetzt ein fließender
- * Übergang zwischen u=2 und u=3 — bei ganzen Zahlen dieselben Werte wie
- * vorher, dazwischen ohne Sprung (Vorgabe Entwickler: fließend verbessern).
- * > Begründung offen (für den Bonus selbst)
- */
-export function getSkillEffectiveness(practice: number): number {
-  const bonusRamp = Math.min(1, Math.max(0, practice - 2));
-  return 1.0 + (practice - 1) * 0.1 + 0.15 * bonusRamp;
-}
+// [VERWORFEN, 21. November 2026] getSkillEffectiveness(u) entfernt — alter
+// Schadens-Faktor, nur noch von einer ungenutzten Alt-Formel aufgerufen.
+// Angriffe haben damage { start, max } in skills.ts.
 
 // -----------------------------------------------------------
 // SKILL-XP DURCH BENUTZUNG VERGEBEN

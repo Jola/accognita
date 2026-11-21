@@ -37,12 +37,11 @@ Format:
 
 - `[FEATURE]` **Gegner-XP an das allgemeine Schema anpassen?** — Seit v0.6 starten alle Skill-Werte bei ≈ 1 (Fortschritt 0 %). Die `skillXp` der Gegner sind unverändert, deshalb sind schwache Gegner viel schwächer geworden (Ameise Biss 7 → 1 HP — inzwischen auf 5 HP angehoben, Vorgabe Entwickler; Giftspinne 44 % auf 12 HP Gift → 8 % auf 4 HP), der Drache ist auf die Höchstwerte begrenzt (Klaue 24 → 18). Offen: Gegner-XP anheben, damit z. B. Ameisen bei Übung liegen? GDD-02 Abschnitt 8.3.
 
-- `[POLISH]` **Ungenutzte Alt-Formeln in SkillEffects.ts** — `calcChitinDr`, `calcVenomChance`, `calcVenomDmgPerTick`, `calcHemolymphReflect`, `calcSuperstrengthMult`, `calcFireBreathDamage`, `calcBiteDamage`, `calcClawDamage` und `SkillSystem.getSkillEffectiveness` (seit v0.6) werden nirgends mehr aufgerufen und liefern teils andere Werte als die Effekt-Deklarationen in skills.ts. Entfernen, damit niemand sie versehentlich nutzt (GDD-05 Migrationsschritt 5). GDD-08 Abschnitt 11.2.
-
 ---
 
 ## Erledigt
 
+- `[POLISH]` **Ungenutzte Alt-Formeln entfernt** (Auftrag Entwickler, 21. November 2026): `calcChitinDr`, `calcVenomChance`, `calcVenomDmgPerTick`, `calcHemolymphReflect`, `calcSuperstrengthMult`, `calcFireBreathDamage`, `calcBiteDamage`, `calcClawDamage` und `SkillSystem.getSkillEffectiveness`. Spiel unverändert (v0.9.5).
 - `[BUG]` **Menü-Reiter im Hochformat abgeschnitten** (Meldung Entwickler, 17. November 2026): Die zentrierte Reiterleiste war etwas zu breit und schnitt SKILLS und INDEX an beiden Rändern ab. Jetzt passen alle Reiter, auf schmalen Schirmen mit weniger Innenabstand (v0.9.4).
 - `[BUG]` **Facettenauge und Hauptaugen ohne Farbe** (Meldung Entwickler, 16. November 2026): Der Filter „ohne Rot“ legte Rot und Grün zu Gelbgrau zusammen, im Wald blieb kaum Farbe. Jetzt bleiben Grün und Blau, nur Rot wird dunkel (v0.9.2).
 - `[FEATURE]` **Spieleinstieg 5.10** (Auftrag Entwickler, 15. November 2026): Karte „Begrenzter Platz“ ab 80 % Kapazität, Entdeckung „Du bist gewachsen“; Kombinieren entfällt ohne Konzept (v0.9.1).

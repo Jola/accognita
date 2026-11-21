@@ -51,7 +51,7 @@ Current state: **v0.9** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/systems/CombatSystem.ts` | Damage calculation, skill dispatch, checkpoint logic |
 | `src/systems/DamageSystem.ts` | Damage pipeline (GDD-05 section 3) |
 | `src/systems/SkillEffectSystem.ts` | Evaluates declarative skill effects (`evalSkillValue` = start + (max − start) × progress, attacker/defender effects, dexterity) |
-| `src/systems/SkillEffects.ts` | Converts skill values into game units: attack damage (`damage` start → max), jump distance, regeneration (contains unused legacy formulas, see TODO.md) |
+| `src/systems/SkillEffects.ts` | Converts skill values into game units: attack damage (`damage` start → max), jump distance, regeneration |
 | `src/systems/EntityLevelingSystem.ts` | Entities fight each other: bonus levels, scaled combat values |
 | `src/systems/HitSystem.ts` | Hit grades (miss/light/normal/heavy/crit): chances from skill profile, level and dexterity; dice roll |
 | `src/systems/AiSystem.ts` | Aggro, chase, attack-trigger (pure logic, no Phaser) |
