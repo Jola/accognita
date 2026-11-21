@@ -102,16 +102,29 @@ export interface EntityDefinition {
    */
   hitAndRun?: { fleeMs: number; reengageLengths: number };
 
+  // --- Größe (Größenskala, balance.ts) ---
+  // In entities.ts steht nur die echte Länge und die Folgewerte als
+  // Vielfache der Größe. worldSize, speed, attackRangePx, aggroRadius und
+  // rangedAttackRangePx rechnet resolveEntitySize (entities.ts) beim Laden
+  // daraus aus — wer die Skala ändert, ändert alles mit.
+
   /**
    * Durchschnittliche Körperlänge des Vorbilds in cm (Säugetiere ohne
    * Schwanz, Schlange und Eidechse mit Schwanz, Gras = Wuchshöhe).
-   * Daraus folgt worldSize über die Größenskala (balance.ts).
    */
   lengthCm?: number;
+  /** Tempo in worldSize pro Sekunde → speed. */
+  speedPerSize?: number;
+  /** Nahkampf-Reichweite (Mitte zu Mitte) in worldSize → attackRangePx. */
+  reachPerSize?: number;
+  /** Aggro-Radius in worldSize → aggroRadius. */
+  aggroPerSize?: number;
+  /** Fernkampf-Reichweite in worldSize → rangedAttackRangePx. */
+  rangedReachPerSize?: number;
 
-  /** Visuelle Weltgröße in World-Pixeln. Bestimmt wie groß das Icon dargestellt wird.
-   *  Seit 21. November 2026 aus lengthCm: 3 × √(Länge / 0,6 cm), auf 0,5 gerundet
-   *  (balance.ts, Größenskala). Default: 5 wenn nicht angegeben. */
+  /** Weltgröße in World-Pixeln (Schriftgröße des Icons). Berechnet aus
+   *  lengthCm über die Größenskala (balance.ts worldSizeFromLength), nicht
+   *  von Hand eintragen. Default: 5 wenn nicht vorhanden. */
   worldSize?: number;
 }
 

@@ -38,31 +38,36 @@ Der Weg ist in **7 Etappen** gegliedert. Die Größenangaben je Etappe beschreib
 
 **Vorgabe (Entwickler, 21. November 2026):** Die Größen der Wesen richten sich nach der natürlichen Durchschnittsgröße ihres Vorbilds. Der Drache ist etwa so groß wie ein Elefant. Umgerechnet wird mit der **Quadratwurzel** (gewählt aus Kubikwurzel, Quadratwurzel und 1:1). Angriffsreichweite, Aggro-Radius und Tempo wachsen mit. Die Werte werden auf Realismus geprüft, die der großen Tiere zugunsten der Spielbalance angepasst.
 
-`worldSize = 3 × √(Länge in cm ÷ 0,6)`, auf 0,5 gerundet (`SIZE_SCALE_BASE`, `SIZE_SCALE_REF_CM` in balance.ts; Länge = Feld `lengthCm` am Wesen). Länge heißt: Säugetiere ohne Schwanz, Schlange und Eidechse mit Schwanz, Gras als Wuchshöhe.
+~~`worldSize = 3 × √(Länge in cm ÷ 0,6)`, auf 0,5 gerundet und am Wesen eingetragen.~~ [VERWORFEN, 21. November 2026]
+
+**Vorgabe (Entwickler, 21. November 2026):** Die echte Größe der Tiere wird eingetragen. Die Skala wird erst bei der Anzeige angewendet.
+**Begründung (Entwickler):** So ist es leichter, die Skala noch einmal anzupassen.
+
+Umsetzung: Am Wesen stehen nur die echte Länge (`lengthCm`) und die Folgewerte als Vielfache der Größe: `speedPerSize`, `reachPerSize`, `aggroPerSize`, `rangedReachPerSize`. Beim Laden rechnet `resolveEntitySize` (entities.ts) daraus `worldSize`, Tempo, Reichweite, Aggro-Radius und Fernkampf-Reichweite aus, ohne zu runden. Die Skala steht an einer einzigen Stelle: `worldSizeFromLength` in balance.ts, heute `3 × (Länge in cm ÷ 0,6) ^ 0,5`, mit den Stellschrauben `SIZE_SCALE_BASE`, `SIZE_SCALE_REF_CM` und `SIZE_SCALE_EXPONENT`. Auch der ausgewachsene Blob (61 cm, `PLAYER_LENGTH_CM_MAX`) wird damit berechnet. Ändert man die Skala, ändern sich alle Größen und Folgewerte mit. Länge heißt: Säugetiere ohne Schwanz, Schlange und Eidechse mit Schwanz, Gras als Wuchshöhe.
 
 **Begründung (Vorschlag Claude, übernommen):** 1:1 geht nicht. Bei 3,8 cm pro Pixel (ausgewachsener Blob 61 cm = 16 px) wäre eine Ameise 0,16 px groß. Die Wurzel staucht und hält die Reihenfolge: doppelt so lang = 41 % größer. Bezugspunkt ist die Ameise (0,6 cm = 3), die kleinste Größe, die man noch erkennt.
 
-Grundregel für die Folgewerte: Reichweite 2 ×, Aggro-Radius 2,5 ×, Tempo 5 × `worldSize`. Abweichungen stehen mit Begründung am Wesen (entities.ts).
+Grundregel für die Folgewerte: Tempo 5 ×, Reichweite 2 ×, Aggro-Radius 2,5 × Größe. Die Werte in Klammern sind die alten, vor der Größenskala.
 
-| Wesen | Länge | worldSize (alt) | Tempo (alt) | Reichweite (alt) | Aggro (alt) | Abweichung von der Grundregel |
+| Wesen | Länge | Größe (alt) | Tempo × (heute px/s, alt) | Reichweite × (px, alt) | Aggro × (px, alt) | Abweichung von der Grundregel |
 |---|---|---|---|---|---|---|
-| Ameise | 0,6 cm | 3 (3) | 15 (15) | 6 (6) | 8 (8) | — |
-| Marienkäfer | 0,7 cm | 3 (4) | 15 (20) | 6 (8) | 8 (10) | — |
-| Springspinne | 0,8 cm | 3,5 (6) | 17,5 (30) | 7 (12) | 9 (15) | — |
-| Giftspinne | 1,5 cm | 4,5 (6) | 22,5 (30) | 9 (12) | 11 (15) | — |
-| Kleiner Skorpion | 3,5 cm | 7 (7) | 35 (35) | 14 (14) | 18 (18) | — |
-| Schnecke | 5 cm | 8,5 (4) | 3 (3) | — | — | Tempo: langsamstes Wesen (≈ 1 mm/s) |
-| Wasserspitzmaus | 8 cm | 11 (6) | 60 (45) | 22 (12) | 28 (15) | Tempo nach echter Geschwindigkeit |
-| Waldmaus | 9 cm | 11,5 (7) | 82 (50) | 23 (14) | 29 (18) | Tempo ≈ 7 × wie bisher (≈ 3,5 m/s) |
-| Regenwurm | 12 cm | 13,5 (4) | 5 (4) | — | — | Tempo: kriecht ≈ 2 cm/s |
-| Großer Skorpion | 12 cm | 13,5 (10) | 54 (50) | 27 (20) | 34 (25) | Tempo 4 ×: Lauerjäger |
-| Gras | 15 cm | 15 (5) | — | — | — | — |
-| Mauswiesel | 18 cm | 16,5 (10) | 100 (70) | 33 (20) | 41 (25) | Tempo: schnellstes Wirbeltier (≈ 6 m/s), schneller als die Maus |
-| Zauneidechse | 20 cm | 17,5 (8) | 70 (55) | 35 (16) | 44 (20) | Tempo nach echter Geschwindigkeit |
-| Igel | 25 cm | 19,5 (11) | 55 (40) | 39 (22) | 49 (28) | Tempo nach echter Geschwindigkeit |
-| Blob (ausgewachsen) | 61 cm | 30 (14,5) | 165 (80) | — | — | Radius 16,5 statt 8 |
-| Schlange | 70 cm | 32,5 (12) | 70 (60) | 49 (24) | 65 (30) | gedämpft: kriecht ≈ 1 m/s; schnellt ⅓ der Länge vor; Lauerjägerin |
-| Drache | 6 m (Elefant) | 95 (20) | 90 (35) | 95 (40) | 240 (50) | stark gedämpft, siehe unten |
+| Ameise | 0,6 cm | 3,0 (3) | 5 (15, 15) | 2 (6, 6) | 2,5 (7,5, 8) | — |
+| Marienkäfer | 0,7 cm | 3,2 (4) | 5 (16, 20) | 2 (6,5, 8) | 2,5 (8, 10) | — |
+| Springspinne | 0,8 cm | 3,5 (6) | 5 (17, 30) | 2 (7, 12) | 2,5 (9, 15) | — |
+| Giftspinne | 1,5 cm | 4,7 (6) | 5 (24, 30) | 2 (9,5, 12) | 2,5 (12, 15) | — |
+| Kleiner Skorpion | 3,5 cm | 7,2 (7) | 5 (36, 35) | 2 (14,5, 14) | 2,5 (18, 18) | — |
+| Schnecke | 5 cm | 8,7 (4) | 0,35 (3, 3) | — | — | Tempo: langsamstes Wesen (≈ 1 mm/s) |
+| Wasserspitzmaus | 8 cm | 11,0 (6) | 5,5 (60, 45) | 2 (22, 12) | 2,5 (27, 15) | Tempo nach echter Geschwindigkeit |
+| Waldmaus | 9 cm | 11,6 (7) | 7 (81, 50) | 2 (23, 14) | 2,5 (29, 18) | Tempo ≈ 7 × wie bisher (≈ 3,5 m/s) |
+| Regenwurm | 12 cm | 13,4 (4) | 0,4 (5, 4) | — | — | Tempo: kriecht ≈ 2 cm/s |
+| Großer Skorpion | 12 cm | 13,4 (10) | 4 (54, 50) | 2 (27, 20) | 2,5 (33,5, 25) | Tempo 4 ×: Lauerjäger |
+| Gras | 15 cm | 15,0 (5) | — | — | — | — |
+| Mauswiesel | 18 cm | 16,4 (10) | 6 (99, 70) | 2 (33, 20) | 2,5 (41, 25) | Tempo: schnellstes Wirbeltier (≈ 6 m/s), schneller als die Maus |
+| Zauneidechse | 20 cm | 17,3 (8) | 4 (69, 55) | 2 (35, 16) | 2,5 (43, 20) | Tempo nach echter Geschwindigkeit |
+| Igel | 25 cm | 19,4 (11) | 2,8 (54, 40) | 2 (39, 22) | 2,5 (48, 28) | Tempo nach echter Geschwindigkeit |
+| Blob (ausgewachsen) | 61 cm | 30,2 (14,5) | (166, 80) | — | — | Radius ≈ 16,6 statt 8 |
+| Schlange | 70 cm | 32,4 (12) | 2,2 (71, 60) | 1,5 (49, 24) | 2 (65, 30) | gedämpft: kriecht ≈ 1 m/s; schnellt ⅓ der Länge vor; Lauerjägerin |
+| Drache | 6 m (Elefant) | 94,9 (20) | 0,95 (90, 35) | 1 (95, 40) | 2,5 (237, 50) | stark gedämpft, siehe unten; Feueratem 2,5 × (237, alt 160) |
 
 **Begründung (Vorschlag Claude, offen)** für die Abweichungen:
 - **Kleine Kriecher (Wurm, Schnecke):** Nach der Grundregel wäre der Wurm 67 px/s schnell, schneller als eine Ameise. Echt kriecht er ≈ 2 cm/s, die Schnecke ≈ 1 mm/s. Ihre Tempi bleiben fast wie bisher.
@@ -70,10 +75,10 @@ Grundregel für die Folgewerte: Reichweite 2 ×, Aggro-Radius 2,5 ×, Tempo 5 ×
 - **Großer Skorpion:** Skorpione lauern und laufen nur kurze Strecken. Deshalb 4 × statt 5 × `worldSize`.
 - **Schlange:** Nach der Grundregel wäre sie 162 px/s schnell. Echt kriecht sie ≈ 1 m/s, langsamer als eine Maus, deshalb 70 px/s. Sie schnellt etwa ein Drittel ihrer Länge vor, deshalb ist die Reichweite 1,5 × (49 px). Als Lauerjägerin schlägt sie erst zu, wenn die Beute nah ist, deshalb ist der Aggro-Radius 2 × (65 px).
 - **Drache (Balance):** Nach der Grundregel wäre er 475 px/s schnell, griffe 190 px weit und spiee 760 px weit Feuer, weiter, als die KI überhaupt rechnet (500 px). Deshalb:
-  - Tempo 90: Ein Elefant läuft ≈ 7 m/s. Im Spiel ist der Drache knapp schneller als die Maus, aber langsamer als der ausgewachsene Blob (165 px/s), man kann ihm also davonlaufen.
+  - Tempo 90: Ein Elefant läuft ≈ 7 m/s. Im Spiel ist der Drache knapp schneller als die Maus, aber langsamer als der ausgewachsene Blob (166 px/s), man kann ihm also davonlaufen.
   - Nahkampf 95 px: Das reicht ≈ 43 px über seinen Körper hinaus. Die alten 40 px wären kürzer als sein eigener Radius (52 px).
   - Feueratem 240 px und Aggro 240 px: etwa 2,5 × `worldSize`.
-- **Blob:** Der ausgewachsene Blob (61 cm, Vorgabe Entwickler) liegt auf derselben Skala bei Radius 16,5 statt 8. Sonst wäre er kleiner als ein Igel (25 cm). Der frische Blob (Radius 2) entspricht ≈ 0,9 cm. Siehe GDD-10 Abschnitt 7.1.
+- **Blob:** Der ausgewachsene Blob (61 cm, Vorgabe Entwickler) liegt auf derselben Skala bei Radius ≈ 16,6 statt 8. Sonst wäre er kleiner als ein Igel (25 cm). Der frische Blob (Radius 2) entspricht ≈ 0,9 cm. Siehe GDD-10 Abschnitt 7.1.
 - **Nest:** Wurm und Schnecke liegen jetzt 11 bzw. 8 px vom Startpunkt statt 5 bzw. 6 px. Sonst verdecken sie den frischen Blob. Ihr Rand ist weiter in Reichweite (GDD-09 Abschnitt 5).
 
 ### Häufigkeit und Verhalten
@@ -339,11 +344,11 @@ Jede Etappe ist ein eigener Lebensraum, und die Einheiten folgen daraus, wo sie 
 
 | Einheit | Gr. | Lv | HP | Tempo | worldSize | Verhalten | Skills | Merkmal des Vorbilds |
 |---------|-----|----|----|-------|-----------|-----------|--------|----------------------|
-| Waldmaus 🐁 | G3 | 2 | 14 | ~~50~~ 82 | ~~7~~ 11,5 | defensiv, Zuschlagen und Abhauen | Laufen, Nagen, Haken schlagen | Nagezähne wachsen nach; flieht im Zickzack vor Eule und Katze |
+| Waldmaus 🐁 | G3 | 2 | 14 | ~~50~~ 81 | ~~7~~ 11,6 | defensiv, Zuschlagen und Abhauen | Laufen, Nagen, Haken schlagen | Nagezähne wachsen nach; flieht im Zickzack vor Eule und Katze |
 | Wasserspitzmaus 🐀 | G3 | 3 | 16 | ~~45~~ 60 | ~~6~~ 11 | aggressiv | Laufen, Biss, Venom, Heißhunger | giftiger Speichel; frisst täglich ihr Körpergewicht |
-| Zauneidechse 🦎 | G3 | 3 | 22 | ~~55~~ 70 | ~~8~~ 17,5 | defensiv | Laufen, Schnappbiss, Schwanz abwerfen | Sprint und Zuschnappen; Autotomie |
-| Igel 🦔 | G4 | 4 | 45 | ~~40~~ 55 | ~~11~~ 19,5 | defensiv | Laufen, Biss, Stachelkleid, Giftresistenz | 7000 Stacheln; verträgt Schlangengift |
-| Mauswiesel 🦦 | G4 | 5 | 40 | ~~70~~ 100 | ~~10~~ 16,5 | aggressiv | Laufen, Nackenbiss, Wendigkeit | tötet mit Nackenbiss; passt durch Mauselöcher |
+| Zauneidechse 🦎 | G3 | 3 | 22 | ~~55~~ 69 | ~~8~~ 17,3 | defensiv | Laufen, Schnappbiss, Schwanz abwerfen | Sprint und Zuschnappen; Autotomie |
+| Igel 🦔 | G4 | 4 | 45 | ~~40~~ 54 | ~~11~~ 19,4 | defensiv | Laufen, Biss, Stachelkleid, Giftresistenz | 7000 Stacheln; verträgt Schlangengift |
+| Mauswiesel 🦦 | G4 | 5 | 40 | ~~70~~ 99 | ~~10~~ 16,4 | aggressiv | Laufen, Nackenbiss, Wendigkeit | tötet mit Nackenbiss; passt durch Mauselöcher |
 
 **Vorschlag Claude (offen)**, alle Zahlen VORLÄUFIG:
 - ~~**Größe:** `worldSize` 6–11, größer als Insekten (3–7), kleiner als die Schlange (12). **Begründung:** Eine Maus ist viel größer als eine Spinne, der Maßstab im Spiel ist aber gestaucht (Abschnitt 1, Größenklassen).~~ [VERWORFEN, 21. November 2026] Größe jetzt nach der echten Länge (Abschnitt 1, Größenskala; durchgestrichene Werte in der Tabelle = alt).
@@ -357,4 +362,4 @@ Offen: wo die Tiere platziert werden (Biome, Häufigkeit, Spawn-Dichte), und ob 
 
 ---
 
-*Letzte Aktualisierung: 21. November 2026 — Größenskala nach echter Länge (Quadratwurzel), Folgewerte und Abweichungen (Abschnitt 1, v0.9.7); offene Frage worldSize-Skala beantwortet; Abschnitt 12: neue Größen und Tempi; davor 21. November 2026 — Abschnitt 12: fünf Wirbeltiere mit Laufen gebaut, nicht platziert (v0.9.6); davor v0.4 — Größenregel nach GDD-02 verschoben (Analysieren ohne 20-%-Grenze, Maßstab `worldSize`); Größenzunahme gilt nur für bekämpfbare Gegner, mit Begründung des Entwicklers; Größenregel beim Absorbieren und „Menschen nur analysieren“ (beide vorläufig); erster Entwurf: 104 Einheiten in 7 Etappen (Oktober 2026)*
+*Letzte Aktualisierung: 21. November 2026 — echte Länge wird eingetragen, Skala erst beim Laden angewendet, Folgewerte als Vielfache der Größe (Vorgabe Entwickler, v0.9.8); davor Größenskala nach echter Länge (Quadratwurzel), Folgewerte und Abweichungen (Abschnitt 1, v0.9.7); offene Frage worldSize-Skala beantwortet; Abschnitt 12: neue Größen und Tempi; davor 21. November 2026 — Abschnitt 12: fünf Wirbeltiere mit Laufen gebaut, nicht platziert (v0.9.6); davor v0.4 — Größenregel nach GDD-02 verschoben (Analysieren ohne 20-%-Grenze, Maßstab `worldSize`); Größenzunahme gilt nur für bekämpfbare Gegner, mit Begründung des Entwicklers; Größenregel beim Absorbieren und „Menschen nur analysieren“ (beide vorläufig); erster Entwurf: 104 Einheiten in 7 Etappen (Oktober 2026)*

@@ -21,7 +21,7 @@ import { clearVenom } from "./VenomSystem";
 import type { SkillDiscoveryResult, DiscoveryMethod } from "../types/Skill";
 import {
   calcSuccessChance, ANALYZE_CHANCE_MODIFIER, ENTITY_ICON_RADIUS_FACTOR,
-  SIZE_SCALE_BASE, SIZE_SCALE_REF_CM, SIZE_IGNORE_RATIO,
+  SIZE_IGNORE_RATIO,
 } from "../data/balance";
 import type { EntityDefinition } from "../types/Entity";
 
@@ -225,11 +225,6 @@ export function processRespawns(world: WorldState): string[] {
 // -----------------------------------------------------------
 // NEAREST ENTITY — findet nächste lebende Entity in Reichweite
 // -----------------------------------------------------------
-/** worldSize aus der echten Körperlänge (Größenskala, balance.ts). */
-export function worldSizeFromLength(lengthCm: number): number {
-  return SIZE_SCALE_BASE * Math.sqrt(lengthCm / SIZE_SCALE_REF_CM);
-}
-
 /** Größe des Blobs auf der worldSize-Skala (Radius ÷ Icon-Radius-Faktor). */
 export function blobWorldSize(worldRadius: number): number {
   return worldRadius / ENTITY_ICON_RADIUS_FACTOR;

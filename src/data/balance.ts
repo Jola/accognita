@@ -299,30 +299,34 @@ export const ANALYZE_CHANCE_MODIFIER = 0.7;
 //
 // Tile-Verhältnis (TILE_SIZE = 32):
 //   frisch:       Radius 2    ≈ 1/8 Tile-Durchmesser (≈ 0,9 cm)
-//   ausgewachsen: Radius 16,5 ≈ 1 Tile-Durchmesser (61 cm)
+//   ausgewachsen: Radius ≈ 16,6 ≈ 1 Tile-Durchmesser (61 cm, aus der Größenskala)
 //   [VERWORFEN, 21. November 2026] ausgewachsen Radius 8 ≈ 1/2 Tile — passte
-//   nicht mehr zur Größenskala (unten), nach der 61 cm Radius 16,5 sind.
+//   nicht mehr zur Größenskala (unten), nach der 61 cm Radius ≈ 16,6 sind.
 // -----------------------------------------------------------
 
 /** Welt-Radius eines frischen Blobs (in World-Pixeln, TILE_SIZE=32) */
 export const PLAYER_WORLD_RADIUS_MIN = 2;
 
 /**
- * Welt-Radius des Blobs ab Wachstum PLAYER_SIZE_GROWTH_MAX.
- * 61 cm nach der Größenskala (unten): worldSize 3 × √(61 / 0,6) ≈ 30,2,
- * Radius = 30,2 × ENTITY_ICON_RADIUS_FACTOR ≈ 16,6 → 16,5.
+ * Echte Größe des ausgewachsenen Blobs (cm, Vorgabe Entwickler: Kugel von
+ * 61 cm). Daraus folgt PLAYER_WORLD_RADIUS_MAX (Welt-Radius ab Wachstum
+ * PLAYER_SIZE_GROWTH_MAX) über die Größenskala (unten):
+ * worldSize 3 × √(61 / 0,6) ≈ 30,2, Radius = 30,2 × ENTITY_ICON_RADIUS_FACTOR ≈ 16,6.
+ * [VERWORFEN, 21. November 2026] fest 16,5 eingetragen — jetzt berechnet,
+ *   damit der Blob einer geänderten Skala folgt.
  * Begründung (Vorschlag Claude, offen): Der Blob muss auf derselben Skala
  *   liegen wie die Wesen, sonst stimmen Größenvergleiche (Größen-Aggro) und
  *   das Bild nicht — mit Radius 8 wäre der ausgewachsene Blob (61 cm) kleiner
  *   als ein Igel (25 cm). Der frische Blob (Radius 2) entspricht ≈ 0,9 cm.
  * [VERWORFEN, 21. November 2026] 8 (Größenklasse G5, Vorschlag Claude, übernommen).
  */
-export const PLAYER_WORLD_RADIUS_MAX = 16.5;
+export const PLAYER_LENGTH_CM_MAX = 61;
+// PLAYER_WORLD_RADIUS_MAX steht unter der Größenskala (braucht deren Konstanten).
 
 /**
  * Wachstum, ab dem die maximale Größe erreicht wird: ausgewachsen (≈ 5,9).
  * Vorgabe (Entwickler, 14. November 2026): Kugel von höchstens 120 kg und
- * 61 cm; 61 cm = Welt-Radius 16,5 px (Größenskala, seit 21. November 2026;
+ * 61 cm; 61 cm = Welt-Radius ≈ 16,6 px (Größenskala, seit 21. November 2026;
  * [VERWORFEN] 8 px, Größenklasse G5).
  */
 export const PLAYER_SIZE_GROWTH_MAX = Math.log2(1 + MAX_BODY_MASS / GROWTH_FIBER_SCALE);
@@ -379,14 +383,14 @@ export const PLAYER_REACH_FACTOR = 2.5;
  * Geschwindigkeit des Blobs pro World-Pixel Radius.
  * speed = worldRadius × PLAYER_SPEED_PER_WORLD_RADIUS
  *   frisch       (radius 2):    world-speed  20 → screen-speed  20 × 8 = 160 px/s
- *   ausgewachsen (radius 16,5): world-speed 165 → screen-speed 165 × 0,97 = 160 px/s
+ *   ausgewachsen (radius 16,6): world-speed 166 → screen-speed 166 × 0,96 = 160 px/s
  */
 export const PLAYER_SPEED_PER_WORLD_RADIUS = 10;
 
 // -----------------------------------------------------------
 // GRÖSSENSKALA DER WESEN (worldSize aus der echten Größe)
 //
-// worldSize = SIZE_SCALE_BASE × √(Länge in cm / SIZE_SCALE_REF_CM)
+// worldSize = SIZE_SCALE_BASE × (Länge in cm / SIZE_SCALE_REF_CM) ^ SIZE_SCALE_EXPONENT
 // Länge = durchschnittliche Körperlänge des Vorbilds (Säugetiere ohne
 // Schwanz, Schlange und Eidechse mit Schwanz, Gras = Wuchshöhe).
 // Vorgabe (Entwickler, 21. November 2026): Die Größen richten sich nach der
@@ -407,6 +411,22 @@ export const PLAYER_SPEED_PER_WORLD_RADIUS = 10;
 export const SIZE_SCALE_BASE = 3;
 /** Bezugslänge der Größenskala in cm (Ameise). */
 export const SIZE_SCALE_REF_CM = 0.6;
+/** Exponent der Größenskala: 0,5 = Quadratwurzel (1/3 = Kubikwurzel, 1 = 1:1 ab der Ameise). */
+export const SIZE_SCALE_EXPONENT = 0.5;
+
+/**
+ * Die Größenskala: echte Länge (cm) → worldSize. Die einzige Stelle, an der
+ * sie steht — Wesen (entities.ts resolveEntitySize) und der ausgewachsene
+ * Blob (PLAYER_WORLD_RADIUS_MAX) rechnen damit. Vorgabe (Entwickler,
+ * 21. November 2026): echte Größen eintragen, die Skala erst bei der
+ * Anzeige anwenden, damit sie leicht anzupassen ist.
+ */
+export function worldSizeFromLength(lengthCm: number): number {
+  return SIZE_SCALE_BASE * Math.pow(lengthCm / SIZE_SCALE_REF_CM, SIZE_SCALE_EXPONENT);
+}
+
+/** Welt-Radius des ausgewachsenen Blobs (61 cm) nach der Größenskala ≈ 16,6 (Begründung bei PLAYER_LENGTH_CM_MAX). */
+export const PLAYER_WORLD_RADIUS_MAX = worldSizeFromLength(PLAYER_LENGTH_CM_MAX) * ENTITY_ICON_RADIUS_FACTOR;
 
 // -----------------------------------------------------------
 // GRÖSSEN-AGGRO (AiSystem, EntityLevelingSystem; GDD-03 Abschnitt 4)
@@ -421,10 +441,10 @@ export const SIZE_SCALE_REF_CM = 0.6;
 //   kleinere in Ruhe, da sie sie nicht als Beute sehen. Ebenso umgekehrt.
 // Begründung (Vorschlag Claude, offen) für 4: Auf der Wurzel-Skala ist das
 //   16-mal so lang. Ein Wert für beide Richtungen ist leicht zu verstehen.
-//   Der Drache (95) beachtet den Blob erst ab worldSize 23,75 (Radius 13,
+//   Der Drache (94,9) beachtet den Blob erst ab worldSize 23,7 (Radius 13,
 //   fast ausgewachsen) — er bleibt ein Ziel für später; bei 3 würde er den
-//   ausgewachsenen Blob (30) nie angreifen. Springspinne (3,5) und
-//   Giftspinne (4,5) greifen den Blob ab Radius 7,7 bzw. 9,9 nicht mehr an.
+//   ausgewachsenen Blob (30,2) nie angreifen. Springspinne (3,5) und
+//   Giftspinne (4,7) greifen den Blob ab Radius 7,6 bzw. 10,4 nicht mehr an.
 // -----------------------------------------------------------
 export const SIZE_IGNORE_RATIO = 4;
 

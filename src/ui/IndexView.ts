@@ -27,9 +27,8 @@ import {
   HP_PER_GROWTH, MP_PER_GROWTH, BASE_HP, BASE_MP, PLAYER_SIZE_GROWTH_MAX, PLAYER_SPEED_PER_WORLD_RADIUS,
   PLAYER_WORLD_RADIUS_MIN, PLAYER_WORLD_RADIUS_MAX, PLAYER_REACH_FACTOR,
   SIZE_STRENGTH_BONUS_MAX, MP_REGEN_MILLI_PER_SECOND,
-  SIZE_IGNORE_RATIO, ENTITY_ICON_RADIUS_FACTOR,
+  SIZE_IGNORE_RATIO, ENTITY_ICON_RADIUS_FACTOR, worldSizeFromLength,
 } from "../data/balance.js";
-import { worldSizeFromLength } from "../systems/EntitySystem.js";
 import { SIGHT_EDGE_FRACTION } from "../data/body.js";
 import { calcSizeStrengthBonus, maxEffectOverSkills } from "../systems/BodySystem.js";
 import { SKILL_RANKS, NATUR_PROGRESS, LEVEL_AT_NATUR, OVERSTRETCH_MAX_FRACTION } from "../data/progression.js";
@@ -471,6 +470,11 @@ function growthHtml(): string {
 }
 
 // ── Einheiten-Detail ───────────────────────────────────────
+/** „ (= 2 × Größe)“ für Werte, die aus der Größe berechnet sind. */
+function perSize(f: number | undefined): string {
+  return f !== undefined ? ` (= ${num(f, 2)} × Größe)` : "";
+}
+
 function entityDetail(e: EntityDefinition): string {
   const p: [string, string][] = [
     ["ID", `<code>${e.id}</code>`],
@@ -478,10 +482,10 @@ function entityDetail(e: EntityDefinition): string {
     ["Level", String(e.level)],
     ["Verhalten", `${BEHAVIOR_DE[e.behavior]} · ${DISPOSITION_DE[e.disposition]}`],
     ["HP", e.hp !== undefined ? `${hp(e.hp)} HP` : "—"],
-    ["Tempo", e.speed !== undefined ? `${e.speed} px/s` : "—"],
+    ["Tempo", e.speed !== undefined ? `${num(e.speed, 1)} px/s${perSize(e.speedPerSize)}` : "—"],
     ["Echte Länge", e.lengthCm !== undefined ? `${num(e.lengthCm, 1)} cm` : "—"],
     ["Weltgröße", e.worldSize !== undefined
-      ? `${num(e.worldSize, 1)}${e.lengthCm !== undefined ? ` (Skala: ${num(worldSizeFromLength(e.lengthCm), 2)})` : ""}`
+      ? `${num(e.worldSize, 1)}${e.lengthCm !== undefined ? " (aus der echten Länge über die Größenskala)" : ""}`
       : "—"],
     ["Größen-Aggro", e.worldSize !== undefined
       ? `greift den Blob nicht von sich aus an, wenn sein Radius unter ${num(e.worldSize / SIZE_IGNORE_RATIO * ENTITY_ICON_RADIUS_FACTOR, 1)} px oder ab ${num(e.worldSize * SIZE_IGNORE_RATIO * ENTITY_ICON_RADIUS_FACTOR, 1)} px liegt (Blob ${num(PLAYER_WORLD_RADIUS_MIN)}–${num(PLAYER_WORLD_RADIUS_MAX)} px)`
@@ -489,12 +493,12 @@ function entityDetail(e: EntityDefinition): string {
     ["Interaktionsradius", `${e.interactRadius} px`],
     ["Respawn", `${e.respawnTime} s`],
   ];
-  if (e.aggroRadius !== undefined) p.push(["Aggro-Radius", `${e.aggroRadius} px`]);
-  if (e.attackRangePx !== undefined) p.push(["Angriffsreichweite", `${e.attackRangePx} px`]);
+  if (e.aggroRadius !== undefined) p.push(["Aggro-Radius", `${num(e.aggroRadius, 1)} px${perSize(e.aggroPerSize)}`]);
+  if (e.attackRangePx !== undefined) p.push(["Angriffsreichweite", `${num(e.attackRangePx, 1)} px${perSize(e.reachPerSize)}`]);
   if (e.attackCooldownMs !== undefined) p.push(["Angriffs-Cooldown", seconds(e.attackCooldownMs)]);
   if (e.attackType) p.push(["Angriffsart", e.attackType]);
   if (e.rangedAttackSkillId) {
-    p.push(["Fernkampf", `${ALL_SKILLS.get(e.rangedAttackSkillId)?.name ?? e.rangedAttackSkillId} · ${hp(getEntityRangedDamage(e))} HP · ${orDash(e.rangedAttackRangePx)} px · ${seconds(e.rangedAttackCooldownMs)}`]);
+    p.push(["Fernkampf", `${ALL_SKILLS.get(e.rangedAttackSkillId)?.name ?? e.rangedAttackSkillId} · ${hp(getEntityRangedDamage(e))} HP · ${e.rangedAttackRangePx !== undefined ? num(e.rangedAttackRangePx, 1) : "—"} px${perSize(e.rangedReachPerSize)} · ${seconds(e.rangedAttackCooldownMs)}`]);
   }
   const biomes = biomeShares(e.id);
   p.push(["Vorkommen", biomes.length ? biomes.map((b) => `${b.name} (${pct(b.share)})`).join(", ") : "—"]);

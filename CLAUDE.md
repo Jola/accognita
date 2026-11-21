@@ -25,7 +25,7 @@ Current state: **v0.9** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/types/Material.ts` | Material and loot-drop interfaces |
 | `src/types/Blob.ts` | GDD-10 blob forms: BlobForm, BlobMeta, StoredBlob, SerializedBody (stored body of a blob) |
 | `src/data/skills.ts` | All skill definitions and everything that belongs to a skill: values start → max, attributes it gives, attribute scaling, jump distance, healing, digestion, XP from practice (`practice`) |
-| `src/data/entities.ts` | All entity definitions |
+| `src/data/entities.ts` | All entity definitions: real length (`lengthCm`) and speed/reach/aggro as multiples of size; `resolveEntitySize` applies the size scale (`balance.ts worldSizeFromLength`) on load |
 | `src/data/materials.ts` | All material/loot definitions |
 | `src/data/balance.ts` | General game rules and central entry (header lists which rule lives in which file): XP per absorb/analyze/combat, success chance, hit grades and precision, damage caps, HP/MP, MP regen, size/reach/speed, strength from size, AI, entity bonus levels |
 | `src/data/progression.ts` | All progression knobs with rationale: experience → progress 0–100 % (general scheme: every skill value runs start → max), ranks in %, comparison level vs. entity levels, capacity (discovered skills up to 90 %), overstretch, relearning, overtraining (no levels) |

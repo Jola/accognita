@@ -143,7 +143,7 @@ Standard-Nahkampf: erster vorhandener Skill aus `bite`, `claw`, `pincer` (`ENTIT
 - Das gilt gegenüber dem Blob (`AiSystem`, Aggro aggressiver und territorialer Wesen) und unter den Wesen (`EntityLevelingSystem`: viel kleinere sind keine Beute, viel größere kein Gegner).
 - Wer angegriffen wird oder einen Absorb-/Analyse-Fehlschlag bemerkt, wehrt sich trotzdem, und wer schon aggro ist, bleibt es. Das Level zählt (noch) nicht.
 
-**Begründung (Vorschlag Claude, offen):** 4-mal so groß ist auf der Wurzel-Skala (GDD-07 Abschnitt 1) 16-mal so lang. Ein Wert für beide Richtungen ist leicht zu verstehen. Der Drache (95) beachtet den Blob erst ab Radius 13, also fast ausgewachsen, und bleibt so ein Ziel für später. Bei 3 würde er den ausgewachsenen Blob (30) nie angreifen. Spinnen greifen den Blob ab Radius 7,7 (Springspinne) bzw. 9,9 (Giftspinne) nicht mehr an, der kleine Skorpion ab 15,4.
+**Begründung (Vorschlag Claude, offen):** 4-mal so groß ist auf der Wurzel-Skala (GDD-07 Abschnitt 1) 16-mal so lang. Ein Wert für beide Richtungen ist leicht zu verstehen. Der Drache (94,9) beachtet den Blob erst ab Radius 13, also fast ausgewachsen, und bleibt so ein Ziel für später. Bei 3 würde er den ausgewachsenen Blob (30,2) nie angreifen. Spinnen greifen den Blob ab Radius 7,6 (Springspinne) bzw. 10,4 (Giftspinne) nicht mehr an, der kleine Skorpion ab 15,9.
 **Begründung (Vorschlag Claude, offen)** für die Gegenwehr: entspricht dem Vorschlag oben (wie `defensive`). Ein Tier, das man beißt, wehrt sich, egal wie groß man ist.
 
 Wer greift den Blob von sich aus an (Test v0.9.7, aggressive Wesen):
@@ -152,8 +152,8 @@ Wer greift den Blob von sich aus an (Test v0.9.7, aggressive Wesen):
 |---|---|---|
 | 2 (frisch) | Spinnen, Skorpione, Wasserspitzmaus | Schlange, Mauswiesel, Drache |
 | 5 | alle außer Drache | Drache |
-| 10 | Skorpione, Schlange, Wasserspitzmaus, Mauswiesel | Spinnen, Drache |
-| 16,5 (ausgewachsen) | großer Skorpion, Schlange, Wasserspitzmaus, Mauswiesel, Drache | Spinnen, kleiner Skorpion |
+| 10 | Giftspinne, Skorpione, Schlange, Wasserspitzmaus, Mauswiesel | Springspinne, Drache |
+| 16,6 (ausgewachsen) | großer Skorpion, Schlange, Wasserspitzmaus, Mauswiesel, Drache | Spinnen, kleiner Skorpion |
 
 ---
 
