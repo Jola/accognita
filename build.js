@@ -1,4 +1,5 @@
-// Build-Script: TypeScript kompilieren + in accognita.html bündeln
+// Build-Script: TypeScript kompilieren + in accognita.html bündeln,
+// dazu tileset.html (Tileset zum Anschauen, src/tools/TilesetPreview.ts, GDD-12)
 // Verwendung: node build.js [--out <verzeichnis>]
 //   --out <dir>  Ausgabeverzeichnis (Standard: aktuelles Verzeichnis)
 //
@@ -53,6 +54,16 @@ const html = template + "<script>\n" + bundle + "</script>\n\n</html>\n";
 fs.mkdirSync(outDir, { recursive: true });
 fs.writeFileSync(path.join(outDir, "accognita.html"), html);
 
+// 4b. Tileset zum Anschauen: eigene Seite neben dem Spiel (ohne Phaser)
+const tilesetBundle = execFileSync(
+  "node_modules/.bin/esbuild",
+  ["dist/js/tools/TilesetPreview.js", "--bundle", "--format=iife", "--platform=browser"],
+  { encoding: "utf8" }
+);
+const tilesetHtml = fs.readFileSync("tileset.template.html", "utf8") +
+  "<script>\n" + tilesetBundle + "</script>\n</body>\n</html>\n";
+fs.writeFileSync(path.join(outDir, "tileset.html"), tilesetHtml);
+
 // 5. Index-Redirect für GitHub Pages
 if (outDir !== ".") {
   const redirect =
@@ -64,5 +75,6 @@ if (outDir !== ".") {
 }
 
 console.log(
-  `Build fertig: ${path.join(outDir, "accognita.html")} (${Math.round(html.length / 1024)} kb)`
+  `Build fertig: ${path.join(outDir, "accognita.html")} (${Math.round(html.length / 1024)} kb), ` +
+  `${path.join(outDir, "tileset.html")} (${Math.round(tilesetHtml.length / 1024)} kb)`
 );

@@ -18,6 +18,9 @@ Current state: **v0.9** — Modular TypeScript + Phaser.js architecture, Skill-S
 |------|---------|
 | `accognita.html` | The game itself. Build output, open by double-click in browser. |
 | `README.md` | GitHub Pages landing page with link to the game. |
+| `tileset.html` | Build output next to the game: tileset viewer (all ground tiles, transitions, obstacles, world excerpts), drawn on open with the game's own code. |
+| `tileset.template.html` | Markup and styles of the tileset viewer (build.js appends the script). |
+| `src/tools/TilesetPreview.ts` | Tileset viewer script (no Phaser): draws ground types, the 16 corner cases per pair, obstacles with real size/radius/blocking, and world excerpts via TilesetGenerator and Terrain |
 | `src/types/Skill.ts` | TypeScript interfaces for skills |
 | `src/types/Entity.ts` | TypeScript interfaces for entities |
 | `src/types/GameState.ts` | Central game state interfaces |
@@ -161,7 +164,8 @@ Every rule, formula, constant and balancing decision is documented together with
 
 **Lokaler Build (nur wenn nötig):** `node build.js` → erzeugt `accognita.html` im Projektordner.
 **Lokale Entwicklung (optional, für Jörn):** Dev-Container öffnen, dann `npm run dev` → Spiel unter http://localhost:8080, baut und lädt bei jeder Änderung neu. Keep `scripts/dev.js` dependency-free.
-**Build-Artefakte:** `dist/`, `accognita.html`, `_site/` sind gitignored — nur `src/` wird committet.
+**Tileset ansehen:** Der Build erzeugt neben `accognita.html` auch `tileset.html` (GitHub Pages: `…/tileset.html`, lokal `npm run dev` → http://localhost:8080/tileset.html).
+**Build-Artefakte:** `dist/`, `accognita.html`, `tileset.html`, `_site/` sind gitignored — nur `src/` wird committet.
 **CI-Pipeline:** `.github/workflows/deploy.yml` — wird bei jedem Push auf `main` ausgelöst.
 
 ### Communication

@@ -45,6 +45,7 @@ Format:
 
 ## Erledigt
 
+- `[TOOL]` **Tileset zum Anschauen** (Auftrag Entwickler, 22. November 2026): `tileset.html` neben dem Spiel, beim Öffnen mit dem Spielcode gezeichnet (v0.10.1, GDD-12 Abschnitt 2.10).
 - `[FEATURE]` **Welt Etappe 1: Gelände, Wasser, Hindernisse, Übergänge** (Auftrag Entwickler, 22. November 2026): Biome mit zufälligen Formen, Seen und Bäche (nicht begehbar, keine Wesen darin), Hindernisse in echter Größe mit Kollision (Gestrüpp lässt Kleine durch, Kiesel blockieren Kleine), gerundete Übergänge mit Ufer, neue Pixel-Art (v0.10.0, GDD-12).
 - `[FEATURE]` **Wirbeltiere platzieren** (Auftrag Entwickler, 21. November 2026): Waldmaus (Wald, Sumpf, Hochland), Wasserspitzmaus (Sumpf), Zauneidechse (Hochland, Wüste), Igel (Wald, Hochland), Mauswiesel (nur Hochland); Gewichte vorläufig (v0.9.10, GDD-07 Abschnitt 12.1).
 - `[UI]` **Lern-Anzeige oben links, Skill-Slots und Blob-Knöpfe neu angeordnet** (Auftrag Entwickler, 21. November 2026): Skills mit Fortschrittsbalken bis zur nächsten Stufe (inkl. Erfahrung aus der Ruhe) unter dem Namen; Skill-Slots im Hochformat übereinander; Blob-Knöpfe im Hochformat über, im Querformat neben dem Joystick (v0.9.9, GDD-04).

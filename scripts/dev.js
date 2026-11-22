@@ -1,6 +1,6 @@
 // Lokaler Entwicklungsserver — ohne zusätzliche Abhängigkeiten.
 //   npm run dev   → baut das Spiel und liefert es unter http://localhost:8080 aus
-// Änderungen in src/ oder accognita.template.html lösen einen neuen Build aus;
+// Änderungen in src/, accognita.template.html oder tileset.template.html lösen einen neuen Build aus;
 // danach lädt der Browser die Seite selbst neu.
 // Umgebungsvariablen: PORT (Standard 8080), HOST (Standard 0.0.0.0, nötig im Container).
 
@@ -12,7 +12,7 @@ const { spawn } = require("child_process");
 const ROOT = path.join(__dirname, "..");
 const PORT = Number(process.env.PORT) || 8080;
 const HOST = process.env.HOST || "0.0.0.0";
-const WATCH = ["src", "accognita.template.html"];
+const WATCH = ["src", "accognita.template.html", "tileset.template.html"];
 
 // Wird nur beim Ausliefern eingefügt, nie in die gebaute Datei geschrieben
 const RELOAD_SCRIPT =
@@ -68,6 +68,19 @@ http.createServer((req, res) => {
 
   if (url === "/" || url === "/index.html" || url === "/accognita.html") {
     fs.readFile(path.join(ROOT, "accognita.html"), "utf8", (err, html) => {
+      if (err) {
+        res.writeHead(503, { "Content-Type": "text/plain; charset=utf-8" });
+        res.end("Noch nicht gebaut — bitte kurz warten und neu laden.");
+        return;
+      }
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
+      res.end(html.replace(/<\/html>\s*$/, `${RELOAD_SCRIPT}</html>\n`));
+    });
+    return;
+  }
+
+  if (url === "/tileset.html") {
+    fs.readFile(path.join(ROOT, "tileset.html"), "utf8", (err, html) => {
       if (err) {
         res.writeHead(503, { "Content-Type": "text/plain; charset=utf-8" });
         res.end("Noch nicht gebaut — bitte kurz warten und neu laden.");

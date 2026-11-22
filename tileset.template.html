@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Accognita Tileset</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Musterbuch eines Pixel-Art-Sets — Abschnitte untereinander, Kacheln auf Transparenz-Raster, Zoom-Leiste oben fest.
+   Die Bilder zeichnet src/tools/TilesetPreview.ts beim Öffnen mit dem Spielcode. */
+:root {
+  --bg: #eef0ea; --panel: #f8f9f5; --ink: #1d2420; --muted: #5d6860; --line: #d3d8cf;
+  --accent: #2f7a3c; --water: #2f6fb1; --chk-a: #e2e5dd; --chk-b: #d6dad0;
+  --f-display: "Pixelify Sans", "Courier New", monospace;
+  --f-body: "IBM Plex Sans", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root {
+  --bg: #131815; --panel: #1b211d; --ink: #e3e8e2; --muted: #98a39b; --line: #2d362f;
+  --accent: #7cc47f; --water: #74aee6; --chk-a: #232a25; --chk-b: #1d231f; color-scheme: dark } }
+* { box-sizing: border-box; }
+html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 48px; }
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 44px; }
+header { padding-top: 28px; display: grid; gap: 10px; }
+h1 { font-family: var(--f-display); font-weight: 700; font-size: clamp(30px, 6vw, 46px); line-height: 1.05; margin: 0; }
+h2 { font-family: var(--f-display); font-weight: 500; font-size: 24px; margin: 0; text-wrap: balance; }
+h3 { font-size: 15px; font-weight: 600; margin: 0; }
+p { margin: 0; max-width: 68ch; }
+a { color: var(--accent); }
+.lead { color: var(--muted); }
+.meta { font-family: var(--f-mono); font-size: 12.5px; color: var(--muted); }
+section { display: grid; gap: 16px; }
+.bar { position: sticky; top: 0; z-index: 5; background: var(--bg); padding-block: 10px; border-bottom: 1px solid var(--line);
+  display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+.bar nav { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13.5px; }
+.bar a { color: var(--ink); text-decoration: none; border-bottom: 1px dotted var(--muted); }
+.bar a:hover, .bar a:focus-visible { color: var(--accent); border-color: var(--accent); }
+.zoom { margin-left: auto; display: flex; gap: 4px; align-items: center; font-size: 13px; color: var(--muted); }
+.zoom button { font: 500 13px var(--f-mono); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 3px 9px; cursor: pointer; }
+.zoom button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.zoom button:focus-visible, .bar a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+canvas.px { image-rendering: pixelated; image-rendering: crisp-edges; display: block; max-width: 100%; height: auto; }
+.chk { background-color: var(--chk-a); background-image: linear-gradient(45deg, var(--chk-b) 25%, transparent 25%, transparent 75%, var(--chk-b) 75%), linear-gradient(45deg, var(--chk-b) 25%, transparent 25%, transparent 75%, var(--chk-b) 75%); background-size: 16px 16px; background-position: 0 0, 8px 8px; }
+.grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); }
+.pairs { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+.row.head { justify-content: space-between; align-items: center; }
+.cell { display: grid; gap: 4px; justify-items: start; }
+.cell span { font-size: 11.5px; color: var(--muted); font-family: var(--f-mono); }
+.tiles16 { display: grid; grid-template-columns: repeat(4, max-content); gap: 8px; overflow-x: auto; max-width: 100%; }
+.t16 { display: grid; gap: 3px; justify-items: center; }
+.corners { width: 14px; height: 14px; color: var(--muted); }
+.corners .on { fill: var(--water); } .corners .off { fill: var(--muted); opacity: .35; }
+dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 0; font-size: 13px; }
+dt { color: var(--muted); } dd { margin: 0; font-variant-numeric: tabular-nums; }
+.tag { display: inline-block; font: 500 11.5px var(--f-mono); padding: 1px 7px; border-radius: 99px; border: 1px solid currentColor; }
+.tag.all { color: var(--ink); } .tag.large { color: var(--accent); } .tag.small { color: var(--water); }
+.obs-imgs { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; overflow-x: auto; max-width: 100%; padding: 6px; }
+.regions { display: grid; gap: 18px; }
+.region { display: grid; gap: 6px; margin: 0; }
+.region .scroll { overflow-x: auto; max-width: 100%; border: 1px solid var(--line); border-radius: 6px; min-height: 60px; }
+.region canvas.px { max-width: none; }
+.pending { padding: 18px; color: var(--muted); font-size: 13px; }
+.note { font-size: 13.5px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Accognita Tileset</h1>
+  <p class="lead">Alle Kacheln und Hindernisse der Oberwelt, beim Öffnen gezeichnet mit demselben Code, den das Spiel nutzt. Ein Pixel im Bild ist ein Pixel in der Welt; eine Kachel misst 32 × 32.</p>
+  <p class="meta"><span id="version"></span> · src/world/TilesetGenerator.ts · Werte aus src/data/terrain.ts · GDD-12 · <a href="accognita.html">zum Spiel</a></p>
+</header>
+<div class="bar">
+  <nav aria-label="Abschnitte"><a href="#boden">Bodenarten</a><a href="#uebergaenge">Übergänge</a><a href="#hindernisse">Hindernisse</a><a href="#ausschnitte">Ausschnitte</a></nav>
+  <div class="zoom" role="group" aria-label="Vergrößerung">Zoom
+    <button type="button" id="z1" data-z="1" aria-pressed="false">1×</button>
+    <button type="button" id="z2" data-z="2" aria-pressed="false">2×</button>
+    <button type="button" id="z3" data-z="3" aria-pressed="true">3×</button>
+    <button type="button" id="z4" data-z="4" aria-pressed="false">4×</button>
+  </div>
+</div>
+
+<section id="boden">
+  <h2>Bodenarten</h2>
+  <p>Sieben Bodenarten, je vier Varianten. Volle Kacheln wählen ihre Variante zufällig, die Ränder passen immer aneinander.</p>
+  <div class="grid" id="grounds"></div>
+</section>
+
+<section id="uebergaenge">
+  <h2>Übergänge</h2>
+  <p>Jede Kachel hängt von den Bodenarten ihrer vier Ecken ab. Daraus entstehen 16 Fälle je Paar; die Grenze verläuft gerundet zwischen den Ecken. Zwischen Land und Wasser liegt ein Ufer aus Sand, Schaum und flachem Wasser. Der Punkt-Schlüssel unter jeder Kachel zeigt, welche Ecken die zweite Bodenart haben.</p>
+  <div class="row" id="patches"></div>
+  <div class="pairs" id="pairs"></div>
+</section>
+
+<section id="hindernisse">
+  <h2>Hindernisse</h2>
+  <p>Größe aus der echten Größe auf derselben Wurzel-Skala wie die Wesen. Gestrüpp, Schilf und Dornbusch lassen Wesen unter Größe <span class="th-large"></span> durch (Mäuse ja, der ausgewachsene Blob nein). Kiesel und Schutt blockieren nur Wesen unter Größe <span class="th-small"></span> (Ameisen, Spinnen, der frische Blob). Baumkronen und Gestrüpp werden durchsichtig, wenn der Blob darunter ist.</p>
+  <div class="grid" id="obstacles"></div>
+  <p class="note">Bäume zeigen zuerst den Stamm mit Kronenschatten (unter den Wesen), dann die Krone (über den Wesen).</p>
+</section>
+
+<section id="ausschnitte">
+  <h2>Ausschnitte aus der Welt</h2>
+  <p>So setzt der Generator alles zusammen. Ausschnitte von 640 × 400 Weltpixeln, ohne Wesen und ohne Dunkelheit.</p>
+  <div class="regions" id="regions"></div>
+</section>
+</div>

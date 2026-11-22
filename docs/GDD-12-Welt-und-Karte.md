@@ -122,6 +122,14 @@ Im Browser-Test (ohne Grafikkarte) läuft das Spiel mit etwa 8 % weniger Bildern
 
 > Offen: Auf älteren Handys prüfen. Falls nötig: weniger Kiesel, Render-Radius verkleinern, oder Hindernisse außerhalb des Bildes ausblenden.
 
+### 2.10 Tileset zum Anschauen (v0.10.1)
+
+**Vorgabe (Entwickler, 22. November 2026):** Das Tileset soll zum Anschauen verfügbar sein, als eigene HTML-Datei neben `accognita.html`.
+
+Der Build erzeugt `tileset.html` (GitHub Pages neben dem Spiel, lokal mit `npm run dev` unter `/tileset.html`). Die Seite zeichnet beim Öffnen mit dem Spielcode: alle Bodenarten mit Varianten, die 16 Ecken-Fälle je Paar von Bodenarten, Beispielflächen (Teich, Oase, Wiese, Ruine), alle Hindernisse mit echter Größe, Radius, Kollision, wen sie blockieren und in welchen Biomen sie vorkommen, und fünf Ausschnitte der echten Welt. Zoom 1×–4×.
+
+**Begründung (Vorschlag Claude, offen):** Im Browser gezeichnet statt als fertige Bilder — die Seite ist nach jeder Änderung an Kacheln oder Werten von selbst aktuell und bleibt klein (ca. 60 kb).
+
 ---
 
 ## 3. Etappe 2: Weltobjekte (Konzept)
@@ -156,7 +164,8 @@ Im Browser-Test (ohne Grafikkarte) läuft das Spiel mit etwa 8 % weniger Bildern
 | `src/world/TilesetGenerator.ts` | Pixel-Art: Bodenmuster, Übergangskacheln im Atlas, Hindernis-Texturen |
 | `src/world/WorldGenerator.ts` | Wesen je Chunk, frei von Wasser und Hindernissen |
 | `src/world/ChunkManager.ts` | Tilemap und Hindernisse je Chunk, Kronen durchsichtig über dem Blob |
+| `src/tools/TilesetPreview.ts`, `tileset.template.html` | Tileset zum Anschauen (`tileset.html` neben dem Spiel, Abschnitt 2.10) |
 
 ---
 
-*Letzte Aktualisierung: 22. November 2026 — erste Fassung: Auftrag des Entwicklers, Etappe 1 umgesetzt (v0.10.0), Etappen 2 und 3 als Konzept*
+*Letzte Aktualisierung: 22. November 2026 — Abschnitt 2.10: Tileset zum Anschauen (v0.10.1); davor erste Fassung: Auftrag des Entwicklers, Etappe 1 umgesetzt (v0.10.0), Etappen 2 und 3 als Konzept*
