@@ -36,7 +36,9 @@ export interface MapData {
   chunksX: number;
   chunksY: number;
   chunkPx: number;
-  biomeColor(cx: number, cy: number): string;
+  /** [VERWORFEN, 22. November 2026] biomeColor(cx, cy) je Chunk — Biome laufen quer durch Chunks (GDD-12). */
+  /** Farbe des Bodens an einem Weltpunkt (px) — Biome und Wasser. */
+  terrainColor(x: number, y: number): string;
   visited: Set<string>;
   blobs: MapBlob[];
   /** Wahlmodus (Sterbescreen): nur niedergelassene Blobs sind wählbar */
@@ -165,8 +167,18 @@ export function createMapView(root: HTMLElement, cb: MapCallbacks): MapViewState
         const { sx, sy } = toScreen(x * cp, y * cp);
         const size = cp * k;
         if (sx > w || sy > w || sx + size < 0 || sy + size < 0) continue;
-        g.fillStyle = data.visited.has(`${x},${y}`) ? data.biomeColor(x, y) : "#121722";
-        g.fillRect(sx, sy, size + 0.5, size + 0.5);
+        if (!data.visited.has(`${x},${y}`)) {
+          g.fillStyle = "#121722";
+          g.fillRect(sx, sy, size + 0.5, size + 0.5);
+        } else {
+          // Besuchte Chunks fein: je nach Zoom bis zu 32 × 32 Felder je Chunk
+          const n = Math.max(2, Math.min(32, Math.round(size / 5)));
+          const cell = size / n, cpx = cp / n;
+          for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+            g.fillStyle = data.terrainColor(x * cp + (i + 0.5) * cpx, y * cp + (j + 0.5) * cpx);
+            g.fillRect(sx + i * cell, sy + j * cell, cell + 0.5, cell + 0.5);
+          }
+        }
         if (size >= 24) {
           g.strokeStyle = "rgba(0,0,0,.25)";
           g.lineWidth = 1;

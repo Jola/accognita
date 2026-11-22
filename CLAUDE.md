@@ -8,7 +8,7 @@ This file is the project constitution. Read it at the start of every session bef
 
 **Absorb & Evolve** is a browser-based Action-RPG. The player controls a Blob (inspired by the real organism *Physarum polycephalum*) that evolves by absorbing or analyzing entities in a medieval fantasy world. Skills are discovered through interaction, leveled through repetition, and combined into new abilities.
 
-Current state: **v0.9** — Modular TypeScript + Phaser.js architecture, Skill-System + Combat-System implemented. The blob awakens blind and immobile in the nest (a settled blob) and learns movement and sight (GDD-09); blob forms settled/traveling/dried with splitting (transfer dialog), merging, rising up, settled-blob activity (nearest blob harvests), death screen and a map with fog and markers are implemented (GDD-10). Onboarding: nudges as simple questions that escalate, explanation cards, discoveries and a GEDÄCHTNIS tab (GDD-11). Large procedural world (20×20 chunks = 20480×20480px) with 6 biomes, pixel art tiles, and dynamic chunk loading.
+Current state: **v0.9** — Modular TypeScript + Phaser.js architecture, Skill-System + Combat-System implemented. The blob awakens blind and immobile in the nest (a settled blob) and learns movement and sight (GDD-09); blob forms settled/traveling/dried with splitting (transfer dialog), merging, rising up, settled-blob activity (nearest blob harvests), death screen and a map with fog and markers are implemented (GDD-10). Onboarding: nudges as simple questions that escalate, explanation cards, discoveries and a GEDÄCHTNIS tab (GDD-11). Large procedural world (20×20 chunks = 20480×20480px) with 6 biomes of random shape, water, obstacles with collision, pixel art tiles with rounded transitions, and dynamic chunk loading (GDD-12).
 
 ---
 
@@ -76,11 +76,15 @@ Current state: **v0.9** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `src/ui/ValueChart.ts` | INDEX value charts: SVG curve "value over experience" per skill value, ranks as bands, tap/hover readout |
 | `src/scenes/GameScene.ts` | Phaser scene — main file that knows about Phaser |
 | `src/scenes/BlobRenderer.ts` | GDD-10 look of settled blobs (vein network with pulse wave, seeded by blob number) and dried blobs (crust); geometry is plain math |
-| `src/world/Chunk.ts` | Types: BiomeId, HeightLevel, ChunkDef, LoadedChunk, SpawnDef + constants |
-| `src/world/BiomeDefinitions.ts` | Zone layout, spawn tables, tile index mapping |
-| `src/world/WorldGenerator.ts` | `generateChunk(cx, cy, seed)` — deterministic chunk generation |
-| `src/world/TilesetGenerator.ts` | Procedural pixel art tileset (24 tiles, Canvas 2D) |
-| `src/world/ChunkManager.ts` | Chunk load/unload, entity lifecycle, active-radius AI filtering |
+| `src/world/Chunk.ts` | Types: BiomeId, ChunkDef, LoadedChunk, SpawnDef + constants |
+| `src/world/BiomeDefinitions.ts` | Zone layout (ground plan, borders are warped in Terrain.ts), spawn tables, nest |
+| `src/world/WorldGenerator.ts` | `generateChunk(cx, cy, seed)` — deterministic creature spawns per chunk, never in water or in obstacles that block them |
+| `src/world/Terrain.ts` | GDD-12 terrain queries: biome at a point (warped zones), ground type at vertices (every 32 px), water field (same rounded border the art draws), obstacles per chunk, circle collision, free spot |
+| `src/world/Noise.ts` | Deterministic noise (hash, value noise, fBm, LCG) |
+| `src/world/TilesetGenerator.ts` | GDD-12 pixel art drawn in code: ground patterns, transition tiles computed from 4 corner ground types into a canvas atlas ("dual grid", shore, rounded corners), obstacle textures |
+| `src/world/ChunkManager.ts` | Chunk load/unload: tilemap and obstacle sprites, crowns/bushes fade above the blob, entity lifecycle, active-radius AI filtering |
+| `src/data/terrain.ts` | GDD-12 world rules with rationale: ground types, biome warp, water per biome, obstacle kinds by real size, size thresholds (bushes block large, pebbles block small), densities |
+| `src/systems/CollisionSystem.ts` | Movement with collision (slide/steer), jump sweep — pure, terrain passed as a function |
 | `tsconfig.json` | TypeScript compiler configuration |
 | `.devcontainer/devcontainer.json` | Dev container (Node 20 like CI) for local development in VS Code / Codespaces |
 | `scripts/dev.js` | `npm run dev`: dependency-free dev server on port 8080 — rebuilds on changes in `src/` and the template, reloads the browser |
@@ -94,6 +98,7 @@ Current state: **v0.9** — Modular TypeScript + Phaser.js architecture, Skill-S
 | `docs/GDD-09-Grundwerte-und-Sinne.md` | Base stats (strength, dexterity, speed, sight), movement skills, strength from size, vision black → gray → color, awakening intro with nest. |
 | `docs/GDD-08-Progressionsmathematik.md` | Math of leveling (curve families, XP models, integer limits, other games) and of effects (power per level, hit/effect probabilities, skill interactions) (Status: Diskussion; Teil 6 = implemented XP model). |
 | `docs/GDD-10-Blob-Formen.md` | Implemented (v0.7.6–v0.8.4): blob forms settled/traveling/dried, settling, split, merging (no separate connect), rising up, consciousness switch, knowledge merge (highest value per skill), split cost (a fully grown body), resource split, map and direction arrows. |
+| `docs/GDD-12-Welt-und-Karte.md` | World and map: stage 1 implemented v0.10.0 (ground types at vertices with rounded transitions and shore, random biome shapes, water not walkable, obstacles by real size with collision, partly size-dependent, art drawn in code); stages 2–3 concept (world objects: ant hills, mouse holes, forest hut; levels as separate interior maps: caves, houses, later diving). |
 | `docs/GDD-11-Spieleinstieg.md` | Implemented v0.9.0–v0.9.1 (except combining, no concept yet): onboarding — teach basics, leave room for discovery, curiosity as the drive, nudges as simple questions with no named speaker (why it awakens stays a mystery), explanation/nudge/discovery with escalation, first-hour sequence, landscape layouts (skill intro cards implemented v0.8.6). |
 
 ---

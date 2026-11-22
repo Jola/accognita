@@ -43,7 +43,8 @@ import type { EffectType } from "../types/Skill";
 import { createInitialGameState } from "../types/GameState.js";
 import type { GameState, PlayerState } from "../types/GameState.js";
 import { serializeBody, deserializeBody } from "../systems/BodySerializer";
-import { getBiomeAt } from "../world/BiomeDefinitions.js";
+import { biomeAtPoint, circleBlocked, findFreeSpot, isWaterAt, vertexTerrain } from "../world/Terrain.js";
+import { moveWithCollision, sweepTo } from "../systems/CollisionSystem.js";
 import { ALL_SKILLS } from "../data/skills.js";
 import { MATERIAL_MAP } from "../data/materials.js";
 import { ENTITY_MAP, ENTITY_DEFINITIONS } from "../data/entities.js";
@@ -80,7 +81,7 @@ import {
 import {
   getMaterialList,
 } from "../systems/MaterialSystem.js";
-import type { EntityInstance } from "../types/Entity.js";
+import type { EntityInstance, EntityDefinition } from "../types/Entity.js";
 import type { DamageType, HitGrade } from "../types/Combat.js";
 import { createJoystick, type JoystickState } from "../ui/Joystick.js";
 import { createSkillBar, type SkillBarState } from "../ui/SkillBar.js";
@@ -134,7 +135,7 @@ import {
 } from "../data/balance.js";
 import { calcPlayerWorldRadius, calcPlayerSpeed, calcPlayerReach, describePlayerSkillValues } from "../systems/StatsSystem.js";
 import { addVenomDose, processVenom, getVenomLoad, clearVenom } from "../systems/VenomSystem.js";
-import { generateTileset, TILE_SIZE, biomeBaseColor } from "../world/TilesetGenerator.js";
+import { initTerrainArt, terrainColor } from "../world/TilesetGenerator.js";
 import { ChunkManager } from "../world/ChunkManager.js";
 import { CHUNK_PX, WORLD_CHUNKS_X, WORLD_CHUNKS_Y } from "../world/Chunk.js";
 
@@ -222,7 +223,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   preload() {
-    generateTileset(this);
+    initTerrainArt(this);
   }
 
   create() {
@@ -528,7 +529,7 @@ export class GameScene extends Phaser.Scene {
       hpFraction: p.hp / Math.max(1, p.maxHp),
       calm: Date.now() - this.lastAggroAt >= SETTLE_AGGRO_LOCK_MS,
       nestMeters: nest ? this.toMeters(Math.hypot(nest.body.x - p.x, nest.body.y - p.y)) : null,
-      biome: getBiomeAt(Math.floor(p.x / CHUNK_PX), Math.floor(p.y / CHUNK_PX)),
+      biome: biomeAtPoint(p.x, p.y, state.world.worldSeed),
       peacefulNear: peaceful,
       canSettle: c.form === "traveling" && moves && canSettle(state).ok,
       canRise: c.form === "settled" && !c.nest && moves && canRise(state).ok,
@@ -999,7 +1000,7 @@ export class GameScene extends Phaser.Scene {
     if (this.deathPending) return;
     this.tickSettledActivity(delta);
     const prevX = this.gameState.player.x, prevY = this.gameState.player.y;
-    this.handleMovement();
+    this.handleMovement(delta);
     this.syncPlayerPosition();
     this.gainBodyXp(prevX, prevY, delta);
     this.chunkManager.tick(this.gameState.player.x, this.gameState.player.y, Date.now());
@@ -1008,6 +1009,7 @@ export class GameScene extends Phaser.Scene {
     this.processEntityLeveling(delta);
     this.processCombatEffects(delta);
     this.updateEntityVisuals();
+    this.chunkManager.updateOverhead(this.gameState.player.x, this.gameState.player.y, this.calcPlayerWorldRadius());
     this.updateBlobWobble(_time);
     this.updateVision();
     this.updateGainFeedAnchor();
@@ -1064,22 +1066,56 @@ export class GameScene extends Phaser.Scene {
     this.blobGraphic.setScale(baseScale * (1 + wobble), baseScale * (1 - wobble));
   }
 
-  private handleMovement() {
+  // Kollision (GDD-12): Der Blob wird nicht mehr von der Physik bewegt,
+  // sondern hier Schritt für Schritt mit Gelände und Hindernissen abgeglichen.
+  private handleMovement(delta: number) {
+    this.blobGraphic.body.setVelocity(0, 0);
     // Joystick nur beim Reisenden (GDD-10 Abschnitt 13.5)
-    if (this.gameState.conscious.form !== "traveling") {
-      this.blobGraphic.body.setVelocity(0, 0);
+    if (this.gameState.conscious.form !== "traveling") return;
+    const p = this.gameState.player;
+    const blocked = this.playerBlockedFn();
+    // Steht der Blob in Wasser oder Fels (alter Spielstand, gewachsen im Gestrüpp): zur nächsten freien Stelle
+    if (blocked(p.x, p.y)) {
+      const r = this.calcPlayerWorldRadius();
+      const free = findFreeSpot(p.x, p.y, r, blobWorldSize(r), this.gameState.world.worldSeed);
+      p.x = free.x; p.y = free.y;
+      this.blobGraphic.body.reset(p.x, p.y);
       return;
     }
     // Geschwindigkeit skaliert mit Weltgröße → Bildschirm-Speed bleibt über alle Größen konstant
-    const speed = calcPlayerSpeed(this.gameState.player);
-    const body = this.blobGraphic.body;
-
+    const speed = calcPlayerSpeed(p);
     let dx = this.joy.active ? this.joy.dx : 0;
     let dy = this.joy.active ? this.joy.dy : 0;
     const len = Math.hypot(dx, dy);
     if (len > 1) { dx /= len; dy /= len; }
+    if (dx === 0 && dy === 0) return;
+    const dt = Math.min(delta, 100) / 1000;
+    const next = moveWithCollision(p.x, p.y, dx * speed * dt, dy * speed * dt, blocked);
+    if (!next.moved) return;
+    p.x = next.x; p.y = next.y;
+    this.blobGraphic.body.reset(p.x, p.y);
+  }
 
-    body.setVelocity(dx * speed, dy * speed);
+  /** Kann der Blob mit seiner jetzigen Größe hier stehen? (Wasser, Hindernisse, Weltrand) */
+  private playerBlockedFn(): (x: number, y: number) => boolean {
+    const r = this.calcPlayerWorldRadius();
+    const size = blobWorldSize(r);
+    const seed = this.gameState.world.worldSeed;
+    return (x, y) => circleBlocked(x, y, r, size, seed);
+  }
+
+  /** Bewegt ein Wesen mit Kollision (GDD-12); ins Wasser kommt es nie, auch nicht beim Befreien. */
+  private moveEntity(instance: EntityInstance, def: EntityDefinition, dx: number, dy: number): void {
+    const size = def.worldSize ?? 5;
+    const r = getEntityRadius(def);
+    const seed = this.gameState.world.worldSeed;
+    const next = moveWithCollision(
+      instance.x, instance.y, dx, dy,
+      (x, y) => circleBlocked(x, y, r, size, seed),
+      (x, y) => !isWaterAt(x, y, seed),
+      true,
+    );
+    instance.x = next.x; instance.y = next.y;
   }
 
   private syncPlayerPosition() {
@@ -1180,8 +1216,7 @@ export class GameScene extends Phaser.Scene {
 
       // Entity bewegen (nur Logik-Position — Sprite-Update in updateEntityVisuals)
       if ((frame.vx !== 0 || frame.vy !== 0) && instance.isAlive) {
-        instance.x += frame.vx * (delta / 1000);
-        instance.y += frame.vy * (delta / 1000);
+        this.moveEntity(instance, def, frame.vx * (delta / 1000), frame.vy * (delta / 1000));
       }
 
       // Entity setzt Fernkampf ein (z.B. Drachen-Feueratem)
@@ -1283,8 +1318,7 @@ export class GameScene extends Phaser.Scene {
 
       if (dist > attackRange) {
         const spd = getScaledSpeed(hunterDef, hunter.bonusLevel ?? 0);
-        hunter.x += (dx / dist) * spd * (delta / 1000);
-        hunter.y += (dy / dist) * spd * (delta / 1000);
+        this.moveEntity(hunter, hunterDef, (dx / dist) * spd * (delta / 1000), (dy / dist) * spd * (delta / 1000));
       } else if ((hunter.levelingCooldown ?? 0) <= 0) {
         // Angriff
         hunter.levelingCooldown = hunterDef.attackCooldownMs ?? 1500;
@@ -2038,7 +2072,7 @@ export class GameScene extends Phaser.Scene {
     }
     this.mapView.render({
       chunksX: WORLD_CHUNKS_X, chunksY: WORLD_CHUNKS_Y, chunkPx: CHUNK_PX,
-      biomeColor: (cx, cy) => biomeBaseColor(getBiomeAt(cx, cy)),
+      terrainColor: (x, y) => terrainColor(vertexTerrain(Math.round(x / 32), Math.round(y / 32), this.gameState.world.worldSeed)),
       visited: this.visitedSet,
       blobs,
       pickMode: !!this.mapPick,
@@ -2266,14 +2300,14 @@ export class GameScene extends Phaser.Scene {
       const dy = this.joy.active ? this.joy.dy : 0;
       const len = Math.hypot(dx, dy);
       if (len > 0.1) {
-        const dist = executeJump(
-          this.gameState.player,
-          dx / len, dy / len,
-          skillId,
-          WORLD_CHUNKS_X * CHUNK_PX,
-          WORLD_CHUNKS_Y * CHUNK_PX
-        );
-        this.blobGraphic.setPosition(this.gameState.player.x, this.gameState.player.y);
+        const p = this.gameState.player;
+        const fromX = p.x, fromY = p.y;
+        executeJump(p, dx / len, dy / len, skillId, WORLD_CHUNKS_X * CHUNK_PX, WORLD_CHUNKS_Y * CHUNK_PX);
+        // Kein Sprung über Wasser oder durch Hindernisse (GDD-12): endet davor
+        const end = sweepTo(fromX, fromY, p.x, p.y, Math.max(2, this.calcPlayerWorldRadius() / 2), this.playerBlockedFn());
+        p.x = end.x; p.y = end.y;
+        const dist = Math.hypot(end.x - fromX, end.y - fromY);
+        this.blobGraphic.body.reset(p.x, p.y);
         showToast(`🦘 Sprung! (${Math.round(dist)}px)`, "system");
       }
       // Jump: XP pro Benutzung

@@ -17,6 +17,12 @@ Format:
 
 ## Features & Ideen
 
+- `[FEATURE]` **Welt Etappe 2: Weltobjekte** (beauftragt, 22. November 2026; GDD-12 Abschnitt 3): Ameisen aus Ameisenbauten, Mäuse aus Mauselöchern, verlassene Waldhütte im Wald nahe dem Start (von außen).
+
+- `[FEATURE]` **Welt Etappe 3: Ebenen** (beauftragt, 22. November 2026; GDD-12 Abschnitt 4): eigene Innenkarten — Höhlen, Waldhütte betretbar; später Tauchen, Fische und Amphibien im Wasser.
+
+- `[POLISH]` **Welt: Leistung auf älteren Handys prüfen** (GDD-12 Abschnitt 2.9): bis 220 Hindernisse je Chunk, im Test ca. 8 % weniger Bilder pro Sekunde.
+
 - `[FEATURE]` **Channeling für Absorb und Analyze** (Idee Entwickler, 14. November 2026, für später; GDD-02 Abschnitt 7): Beide sollen etwas Zeit in Anspruch nehmen und in dieser Zeit unterbrochen werden können.
 
 - `[FEATURE]` **Wärmesicht** (Konzept, GDD-09 Abschnitt 4.2): von der Schlange, Lebewesen leuchten auch im Dunkeln.
@@ -39,6 +45,7 @@ Format:
 
 ## Erledigt
 
+- `[FEATURE]` **Welt Etappe 1: Gelände, Wasser, Hindernisse, Übergänge** (Auftrag Entwickler, 22. November 2026): Biome mit zufälligen Formen, Seen und Bäche (nicht begehbar, keine Wesen darin), Hindernisse in echter Größe mit Kollision (Gestrüpp lässt Kleine durch, Kiesel blockieren Kleine), gerundete Übergänge mit Ufer, neue Pixel-Art (v0.10.0, GDD-12).
 - `[FEATURE]` **Wirbeltiere platzieren** (Auftrag Entwickler, 21. November 2026): Waldmaus (Wald, Sumpf, Hochland), Wasserspitzmaus (Sumpf), Zauneidechse (Hochland, Wüste), Igel (Wald, Hochland), Mauswiesel (nur Hochland); Gewichte vorläufig (v0.9.10, GDD-07 Abschnitt 12.1).
 - `[UI]` **Lern-Anzeige oben links, Skill-Slots und Blob-Knöpfe neu angeordnet** (Auftrag Entwickler, 21. November 2026): Skills mit Fortschrittsbalken bis zur nächsten Stufe (inkl. Erfahrung aus der Ruhe) unter dem Namen; Skill-Slots im Hochformat übereinander; Blob-Knöpfe im Hochformat über, im Querformat neben dem Joystick (v0.9.9, GDD-04).
 - `[POLISH]` **Echte Größe eintragen, Skala erst beim Laden** (Auftrag Entwickler, 21. November 2026): Wesen haben nur `lengthCm` und Folgewerte als Vielfache der Größe; `worldSizeFromLength` (balance.ts) ist die einzige Stelle der Skala, auch der ausgewachsene Blob wird damit berechnet (v0.9.8, GDD-07 Abschnitt 1).

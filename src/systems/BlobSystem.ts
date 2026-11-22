@@ -27,8 +27,7 @@ import { isFullyGrown, calcGrowthFromMass } from "./GrowSystem";
 import { calcMaxHp, calcMaxMp, updatePlayerGrowth } from "./SkillSystem";
 import { calcPlayerReach, calcPlayerWorldRadius } from "./StatsSystem";
 import { clearVenom } from "./VenomSystem";
-import { getBiomeAt } from "../world/BiomeDefinitions";
-import { CHUNK_PX } from "../world/Chunk";
+import { biomeAtPoint } from "../world/Terrain";
 import { GROW_FOOD_MATERIAL_ID, MAX_BODY_MASS } from "../data/grow";
 import {
   SPLIT_SHARE_DEFAULT, SPLIT_OFFSET_PX, DRIED_RADIUS_FACTOR,
@@ -52,7 +51,7 @@ function allocateId(state: GameState): string {
 
 /** Name eines niedergelassenen oder vertrockneten Blobs: Biom und Nummer („Wald 2“). */
 export function makeBlobName(state: GameState, x: number, y: number): string {
-  const biome = BIOME_NAMES[getBiomeAt(Math.floor(x / CHUNK_PX), Math.floor(y / CHUNK_PX))] ?? "Blob";
+  const biome = BIOME_NAMES[biomeAtPoint(x, y, state.world.worldSeed)] ?? "Blob";
   const taken = new Set([state.conscious.name, ...state.blobs.map((b) => b.name)]);
   let n = 1;
   while (taken.has(`${biome} ${n}`)) n++;

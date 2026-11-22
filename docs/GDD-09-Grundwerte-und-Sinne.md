@@ -157,6 +157,8 @@ Ein garantierter Fund nach X Versuchen ist nicht eingebaut. Mit zwei Wesen und d
 
 Regenwurm und Schnecke kommen auch in der Welt vor: Wald (je Gewicht 6), Sumpf (Schnecke 8, Wurm 4).
 
+**Freier Startbereich (seit v0.10.0, GDD-12):** Rund um den Startpunkt gibt es kein Wasser (360 px) und keine Hindernisse (70 px). **Begründung (Vorschlag Claude, offen):** Die ersten Schritte des blinden, langsamen Blobs sollen frei sein.
+
 ### 5.3 Alte Spielstände
 
 Spielstand-Version 5: Wer schon spielte, konnte sich bewegen und farbig sehen. Diese Spielstände bekommen Kriechen, Krabbeln, Lichtsinn, Facettenauge und Hauptaugen auf Natur. Danach ist das Tempo ×0,94 statt ×1,0, die Sichtweite 37 Körperradien, die Farbe 95 %, Rot 90 %.
@@ -173,4 +175,4 @@ Spielstand-Version 5: Wer schon spielte, konnte sich bewegen und farbig sehen. D
 
 ---
 
-*Letzte Aktualisierung: 21. November 2026 — Abschnitt 5: Nest-Abstände an die Größenskala angepasst (v0.9.7); davor 21. November 2026 — Abschnitt 2.4: Laufen umgesetzt, Quellen-Tiere gebaut, aber nicht platziert (v0.9.6); davor 16. November 2026 — „ohne Rot“: Rot ganz schwarz (Vorgabe Entwickler, v0.9.3); davor 16. November 2026 — „ohne Rot“ lässt Grün und Blau stehen, Rot wird dunkel (Meldung Entwickler, v0.9.2); davor 15. November 2026 — Abschnitt 5: Erwachen im Nest umgesetzt (v0.8.0); Abschnitt 5: Verweis auf GDD-10 angepasst (Gras schon in Reichweite, keine Tätigkeit voreingestellt); davor 14. November 2026 — Erfahrung durch Bewegen und Sehen steht je Skill (Feld practice), Größenbonus in balance.ts, body.ts gilt nur für den Blob (Werte unverändert); davor 14. November 2026 — Abschnitt 5 verweist auf die geplante Änderung in GDD-10 Abschnitt 12; 13. November 2026 — Datei neu angelegt: Grundwerte, Bewegung (Kriechen, Krabbeln), Stärke aus Größe, Sehen (Lichtsinn, Facettenauge, Hauptaugen), Erwachen mit Nest*
+*Letzte Aktualisierung: 22. November 2026 — Abschnitt 5.2: freier Startbereich (GDD-12, v0.10.0); davor 21. November 2026 — Abschnitt 5: Nest-Abstände an die Größenskala angepasst (v0.9.7); davor 21. November 2026 — Abschnitt 2.4: Laufen umgesetzt, Quellen-Tiere gebaut, aber nicht platziert (v0.9.6); davor 16. November 2026 — „ohne Rot“: Rot ganz schwarz (Vorgabe Entwickler, v0.9.3); davor 16. November 2026 — „ohne Rot“ lässt Grün und Blau stehen, Rot wird dunkel (Meldung Entwickler, v0.9.2); davor 15. November 2026 — Abschnitt 5: Erwachen im Nest umgesetzt (v0.8.0); Abschnitt 5: Verweis auf GDD-10 angepasst (Gras schon in Reichweite, keine Tätigkeit voreingestellt); davor 14. November 2026 — Erfahrung durch Bewegen und Sehen steht je Skill (Feld practice), Größenbonus in balance.ts, body.ts gilt nur für den Blob (Werte unverändert); davor 14. November 2026 — Abschnitt 5 verweist auf die geplante Änderung in GDD-10 Abschnitt 12; 13. November 2026 — Datei neu angelegt: Grundwerte, Bewegung (Kriechen, Krabbeln), Stärke aus Größe, Sehen (Lichtsinn, Facettenauge, Hauptaugen), Erwachen mit Nest*

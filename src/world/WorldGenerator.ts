@@ -6,10 +6,14 @@
 // generateChunk(cx, cy, worldSeed) → ChunkDef (immer gleich für gleiche Inputs)
 // ============================================================
 
-import type { ChunkDef, HeightLevel, SpawnDef } from "./Chunk.js";
-import { TILES_PER_CHUNK, CHUNK_PX } from "./Chunk.js";
+import type { ChunkDef, SpawnDef } from "./Chunk.js";
+import { CHUNK_PX } from "./Chunk.js";
 import type { BiomeSpawnEntry } from "./BiomeDefinitions.js";
-import { getBiomeAt, BIOME_SPAWNS, getTileIndex, START_NEST_CHUNK, START_NEST_SPAWNS } from "./BiomeDefinitions.js";
+import { BIOME_SPAWNS, START_NEST_CHUNK, START_NEST_SPAWNS } from "./BiomeDefinitions.js";
+import { biomeAtPoint, circleBlocked } from "./Terrain.js";
+import { makeLCG } from "./Noise.js";
+import { ENTITY_MAP } from "../data/entities.js";
+import { ENTITY_ICON_RADIUS_FACTOR } from "../data/balance.js";
 
 // ────────────────────────────────────────
 // Deterministisches seeded LCG
@@ -19,98 +23,66 @@ function chunkSeed(cx: number, cy: number, worldSeed: number): number {
   return ((cx * 73856093) ^ (cy * 19349663) ^ worldSeed) >>> 0;
 }
 
-function makeLCG(seed: number): () => number {
-  let s = seed >>> 0;
-  return (): number => {
-    s = ((s * 1664525 + 1013904223) & 0xffffffff) >>> 0;
-    return s / 0xffffffff;
-  };
-}
-
-// ────────────────────────────────────────
-// Height-Map-Generierung
-// ────────────────────────────────────────
-
-/**
- * Generiert eine Höhenverteilung für einen Chunk.
- * Verteilung: 15% h0 (Wasser), 40% h1, 35% h2, 10% h3
- *
- * Verwendet einen Rausch-Ansatz mit mehreren LCG-Wellen für
- * organischere, zusammenhängende Geländeformen.
- */
-function generateHeightMap(rng: () => number): HeightLevel[][] {
-  const map: HeightLevel[][] = [];
-
-  // Grobe Schichten: 4×4 Blöcke mit Basis-Höhe
-  const coarse: number[][] = [];
-  const coarseSize = Math.ceil(TILES_PER_CHUNK / 4);
-  for (let cy = 0; cy < coarseSize; cy++) {
-    coarse.push([]);
-    for (let cx2 = 0; cx2 < coarseSize; cx2++) {
-      const r = rng();
-      let h: number;
-      if (r < 0.15) h = 0;
-      else if (r < 0.55) h = 1;
-      else if (r < 0.90) h = 2;
-      else h = 3;
-      coarse[cy].push(h);
-    }
-  }
-
-  for (let row = 0; row < TILES_PER_CHUNK; row++) {
-    map.push([]);
-    for (let col = 0; col < TILES_PER_CHUNK; col++) {
-      // Basis-Höhe aus dem groben Raster
-      const coarseH = coarse[Math.floor(row / 4)][Math.floor(col / 4)];
-      // Kleine Variation per Tile (±1 Schritt, selten)
-      const nudge = rng();
-      let h = coarseH;
-      if (nudge > 0.85 && h < 3) h++;
-      else if (nudge < 0.08 && h > 0) h--;
-      map[row].push(h as HeightLevel);
-    }
-  }
-
-  return map;
-}
+// [VERWORFEN, 22. November 2026] Höhenkarte je Chunk (4 Höhenstufen, nur
+// Farbe, an Chunk-Grenzen nicht zusammenhängend). Ersetzt durch Bodenarten,
+// Wasser und Hindernisse aus weltweitem Rauschen (Terrain.ts, GDD-12).
 
 // ────────────────────────────────────────
 // Gewichtete Zufallsauswahl
 // ────────────────────────────────────────
 
-function weightedPick(table: BiomeSpawnEntry[], rng: () => number): string {
+function weightedPick(table: BiomeSpawnEntry[], rng: () => number): BiomeSpawnEntry {
   const total = table.reduce((s, e) => s + e.weight, 0);
   let r = rng() * total;
   for (const entry of table) {
     r -= entry.weight;
-    if (r <= 0) return entry.id;
+    if (r <= 0) return entry;
   }
-  return table[table.length - 1].id;
+  return table[table.length - 1];
 }
 
 // ────────────────────────────────────────
 // Spawn-Generierung
 // ────────────────────────────────────────
 
-/** 64–112 Ziehungen pro Chunk, gewichtet nach Biom-Spawn-Tabelle; Einträge mit count setzen mehrere Exemplare */
-function generateSpawns(
-  biome: string,
-  rng: () => number
-): SpawnDef[] {
-  const spawnTable = BIOME_SPAWNS[biome as keyof typeof BIOME_SPAWNS]
-    ?? [{ id: "grass", weight: 1 }];
+/** Versuche je Wesen, eine freie Stelle zu finden. */
+const SPAWN_TRIES = 6;
+
+/**
+ * 64–112 Ziehungen pro Chunk. Je Ziehung: zufällige Stelle, Biom an dieser
+ * Stelle (Grenzen verlaufen quer durch Chunks), Wesen aus dessen Tabelle.
+ * Vorgabe (Entwickler, 22. November 2026): keine Einheiten im Wasser — und
+ * auch nicht in Hindernissen, die das Wesen blockieren. Ist die Stelle nicht
+ * frei, wird eine neue gesucht (bis zu SPAWN_TRIES Mal), sonst entfällt es.
+ * Einträge mit count setzen mehrere Exemplare, jedes an eigener Stelle.
+ */
+function generateSpawns(cx: number, cy: number, rng: () => number, seed: number): SpawnDef[] {
   const count = 64 + Math.floor(rng() * 49); // 64–112
   const spawns: SpawnDef[] = [];
 
   for (let i = 0; i < count; i++) {
-    const defId = weightedPick(spawnTable, rng);
-    // count: Exemplare je Treffer (z. B. Gras doppelt), jedes an eigener Position
-    const copies = spawnTable.find((e) => e.id === defId)?.count ?? 1;
+    let lx = 48 + Math.floor(rng() * (CHUNK_PX - 96));
+    let ly = 48 + Math.floor(rng() * (CHUNK_PX - 96));
+    const biome = biomeAtPoint(cx * CHUNK_PX + lx, cy * CHUNK_PX + ly, seed);
+    const entry = weightedPick(BIOME_SPAWNS[biome] ?? [{ id: "grass", weight: 1 }], rng);
+    const def = ENTITY_MAP.get(entry.id);
+    const size = def?.worldSize ?? 5;
+    const r = size * ENTITY_ICON_RADIUS_FACTOR;
+    const copies = entry.count ?? 1;
     for (let c = 0; c < copies; c++) {
-      // Position: nicht zu nah am Chunk-Rand (mindestens 48px Abstand)
-      const localX = 48 + (rng() * (CHUNK_PX - 96)) | 0;
-      const localY = 48 + (rng() * (CHUNK_PX - 96)) | 0;
-      spawns.push({ defId, localX, localY });
+      if (c > 0) {
+        lx = 48 + Math.floor(rng() * (CHUNK_PX - 96));
+        ly = 48 + Math.floor(rng() * (CHUNK_PX - 96));
+      }
+      let ok = false;
+      for (let t = 0; t < SPAWN_TRIES; t++) {
+        if (t > 0) {
+          lx = 48 + Math.floor(rng() * (CHUNK_PX - 96));
+          ly = 48 + Math.floor(rng() * (CHUNK_PX - 96));
+        }
+        if (!circleBlocked(cx * CHUNK_PX + lx, cy * CHUNK_PX + ly, r, size, seed)) { ok = true; break; }
+      }
+      if (ok) spawns.push({ defId: entry.id, localX: lx, localY: ly });
     }
   }
 
@@ -124,24 +96,16 @@ function generateSpawns(
 /**
  * Generiert einen ChunkDef deterministisch.
  * Gleiche cx/cy/worldSeed → immer identisches Ergebnis.
+ * Boden, Wasser und Hindernisse fragt man über Terrain.ts ab; der ChunkDef
+ * enthält die Wesen.
  */
 export function generateChunk(cx: number, cy: number, worldSeed: number): ChunkDef {
-  const seed = chunkSeed(cx, cy, worldSeed);
-  const rng = makeLCG(seed);
-  const biome = getBiomeAt(cx, cy);
-
-  const heightMap = generateHeightMap(rng);
-
-  // Tile-Indices aus Biom + Höhe
-  const tileIndices: number[][] = heightMap.map((row) =>
-    row.map((h) => getTileIndex(biome, h))
-  );
-
-  const spawns = generateSpawns(biome, rng);
+  const rng = makeLCG(chunkSeed(cx, cy, worldSeed));
+  const biome = biomeAtPoint((cx + 0.5) * CHUNK_PX, (cy + 0.5) * CHUNK_PX, worldSeed);
+  const spawns = generateSpawns(cx, cy, rng, worldSeed);
   // Nest am Startpunkt (GDD-09): feste Spawns zuerst, die Zufallsverteilung bleibt unverändert
   if (cx === START_NEST_CHUNK.cx && cy === START_NEST_CHUNK.cy) {
     spawns.unshift(...START_NEST_SPAWNS.map((s) => ({ defId: s.id, localX: s.localX, localY: s.localY })));
   }
-
-  return { cx, cy, biome, tileIndices, heightMap, spawns };
+  return { cx, cy, biome, spawns };
 }

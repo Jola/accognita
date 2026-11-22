@@ -6,6 +6,7 @@
 // ============================================================
 
 export type BiomeId = "forest" | "swamp" | "highland" | "mountain" | "desert" | "dungeon";
+/** [VERWORFEN, 22. November 2026] Höhenstufen der alten Höhenkarte (GDD-12). */
 export type HeightLevel = 0 | 1 | 2 | 3;
 
 // ────────────────────────────────────────
@@ -38,9 +39,8 @@ export interface SpawnDef {
 export interface ChunkDef {
   cx: number;         // Chunk-Koordinaten (nicht Pixel)
   cy: number;
-  biome: BiomeId;
-  tileIndices: number[][];  // [row][col] → Phaser-Tileset-Index
-  heightMap: HeightLevel[][]; // [row][col] → Höhe (für Spiellogik)
+  biome: BiomeId;     // Biom in der Chunk-Mitte (Grenzen verlaufen quer durch Chunks, Terrain.ts)
+  // [VERWORFEN, 22. November 2026] tileIndices / heightMap — Boden kommt aus Terrain.ts
   spawns: SpawnDef[];
 }
 
@@ -49,6 +49,8 @@ export interface LoadedChunk {
   def: ChunkDef;
   tilemap: any;           // Phaser.Tilemaps.Tilemap
   tilemapLayer: any;      // Phaser.Tilemaps.TilemapLayer
+  sprites: any[];         // Hindernisse (Phaser-Images), werden beim Entladen zerstört
+  overhead: { sprite: any; x: number; y: number; r: number }[]; // Kronen und Gestrüpp, durchsichtig über dem Blob
   instanceIds: string[];  // EntityInstance-IDs die zu diesem Chunk gehören
   loadedAt: number;       // Timestamp für Debugging
 }

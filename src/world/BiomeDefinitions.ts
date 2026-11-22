@@ -6,7 +6,6 @@
 // ============================================================
 
 import type { BiomeId } from "./Chunk.js";
-import { BIOME_TILE_OFFSET } from "./TilesetGenerator.js";
 
 // ────────────────────────────────────────
 // Zonen-Layout (Authored, in Chunk-Koordinaten)
@@ -28,7 +27,10 @@ export const WORLD_ZONES: ZoneDef[] = [
   { cx:  7, cy:  9, cw: 5, ch: 5, biome: "dungeon",  danger: 4 },
 ];
 
-/** Liefert das Biom für einen Chunk — forest als Fallback */
+/**
+ * Biom der Zonen-Tabelle an einer Stelle in Chunk-Koordinaten (auch Kommazahlen) —
+ * forest als Fallback. Die verbogenen Grenzen der Welt: Terrain.ts biomeAtPoint.
+ */
 export function getBiomeAt(cx: number, cy: number): BiomeId {
   for (const zone of WORLD_ZONES) {
     if (
@@ -123,17 +125,10 @@ export const BIOME_SPAWNS: Record<BiomeId, BiomeSpawnEntry[]> = {
 };
 
 // ────────────────────────────────────────
-// Tile-Index-Berechnung
+// [VERWORFEN, 22. November 2026] Tile-Index aus Biom + Höhe (getTileIndex,
+// 6 Biome × 4 Höhenstufen). Ersetzt durch Bodenarten an Eckpunkten und
+// berechnete Übergangskacheln (GDD-12, TilesetGenerator.ts).
 // ────────────────────────────────────────
-
-/**
- * Berechnet den Tileset-Index aus Biom und Höhe.
- * Layout: [biomeOffset + heightLevel]
- */
-export function getTileIndex(biome: BiomeId, height: number): number {
-  const offset = BIOME_TILE_OFFSET[biome] ?? 0;
-  return offset + Math.min(3, Math.max(0, height));
-}
 
 // ────────────────────────────────────────
 // Nest am Startpunkt (GDD-09 Abschnitt 5)

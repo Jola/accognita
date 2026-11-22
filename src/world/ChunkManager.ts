@@ -14,6 +14,12 @@ import {
   chunkKey,
 } from "./Chunk.js";
 import { generateChunk } from "./WorldGenerator.js";
+import { chunkObstacles } from "./Terrain.js";
+import {
+  chunkTileData, flushTerrainAtlas, obstacleTextureKey, crownTextureKey,
+  TERRAIN_ATLAS_KEY, TERRAIN_ATLAS_MARGIN, TERRAIN_ATLAS_SPACING,
+} from "./TilesetGenerator.js";
+import { OBSTACLE_KINDS } from "../data/terrain.js";
 import type { GameState } from "../types/GameState.js";
 import type { EntityInstance } from "../types/Entity.js";
 import { ENTITY_MAP } from "../data/entities.js";
@@ -29,6 +35,14 @@ interface DeadEntityRecord {
   localY: number;
   respawnAt: number;
 }
+
+// Zeichenreihenfolge (GDD-12): Boden < Steine/Stämme < Wesen (0) < Gestrüpp < Kronen < HP-Balken (10)
+const DEPTH_GROUND = -2;
+const DEPTH_LOW_OBSTACLE = -1;
+const DEPTH_OVERHEAD = 8;
+const DEPTH_CROWN = 9;
+/** Durchsichtigkeit von Kronen und Gestrüpp, unter denen der Blob gerade ist. */
+const OVERHEAD_FADE_ALPHA = 0.3;
 
 // ────────────────────────────────────────
 // ChunkManager
@@ -147,21 +161,64 @@ export class ChunkManager {
     }
   }
 
+  /**
+   * Kronen und Gestrüpp über dem Blob werden durchsichtig, damit man ihn
+   * (und was um ihn ist) sieht. Begründung (Vorschlag Claude, offen): Kronen
+   * verdecken sonst große Teile des Bildes, besonders beim winzigen Blob am Anfang.
+   */
+  updateOverhead(px: number, py: number, blobRadius: number): void {
+    const cx = Math.floor(px / CHUNK_PX), cy = Math.floor(py / CHUNK_PX);
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const chunk = this.loadedChunks.get(chunkKey(cx + dx, cy + dy));
+      if (!chunk) continue;
+      for (const o of chunk.overhead) {
+        const reach = o.r + blobRadius + 4;
+        const ddx = o.x - px, ddy = o.y - py;
+        const target = ddx * ddx + ddy * ddy < reach * reach ? OVERHEAD_FADE_ALPHA : 1;
+        const a = o.sprite.alpha;
+        if (a !== target) o.sprite.setAlpha(Math.abs(target - a) < 0.02 ? target : a + (target - a) * 0.2);
+      }
+    }
+  }
+
   private loadChunk(cx: number, cy: number): void {
     const key = chunkKey(cx, cy);
     if (this.loadedChunks.has(key)) return;
 
     const def: ChunkDef = generateChunk(cx, cy, this.gameState.world.worldSeed);
 
-    // Phaser Tilemap erstellen
+    // Boden: Phaser-Tilemap aus berechneten Übergangskacheln (GDD-12)
+    const seed = this.gameState.world.worldSeed;
     const tilemap = this.scene.make.tilemap({
-      data: def.tileIndices,
+      data: chunkTileData(cx, cy, TILES_PER_CHUNK, seed),
       tileWidth: TILE_PX,
       tileHeight: TILE_PX,
     });
-    const tileset = tilemap.addTilesetImage("worldTileset", "worldTileset", TILE_PX, TILE_PX, 0, 0);
+    flushTerrainAtlas();
+    const tileset = tilemap.addTilesetImage(
+      TERRAIN_ATLAS_KEY, TERRAIN_ATLAS_KEY, TILE_PX, TILE_PX, TERRAIN_ATLAS_MARGIN, TERRAIN_ATLAS_SPACING,
+    );
     const layer = tilemap.createLayer(0, tileset, cx * CHUNK_PX, cy * CHUNK_PX);
-    layer.setDepth(-1);
+    layer.setDepth(DEPTH_GROUND);
+
+    // Hindernisse: Unterteil unter den Wesen, Kronen und Gestrüpp darüber
+    const sprites: any[] = [];
+    const overhead: LoadedChunk["overhead"] = [];
+    for (const o of chunkObstacles(cx, cy, seed)) {
+      const kind = OBSTACLE_KINDS[o.kind];
+      if (kind?.overhead) {
+        const sp = this.scene.add.image(o.x, o.y, obstacleTextureKey(o)).setDepth(DEPTH_OVERHEAD);
+        sprites.push(sp);
+        overhead.push({ sprite: sp, x: o.x, y: o.y, r: o.r });
+        continue;
+      }
+      sprites.push(this.scene.add.image(o.x, o.y, obstacleTextureKey(o)).setDepth(DEPTH_LOW_OBSTACLE));
+      if (o.crownR) {
+        const crown = this.scene.add.image(o.x, o.y - 2, crownTextureKey(o)).setDepth(DEPTH_CROWN);
+        sprites.push(crown);
+        overhead.push({ sprite: crown, x: o.x, y: o.y, r: o.crownR });
+      }
+    }
 
     // Entities spawnen
     const instanceIds: string[] = [];
@@ -221,6 +278,8 @@ export class ChunkManager {
       def,
       tilemap,
       tilemapLayer: layer,
+      sprites,
+      overhead,
       instanceIds,
       loadedAt: now,
     });
@@ -265,6 +324,7 @@ export class ChunkManager {
     // Phaser-Objekte freigeben
     chunk.tilemapLayer.destroy();
     chunk.tilemap.destroy();
+    for (const sp of chunk.sprites) sp.destroy();
 
     this.loadedChunks.delete(key);
     console.log(`[Chunk] Unloaded [${key}]`);

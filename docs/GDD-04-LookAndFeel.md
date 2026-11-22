@@ -13,6 +13,7 @@ Kein Cartoon-Look. Stattdessen:
 - Organische Formen (der Blob ist nie perfekt rund)
 - Mittelalterliche Welt ohne Technologie-Elemente
 - **Pixel-Art-Tiles** (32×32px, prozedural generiert): Grashalme, Steinfugen, Dünenstreifen, Wasserreflexionen — jedes Biom hat einen eigenen Look
+- **Seit v0.10.0 (GDD-12):** Bodenarten an Eckpunkten mit berechneten, gerundeten Übergängen und Ufer; Hindernisse (Bäume mit Kronen, Gestrüpp, Steine, Kakteen, Säulen) als Pixel-Art mit Licht von oben links, Farbstufen, Umrisslinie und Schatten; Texturen scharf beim Zoomen
 
 ---
 
@@ -20,7 +21,9 @@ Kein Cartoon-Look. Stattdessen:
 
 ### Welt — Biom-Farbpaletten (implementiert, v0.3)
 
-Jedes Biom hat 4 Höhenstufen (Wasser/0, Flach/1, Hügel/2, Gipfel/3) mit eigener Pixel-Art-Textur:
+> [VERWORFEN, 22. November 2026] Höhenstufen und diese Paletten sind ersetzt durch Bodenarten (GDD-12 Abschnitt 2, Farben in `src/data/terrain.ts` und `TilesetGenerator.ts`).
+
+~~Jedes Biom hat 4 Höhenstufen (Wasser/0, Flach/1, Hügel/2, Gipfel/3) mit eigener Pixel-Art-Textur:~~
 
 | Biom | Basis | Hell | Dunkel | Akzent |
 |------|-------|------|--------|--------|
@@ -244,7 +247,7 @@ Ein einziges Menü für alle Bildschirmgrößen und Ausrichtungen ([src/ui/GameM
 - 32×32px Pixel-Art-Tiles, prozedural generiert (Canvas 2D ImageData, kein externes Bild)
 - Kamera folgt dem Spieler mit sanfter Interpolation
 - Chunk-basiert: 20×20 Chunks à 32×32 Tiles = 20480×20480px Welt
-- 6 Biome: Forest, Swamp, Highland, Mountain, Desert, Dungeon — als authored Zonen angeordnet
+- 6 Biome: Forest, Swamp, Highland, Mountain, Desert, Dungeon — als authored Zonen angeordnet; seit v0.10.0 mit verbogenen, zufälligen Grenzen, Wasser und Hindernissen mit Kollision (GDD-12)
 - Dynamisches Laden/Entladen (Render-Radius 2, Active-Radius 1, Unload-Radius 3)
 
 ### View 2: Isometrisch (geplant, v0.4)
@@ -357,4 +360,4 @@ Kein lokales Node.js, npm oder Terminal auf Jörns Seite nötig.
 
 ---
 
-*Letzte Aktualisierung: 21. November 2026 — Bedienelemente im Spiel: Lern-Anzeige oben links mit Fortschrittsbalken, Skill-Slots im Hochformat übereinander, Blob-Knöpfe am Joystick (Vorgabe Entwickler, v0.9.9); davor 15. November 2026 — Reiter GEDÄCHTNIS (v0.9.0); davor 15. November 2026 — COMBO-Reiter ausgebaut; INDEX ist für den Entwickler, was der Spieler braucht, bekommt einen eigenen Bildschirm (Vorgaben Entwickler, v0.8.8); davor 14. November 2026 — Funktionsname calcRegenHp (Heilung aus dem Skill-Effekt regen_hp); davor v0.6 — Werte-Tab mit allen Charakterwerten, Version 0.6.5 (1. November 2026); Version 0.6.4 (tatsächlicher Schaden an den Skills, 1. November 2026); Werte-Graphen: Ränge als Werte-Zonen, Werte aus den echten Berechnungsfunktionen, Version 0.6.3 (1. November 2026); Formel zu jedem Werte-Graphen, Version 0.6.2 (1. November 2026); Version 0.6.1 (Ameise 5 Schaden, 1. November 2026); Fortschritt in % neben dem Rang (Skills-Tab, Kern-Fähigkeiten), Höchstwert-Linie in den Werte-Graphen, Version 0.6.0 (1. November 2026); davor v0.5 — Werte-Graphen im INDEX, Version 0.5.1 (1. November 2026); Reichweite bis zum Rand des Wesens; Version 0.5.0 (1. November 2026); Giftlast in der HP-Bar und Giftdosis-Zahl (31. Oktober 2026); davor Anzeige an Erfahrung statt Level angepasst: HUD zeigt Kapazität (KAP), Skills-Tab und INDEX nach Rängen, Rang-Aufstieg statt Level-Up, Spielstand-Format 3, Desktop-Steuerung (Tastatur/Maus) als verworfen markiert (31. Oktober 2026); davor Dev-Container und `npm run dev` für lokale Entwicklung; Begründungen für Spielmenü, Vollbild-Regel, Version und Spielstand-Migration ergänzt; Spielmenü als pausierendes Vollbild-Overlay mit INDEX-Tab (Oktober 2026)*
+*Letzte Aktualisierung: 22. November 2026 — neue Kacheln und Hindernisse (GDD-12, v0.10.0), alte Biom-Paletten mit Höhenstufen verworfen; davor 21. November 2026 — Bedienelemente im Spiel: Lern-Anzeige oben links mit Fortschrittsbalken, Skill-Slots im Hochformat übereinander, Blob-Knöpfe am Joystick (Vorgabe Entwickler, v0.9.9); davor 15. November 2026 — Reiter GEDÄCHTNIS (v0.9.0); davor 15. November 2026 — COMBO-Reiter ausgebaut; INDEX ist für den Entwickler, was der Spieler braucht, bekommt einen eigenen Bildschirm (Vorgaben Entwickler, v0.8.8); davor 14. November 2026 — Funktionsname calcRegenHp (Heilung aus dem Skill-Effekt regen_hp); davor v0.6 — Werte-Tab mit allen Charakterwerten, Version 0.6.5 (1. November 2026); Version 0.6.4 (tatsächlicher Schaden an den Skills, 1. November 2026); Werte-Graphen: Ränge als Werte-Zonen, Werte aus den echten Berechnungsfunktionen, Version 0.6.3 (1. November 2026); Formel zu jedem Werte-Graphen, Version 0.6.2 (1. November 2026); Version 0.6.1 (Ameise 5 Schaden, 1. November 2026); Fortschritt in % neben dem Rang (Skills-Tab, Kern-Fähigkeiten), Höchstwert-Linie in den Werte-Graphen, Version 0.6.0 (1. November 2026); davor v0.5 — Werte-Graphen im INDEX, Version 0.5.1 (1. November 2026); Reichweite bis zum Rand des Wesens; Version 0.5.0 (1. November 2026); Giftlast in der HP-Bar und Giftdosis-Zahl (31. Oktober 2026); davor Anzeige an Erfahrung statt Level angepasst: HUD zeigt Kapazität (KAP), Skills-Tab und INDEX nach Rängen, Rang-Aufstieg statt Level-Up, Spielstand-Format 3, Desktop-Steuerung (Tastatur/Maus) als verworfen markiert (31. Oktober 2026); davor Dev-Container und `npm run dev` für lokale Entwicklung; Begründungen für Spielmenü, Vollbild-Regel, Version und Spielstand-Migration ergänzt; Spielmenü als pausierendes Vollbild-Overlay mit INDEX-Tab (Oktober 2026)*
